@@ -1,0 +1,63 @@
+#!/usr/bin/env zsh
+
+if [[ -n "$ZSH_DEBUG" ]]; then
+  zmodload zsh/zprof
+fi
+
+# Emacs
+bindkey -e
+
+if [[ -n "$ENV_DIRS" ]]; then
+  for dir in ${(s/:/)ENV_DIRS}; do
+    [[ ! -d "$dir" ]] && mkdir -p "$dir"
+  done
+  unset ENV_DIRS
+fi
+
+# ZSH Syntax Theme
+[[ -r "$ZDOTDIR/.config/zsh/colors/gruvbox.zsh-syntax-theme" ]] && source "$ZDOTDIR/.config/zsh/colors/gruvbox.zsh-syntax-theme"
+
+# Lazy-load (autoload) Zsh function files from a directory.
+export ZFUNCDIR="$ZDOTDIR/.zfunctions"
+# fpath=($ZFUNCDIR $fpath)
+# autoload -Uz $ZFUNCDIR/*(-.N)
+
+# Set any zstyles you might use for configuration.
+[[ -r "$ZDOTDIR/.zstyles" ]] && source "$ZDOTDIR/.zstyles"
+
+# Clone antidote if necessary.
+export ANTIDOTE_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/antidote"
+
+if [[ ! -d "$ANTIDOTE_HOME" ]]; then
+  git clone https://github.com/mattmc3/antidote "$ANTIDOTE_HOME"
+fi
+
+source "$ANTIDOTE_HOME/antidote.zsh"
+antidote load
+
+# for _rc in $ZDOTDIR/.zshrc.d/*.zsh; do
+#   # Ignore tilde files.
+#   if [[ $_rc:t != '~'* ]]; then
+#     source "$_rc"
+#     echo "$_rc"
+#   fi
+# done
+# unset _rc
+
+# ========================= Visual Settings ====================================
+
+# Set dircolors and completion colors
+if command -v dircolors >/dev/null 2>&1; then
+  eval "$(dircolors --sh $ZDOTDIR/colors/onedarkpro.dircolors)"
+elif command -v gdircolors >/dev/null 2>&1; then
+  eval "$(gdircolors --sh $ZDOTDIR/colors/onedarkpro.dircolors)"
+fi
+
+if [[ -n "$ZSH_DEBUG" ]]; then
+  zprof
+fi
+
+# -------------------------------------------------------------------------------------------------
+# -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
+# vim: ft=zsh sw=2 ts=2 et
+# -------------------------------------------------------------------------------------------------

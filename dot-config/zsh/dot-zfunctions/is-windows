@@ -1,0 +1,18 @@
+#!/usr/bin/env zsh
+
+# Detect if running under native Windows shells (MSYS2, MinGW, Cygwin)
+# Note: WSL is NOT considered native Windows for our purposes
+case "${OSTYPE:-}" in
+  msys*|mingw*|cygwin*)
+    return 0
+    ;;
+esac
+
+[[ "${OS:-}" == "Windows_NT" ]] && return 0
+
+return 1
+
+# -------------------------------------------------------------------------------------------------
+# -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
+# vim: ft=zsh sw=2 ts=2 et
+# -------------------------------------------------------------------------------------------------

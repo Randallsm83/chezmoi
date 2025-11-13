@@ -1,0 +1,89 @@
+# Main highlighter styling: https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/docs/highlighters/main.md
+
+ZSH_HIGHLIGHT_HIGHLIGHTERS+=(main brackets pattern regexp cursor root line)
+typeset -gA ZSH_HIGHLIGHT_STYLES
+
+## General
+### Diffs
+ZSH_HIGHLIGHT_STYLES[diff-add]='fg=#b8bb26'               # bright green
+ZSH_HIGHLIGHT_STYLES[diff-delete]='fg=#fb4934'            # bright red
+ZSH_HIGHLIGHT_STYLES[diff-change]='fg=#fabd2f'            # yellow (for changed sections)
+ZSH_HIGHLIGHT_STYLES[diff-text]='fg=#83a598,bold'         # bright blue, bold for emphasis
+
+### Markup
+ZSH_HIGHLIGHT_STYLES[markup-tag]='fg=#d3869b'             # bright purple (for markup tags)
+ZSH_HIGHLIGHT_STYLES[markup-attribute]='fg=#8ec07c'       # bright aqua (for attributes in markup)
+ZSH_HIGHLIGHT_STYLES[markup-value]='fg=#b8bb26'           # bright green (for attribute values)
+ZSH_HIGHLIGHT_STYLES[markup-entity]='fg=#fabd2f'          # yellow (for entities within markup)
+
+## Classes
+ZSH_HIGHLIGHT_STYLES[class]='fg=#fabd2f,bold'             # bright yellow, bold to stand out for classes
+ZSH_HIGHLIGHT_STYLES[class-name]='fg=#d79921,bold'        # yellow, bold to differentiate class names
+
+## Constants
+ZSH_HIGHLIGHT_STYLES[constant]='fg=#d65d0e'               # orange (for constants to make them stand out)
+ZSH_HIGHLIGHT_STYLES[constant-variable]='fg=#d79921'      # yellow (to distinguish constant variables)
+ZSH_HIGHLIGHT_STYLES[constant-character]='fg=#b8bb26'     # bright green (for single characters as constants)
+
+## Entities
+ZSH_HIGHLIGHT_STYLES[entity]='fg=#d3869b'                 # bright purple for general entities
+ZSH_HIGHLIGHT_STYLES[entity-function]='fg=#8ec07c,bold'   # bright aqua, bold for functions as entities
+ZSH_HIGHLIGHT_STYLES[entity-class]='fg=#fabd2f'           # bright yellow for entity classes
+
+## Serializable / Configuration Languages
+ZSH_HIGHLIGHT_STYLES[config-key]='fg=#83a598'             # bright blue (for keys in configuration files)
+ZSH_HIGHLIGHT_STYLES[config-value]='fg=#d5c4a1'           # fg2 light brown (for values in configuration files)
+ZSH_HIGHLIGHT_STYLES[config-comment]='fg=#928374'         # normal gray (for comments in configuration files)
+
+## Storage
+ZSH_HIGHLIGHT_STYLES[storage-type]='fg=#b16286'           # purple (for storage types like int, char, etc.)
+ZSH_HIGHLIGHT_STYLES[storage-modifier]='fg=#d3869b'       # bright purple (for storage modifiers like const, static)
+ZSH_HIGHLIGHT_STYLES[storage-access]='fg=#fb4934'         # bright red (for access specifiers like public/private)
+
+## Comments
+ZSH_HIGHLIGHT_STYLES[comment]='fg=#928374'                # normal gray (for comments)
+
+## Functions/methods
+ZSH_HIGHLIGHT_STYLES[alias]='fg=#98971a'                  # green (for aliases)
+ZSH_HIGHLIGHT_STYLES[suffix-alias]='fg=#98971a'           # green (for suffix aliases)
+ZSH_HIGHLIGHT_STYLES[global-alias]='fg=#98971a'           # green (for global aliases)
+ZSH_HIGHLIGHT_STYLES[function]='fg=#98971a'               # green (for functions)
+ZSH_HIGHLIGHT_STYLES[command]='fg=#98971a'                # green (for commands)
+ZSH_HIGHLIGHT_STYLES[precommand]='fg=#98971a,italic'      # green, italic (for precommands)
+
+## Variables
+ZSH_HIGHLIGHT_STYLES[variable]='fg=#b8bb26'               # bright green (for variables in general)
+ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]='fg=#ebdbb2' # foreground (for dollar-quoted variables)
+ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument-unclosed]='fg=#fb4934' # bright red (for unclosed dollar quotes)
+ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=#ebdbb2'   # foreground (for double-quoted dollar variables)
+ZSH_HIGHLIGHT_STYLES[assign]='fg=#ebdbb2'                 # foreground (for assignment operators)
+ZSH_HIGHLIGHT_STYLES[named-fd]='fg=#ebdbb2'               # foreground (for named file descriptors)
+ZSH_HIGHLIGHT_STYLES[numeric-fd]='fg=#ebdbb2'             # foreground (for numeric file descriptors)
+
+## Strings
+ZSH_HIGHLIGHT_STYLES[command-substitution-quoted]='fg=#d79921'       # yellow (for quoted command substitutions)
+ZSH_HIGHLIGHT_STYLES[command-substitution-delimiter-quoted]='fg=#d79921' # yellow (for quoted delimiters)
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#d79921'            # yellow (for single-quoted strings)
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument-unclosed]='fg=#cc241d'   # red (for unclosed single quotes)
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#d79921'            # yellow (for double-quoted strings)
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument-unclosed]='fg=#cc241d'   # red (for unclosed double quotes)
+ZSH_HIGHLIGHT_STYLES[rc-quote]='fg=#d79921'                          # yellow (for rc-style quotes)
+
+## Keywords
+ZSH_HIGHLIGHT_STYLES[keyword]='fg=#83a598'              # bright blue for keywords
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=#458588'              # blue for built-in commands
+
+## Misc
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#fb4934'        # bright red for unknown tokens
+ZSH_HIGHLIGHT_STYLES[default]='fg=#ebdbb2'              # foreground for default text
+ZSH_HIGHLIGHT_STYLES[cursor]='standout'                 # standout for cursor
+
+## Paths
+ZSH_HIGHLIGHT_STYLES[path]='fg=#ebdbb2'                # foreground (for paths)
+ZSH_HIGHLIGHT_STYLES[path_pathseparator]='fg=#d3869b'  # bright purple (for path separators)
+ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=#ebdbb2'         # foreground (for path prefix)
+ZSH_HIGHLIGHT_STYLES[path_prefix_pathseparator]='fg=#d3869b' # bright purple (for path prefix separators)
+
+## Globbing
+ZSH_HIGHLIGHT_STYLES[globbing]='fg=#ebdbb2'            # foreground (for globbing)
+ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=#b16286'   # purple (for history expansion)

@@ -1,0 +1,13 @@
+#!/usr/bin/env zsh
+
+# Detect if running under WSL (Windows Subsystem for Linux)
+[[ -n "${WSL_DISTRO_NAME:-}" ]] && return 0
+[[ -r /proc/version ]] && grep -qiE '(microsoft|wsl)' /proc/version && return 0
+[[ -r /proc/sys/kernel/osrelease ]] && grep -qiE '(microsoft|wsl)' /proc/sys/kernel/osrelease && return 0
+
+return 1
+
+# -------------------------------------------------------------------------------------------------
+# -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
+# vim: ft=zsh sw=2 ts=2 et
+# -------------------------------------------------------------------------------------------------

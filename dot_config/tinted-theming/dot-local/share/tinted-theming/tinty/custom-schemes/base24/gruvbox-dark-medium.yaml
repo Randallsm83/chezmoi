@@ -1,0 +1,29 @@
+system: "base24"
+name: "Gruvbox Dark Medium"
+author: "Me"
+variant: "dark"
+palette:
+  base00: "#282828" # ----
+  base01: "#3c3836" # ---
+  base02: "#504945" # --
+  base03: "#665c54" # -
+  base04: "#bdae93" # +
+  base05: "#d5c4a1" # ++
+  base06: "#ebdbb2" # +++
+  base07: "#fbf1c7" # ++++
+  base08: "#cc241d" # red
+  base09: "#d65d0e" # orange
+  base0A: "#d79921" # yellow
+  base0B: "#98971a" # green
+  base0C: "#689d6a" # cyan
+  base0D: "#458588" # blue
+  base0E: "#b16286" # purple
+  base0F: "#fe8019" # orange+
+  base10: "#1b1b1b" # -----
+  base11: "#0f0f0f" # ------
+  base12: "#fb4934" # red+
+  base13: "#fabd2f" # yellow+
+  base14: "#b8bb26" # green+
+  base15: "#8ec07c" # cyan+
+  base16: "#83a598" # blue+
+  base17: "#d3869b" # purple+

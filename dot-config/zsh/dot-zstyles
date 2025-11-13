@@ -1,0 +1,23 @@
+#!/usr/bin/env zsh
+
+# Available completion styles: gremlin, ohmy, prez, zshzoo
+zstyle ':plugin:ez-compinit' 'compstyle' 'zshzoo'
+
+# Friendly repo names
+zstyle ':antidote:bundle' use-friendly-names 'yes'
+
+# Alias Finder
+# alias a=abc where abc = source and a = destination
+zstyle ':alias-finder' longer true # true include aliases where the source is longer than the input
+zstyle ':alias-finder' exact false # true to avoid aliases where the source is shorter than the input
+zstyle ':alias-finder' cheaper true # true to avoid aliases where the destination is longer than the input
+zstyle ':alias-finder' autoload true
+
+# Ssh-agent
+zstyle ':ssh-agent' debug false # Enable debug output
+zstyle ':ssh-agent' identities #ldap #id_rsa # Load other identities not found in .ssh/config
+
+# -------------------------------------------------------------------------------------------------
+# -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
+# vim: ft=zsh sw=2 ts=2 et
+# -------------------------------------------------------------------------------------------------

@@ -1,0 +1,56 @@
+# SSH Configuration for 1Password Agent
+# Works across Windows, WSL, macOS, and Linux
+# Uses 1Password agent for key management with per-host restrictions
+
+# Platform-specific configuration (WSL, macOS, etc.)
+# Create ~/.ssh/config.d/<platform> files as needed
+Include config.d/*
+
+# Global defaults - security hardening and reliability
+Host *
+  # Security settings
+  IdentitiesOnly no
+  AddKeysToAgent no
+  ForwardAgent no
+  HashKnownHosts yes
+  PreferredAuthentications publickey
+  GSSAPIAuthentication no
+  
+  # Connection reliability
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+  
+  # Note: IdentityFile is NOT set here
+  # 1Password agent automatically selects the correct key based on "Allowed hosts"
+  # configured in each SSH Key item in 1Password
+
+# GitHub
+Host github.com
+  HostName github.com
+  User git
+  PubkeyAuthentication yes
+  IdentitiesOnly no
+
+# DreamHost Git
+Host git.dreamhost.com
+  HostName git.dreamhost.com
+  User rmiller
+  PubkeyAuthentication yes
+
+# DreamHost yakko shell server
+# Agent forwarding enabled ONLY for this host
+Host yakko
+  HostName ***REMOVED***
+  User rmiller
+  ForwardAgent yes
+  PubkeyAuthentication yes
+  IdentitiesOnly no
+
+# DreamHost porky shell server
+# Agent forwarding enabled ONLY for this host
+Host porky
+  HostName ***REMOVED***
+  User rmiller
+  ForwardAgent yes
+  PubkeyAuthentication yes
+

@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+
+# TODO: Use to clone/load color theme files, completion files etc
+
+mattmc3/ez-compinit                           # Better compinit
+zsh-users/zsh-completions kind:fpath path:src # More completions
+
+mattmc3/zshrc.d                               # Load $ZDOTDOR/.zshrc.d confs
+mattmc3/zfunctions                            # Load $ZDOTDOR/functions
+so-fancy/diff-so-fancy                        # Better Git Diff
+
+zsh-users/zsh-autosuggestions                 # Auto-suggestions
+zsh-users/zsh-syntax-highlighting             # Syntax Highlighting
+zsh-users/zsh-history-substring-search        # Up/Down to search history
+
+# -------------------------------------------------------------------------------------------------
+# -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
+# vim: ft=zsh sw=2 ts=2 et
+# -------------------------------------------------------------------------------------------------

@@ -1,0 +1,60 @@
+# Warp Launch Configuration
+# PowerShell 7 Development Setup
+# 
+# This configuration provides a comprehensive PowerShell development environment
+# with multiple tabs for different workflows and split panes for monitoring.
+#
+# Customize the working directories below to match your project structure.
+
+---
+name: PowerShell 7 Development
+active_window_index: 0
+windows:
+  - active_tab_index: 0
+    tabs:
+      # Tab 1: Dotfiles - Manage configuration files
+      - title: Dotfiles
+        layout:
+          split_direction: vertical
+          panes:
+            - cwd: C:\Users\Randall\.config\dotfiles
+              is_focused: true
+              commands:
+                - exec: git status
+                - exec: git log --oneline -5
+            - cwd: C:\Users\Randall\.config
+              commands:
+                - exec: ll
+        color: blue
+
+      # Tab 2: Projects - Main development workspace
+      - title: Projects
+        layout:
+          split_direction: horizontal
+          panes:
+            - cwd: C:\Users\Randall\projects
+              commands:
+                - exec: Get-ChildItem
+            - cwd: C:\Users\Randall\projects
+              commands:
+                - exec: Write-Host "Quick test area - try commands here" -ForegroundColor Green
+        color: green
+
+      # Tab 3: Scripts - PowerShell script development
+      - title: Scripts
+        layout:
+          cwd: C:\Users\Randall\Documents\PowerShell\Scripts
+          commands:
+            - exec: Get-ChildItem *.ps1
+            - exec: Write-Host "PowerShell Scripts Directory" -ForegroundColor Yellow
+        color: yellow
+
+      # Tab 4: System Monitoring
+      - title: Monitoring
+        layout:
+          split_direction: vertical
+          panes:
+            - cwd: C:\Users\Randall
+              commands:
+                - exec: btop
+        color: magenta

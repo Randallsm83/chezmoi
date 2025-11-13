@@ -1,0 +1,253 @@
+# OneDark Pro Color Scheme for dircolors
+# High contrast with neon-ish colors, less purple in backgrounds
+# Designed for dark terminal environments
+
+# Term Section
+TERM Eterm
+TERM ansi
+TERM *color*
+TERM con[0-9]*x[0-9]*
+TERM cons25
+TERM console
+TERM cygwin
+TERM dtterm
+TERM gnome
+TERM hurd
+TERM jfbterm
+TERM konsole
+TERM kterm
+TERM linux
+TERM linux-c
+TERM mlterm
+TERM putty
+TERM rxvt*
+TERM screen*
+TERM st
+TERM terminator
+TERM tmux*
+TERM vt100
+TERM xterm*
+
+# Base file colors
+NORMAL 00            # no color code at all
+FILE 00              # regular file
+RESET 0              # reset to "normal" color
+DIR 01;38;5;75       # directory - bright blue
+LINK 01;38;5;170     # symbolic link - bright pink/magenta
+MULTIHARDLINK 00     # regular file with more than one link
+FIFO 38;5;214;48;5;235  # pipe - orange on dark background
+SOCK 01;38;5;213        # socket - bright magenta
+DOOR 01;38;5;213        # door
+BLK 38;5;214;48;5;235   # block device driver - orange
+CHR 38;5;214;48;5;235   # character device driver - orange
+ORPHAN 38;5;196;48;5;235;01  # symlink to nonexistent file - bright red
+MISSING 38;5;196;48;5;235    # nonexistent file pointed to by ORPHAN
+SETUID 38;5;15;48;5;196      # file that is setuid (u+s) - white on red
+SETGID 38;5;16;48;5;214      # file that is setgid (g+s) - black on orange
+CAPABILITY 38;5;16;48;5;196  # file with capability
+STICKY_OTHER_WRITABLE 38;5;16;48;5;114  # dir that is sticky and other-writable (+t,o+w) - black on green
+OTHER_WRITABLE 38;5;75;48;5;235  # dir that is other-writable (o+w) and not sticky - blue
+STICKY 38;5;15;48;5;75       # dir with the sticky bit set (+t) and not other-writable - white on blue
+
+# Executables (bright green)
+EXEC 01;38;5;114
+
+# Archives/compressed (neon pink/magenta)
+.tar 01;38;5;170
+.tgz 01;38;5;170
+.arc 01;38;5;170
+.arj 01;38;5;170
+.taz 01;38;5;170
+.lha 01;38;5;170
+.lz4 01;38;5;170
+.lzh 01;38;5;170
+.lzma 01;38;5;170
+.tlz 01;38;5;170
+.txz 01;38;5;170
+.tzo 01;38;5;170
+.t7z 01;38;5;170
+.zip 01;38;5;170
+.z 01;38;5;170
+.dz 01;38;5;170
+.gz 01;38;5;170
+.lrz 01;38;5;170
+.lz 01;38;5;170
+.lzo 01;38;5;170
+.xz 01;38;5;170
+.zst 01;38;5;170
+.tzst 01;38;5;170
+.bz2 01;38;5;170
+.bz 01;38;5;170
+.tbz 01;38;5;170
+.tbz2 01;38;5;170
+.tz 01;38;5;170
+.deb 01;38;5;170
+.rpm 01;38;5;170
+.jar 01;38;5;170
+.war 01;38;5;170
+.ear 01;38;5;170
+.sar 01;38;5;170
+.rar 01;38;5;170
+.alz 01;38;5;170
+.ace 01;38;5;170
+.zoo 01;38;5;170
+.cpio 01;38;5;170
+.7z 01;38;5;170
+.rz 01;38;5;170
+.cab 01;38;5;170
+.wim 01;38;5;170
+.swm 01;38;5;170
+.dwm 01;38;5;170
+.esd 01;38;5;170
+
+# Image formats (purple)
+.jpg 00;38;5;141
+.jpeg 00;38;5;141
+.mjpg 00;38;5;141
+.mjpeg 00;38;5;141
+.gif 00;38;5;141
+.bmp 00;38;5;141
+.pbm 00;38;5;141
+.pgm 00;38;5;141
+.ppm 00;38;5;141
+.tga 00;38;5;141
+.xbm 00;38;5;141
+.xpm 00;38;5;141
+.tif 00;38;5;141
+.tiff 00;38;5;141
+.png 00;38;5;141
+.svg 00;38;5;141
+.svgz 00;38;5;141
+.mng 00;38;5;141
+.pcx 00;38;5;141
+.webp 00;38;5;141
+.ico 00;38;5;141
+
+# Video formats (magenta)
+.mov 00;38;5;213
+.mpg 00;38;5;213
+.mpeg 00;38;5;213
+.m2v 00;38;5;213
+.mkv 00;38;5;213
+.webm 00;38;5;213
+.ogm 00;38;5;213
+.mp4 00;38;5;213
+.m4v 00;38;5;213
+.mp4v 00;38;5;213
+.vob 00;38;5;213
+.qt 00;38;5;213
+.nuv 00;38;5;213
+.wmv 00;38;5;213
+.asf 00;38;5;213
+.rm 00;38;5;213
+.rmvb 00;38;5;213
+.flc 00;38;5;213
+.avi 00;38;5;213
+.fli 00;38;5;213
+.flv 00;38;5;213
+.gl 00;38;5;213
+.dl 00;38;5;213
+.xcf 00;38;5;213
+.xwd 00;38;5;213
+.yuv 00;38;5;213
+.cgm 00;38;5;213
+.emf 00;38;5;213
+
+# Audio formats (cyan)
+.aac 00;38;5;80
+.au 00;38;5;80
+.flac 00;38;5;80
+.m4a 00;38;5;80
+.mid 00;38;5;80
+.midi 00;38;5;80
+.mka 00;38;5;80
+.mp3 00;38;5;80
+.mpc 00;38;5;80
+.ogg 00;38;5;80
+.ra 00;38;5;80
+.wav 00;38;5;80
+.oga 00;38;5;80
+.opus 00;38;5;80
+.spx 00;38;5;80
+.xspf 00;38;5;80
+
+# Documents (bright yellow/orange)
+.pdf 00;38;5;214
+.ps 00;38;5;214
+.txt 00;38;5;251
+.patch 00;38;5;251
+.diff 00;38;5;251
+.log 00;38;5;251
+.tex 00;38;5;251
+.doc 00;38;5;214
+.docx 00;38;5;214
+.odt 00;38;5;214
+.xls 00;38;5;214
+.xlsx 00;38;5;214
+.ppt 00;38;5;214
+.pptx 00;38;5;214
+.rtf 00;38;5;214
+
+# Code/Config files (white/grey)
+.c 00;38;5;252
+.cpp 00;38;5;252
+.cc 00;38;5;252
+.h 00;38;5;252
+.hpp 00;38;5;252
+.py 00;38;5;252
+.rb 00;38;5;252
+.js 00;38;5;252
+.ts 00;38;5;252
+.jsx 00;38;5;252
+.tsx 00;38;5;252
+.go 00;38;5;252
+.rs 00;38;5;252
+.java 00;38;5;252
+.sh 00;38;5;252
+.bash 00;38;5;252
+.zsh 00;38;5;252
+.fish 00;38;5;252
+.vim 00;38;5;252
+.lua 00;38;5;252
+.php 00;38;5;252
+.pl 00;38;5;252
+.pm 00;38;5;252
+.sql 00;38;5;252
+.json 00;38;5;252
+.yaml 00;38;5;252
+.yml 00;38;5;252
+.toml 00;38;5;252
+.xml 00;38;5;252
+.conf 00;38;5;252
+.config 00;38;5;252
+.ini 00;38;5;252
+.md 00;38;5;252
+.markdown 00;38;5;252
+
+# Build/Project files (dim)
+.Makefile 00;38;5;245
+.make 00;38;5;245
+.mk 00;38;5;245
+.cmake 00;38;5;245
+.gradle 00;38;5;245
+.lock 00;38;5;245
+.sum 00;38;5;245
+
+# Backup/temp files (dim red)
+*~ 00;38;5;237
+*# 00;38;5;237
+.bak 00;38;5;237
+.BAK 00;38;5;237
+.old 00;38;5;237
+.OLD 00;38;5;237
+.orig 00;38;5;237
+.ORIG 00;38;5;237
+.swp 00;38;5;237
+.swo 00;38;5;237
+*,v 00;38;5;237
+
+# Version control (dim green)
+.git 00;38;5;240
+.gitignore 00;38;5;240
+.gitmodules 00;38;5;240
+.gitattributes 00;38;5;240

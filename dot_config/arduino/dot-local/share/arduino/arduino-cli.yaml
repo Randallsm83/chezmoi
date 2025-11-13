@@ -1,0 +1,23 @@
+board_manager:
+  additional_urls:
+   - https://downloads.arduino.cc/packages/package_index.json
+daemon:
+  port: "50051"
+library:
+  enable_unsafe_install: false
+locale: en_US.UTF-8
+logging:
+  format: text
+  level: debug
+metrics:
+  addr: ""
+  enabled: false
+output:
+  no_color: false
+sketch:
+  always_export_binaries: false
+updater:
+  enable_notification: true
+build_cache:
+  compilations_before_purge: 5
+  ttl: 360h

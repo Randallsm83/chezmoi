@@ -1,0 +1,95 @@
+# Warp Launch Configuration
+# Multiple SSH Connections Setup with 1Password
+# 
+# This configuration works seamlessly with 1Password SSH agent.
+# No key files needed - 1Password manages authentication securely.
+#
+# Prerequisites:
+# 1. Enable 1Password SSH agent (Settings → Developer)
+# 2. Store SSH keys in 1Password
+# 3. Configure SSH config file (C:\Users\Randall\.ssh\config)
+#
+# Replace placeholders with your actual server details from SSH config
+
+---
+name: SSH Connections
+active_window_index: 0
+windows:
+  - active_tab_index: 0
+    tabs:
+      # Primary Remote Server
+      - title: Main Server
+        layout:
+          split_direction: vertical
+          panes:
+            # Main working pane
+            - cwd: /home/rmiller/
+              is_focused: true
+              commands:
+                - exec: ssh rmiller@your-main-server.com
+            # Secondary pane for logs or monitoring
+            - commands:
+                - exec: ssh rmiller@your-main-server.com -t "tail -f /var/log/syslog"
+        color: blue
+
+      # Development Server
+      - title: Dev Server
+        layout:
+          cwd: /home/rmiller/projects
+          commands:
+            # 1Password handles authentication automatically
+            - exec: ssh dev
+            - exec: cd ~/projects && ls -la
+        color: green
+
+      # Production Server (with extra caution)
+      - title: Production
+        layout:
+          commands:
+            # Use SSH config for custom ports and settings
+            - exec: ssh prod
+            - exec: echo "⚠️  PRODUCTION ENVIRONMENT - Be careful!"
+        color: red
+
+      # Server via Jump Host
+      - title: Internal Server
+        layout:
+          commands:
+            # Jump host configured in SSH config
+            - exec: ssh internal
+        color: yellow
+
+      # Database Server
+      - title: Database
+        layout:
+          split_direction: horizontal
+          panes:
+            # SSH tunnel for database
+            - commands:
+                - exec: ssh -L 5432:localhost:5432 rmiller@db.example.com
+            # Query interface
+            - commands:
+                - exec: echo "Connect to localhost:5432 for PostgreSQL"
+                - exec: psql -h localhost -U dbuser -d mydb
+        color: magenta
+
+      # Multiple Servers Monitor
+      - title: Server Status
+        layout:
+          split_direction: vertical
+          panes:
+            - commands:
+                - exec: ssh server1.example.com -t "htop"
+            - commands:
+                - exec: ssh server2.example.com -t "htop"
+        color: cyan
+
+      # WSL to Remote (Windows-specific)
+      - title: From WSL
+        shell: archlinux
+        layout:
+          cwd: ~
+          commands:
+            # SSH from within WSL
+            - exec: ssh rmiller@remote-server.com
+        color: purple

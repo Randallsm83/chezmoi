@@ -1,0 +1,44 @@
+#!/usr/bin/env zsh
+
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+export LANGUAGE=en_US.UTF-8
+
+# export TERM='xterm-256color'
+export EDITOR='nvim'
+export VISUAL="$EDITOR"
+export PAGER='less'
+
+# Normalize OS detection (uname -s returns 'Darwin', 'Linux', etc.)
+OS_KERNEL="$(uname -s | tr '[:upper:]' '[:lower:]')"
+export OSTYPE="$OS_KERNEL"
+
+# Determine if WSL
+if [[ "$OS_KERNEL" == "linux" ]] && { [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qiE '(microsoft|wsl)' /proc/version 2>/dev/null; }; then
+  export ZSH_OS="wsl"
+elif [[ "$OS_KERNEL" == "darwin" ]]; then
+  export ZSH_OS="macos"
+elif [[ "$OS_KERNEL" == "linux" ]]; then
+  export ZSH_OS="linux"
+else
+  export ZSH_OS="unknown"
+fi
+
+# Set core count for parallel builds
+if [[ "$ZSH_OS" == "macos" ]]; then
+  cores="$(sysctl -n hw.logicalcpu 2>/dev/null || echo 4)"
+elif [[ "$ZSH_OS" == "linux" ]] || [[ "$ZSH_OS" == "wsl" ]]; then
+  cores="$(nproc 2>/dev/null || echo 4)"
+fi
+export MACHINE_CORES="${cores:-4}"
+
+export SHORT_HOST=$(hostname -s 2>/dev/null || uname -n | cut -d. -f1)
+
+# Added by OrbStack: command-line tools and integration
+# This won't be added again if you remove it.
+source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+
+# -------------------------------------------------------------------------------------------------
+# -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
+# vim: ft=zsh sw=2 ts=2 et
+# -------------------------------------------------------------------------------------------------
