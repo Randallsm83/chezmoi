@@ -221,7 +221,7 @@ features:
 
 # Package feature flags (control which optional configs are deployed)
 # Core packages (git, nvim, wezterm, starship, mise, bat, direnv, eza, fzf, ripgrep, wget, zsh, ssh, 1password, windows, wsl) are always enabled
-packages:
+package_features:
   # Language packages (optional, controlled by feature flags)
   rust: true
   golang: true
