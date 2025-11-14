@@ -18,6 +18,11 @@ Invoke-Expression (& mise activate pwsh | Out-String)
 # Initialize Zoxide (smart cd)
 Invoke-Expression (& zoxide init powershell | Out-String)
 
+# VS Code shell integration
+if ($env:TERM_PROGRAM -eq "vscode") {
+    . "$(code --locate-shell-integration-path pwsh)"
+}
+
 # Set LS_COLORS using Vivid ({{ .theme.name }} theme)
 {{- if .packages.scoop | has "vivid" }}
 $env:LS_COLORS = (vivid generate {{ .theme.name }})
