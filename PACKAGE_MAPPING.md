@@ -5,7 +5,7 @@
 
 ## Overview
 
-This document maps packages to their feature flags and controlled files. It serves as a reference during migration and when enabling/disabling packages.
+This document maps packages to their feature flags and controlled files. It serves as a reference during migration and when enabling/disabling package_features.
 
 ### Organization Approach
 
@@ -49,16 +49,16 @@ These packages are **always enabled** and have no feature flag control. They rep
 
 These packages are **controlled by feature flags** in `.chezmoidata.yaml`. When enabled, their files are deployed. When disabled, they're ignored via `.chezmoiignore`.
 
-| Package | Feature Flag | Default | Files Controlled (when migrated) | Notes |
-|---------|--------------|---------|-----------------------------------|-------|
-| **rust** | `packages.rust` | `true` | `.config/cargo/config.toml`<br/>`.config/zsh/.zshrc.d/70-rust.zsh`<br/>`.cache/zsh/completions/_rustc` | Rust language configuration |
-| **golang** | `packages.golang` | `true` | `.config/go/env`<br/>`.config/zsh/.zshrc.d/70-golang.zsh` | Go language configuration |
-| **python** | `packages.python` | `true` | `.config/python/**`<br/>`.config/pip/pip.conf`<br/>`.config/zsh/.zshrc.d/70-python.zsh` | Python language configuration |
-| **ruby** | `packages.ruby` | `true` | `.config/ruby/**`<br/>`.config/bundle/**`<br/>`.config/gem/gemrc`<br/>`.config/zsh/.zshrc.d/70-ruby.zsh` | Ruby language configuration |
-| **lua** | `packages.lua` | `true` | `.config/lua/**`<br/>`.config/zsh/.zshrc.d/70-lua.zsh` | Lua language configuration |
-| **node** | `packages.node` | `true` | `.config/node/**`<br/>`.config/npm/npmrc`<br/>`.config/yarn/**`<br/>`.config/zsh/.zshrc.d/70-node.zsh`<br/>`.config/zsh/.zshrc.d/bun.zsh`<br/>`.config/zsh/.zshrc.d/npm.zsh` | Node.js, npm, yarn, bun configuration |
-| **perl** | `packages.perl` | `false` | `.config/perl/**`<br/>`.perltidyrc`<br/>`.cache/zsh/completions/_cpanm` | Perl language configuration |
-| **php** | `packages.php` | `false` | `.config/php/**`<br/>`.config/zsh/.zshrc.d/70-php.zsh` | PHP language configuration |
+| Package | Feature Flag | Default | Files Controlled | Notes |
+|---------|--------------|---------|------------------|-------|
+| **rust** | `package_features.rust` | `true` | ✅ `.config/zsh/.zshrc.d/70-rust.zsh`<br/>✅ `.cache/zsh/completions/_rustc` | Rust language configuration - **MIGRATED** |
+| **golang** | `package_features.golang` | `true` | `.config/go/env`<br/>`.config/zsh/.zshrc.d/70-golang.zsh` | Go language configuration |
+| **python** | `package_features.python` | `true` | `.config/python/**`<br/>`.config/pip/pip.conf`<br/>`.config/zsh/.zshrc.d/70-python.zsh` | Python language configuration |
+| **ruby** | `package_features.ruby` | `true` | `.config/ruby/**`<br/>`.config/bundle/**`<br/>`.config/gem/gemrc`<br/>`.config/zsh/.zshrc.d/70-ruby.zsh` | Ruby language configuration |
+| **lua** | `package_features.lua` | `true` | `.config/lua/**`<br/>`.config/zsh/.zshrc.d/70-lua.zsh` | Lua language configuration |
+| **node** | `package_features.node` | `true` | `.config/node/**`<br/>`.config/npm/npmrc`<br/>`.config/yarn/**`<br/>`.config/zsh/.zshrc.d/70-node.zsh`<br/>`.config/zsh/.zshrc.d/bun.zsh`<br/>`.config/zsh/.zshrc.d/npm.zsh` | Node.js, npm, yarn, bun configuration |
+| **perl** | `package_features.perl` | `false` | `.config/perl/**`<br/>`.perltidyrc`<br/>`.cache/zsh/completions/_cpanm` | Perl language configuration |
+| **php** | `package_features.php` | `false` | `.config/php/**`<br/>`.config/zsh/.zshrc.d/70-php.zsh` | PHP language configuration |
 
 ---
 
@@ -68,8 +68,8 @@ These packages are **disabled by default** as they've been replaced by better al
 
 | Package | Feature Flag | Default | Files Controlled (when migrated) | Notes |
 |---------|--------------|---------|-----------------------------------|-------|
-| **asdf** | `packages.asdf` | `false` | `.config/asdf/asdfrc`<br/>`.config/asdf/tool-versions`<br/>`.config/zsh/.zshrc.d/50-asdf.zsh` | **Replaced by mise** - kept for migration reference |
-| **nvm** | `packages.nvm` | `false` | `.config/nvm/**`<br/>`.config/zsh/.zshrc.d/70-nvm.zsh` | **Replaced by mise** - kept for migration reference |
+| **asdf** | `package_features.asdf` | `false` | `.config/asdf/asdfrc`<br/>`.config/asdf/tool-versions`<br/>`.config/zsh/.zshrc.d/50-asdf.zsh` | **Replaced by mise** - kept for migration reference |
+| **nvm** | `package_features.nvm` | `false` | `.config/nvm/**`<br/>`.config/zsh/.zshrc.d/70-nvm.zsh` | **Replaced by mise** - kept for migration reference |
 
 ---
 
@@ -79,14 +79,14 @@ These packages provide additional development and utility tools, controlled by f
 
 | Package | Feature Flag | Default | Files Controlled (when migrated) | Notes |
 |---------|--------------|---------|-----------------------------------|-------|
-| **arduino** | `packages.arduino` | `false` | `.config/arduino/**`<br/>`.config/zsh/.zshrc.d/70-arduino.zsh` | Arduino IDE configuration |
-| **glow** | `packages.glow` | `true` | `.config/glow/glow.yml`<br/>`.config/zsh/.zshrc.d/90-glow.zsh` | Markdown viewer in terminal |
-| **tinted_theming** | `packages.tinted_theming` | `true` | `.config/tinted-theming/**`<br/>`.config/zsh/.zshrc.d/80-tinty.zsh` | Base16/Base24 theme manager |
-| **thefuck** | `packages.thefuck` | `false` | `.config/thefuck/settings.py`<br/>`.config/zsh/.zshrc.d/thefuck.zsh` | Command correction tool |
-| **sqlite3** | `packages.sqlite3` | `true` | `.config/sqlite3/sqliterc`<br/>`.sqliterc` | SQLite CLI configuration |
-| **vim** | `packages.vim` | `false` | `.config/vim/vimrc`<br/>`.vimrc` | Vim configuration (separate from neovim) |
-| **vivid** | `packages.vivid` | `true` | `.config/vivid/themes/**` | LS_COLORS generator |
-| **warp** | `packages.warp` | `true` | `.config/warp/launch_configurations/**` | Warp terminal configuration |
+| **arduino** | `package_features.arduino` | `false` | `.config/arduino/**`<br/>`.config/zsh/.zshrc.d/70-arduino.zsh` | Arduino IDE configuration |
+| **glow** | `package_features.glow` | `true` | `.config/glow/glow.yml`<br/>`.config/zsh/.zshrc.d/90-glow.zsh` | Markdown viewer in terminal |
+| **tinted_theming** | `package_features.tinted_theming` | `true` | `.config/tinted-theming/**`<br/>`.config/zsh/.zshrc.d/80-tinty.zsh` | Base16/Base24 theme manager |
+| **thefuck** | `package_features.thefuck` | `false` | `.config/thefuck/settings.py`<br/>`.config/zsh/.zshrc.d/thefuck.zsh` | Command correction tool |
+| **sqlite3** | `package_features.sqlite3` | `true` | `.config/sqlite3/sqliterc`<br/>`.sqliterc` | SQLite CLI configuration |
+| **vim** | `package_features.vim` | `false` | `.config/vim/vimrc`<br/>`.vimrc` | Vim configuration (separate from neovim) |
+| **vivid** | `package_features.vivid` | `true` | `.config/vivid/themes/**` | LS_COLORS generator |
+| **warp** | `package_features.warp` | `true` | `.config/warp/launch_configurations/**` | Warp terminal configuration |
 
 ---
 
@@ -96,8 +96,8 @@ These packages are either bootstrap-only or rarely used utilities.
 
 | Package | Feature Flag | Default | Files Controlled (when migrated) | Notes |
 |---------|--------------|---------|-----------------------------------|-------|
-| **homebrew** | `packages.homebrew` | `false` | `.config/homebrew/Brewfile`<br/>`.config/homebrew/Brewfile.lock.json`<br/>`.config/zsh/.zshrc.d/50-homebrew.zsh` | **Bootstrap only** - not actively managed in dotfiles |
-| **vagrant** | `packages.vagrant` | `false` | `.cache/zsh/completions/_vagrant` | VM management tool |
+| **homebrew** | `package_features.homebrew` | `false` | `.config/homebrew/Brewfile`<br/>`.config/homebrew/Brewfile.lock.json`<br/>`.config/zsh/.zshrc.d/50-homebrew.zsh` | **Bootstrap only** - not actively managed in dotfiles |
+| **vagrant** | `package_features.vagrant` | `false` | `.cache/zsh/completions/_vagrant` | VM management tool |
 
 ---
 
@@ -107,9 +107,10 @@ These packages are either bootstrap-only or rarely used utilities.
 - ✅ All core packages (117 files)
 - ✅ Feature flag infrastructure
 - ✅ Documentation
+- ✅ **rust** package (2 files) - zsh integration, completions
 
 ### Pending Migration
-- ⏳ Language packages (rust, golang, python, ruby, lua, node, perl, php)
+- ⏳ Language packages (golang, python, ruby, lua, node, perl, php)
 - ⏳ Tool packages (glow, tinted_theming, sqlite3, vivid, warp, etc.)
 - ⏳ Deprecated packages (asdf, nvm - for reference only)
 - ⏳ Utility packages (homebrew, vagrant)
@@ -194,4 +195,5 @@ Configuration files follow XDG Base Directory spec:
 ---
 
 **Last Updated**: 2025-01-14  
-**Status**: Infrastructure complete, ready for systematic package migration
+**Status**: First package migrated (rust), 119 files managed  
+**Note**: Feature flags use `package_features.*` (not `package_features.*`) to avoid conflict with package lists
