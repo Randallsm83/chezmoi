@@ -306,7 +306,7 @@ chezmoi cd && git add . && git commit -m "Update git" && git push
 
 **Your Existing Stow Repo (reference):**
 - Current dotfiles: `C:\Users\Randall\.config\dotfiles`
-- GitHub: `git@github.com:Randallsm83/dotfiles.git`
+- GitHub: `git@github.com:Randallsm83/dotfiles-redux.git`
 - **Keep this intact during migration** (parallel operation)
 
 ---

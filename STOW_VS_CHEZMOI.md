@@ -193,7 +193,7 @@ foreach ($pkg in $packages.apps) {
 **Windows:**
 ```powershell
 # 1. Manual git clone
-git clone https://github.com/Randallsm83/dotfiles.git ~/.config/dotfiles
+git clone https://github.com/Randallsm83/dotfiles-redux.git ~/.config/dotfiles
 
 # 2. Manual stow install (requires stow)
 # (Stow not in winget/scoop by default on Windows)
@@ -209,7 +209,7 @@ cd ~/.config/dotfiles/windows
 **WSL/Linux:**
 ```bash
 # 1. Clone repo
-git clone https://github.com/Randallsm83/dotfiles.git ~/.config/dotfiles
+git clone https://github.com/Randallsm83/dotfiles-redux.git ~/.config/dotfiles
 
 # 2. Run setup script (installs stow, brew, mise)
 cd ~/.config/dotfiles/wsl

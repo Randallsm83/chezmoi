@@ -3,7 +3,7 @@
 # Bootstrap script for Unix systems (Linux/WSL/macOS)
 # 
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles-redux/main/setup.sh | bash
 #   OR
 #   ./setup.sh
 
@@ -13,7 +13,7 @@ set -euo pipefail
 # Configuration
 # ============================================================================
 
-REPO="${REPO:-Randallsm83/dotfiles}"
+REPO="${REPO:-Randallsm83/dotfiles-redux}"
 BRANCH="${BRANCH:-main}"
 CHEZMOI_VERSION="${CHEZMOI_VERSION:-latest}"
 

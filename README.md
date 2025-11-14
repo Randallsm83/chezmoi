@@ -10,12 +10,12 @@ Modern, cross-platform dotfile management using [chezmoi](https://www.chezmoi.io
 
 ### Windows (PowerShell)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles-redux/main/bootstrap.ps1 | iex
 ```
 
 ### Unix/Linux/WSL (bash/zsh)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles-redux/main/setup.sh | bash
 ```
 
 This single command will:
@@ -90,7 +90,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)"
 
 ### 2. Initialize from this repository
 ```bash
-chezmoi init --apply Randallsm83/dotfiles
+chezmoi init --apply Randallsm83/dotfiles-redux
 ```
 
 ### 3. Verify and update
@@ -258,7 +258,7 @@ This repository replaces the old GNU Stow-based dotfiles with modern chezmoi:
 - ✅ Built-in secrets management
 - ✅ ~5-10 minute setup (vs 30-60 minutes)
 
-**Old repository**: `Randallsm83/dotfiles` (deprecated)  
+**Old repository**: `Randallsm83/dotfiles-redux` (deprecated)  
 **New repository**: This one
 
 ---
