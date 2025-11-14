@@ -89,3 +89,134 @@ AppData/Local/Packages/Microsoft.WindowsTerminal_*/
 .config/hammerspoon/
 Library/
 {{- end }}
+
+{{- /* Package feature flag exclusions */ -}}
+{{- /* Files for packages controlled by feature flags in .chezmoidata.yaml */ -}}
+
+{{- if not .packages.rust }}
+# Rust package files (when migrated)
+# .config/cargo/**
+# .config/zsh/.zshrc.d/70-rust.zsh
+# .cache/zsh/completions/_rustc
+{{- end }}
+
+{{- if not .packages.golang }}
+# Golang package files (when migrated)
+# .config/go/**
+# .config/zsh/.zshrc.d/70-golang.zsh
+{{- end }}
+
+{{- if not .packages.python }}
+# Python package files (when migrated)
+# .config/python/**
+# .config/pip/**
+# .config/zsh/.zshrc.d/70-python.zsh
+{{- end }}
+
+{{- if not .packages.ruby }}
+# Ruby package files (when migrated)
+# .config/ruby/**
+# .config/bundle/**
+# .config/gem/**
+# .config/zsh/.zshrc.d/70-ruby.zsh
+{{- end }}
+
+{{- if not .packages.lua }}
+# Lua package files (when migrated)
+# .config/lua/**
+# .config/zsh/.zshrc.d/70-lua.zsh
+{{- end }}
+
+{{- if not .packages.node }}
+# Node.js package files (when migrated)
+# .config/node/**
+# .config/npm/**
+# .config/yarn/**
+# .config/zsh/.zshrc.d/70-node.zsh
+# .config/zsh/.zshrc.d/bun.zsh
+# .config/zsh/.zshrc.d/npm.zsh
+{{- end }}
+
+{{- if not .packages.perl }}
+# Perl package files (when migrated)
+# .config/perl/**
+# .perltidyrc
+# .cache/zsh/completions/_cpanm
+{{- end }}
+
+{{- if not .packages.php }}
+# PHP package files (when migrated)
+# .config/php/**
+# .config/zsh/.zshrc.d/70-php.zsh
+{{- end }}
+
+{{- if not .packages.asdf }}
+# ASDF package files (deprecated - replaced by mise)
+# .config/asdf/**
+# .asdfrc
+# .tool-versions
+# .config/zsh/.zshrc.d/50-asdf.zsh
+{{- end }}
+
+{{- if not .packages.nvm }}
+# NVM package files (deprecated - replaced by mise)
+# .config/nvm/**
+# .config/zsh/.zshrc.d/70-nvm.zsh
+{{- end }}
+
+{{- if not .packages.arduino }}
+# Arduino package files (when migrated)
+# .config/arduino/**
+# .config/zsh/.zshrc.d/70-arduino.zsh
+{{- end }}
+
+{{- if not .packages.glow }}
+# Glow package files (when migrated)
+# .config/glow/**
+# .config/zsh/.zshrc.d/90-glow.zsh
+{{- end }}
+
+{{- if not .packages.tinted_theming }}
+# Tinted Theming package files (when migrated)
+# .config/tinted-theming/**
+# .config/zsh/.zshrc.d/80-tinty.zsh
+{{- end }}
+
+{{- if not .packages.thefuck }}
+# Thefuck package files (when migrated)
+# .config/thefuck/**
+# .config/zsh/.zshrc.d/thefuck.zsh
+{{- end }}
+
+{{- if not .packages.sqlite3 }}
+# SQLite3 package files (when migrated)
+# .config/sqlite3/**
+# .sqliterc
+{{- end }}
+
+{{- if not .packages.vim }}
+# Vim package files (when migrated, separate from neovim)
+# .config/vim/**
+# .vimrc
+{{- end }}
+
+{{- if not .packages.vivid }}
+# Vivid package files (when migrated)
+# .config/vivid/**
+{{- end }}
+
+{{- if not .packages.warp }}
+# Warp package files (when migrated)
+# .config/warp/**
+{{- end }}
+
+{{- if not .packages.homebrew }}
+# Homebrew package files (bootstrap only, not actively managed)
+# .config/homebrew/**
+# .config/zsh/.zshrc.d/50-homebrew.zsh
+{{- end }}
+
+{{- if not .packages.vagrant }}
+# Vagrant package files (when migrated)
+# .cache/zsh/completions/_vagrant
+{{- end }}

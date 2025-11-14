@@ -218,3 +218,34 @@ features:
   setup_1password: true
   setup_wsl: true  # Windows only
   setup_symlinks: true  # Windows Developer Mode required
+
+# Package feature flags (control which optional configs are deployed)
+# Core packages (git, nvim, wezterm, starship, mise, bat, direnv, eza, fzf, ripgrep, wget, zsh, ssh, 1password, windows, wsl) are always enabled
+packages:
+  # Language packages (optional, controlled by feature flags)
+  rust: true
+  golang: true
+  python: true
+  ruby: true
+  lua: true
+  node: true
+  perl: false
+  php: false
+  
+  # Version managers (legacy/deprecated)
+  asdf: false  # Replaced by mise
+  nvm: false   # Replaced by mise
+  
+  # Development tools (optional)
+  arduino: false
+  glow: true
+  tinted_theming: true
+  thefuck: false
+  sqlite3: true
+  vim: false  # Using neovim instead
+  vivid: true
+  warp: true
+  
+  # Utilities (optional)
+  homebrew: false  # Only for bootstrap, not managed
+  vagrant: false
