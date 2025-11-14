@@ -193,8 +193,8 @@ Library/
 {{- end }}
 
 {{- if not .package_features.warp }}
-# Warp package files (when migrated)
-# .config/warp/**
+# Warp package files
+.config/warp/**
 {{- end }}
 
 {{- if not .package_features.homebrew }}
