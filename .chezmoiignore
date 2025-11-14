@@ -100,40 +100,28 @@ Library/
 {{- end }}
 
 {{- if not .package_features.golang }}
-# Golang package files (when migrated)
-# .config/go/**
-# .config/zsh/.zshrc.d/70-golang.zsh
+# Golang package files
+.config/zsh/.zshrc.d/70-golang.zsh
 {{- end }}
 
 {{- if not .package_features.python }}
-# Python package files (when migrated)
-# .config/python/**
-# .config/pip/**
-# .config/zsh/.zshrc.d/70-python.zsh
+# Python package files
+.config/zsh/.zshrc.d/70-python.zsh
 {{- end }}
 
 {{- if not .package_features.ruby }}
-# Ruby package files (when migrated)
-# .config/ruby/**
-# .config/bundle/**
-# .config/gem/**
-# .config/zsh/.zshrc.d/70-ruby.zsh
+# Ruby package files
+.config/zsh/.zshrc.d/70-ruby.zsh
 {{- end }}
 
 {{- if not .package_features.lua }}
-# Lua package files (when migrated)
-# .config/lua/**
-# .config/zsh/.zshrc.d/70-lua.zsh
+# Lua package files
+.config/zsh/.zshrc.d/70-lua.zsh
 {{- end }}
 
 {{- if not .package_features.node }}
-# Node.js package files (when migrated)
-# .config/node/**
-# .config/npm/**
-# .config/yarn/**
-# .config/zsh/.zshrc.d/70-node.zsh
-# .config/zsh/.zshrc.d/bun.zsh
-# .config/zsh/.zshrc.d/npm.zsh
+# Node.js package files
+.config/zsh/.zshrc.d/70-node.zsh
 {{- end }}
 
 {{- if not .package_features.perl }}
