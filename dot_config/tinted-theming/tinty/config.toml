@@ -1,0 +1,27 @@
+shell = "zsh -c '{}'"
+default-scheme = "base24-gruvbox-dark-medium"
+
+[[items]]
+name = "tinted-shell"
+path = "https://github.com/tinted-theming/tinted-shell"
+themes-dir = "scripts"
+hook = ". %f"
+supported-systems = ["base16", "base24"]
+
+[[items]]
+name = "tinted-vim"
+path = "https://github.com/tinted-theming/tinted-vim"
+themes-dir = "colors"
+supported-systems = ["base16", "base24"]
+
+# [[items]]
+# name = "base16-vim"
+# path = "https://github.com/tinted-theming/base16-vim"
+# themes-dir = "colors"
+# supported-systems = ["base16"]
+
+# [[items]]
+# path = "https://github.com/tinted-theming/base16-fzf"
+# name = "fzf"
+# themes-dir = "bash"
+# hook = ". %f"

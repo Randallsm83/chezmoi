@@ -158,15 +158,16 @@ Library/
 {{- end }}
 
 {{- if not .package_features.glow }}
-# Glow package files (when migrated)
-# .config/glow/**
-# .config/zsh/.zshrc.d/90-glow.zsh
+# Glow package files
+.config/glow/**
+.config/zsh/.zshrc.d/90-glow.zsh
 {{- end }}
 
 {{- if not .package_features.tinted_theming }}
-# Tinted Theming package files (when migrated)
-# .config/tinted-theming/**
-# .config/zsh/.zshrc.d/80-tinty.zsh
+# Tinted Theming package files
+.config/tinted-theming/**
+.local/share/tinted-theming/**
+.config/zsh/.zshrc.d/80-tinty.zsh
 {{- end }}
 
 {{- if not .package_features.thefuck }}
@@ -176,9 +177,8 @@ Library/
 {{- end }}
 
 {{- if not .package_features.sqlite3 }}
-# SQLite3 package files (when migrated)
-# .config/sqlite3/**
-# .sqliterc
+# SQLite3 package files
+.config/sqlite3/**
 {{- end }}
 
 {{- if not .package_features.vim }}
@@ -188,8 +188,8 @@ Library/
 {{- end }}
 
 {{- if not .package_features.vivid }}
-# Vivid package files (when migrated)
-# .config/vivid/**
+# Vivid package files
+.config/vivid/**
 {{- end }}
 
 {{- if not .package_features.warp }}
