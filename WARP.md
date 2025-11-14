@@ -346,3 +346,41 @@ Per the environment rules:
 - `dot_config/scoop/scoop.json.tmpl` - Windows CLI packages
 - `dot_config/mise/config.toml.tmpl` - Cross-platform runtimes and Unix tools
 - `.chezmoiscripts/run_once_install_packages_*.tmpl` - Auto-installation scripts
+
+## Line Ending Requirements
+
+**CRITICAL**: Files used in Linux/WSL environments MUST use LF (Unix) line endings, NOT CRLF (Windows) line endings.
+
+### Files that MUST use LF:
+- All shell scripts (`*.sh`, `*.bash`, `.tmpl` files for Unix)
+- All zsh configuration files (`dot-zshrc`, `.zsh` files)
+- All files in `.chezmoiscripts/` that target Unix (even if they have `.tmpl` extension)
+- Any configuration files that will be read by Linux/WSL tools
+
+### Files that should use CRLF:
+- PowerShell scripts (`*.ps1`, `.ps1.tmpl`)
+- Windows-specific configuration files
+
+### Checking line endings:
+
+```powershell
+# In PowerShell
+$content = [System.IO.File]::ReadAllText("filename")
+if ($content -match "`r`n") { "CRLF" } else { "LF" }
+```
+
+### Converting CRLF to LF:
+
+```powershell
+# In PowerShell
+$content = [System.IO.File]::ReadAllText("filename")
+$content = $content -replace "`r`n", "`n"
+[System.IO.File]::WriteAllText("filename", $content)
+```
+
+```bash
+# In WSL/Linux
+sed -i 's/\r$//' filename
+```
+
+**AI Agent Note**: Always check and ensure correct line endings when creating or modifying files for Linux/WSL environments.
