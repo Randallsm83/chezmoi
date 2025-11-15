@@ -4,11 +4,11 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Repository Overview
 
-This is an **early-stage chezmoi dotfiles repository** in active migration from GNU Stow. The goal is to enable one-command provisioning of identical development environments across Windows, WSL2, Linux, and macOS.
+This is a **production chezmoi dotfiles repository** migrated from GNU Stow. Enables one-command provisioning of identical development environments across Windows, WSL2, Linux, and macOS.
 
-**Current State:** Foundation phase with migration documentation, bootstrap script implementation, and comprehensive test suite. No actual dotfile configurations have been migrated yet.
+**Current State:** v1.0.0 - Fully migrated with 155+ managed configurations, feature flag system, and production-ready bootstrap scripts.
 
-**Architecture:** Template-based dotfile management using chezmoi with automated bootstrap provisioning, Pester-tested PowerShell scripts, and cross-platform Go templating.
+**Architecture:** Template-based dotfile management using chezmoi v2.67.0 with automated bootstrap provisioning, feature flags for optional packages, and cross-platform Go templating.
 
 ## Essential Chezmoi Commands
 
@@ -184,13 +184,21 @@ try {
 
 ### File Naming Conventions
 
+**Chezmoi Dotfile Naming Convention (Standard):**
+
 | Source File (in chezmoi) | Target Location | Notes |
 |--------------------------|-----------------|-------|
-| `dot_gitconfig` | `~/.gitconfig` | Simple dotfile |
-| `dot_gitconfig.tmpl` | `~/.gitconfig` | Templated dotfile |
-| `dot_config/nvim/init.lua` | `~/.config/nvim/init.lua` | Nested config |
+| `dot_config/` | `~/.config/` | Directories: underscore → dot |
+| `dot_local/` | `~/.local/` | Directories: underscore → dot |
+| `dot_config/zsh/dot_zshrc` | `~/.config/zsh/.zshrc` | Files: underscore → dot |
+| `dot_config/zsh/dot_zprofile` | `~/.config/zsh/.zprofile` | Files: underscore → dot |
+| `dot_config/zsh/dot_zshrc.d/` | `~/.config/zsh/.zshrc.d/` | Nested dotfile directories |
+| `dot_gitconfig.tmpl` | `~/.gitconfig` | Templated dotfiles |
 | `Documents/PowerShell/profile.ps1.tmpl` | `~/Documents/PowerShell/profile.ps1` | Windows non-dotfile |
-| `executable_script.sh` | Executable file | Sets executable bit |
+| `executable_script.sh` | `~/script.sh` (executable) | Sets executable bit |
+
+**Convention**: Uses chezmoi's standard dotfile prefix:
+- `dot_` → `.` (underscore converts to dot for both directories AND files)
 
 ### Template Syntax (Go Templates)
 
@@ -287,23 +295,26 @@ AppData/
 
 ## Migration Context
 
-**Old Setup (GNU Stow):**
+**Old Setup (GNU Stow - Deprecated):**
 - Location: `C:\Users\Randall\.config\dotfiles`
 - 40+ config directories managed with symlinks
 - Separate Windows/WSL bootstrap scripts
 - Manual platform-specific handling
 
-**New Setup (Chezmoi):**
+**Current Setup (Chezmoi - Production):**
 - Location: `C:\Users\Randall\.local\share\chezmoi`
+- 155+ managed configurations
 - Template-based with automatic platform detection
+- Feature flag system for optional packages
 - Integrated bootstrap with auto-install
-- One-command provisioning goal
+- One-command provisioning achieved
+- Repository: `dotfiles-redux`
 
-**Migration Strategy:**
-1. Keep old Stow dotfiles operational during transition
-2. Build and test new chezmoi setup in parallel
-3. Migrate configs incrementally with thorough testing
-4. Validate on Windows → WSL → fresh VM before finalizing
+**Migration Completed:** November 2025 (v1.0.0)
+- All core configs migrated and tested
+- Windows, WSL, and Linux validated
+- Package feature flag system implemented
+- Production-ready bootstrap scripts deployed
 
 ## Target End State
 
