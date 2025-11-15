@@ -269,6 +269,138 @@ AppData/
 {{ end }}
 ```
 
+## Package Feature Flags
+
+The dotfiles use a conditional configuration system to manage 155+ configuration files across packages. Feature flags are defined in `.chezmoidata.yaml` under `package_features` and control which files are included via `.chezmoiignore` template logic.
+
+### Core Packages (Always Enabled)
+
+These packages are always enabled and cannot be disabled:
+
+- **git** - Version control configuration with platform-specific conditionals
+- **nvim** - Neovim editor configuration (44+ files)
+- **wezterm** - Terminal emulator configuration
+- **starship** - Cross-shell prompt with custom onedark theme
+- **mise** - Runtime and tool version manager
+- **bat** - Enhanced cat with syntax highlighting
+- **direnv** - Directory-specific environment variables
+- **eza** - Modern ls replacement
+- **fzf** - Fuzzy finder with shell integrations
+- **ripgrep** - Fast text search tool
+- **wget** - HTTP/FTP file downloader
+- **zsh** - Z shell configuration (Unix only)
+- **ssh** - SSH client configuration with 1Password agent
+- **1password** - 1Password CLI and SSH agent integration
+- **windows** - Windows-specific configurations (PowerShell, VS Code)
+- **wsl** - WSL2-specific configurations
+
+### Optional Language Packages
+
+Language runtime configurations controlled by feature flags:
+
+| Package | Flag | Default | Includes |
+|---------|------|---------|----------|
+| **rust** | `package_features.rust` | ✅ Enabled | Cargo config, zsh integration, rustc completions |
+| **golang** | `package_features.golang` | ✅ Enabled | GOPATH/GOROOT env, zsh integration |
+| **python** | `package_features.python` | ✅ Enabled | pip config, virtualenv, zsh integration |
+| **ruby** | `package_features.ruby` | ✅ Enabled | gem config, bundler, zsh integration |
+| **lua** | `package_features.lua` | ✅ Enabled | Lua config, zsh integration |
+| **node** | `package_features.node` | ✅ Enabled | npm/yarn config, bun, zsh integration |
+| **perl** | `package_features.perl` | ❌ Disabled | Perl config, cpanm completions |
+| **php** | `package_features.php` | ❌ Disabled | PHP config, zsh integration |
+
+### Optional Tool Packages
+
+Additional development tools:
+
+| Package | Flag | Default | Description |
+|---------|------|---------|-------------|
+| **glow** | `package_features.glow` | ✅ Enabled | Markdown renderer in terminal |
+| **tinted_theming** | `package_features.tinted_theming` | ✅ Enabled | Base16/Base24 theme manager (tinty) |
+| **sqlite3** | `package_features.sqlite3` | ✅ Enabled | SQLite CLI configuration |
+| **vivid** | `package_features.vivid` | ✅ Enabled | LS_COLORS generator (spaceduck theme) |
+| **warp** | `package_features.warp` | ✅ Enabled | Warp terminal launch configurations |
+| **arduino** | `package_features.arduino` | ❌ Disabled | Arduino IDE configuration |
+| **thefuck** | `package_features.thefuck` | ❌ Disabled | Command correction tool |
+| **vim** | `package_features.vim` | ❌ Disabled | Vim editor (separate from neovim) |
+
+### Deprecated Packages
+
+Legacy tools replaced by mise:
+
+- **asdf** (`package_features.asdf` = false) - Superseded by mise (aliased for compatibility)
+- **nvm** (`package_features.nvm` = false) - Superseded by mise node runtime management
+
+### Utility Packages
+
+Package managers and infrastructure:
+
+- **homebrew** (`package_features.homebrew` = false) - macOS/Linux package manager (bootstrap only, not actively managed)
+- **vagrant** (`package_features.vagrant` = false) - VM management tool (rarely used)
+
+### How Feature Flags Work
+
+**Configuration Location:**
+
+Feature flags are defined in `.chezmoidata.yaml`:
+
+```yaml
+package_features:
+  rust: true
+  golang: true
+  python: true
+  # ...
+```
+
+**Template Logic in `.chezmoiignore`:**
+
+```go
+{{- if not .package_features.rust }}
+# Rust package files
+.config/zsh/.zshrc.d/70-rust.zsh
+.cache/zsh/completions/_rustc
+{{- end }}
+```
+
+When a feature flag is `false`, its files are listed in `.chezmoiignore` and won't be deployed to the home directory.
+
+**Enabling/Disabling Packages:**
+
+1. Edit `.chezmoidata.yaml` in the chezmoi source directory:
+   ```bash
+   chezmoi cd
+   # Edit .chezmoidata.yaml, set package_features.rust: true or false
+   ```
+
+2. Apply changes:
+   ```bash
+   chezmoi apply
+   ```
+
+3. Verify which files are active:
+   ```bash
+   chezmoi managed | grep rust
+   ```
+
+**File Organization Patterns:**
+
+- **Zsh integrations**: Numbered files in `.config/zsh/.zshrc.d/` control load order:
+  - `50-*` - Package managers (asdf, homebrew)
+  - `70-*` - Language environments (rust, golang, python, ruby, lua, node, php)
+  - `80-*` - Theming tools (tinty)
+  - `90-*` - Utility tools (glow, thefuck)
+
+- **Shell completions**: Stored in `.cache/zsh/completions/_<command>`
+
+- **Config locations**: Follow XDG Base Directory specification:
+  - `~/.config/<package>/` - Configuration files
+  - `~/.local/share/<package>/` - Data files
+  - `~/.cache/<package>/` - Cache files
+
+- **Conditional templates**: Files ending in `.tmpl` are processed with Go templates before deployment
+
+**Migration Status:** v1.0.0 - Feature flag system is production-ready with full migration from GNU Stow completed (November 2025).
+
 ## Project Structure
 
 ### Documentation Files

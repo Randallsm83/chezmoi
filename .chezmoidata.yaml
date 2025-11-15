@@ -31,6 +31,7 @@ packages:
     - yq
     - neovim
     - 1password-cli
+    - cygwin
     - make
     - zig
     - curl
@@ -63,6 +64,7 @@ scoop_packages:
   # Development tools
   - neovim
   - 1password-cli
+  - cygwin
   - make
   - zig
   - curl

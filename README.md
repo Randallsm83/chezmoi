@@ -266,9 +266,7 @@ This repository replaces the old GNU Stow-based dotfiles with modern chezmoi:
 ## 📚 Documentation
 
 - [Chezmoi Documentation](https://www.chezmoi.io/)
-- [PACKAGE_MAPPING.md](PACKAGE_MAPPING.md) - Package feature flags reference
-- [MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md) - Migration notes
-- [TODO_4_COMPLETE.md](TODO_4_COMPLETE.md) - Feature flag infrastructure
+- [WARP.md](WARP.md) - AI agent technical reference (package feature flags, testing, architecture)
 
 ---
 

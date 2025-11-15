@@ -4,12 +4,9 @@
 # Development and documentation files (never apply to home directory)
 README.md
 LICENSE
-TESTING.md
 *.Tests.ps1
 *.example
-CHEZMOI_MIGRATION_GUIDE.md
-MIGRATION_SUMMARY.md
-STOW_VS_CHEZMOI.md
+WARP.md
 
 # Bootstrap scripts (stored in repo root, not applied to home)
 bootstrap.ps1
