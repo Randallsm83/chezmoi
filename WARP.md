@@ -435,18 +435,23 @@ When a feature flag is `false`, its files are listed in `.chezmoiignore` and won
 
 **Current Setup (Chezmoi - Production):**
 - Location: `C:\Users\Randall\.local\share\chezmoi`
-- 155+ managed configurations
+- 170+ managed configurations
 - Template-based with automatic platform detection
 - Feature flag system for optional packages
 - Integrated bootstrap with auto-install
 - One-command provisioning achieved
 - Repository: `dotfiles-redux`
 
-**Migration Completed:** November 2025 (v1.0.0)
-- All core configs migrated and tested
+**Migration Completed:** November 15, 2025 (v1.0.0)
+- All core configs migrated and tested (170+ files)
 - Windows, WSL, and Linux validated
 - Package feature flag system implemented
 - Production-ready bootstrap scripts deployed
+- Language runtime integrations: rust, golang, python, ruby, lua, node, npm
+- SSH configuration with 1Password agent integration
+- 1Password CLI completions (zsh, PowerShell)
+- Utility scripts: gcc relinker, SSH key manager, cache cleaner
+- Deprecated packages: asdf, nvm, perl, php (disabled by default)
 
 ## Target End State
 
