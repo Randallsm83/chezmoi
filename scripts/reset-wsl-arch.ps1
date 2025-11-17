@@ -210,17 +210,6 @@ function Main {
     # Wait for WSL to be ready
     Wait-ForWSLReady $DistroName
     
-    # Install essential packages
-    Write-Step "Installing essential packages (git, curl, base-devel)..."
-    try {
-        wsl -d $DistroName -u root bash -c "pacman -Sy --noconfirm git curl base-devel"
-        Write-Success "Essential packages installed"
-    }
-    catch {
-        Write-Error "Failed to install essential packages: $_"
-        exit 1
-    }
-    
     # Create default user account
     Write-Step "Creating default user account..."
     $username = $env:USERNAME.ToLower()

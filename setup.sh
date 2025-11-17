@@ -77,6 +77,71 @@ detect_platform() {
 }
 
 # ============================================================================
+# Package Installation
+# ============================================================================
+
+install_base_packages() {
+    log_info "Checking for essential packages..."
+    
+    local needs_install=false
+    
+    # Check if git and curl are available
+    if ! command_exists git; then
+        log_warning "git is not installed"
+        needs_install=true
+    fi
+    
+    if ! command_exists curl; then
+        log_warning "curl is not installed"
+        needs_install=true
+    fi
+    
+    if [ "$needs_install" = false ]; then
+        log_success "Essential packages already installed"
+        return 0
+    fi
+    
+    log_info "Installing essential packages..."
+    
+    # Detect package manager and install
+    if command_exists pacman; then
+        # Arch Linux
+        log_info "Using pacman (Arch Linux)"
+        if [ "$EUID" -eq 0 ]; then
+            pacman -Sy --noconfirm git curl base-devel
+        else
+            sudo pacman -Sy --noconfirm git curl base-devel
+        fi
+    elif command_exists apt-get; then
+        # Debian/Ubuntu
+        log_info "Using apt-get (Debian/Ubuntu)"
+        if [ "$EUID" -eq 0 ]; then
+            apt-get update && apt-get install -y git curl build-essential
+        else
+            sudo apt-get update && sudo apt-get install -y git curl build-essential
+        fi
+    elif command_exists dnf; then
+        # Fedora/RHEL
+        log_info "Using dnf (Fedora/RHEL)"
+        if [ "$EUID" -eq 0 ]; then
+            dnf install -y git curl gcc gcc-c++ make
+        else
+            sudo dnf install -y git curl gcc gcc-c++ make
+        fi
+    elif command_exists brew; then
+        # macOS with Homebrew
+        log_info "Using brew (macOS)"
+        brew install git curl
+    else
+        log_error "No supported package manager found (pacman, apt-get, dnf, brew)"
+        log_error "Please install git and curl manually"
+        return 1
+    fi
+    
+    log_success "Essential packages installed"
+}
+
+# ============================================================================
 # XDG Environment Setup
 # ============================================================================
 
@@ -134,6 +199,12 @@ main() {
     local platform
     platform=$(detect_platform)
     log_info "Platform: $platform"
+    
+    # Install base packages if needed
+    if ! install_base_packages; then
+        log_error "Failed to install base packages"
+        exit 1
+    fi
     
     # Setup XDG environment
     setup_xdg_env
