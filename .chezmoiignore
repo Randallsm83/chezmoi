@@ -74,10 +74,7 @@ AppData/Local/Packages/Microsoft.WindowsTerminal_*/
 {{- end }}
 
 {{- /* WSL-specific exclusions */ -}}
-{{- if not (and (eq .chezmoi.os "linux") (or (.chezmoi.kernel.osrelease | lower | contains "microsoft") (.chezmoi.kernel.osrelease | lower | contains "wsl"))) }}
-# Exclude WSL config if not on WSL
-.wslconfig
-{{- end }}
+{{- /* .wslconfig is managed on Windows for WSL2 configuration */ -}}
 
 {{- /* macOS-specific exclusions */ -}}
 {{- if ne .chezmoi.os "darwin" }}
