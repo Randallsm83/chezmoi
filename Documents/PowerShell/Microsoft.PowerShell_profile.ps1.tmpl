@@ -9,6 +9,21 @@
 # $env:XDG_STATE_HOME = "$HOME\.local\state"
 # $env:XDG_CACHE_HOME = "$HOME\.cache"
 
+# XDG-compliant tool configurations
+$env:LESSHISTFILE = "$env:XDG_STATE_HOME\less\history"
+$env:PYTHON_HISTORY = "$env:XDG_STATE_HOME\python\history"
+
+# Ensure XDG state directories for tools exist
+$toolStateDirs = @(
+    "$env:XDG_STATE_HOME\less",
+    "$env:XDG_STATE_HOME\python"
+)
+foreach ($dir in $toolStateDirs) {
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+}
+
 # Initialize Starship prompt
 Invoke-Expression (&starship init powershell)
 
