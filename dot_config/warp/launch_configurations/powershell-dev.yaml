@@ -31,7 +31,7 @@ windows:
               commands:
                 - exec: git status
                 - exec: git log --oneline -5
-            - cwd: C:\Users\Randall\.config
+            - cwd: C:\Users\Randall\.local\share\chezmoi
               commands:
                 - exec: ll
         color: blue
