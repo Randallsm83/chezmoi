@@ -13,7 +13,7 @@ set -euo pipefail
 # Configuration
 # ============================================================================
 
-REPO="${REPO:-Randallsm83/dotfiles-redux}"
+REPO="${REPO:-Randallsm83/dotfiles}"
 BRANCH="${BRANCH:-main}"
 CHEZMOI_VERSION="${CHEZMOI_VERSION:-latest}"
 
@@ -96,83 +96,25 @@ setup_xdg_env() {
 }
 
 # ============================================================================
-# Mise Installation
+# Chezmoi One-Line Install
 # ============================================================================
 
-install_mise() {
-    if command_exists mise; then
-        log_success "mise is already installed"
-        return 0
-    fi
+install_and_apply_dotfiles() {
+    log_info "Installing chezmoi and applying dotfiles from $REPO..."
+    log_info "This will install mise, all tools, and configure your environment"
     
-    log_info "Installing mise..."
-    
-    if command_exists curl; then
-        curl https://mise.run | sh
-        
-        # Add mise to PATH for current session
-        export PATH="$HOME/.local/bin:$PATH"
-        
-        # Activate mise
-        if [ -f "$HOME/.local/bin/mise" ]; then
-            eval "$($HOME/.local/bin/mise activate bash)"
-        fi
-        
-        log_success "mise installed successfully"
-    else
-        log_error "curl is not available. Cannot install mise."
+    if ! command_exists curl; then
+        log_error "curl is not available. Cannot proceed."
         return 1
     fi
-}
-
-# ============================================================================
-# Chezmoi Installation
-# ============================================================================
-
-install_chezmoi() {
-    if command_exists chezmoi; then
-        log_success "chezmoi is already installed"
-        return 0
-    fi
     
-    log_info "Installing chezmoi..."
-    
-    # Try mise first (preferred)
-    if command_exists mise; then
-        log_info "Installing chezmoi via mise..."
-        mise use -g chezmoi@"$CHEZMOI_VERSION"
-        log_success "chezmoi installed via mise"
-        return 0
-    fi
-    
-    # Fallback to official install script
-    log_info "Installing chezmoi via curl..."
-    if command_exists curl; then
-        sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
-        export PATH="$HOME/.local/bin:$PATH"
-        log_success "chezmoi installed via curl"
-        return 0
-    fi
-    
-    log_error "Failed to install chezmoi: no suitable method available"
-    return 1
-}
-
-# ============================================================================
-# Chezmoi Initialization
-# ============================================================================
-
-init_chezmoi() {
-    log_info "Initializing chezmoi from $REPO..."
-    
-    local repo_url="https://github.com/${REPO}.git"
-    
-    # Initialize and apply dotfiles
-    if chezmoi init --apply --branch "$BRANCH" "$repo_url"; then
+    # Use chezmoi's one-line install that does everything
+    # This installs chezmoi AND applies the dotfiles in one step
+    if sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply "$REPO" --branch "$BRANCH"; then
         log_success "Dotfiles applied successfully"
         return 0
     else
-        log_error "Failed to initialize chezmoi"
+        log_error "Failed to install chezmoi and apply dotfiles"
         return 1
     fi
 }
@@ -196,20 +138,9 @@ main() {
     # Setup XDG environment
     setup_xdg_env
     
-    # Install mise
-    if ! install_mise; then
-        log_warning "mise installation failed, continuing without it"
-    fi
-    
-    # Install chezmoi
-    if ! install_chezmoi; then
-        log_error "Bootstrap failed: Could not install chezmoi"
-        exit 1
-    fi
-    
-    # Initialize chezmoi and apply dotfiles
-    if ! init_chezmoi; then
-        log_error "Bootstrap failed: Could not apply dotfiles"
+    # Install chezmoi and apply dotfiles in one step
+    if ! install_and_apply_dotfiles; then
+        log_error "Bootstrap failed: Could not install chezmoi and apply dotfiles"
         exit 1
     fi
     
