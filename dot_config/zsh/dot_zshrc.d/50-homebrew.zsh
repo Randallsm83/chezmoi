@@ -1,3 +1,12 @@
+# ███████╗███████╗██╗  ██╗
+# ╚══███╔╝██╔════╝██║  ██║
+#   ███╔╝ ███████╗███████║
+#  ███╔╝  ╚════██║██╔══██║
+# ███████╗███████║██║  ██║
+# ╚══════╝╚══════╝╚═╝  ╚═╝
+# Z Shell - powerful command interpreter.
+#
+
 #!/usr/bin/env zsh
 
 # This is NOT the typical brew.env mentioned in their docs, that file doesn't support shell expansion...

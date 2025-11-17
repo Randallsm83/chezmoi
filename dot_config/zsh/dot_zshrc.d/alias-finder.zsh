@@ -1,3 +1,12 @@
+# ███████╗███████╗██╗  ██╗
+# ╚══███╔╝██╔════╝██║  ██║
+#   ███╔╝ ███████╗███████║
+#  ███╔╝  ╚════██║██╔══██║
+# ███████╗███████║██║  ██║
+# ╚══════╝╚══════╝╚═╝  ╚═╝
+# Z Shell - powerful command interpreter.
+#
+
 alias-finder() {
   local cmd=" " exact="" longer="" cheaper="" wordEnd="'{0,1}$" finder="" filter=""
 

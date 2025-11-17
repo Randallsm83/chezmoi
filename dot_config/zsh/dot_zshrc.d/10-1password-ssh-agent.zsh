@@ -1,3 +1,12 @@
+# ███████╗███████╗██╗  ██╗
+# ╚══███╔╝██╔════╝██║  ██║
+#   ███╔╝ ███████╗███████║
+#  ███╔╝  ╚════██║██╔══██║
+# ███████╗███████║██║  ██║
+# ╚══════╝╚══════╝╚═╝  ╚═╝
+# Z Shell - powerful command interpreter.
+#
+
 # 1Password SSH Agent Configuration
 # Configures SSH_AUTH_SOCK to use the 1Password SSH agent
 # Works across macOS, WSL, and native Linux

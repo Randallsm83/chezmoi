@@ -312,10 +312,9 @@ function Process-ConfigDirectory {
         
         Write-Host "`n📦 Processing $packageName..." -ForegroundColor Cyan
         
-        # Find config files (excluding templates for now)
+        # Find config files (including shell scripts and templates)
         $configFiles = Get-ChildItem -Path $dir.FullName -File -Recurse | 
-            Where-Object { $_.Extension -in @('.conf', '.config', '', '.toml', '.yaml', '.yml', '.json') -and
-                          $_.Name -notmatch '\.tmpl$' }
+            Where-Object { $_.Extension -in @('.conf', '.config', '', '.toml', '.yaml', '.yml', '.json', '.bash', '.zsh', '.sh', '.tmpl') }
         
         foreach ($file in $configFiles) {
             Add-HeaderToFile -FilePath $file.FullName -PackageName $packageName -AsciiArt $asciiArt[$packageName] -IsDryRun $IsDryRun

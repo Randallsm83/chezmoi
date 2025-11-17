@@ -1,3 +1,12 @@
+# ███████╗███████╗██╗  ██╗
+# ╚══███╔╝██╔════╝██║  ██║
+#   ███╔╝ ███████╗███████║
+#  ███╔╝  ╚════██║██╔══██║
+# ███████╗███████║██║  ██║
+# ╚══════╝╚══════╝╚═╝  ╚═╝
+# Z Shell - powerful command interpreter.
+#
+
 #!/usr/bin/env zsh
 
 [[ -x "${XDG_CONFIG_HOME:-$HOME/.config}/wezterm/wezterm.sh" ]] && source "${XDG_CONFIG_HOME:-$HOME/.config}/wezterm/wezterm.sh"

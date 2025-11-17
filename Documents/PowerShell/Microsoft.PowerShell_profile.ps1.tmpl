@@ -38,6 +38,17 @@ if (Get-Module -ListAvailable -Name GamePerformanceOptimizer) {
     Import-Module GamePerformanceOptimizer
 }
 
+# Source aliases and functions
+$aliasesFile = Join-Path (Split-Path $PROFILE) "aliases.ps1"
+$functionsFile = Join-Path (Split-Path $PROFILE) "functions.ps1"
+
+if (Test-Path $aliasesFile) {
+    . $aliasesFile
+}
+if (Test-Path $functionsFile) {
+    . $functionsFile
+}
+
 # VS Code shell integration
 if ($env:TERM_PROGRAM -eq "vscode") {
     . "$(code --locate-shell-integration-path pwsh)"
@@ -46,19 +57,6 @@ if ($env:TERM_PROGRAM -eq "vscode") {
 # Set LS_COLORS using Vivid ({{ .theme.name }} theme)
 {{- if .packages.scoop | has "vivid" }}
 $env:LS_COLORS = (vivid generate {{ .theme.name }})
-{{- end }}
-
-# Aliases - Modern CLI replacements
-Set-Alias -Name ll -Value Get-ChildItem -Option AllScope
-Set-Alias -Name la -Value Get-ChildItem -Option AllScope
-{{- if .packages.scoop | has "ripgrep" }}
-Set-Alias -Name grep -Value rg -Option AllScope
-{{- end }}
-{{- if .packages.scoop | has "bat" }}
-Set-Alias -Name cat -Value bat -Option AllScope
-{{- end }}
-{{- if .packages.scoop | has "eza" }}
-Set-Alias -Name ls -Value eza -Option AllScope
 {{- end }}
 
 # PSReadLine configuration - Vi mode with enhanced history
@@ -126,45 +124,6 @@ Set-PSReadLineKeyHandler -Key Spacebar -ScriptBlock {
     
     # Insert the space
     [Microsoft.PowerShell.PSConsoleReadLine]::Insert(' ')
-}
-
-# Git shortcuts
-function gs { git status }
-function gp { git push }
-function gl { git pull }
-function ga { git add $args }
-function gc { git commit -m $args }
-function gco { git checkout $args }
-function gb { git branch $args }
-function gd { git diff }
-function gds { git diff --staged }
-function glog { git log --oneline --graph --decorate }
-
-# Enhanced ls functions using eza
-{{- if .packages.scoop | has "eza" }}
-function ll { eza -l --icons --git $args }
-function la { eza -la --icons --git $args }
-function lt { eza -T --icons --git-ignore $args }
-function llt { eza -lT --icons --git-ignore $args }
-{{- end }}
-
-# Utility functions
-function which ($command) {
-    Get-Command -Name $command -ErrorAction SilentlyContinue |
-        Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
-}
-
-function touch ($file) {
-    if (Test-Path $file) {
-        (Get-Item $file).LastWriteTime = Get-Date
-    } else {
-        New-Item -ItemType File -Path $file | Out-Null
-    }
-}
-
-function mkcd ($path) {
-    New-Item -ItemType Directory -Path $path -Force | Out-Null
-    Set-Location $path
 }
 
 # 1Password SSH Agent integration

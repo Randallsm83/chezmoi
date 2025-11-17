@@ -1,3 +1,12 @@
+# ███████╗███████╗██╗  ██╗
+# ╚══███╔╝██╔════╝██║  ██║
+#   ███╔╝ ███████╗███████║
+#  ███╔╝  ╚════██║██╔══██║
+# ███████╗███████║██║  ██║
+# ╚══════╝╚══════╝╚═╝  ╚═╝
+# Z Shell - powerful command interpreter.
+#
+
 ## History file configuration
 _state_dir=${XDG_STATE_HOME:-$HOME/.local/state}/zsh
 [[ -d "$_state_dir"  ]] || mkdir -p "$_state_dir"

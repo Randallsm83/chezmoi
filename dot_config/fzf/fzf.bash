@@ -1,3 +1,12 @@
+# ███████╗███████╗███████╗
+# ██╔════╝╚══███╔╝██╔════╝
+# █████╗    ███╔╝ █████╗
+# ██╔══╝   ███╔╝  ██╔══╝
+# ██║     ███████╗██║
+# ╚═╝     ╚══════╝╚═╝
+# Command-line fuzzy finder.
+#
+
 # fzf configuration for bash/zsh
 # https://github.com/junegunn/fzf
 
