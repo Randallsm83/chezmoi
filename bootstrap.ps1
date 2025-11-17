@@ -12,7 +12,7 @@
     5. Trigger package installation via chezmoi run scripts
     
 .PARAMETER Repository
-    GitHub repository (default: Randallsm83/dotfiles-redux)
+    GitHub repository (default: Randallsm83/dotfiles)
     
 .PARAMETER Branch
     Branch to clone (default: main)
@@ -22,7 +22,7 @@
     
 .EXAMPLE
     # One-command install from GitHub (production)
-    iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles-redux/main/bootstrap.ps1 | iex
+    iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 | iex
     
 .EXAMPLE
     # Local install
@@ -39,7 +39,7 @@
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string]$Repository = "Randallsm83/dotfiles-redux",
+    [string]$Repository = "Randallsm83/dotfiles",
     [string]$Branch = "main",
     [switch]$SkipPackages
 )

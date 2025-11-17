@@ -3,7 +3,7 @@
 # Bootstrap script for Unix systems (Linux/WSL/macOS)
 # 
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles-redux/main/setup.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
 #   OR
 #   ./setup.sh
 

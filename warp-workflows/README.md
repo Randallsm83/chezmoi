@@ -253,4 +253,4 @@ If you use chezmoi to manage your dotfiles:
 
 **Created:** 2025-01-17  
 **Maintained by:** Randall  
-**Repository:** Randallsm83/dotfiles-redux
+**Repository:** Randallsm83/dotfiles

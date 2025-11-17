@@ -25,7 +25,7 @@
     If specified, only unregister and install WSL without running the chezmoi bootstrap
 
 .PARAMETER ChezmoisRepo
-    GitHub repository for chezmoi dotfiles. Default: "Randallsm83/dotfiles-redux"
+    GitHub repository for chezmoi dotfiles. Default: "Randallsm83/dotfiles"
 
 .PARAMETER ChezmoiBranch
     Branch to use for chezmoi initialization. Default: "main"

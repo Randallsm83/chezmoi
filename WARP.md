@@ -440,7 +440,7 @@ When a feature flag is `false`, its files are listed in `.chezmoiignore` and won
 - Feature flag system for optional packages
 - Integrated bootstrap with auto-install
 - One-command provisioning achieved
-- Repository: `dotfiles-redux`
+- Repository: `Randallsm83/dotfiles`
 
 **Migration Completed:** November 15, 2025 (v1.0.0)
 - All core configs migrated and tested (170+ files)
