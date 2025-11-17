@@ -125,9 +125,13 @@
 [core]
 	# Windows: 1Password SSH agent via named pipe
 	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe -F /dev/null -o IdentityAgent=\\\\.\\pipe\\openssh-ssh-agent
+{{- else if .chezmoi.kernel.osrelease | lower | contains "microsoft" }}
+[core]
+	# WSL: Use Windows SSH to access 1Password agent on Windows host
+	sshCommand = ssh.exe
 {{- else }}
 [core]
-	# Unix: 1Password SSH agent via socket
+	# Native Linux/macOS: 1Password SSH agent via socket
 	sshCommand = ssh -o IdentityAgent=~/.1password/agent.sock
 {{- end }}
 {{- end }}
