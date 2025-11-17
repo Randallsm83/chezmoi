@@ -65,24 +65,34 @@ if command_exists pacman; then
     packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi"
     if [ "$EUID" -eq 0 ]; then
         pacman -Syu --noconfirm $packages
-    else
+    elif command_exists sudo; then
         sudo pacman -Syu --noconfirm $packages
+    else
+        log_warning "Neither running as root nor sudo available - attempting pacman without privilege escalation"
+        log_warning "This will likely fail. Please run manually: wsl -d archlinux -u root pacman -Syu --noconfirm $packages"
+        exit 1
     fi
 elif command_exists apt-get; then
     log_info "Using apt-get (Debian/Ubuntu)"
     packages="git curl wget unzip zip build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev"
     if [ "$EUID" -eq 0 ]; then
         apt-get update && apt-get install -y $packages
-    else
+    elif command_exists sudo; then
         sudo apt-get update && sudo apt-get install -y $packages
+    else
+        log_warning "Neither running as root nor sudo available"
+        exit 1
     fi
 elif command_exists dnf; then
     log_info "Using dnf (Fedora/RHEL)"
     packages="git curl wget unzip zip gcc gcc-c++ make openssl-devel readline-devel zlib-devel libyaml-devel libffi-devel"
     if [ "$EUID" -eq 0 ]; then
         dnf install -y $packages
-    else
+    elif command_exists sudo; then
         sudo dnf install -y $packages
+    else
+        log_warning "Neither running as root nor sudo available"
+        exit 1
     fi
 elif command_exists brew; then
     log_info "Using brew (macOS)"
