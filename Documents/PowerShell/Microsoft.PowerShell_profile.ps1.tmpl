@@ -89,22 +89,22 @@ Set-PSReadLineKeyHandler -Key Spacebar -ScriptBlock {
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
     
     # Handle !! expansion (repeat last command)
-    if ($line -match '!!$') {
+    if ($line -match '!!') {
         $lastCommand = (Get-History -Count 1).CommandLine
         if ($lastCommand) {
-            $newLine = $line -replace '!!$', $lastCommand
+            $newLine = $line -replace '!!', $lastCommand
             [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $newLine)
             [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($newLine.Length)
         }
     }
     # Handle !$ expansion (last argument of last command)
-    elseif ($line -match '!\$$') {
+    elseif ($line -match '!\$') {
         $lastCommand = (Get-History -Count 1).CommandLine
         if ($lastCommand) {
             # Get last argument (split on whitespace, take last non-empty)
             $lastArg = ($lastCommand -split '\s+' | Where-Object { $_ }) | Select-Object -Last 1
             if ($lastArg) {
-                $newLine = $line -replace '!\$$', $lastArg
+                $newLine = $line -replace '!\$', $lastArg
                 [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $newLine)
                 [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($newLine.Length)
             }
