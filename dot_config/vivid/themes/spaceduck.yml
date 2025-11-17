@@ -1,3 +1,12 @@
+# ██╗   ██╗██╗██╗   ██╗██╗██████╗
+# ██║   ██║██║██║   ██║██║██╔══██╗
+# ██║   ██║██║██║   ██║██║██║  ██║
+# ╚██╗ ██╔╝██║╚██╗ ██╔╝██║██║  ██║
+#  ╚████╔╝ ██║ ╚████╔╝ ██║██████╔╝
+#   ╚═══╝  ╚═╝  ╚═══╝  ╚═╝╚═════╝
+# LS_COLORS generator.
+#
+
 colors:
   # Spaceduck color palette
   # Based on https://github.com/pineapplegiant/spaceduck
