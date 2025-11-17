@@ -1,17 +1,17 @@
-# eza default flags
-# https://github.com/eza-community/eza
+# eza unified default flags
+# Loaded by EzaProfile.psm1 (PowerShell) and ~/.zshrc (zsh)
+# 
+# Layering order:
+#   1. flags.txt (base defaults, this file)
+#   2. flags-{hostname}.txt (per-host overrides)
+#   3. flags-{shell}.txt (per-shell overrides: flags-pwsh.txt, flags-zsh.txt)
+#   4. EZA_DISABLE_GDF=1 (environment override to disable --group-directories-first)
 
-# Display options
+# Core display
 --icons
 --git
 --group-directories-first
-
-# Colors
 --color=auto
---color-scale
-
-# Sorting
+--color-scale=all
 --sort=name
-
-# Grid options
---grid
+--time-style=long-iso
