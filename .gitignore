@@ -1,0 +1,17 @@
+# Chezmoi repository .gitignore
+
+# Binaries (chezmoi downloads itself here during bootstrap)
+bin/
+
+# Editor temp files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+tmp/

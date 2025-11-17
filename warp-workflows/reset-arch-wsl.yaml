@@ -1,0 +1,97 @@
+---
+name: "Reset Arch Linux WSL"
+command: |-
+  # Terminate existing Arch Linux WSL instance
+  Write-Host "`n╔═══════════════════════════════════════════╗" -ForegroundColor Cyan
+  Write-Host "║  Resetting Arch Linux WSL Instance       ║" -ForegroundColor Cyan
+  Write-Host "╚═══════════════════════════════════════════╝`n" -ForegroundColor Cyan
+  
+  Write-Host "⚠ WARNING: This will DELETE ALL DATA in the archlinux WSL instance" -ForegroundColor Yellow
+  $confirm = Read-Host "`nContinue? (y/N)"
+  
+  if ($confirm -ne "y" -and $confirm -ne "Y") {
+      Write-Host "`n✗ Operation cancelled" -ForegroundColor Red
+      exit 0
+  }
+  
+  Write-Host "`n▶ Step 1/4: Unregistering existing archlinux WSL..." -ForegroundColor Cyan
+  wsl --unregister archlinux
+  Write-Host "✓ WSL instance unregistered" -ForegroundColor Green
+  
+  Write-Host "`n▶ Step 2/4: Installing fresh Arch Linux..." -ForegroundColor Cyan
+  Write-Host "  (This may take a few minutes)" -ForegroundColor Gray
+  wsl --install archlinux --no-launch
+  Write-Host "✓ Arch Linux installed" -ForegroundColor Green
+  
+  Write-Host "`n▶ Step 3/4: Waiting for WSL to be ready..." -ForegroundColor Cyan
+  Start-Sleep -Seconds 5
+  
+  # Test if WSL is ready
+  $ready = $false
+  $attempts = 0
+  while (-not $ready -and $attempts -lt 10) {
+      try {
+          $result = wsl -d archlinux echo "ready" 2>&1
+          if ($result -match "ready") {
+              $ready = $true
+          }
+      } catch {
+          Start-Sleep -Seconds 2
+          $attempts++
+      }
+  }
+  Write-Host "✓ WSL instance ready" -ForegroundColor Green
+  
+  Write-Host "`n▶ Step 4/4: Bootstrapping with chezmoi dotfiles..." -ForegroundColor Cyan
+  Write-Host "  Repository: Randallsm83/dotfiles" -ForegroundColor Gray
+  Write-Host "  Duration: ~10-15 minutes (installing packages and runtimes)" -ForegroundColor Gray
+  Write-Host "  You can monitor progress in the WSL terminal`n" -ForegroundColor Gray
+  
+  # Use chezmoi's one-line install that does everything
+  wsl -d archlinux bash -c "sh -c '$$(curl -fsLS get.chezmoi.io)' -- init --apply Randallsm83/dotfiles"
+  
+  if ($LASTEXITCODE -ne 0) {
+      Write-Host "`n⚠ Bootstrap encountered issues" -ForegroundColor Yellow
+      Write-Host "You can retry manually from within WSL:" -ForegroundColor Yellow
+      Write-Host "  wsl -d archlinux" -ForegroundColor White
+      Write-Host "  sh -c '$$(curl -fsLS get.chezmoi.io)' -- init --apply Randallsm83/dotfiles`n" -ForegroundColor White
+      exit 1
+  }
+  
+  Write-Host "`n╔═══════════════════════════════════════════╗" -ForegroundColor Green
+  Write-Host "║          Setup Complete! 🎉              ║" -ForegroundColor Green
+  Write-Host "╚═══════════════════════════════════════════╝`n" -ForegroundColor Green
+  
+  Write-Host "Next steps:" -ForegroundColor White
+  Write-Host "  1. Launch WSL:     wsl -d archlinux" -ForegroundColor White
+  Write-Host "  2. Restart shell:  exec zsh" -ForegroundColor White
+  Write-Host "  3. Verify setup:   starship --version && mise --version`n" -ForegroundColor White
+tags:
+  - wsl
+  - arch
+  - dotfiles
+  - chezmoi
+  - setup
+description: |-
+  Complete reset and bootstrap of Arch Linux WSL instance with chezmoi dotfiles.
+  
+  This workflow will:
+  1. Unregister (delete) the existing 'archlinux' WSL distribution
+  2. Install a fresh Arch Linux instance from WSL repository
+  3. Bootstrap with chezmoi dotfiles from GitHub
+  4. Install all tools, runtimes, and configurations automatically
+  
+  What gets installed:
+  - mise (package & runtime manager)
+  - CLI tools: ripgrep, fd, bat, eza, delta, starship, zoxide, fzf
+  - Language runtimes: Node.js, Python, Ruby, Go, Rust, Lua, Bun, Deno
+  - Neovim with LazyVim config
+  - Zsh with starship prompt (onedark theme)
+  - 1Password SSH agent integration
+  - All dotfiles and configurations
+  
+  Duration: 10-15 minutes total
+  Prerequisites: WSL2 enabled, internet connection
+  
+  ⚠️ WARNING: This is a DESTRUCTIVE operation. All data in the current
+  archlinux WSL instance will be deleted. You will be prompted to confirm.
