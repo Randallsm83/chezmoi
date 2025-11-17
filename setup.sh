@@ -85,7 +85,7 @@ install_base_packages() {
     
     local needs_install=false
     
-    # Check if git and curl are available
+    # Check for essential tools
     if ! command_exists git; then
         log_warning "git is not installed"
         needs_install=true
@@ -93,6 +93,16 @@ install_base_packages() {
     
     if ! command_exists curl; then
         log_warning "curl is not installed"
+        needs_install=true
+    fi
+    
+    if ! command_exists make; then
+        log_warning "make is not installed"
+        needs_install=true
+    fi
+    
+    if ! command_exists unzip; then
+        log_warning "unzip is not installed"
         needs_install=true
     fi
     
