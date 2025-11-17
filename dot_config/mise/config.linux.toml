@@ -23,7 +23,7 @@ luajit = "2.1.0-beta3"
 # Terminal utilities
 "cargo:bat" = "latest"
 "cargo:eza" = "latest"
-"cargo:fd-find" = "latest"
+"cargo:fd" = "latest"
 "cargo:ripgrep" = "latest"
 bat-extras = "latest"     # Bash-dependent wrapper scripts
 btop = "latest"

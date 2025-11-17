@@ -93,10 +93,10 @@ winget_packages:
 # Used on Linux/WSL/macOS, not Windows (scoop handles these)
 mise_cli_tools:
   - ripgrep
-  - fd-find
+  - fd
   - bat
   - eza
-  - git-delta
+  - delta
   - bottom  # btop alternative
   - starship
   - zoxide
@@ -115,7 +115,7 @@ homebrew_packages:
   - fd
   - bat
   - eza
-  - git-delta
+  - delta
   - btop
   
   # Development
