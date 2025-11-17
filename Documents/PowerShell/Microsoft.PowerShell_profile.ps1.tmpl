@@ -33,6 +33,11 @@ Invoke-Expression (& mise activate pwsh | Out-String)
 # Initialize Zoxide (smart cd)
 Invoke-Expression (& zoxide init powershell | Out-String)
 
+# Import GamePerformanceOptimizer module (for game security exclusions)
+if (Get-Module -ListAvailable -Name GamePerformanceOptimizer) {
+    Import-Module GamePerformanceOptimizer
+}
+
 # VS Code shell integration
 if ($env:TERM_PROGRAM -eq "vscode") {
     . "$(code --locate-shell-integration-path pwsh)"
