@@ -79,6 +79,50 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
 }
 
+# Bash-style history expansion (!!, !$)
+function Invoke-LastCommand {
+    $line = $null
+    $cursor = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+    
+    # Check if user typed !! at start of line or after whitespace
+    if ($line -match '(^|\s)!!$') {
+        $lastCommand = (Get-History -Count 1).CommandLine
+        if ($lastCommand) {
+            # Replace !! with last command
+            $newLine = $line -replace '(^|\s)!!$', "`$1$lastCommand"
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $newLine)
+            [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($newLine.Length)
+        }
+    }
+    # Check if user typed !$ at start of line or after whitespace
+    elseif ($line -match '(^|\s)!\$$') {
+        $lastCommand = (Get-History -Count 1).CommandLine
+        if ($lastCommand) {
+            # Get last argument from last command
+            $lastArg = ($lastCommand -split '\s+')[-1]
+            # Replace !$ with last argument
+            $newLine = $line -replace '(^|\s)!\$$', "`$1$lastArg"
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $newLine)
+            [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($newLine.Length)
+        }
+    }
+}
+
+Set-PSReadLineKeyHandler -Key Spacebar -ScriptBlock {
+    $line = $null
+    $cursor = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+    
+    # Expand !! or !$ when space is pressed
+    if ($line -match '!!$' -or $line -match '!\$$') {
+        Invoke-LastCommand
+    }
+    
+    # Insert the space
+    [Microsoft.PowerShell.PSConsoleReadLine]::Insert(' ')
+}
+
 # Git shortcuts
 function gs { git status }
 function gp { git push }
