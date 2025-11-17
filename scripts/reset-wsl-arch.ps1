@@ -210,6 +210,56 @@ function Main {
     # Wait for WSL to be ready
     Wait-ForWSLReady $DistroName
     
+    # Install essential packages
+    Write-Step "Installing essential packages (git, curl, base-devel)..."
+    try {
+        wsl -d $DistroName -u root bash -c "pacman -Sy --noconfirm git curl base-devel"
+        Write-Success "Essential packages installed"
+    }
+    catch {
+        Write-Error "Failed to install essential packages: $_"
+        exit 1
+    }
+    
+    # Create default user account
+    Write-Step "Creating default user account..."
+    $username = $env:USERNAME.ToLower()
+    Write-ColorOutput "Using Windows username: $username"
+    
+    try {
+        # Create user with home directory and sudo access
+        wsl -d $DistroName -u root bash -c @"
+set -e
+useradd -m -G wheel -s /bin/bash $username
+passwd -d $username
+mkdir -p /etc/sudoers.d
+echo '$username ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$username
+chmod 440 /etc/sudoers.d/$username
+"@
+        Write-Success "User '$username' created successfully"
+    }
+    catch {
+        Write-Error "Failed to create user account: $_"
+        exit 1
+    }
+    
+    # Configure default WSL user
+    Write-Step "Configuring default WSL user..."
+    try {
+        wsl -d $DistroName -u root bash -c "echo -e '[user]\ndefault=$username' > /etc/wsl.conf"
+        Write-Success "Default user set to '$username'"
+        
+        # Restart WSL to apply wsl.conf changes
+        Write-Step "Restarting WSL to apply user configuration..."
+        wsl --terminate $DistroName
+        Start-Sleep -Seconds 2
+        Wait-ForWSLReady $DistroName
+    }
+    catch {
+        Write-Error "Failed to configure default user: $_"
+        exit 1
+    }
+    
     # Bootstrap with chezmoi (unless skipped)
     if (-not $SkipBootstrap) {
         Write-Step "Bootstrapping with chezmoi dotfiles..."
