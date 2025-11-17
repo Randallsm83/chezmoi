@@ -1,22 +1,48 @@
 {
+  // ============================================================================
+  // THEME & APPEARANCE
+  // ============================================================================
+  // Active Theme: One Dark Pro
   "workbench.colorTheme": "One Dark Pro Night Flat",
   "workbench.preferredDarkColorTheme": "One Dark Pro Night Flat",
   "workbench.iconTheme": "a-file-icon-vscode",
   "workbench.productIconTheme": "a-file-icon-vscode-product-icon-theme",
   "oneDarkPro.editorTheme": "One Dark Pro Night Flat",
   "oneDarkPro.vivid": true,
+  // Alternative Themes (uncomment to switch)
+  // Gruvbox Concoctis
+  // "gruvboxConcoctis.useBoldFont": true,
+  // "gruvboxConcoctis.usePalette": "mix",
+  // "gruvboxConcoctis.selectionColor": "orange",
+  // "workbench.colorTheme": "gruvboxConcoctis dark medium",
+  // "workbench.preferredDarkColorTheme": "gruvboxConcoctis dark medium",
+  // "workbench.iconTheme": "gruvbox-material-icon-theme",
+  // Tokyo Night
+  // "workbench.colorTheme": "Tokyo Night",
+  // "workbench.preferredDarkColorTheme": "Tokyo Night",
+  // "workbench.iconTheme": "material-icon-theme",
+  // ============================================================================
+  // FONTS & TYPOGRAPHY
+  // ============================================================================
+  // Editor Font
   "editor.fontFamily": "FiraCode Nerd Font, Hack Nerd Font, Consolas, 'Courier New', monospace",
   "editor.fontSize": 14,
   "editor.lineHeight": 1.4,
   "editor.fontWeight": "normal",
   "editor.fontLigatures": true,
+  // Code Lens Font
   "editor.codeLensFontFamily": "FiraCode Nerd Font, Hack Nerd Font, Consolas, 'Courier New', monospace",
   "editor.codeLensFontSize": 13,
+  // Terminal Font
   "terminal.integrated.fontFamily": "FiraCode Nerd Font, Hack Nerd Font, Consolas, 'Courier New', monospace",
   "terminal.integrated.fontSize": 13,
   "terminal.integrated.lineHeight": 1.2,
   "terminal.integrated.fontWeight": "normal",
   "terminal.integrated.fontLigatures.enabled": true,
+  // ============================================================================
+  // EDITOR BEHAVIOR
+  // ============================================================================
+  // Editing
   "editor.autoIndentOnPaste": true,
   "editor.detectIndentation": true,
   "editor.formatOnPaste": true,
@@ -25,37 +51,51 @@
   "editor.trimAutoWhitespace": true,
   "editor.wordWrap": "on",
   "editor.wrappingStrategy": "simple",
+  // Cursor
   "editor.cursorStyle": "line",
   "editor.cursorWidth": 2,
   "editor.cursorBlinking": "blink",
   "editor.cursorSurroundingLines": 5,
   "editor.cursorSmoothCaretAnimation": "on",
+  // Visual Guides
   "editor.guides.bracketPairs": true,
   "editor.renderControlCharacters": false,
   "editor.renderLineHighlight": "line",
   "editor.renderWhitespace": "selection",
   "editor.occurrencesHighlight": "singleFile",
   "editor.selectionHighlight": false,
+  // Suggestions & Hover
   "editor.hover.delay": 300,
   "editor.hover.enabled": true,
   "editor.suggest.preview": true,
   "editor.screenReaderAnnounceInlineSuggestion": false,
+  // Code Features
   "editor.codeLens": false,
   "editor.aiStats.enabled": true,
   "editor.semanticHighlighting.enabled": true,
+  // Minimap
   "editor.minimap.size": "fill",
+  // Scrolling
   "editor.smoothScrolling": true,
   "editor.mouseWheelScrollSensitivity": 2,
+  // Performance
   "editor.experimentalGpuAcceleration": "on",
-  "editor.accessibilitySupport": "off",
+  // ============================================================================
+  // WORKBENCH BEHAVIOR
+  // ============================================================================
   "workbench.startupEditor": "none",
   "workbench.list.smoothScrolling": true,
   "workbench.list.openMode": "doubleClick",
   "workbench.enableExperiments": false,
   "window.menuBarVisibility": "compact",
+  // "window.zoomLevel": 0.1,
   "breadcrumbs.enabled": true,
+  // ============================================================================
+  // FILE HANDLING
+  // ============================================================================
   "files.trimTrailingWhitespace": true,
   "files.eol": "\n",
+  // File Watcher Performance (especially for remote)
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
@@ -66,17 +106,29 @@
     "**/build/**": true,
     "**/.cache/**": true
   },
+  // ============================================================================
+  // LANGUAGE-SPECIFIC SETTINGS
+  // ============================================================================
   "[perl]": {
     "editor.insertSpaces": false
   },
   "[markdown]": {
     "editor.wordWrap": "wordWrapColumn",
     "editor.wordWrapColumn": 100,
-    "editor.rulers": [100, 120]
+    "editor.rulers": [
+      100,
+      120
+    ]
   },
+  // ============================================================================
+  // EXTENSIONS
+  // ============================================================================
+  // Markdown Preview Enhanced
   "markdown-preview-enhanced.previewTheme": "one-dark.css",
   "markdown-preview-enhanced.revealjsTheme": "night.css",
+  // Todo Highlight
   "todohighlight.isEnable": true,
+  // CSpell
   "cSpell.userWords": [
     "BAAI",
     "Dreamhost",
@@ -88,14 +140,27 @@
     "qdrant",
     "sequentialthinking"
   ],
-  "remote.SSH.configFile": "~/.ssh/config",
+  // ============================================================================
+  // REMOTE DEVELOPMENT (SSH)
+  // ============================================================================
+  "remote.SSH.configFile": "C:\\Users\\Randall\\.ssh\\config",
   "remote.SSH.connectTimeout": 60,
   "remote.restoreForwardedPorts": false,
   "remote.autoForwardPorts": false,
+  // "remote.SSH.showLoginTerminal": true,
+  "remote.SSH.remotePlatform": {
+    "***REMOVED***": "linux",
+    "yakko": "linux"
+  },
+  // ============================================================================
+  // VIM CONFIGURATION
+  // ============================================================================
+  // Extension Affinity (improve performance)
   "extensions.experimental.affinity": {
     "vscodevim.vim": 1,
     "asvetliakov.vscode-neovim": 1
   },
+  // Core Vim Settings
   "vim.leader": "<space>",
   "vim.smartRelativeLine": true,
   "vim.useSystemClipboard": true,
@@ -104,71 +169,248 @@
   "vim.hlsearch": true,
   "vim.useCtrlKeys": true,
   "vim.mouseSelectionGoesIntoVisualMode": false,
+  // Neovim Integration
   "vim.enableNeovim": false,
   "vim.neovimUseConfigFile": true,
-  "vim.handleKeys": {},
+  // Vim Key Mappings
+  "vim.handleKeys": {
+    // Uncomment to disable specific Ctrl combinations
+    // "<C-a>": false,
+    // "<C-f>": false
+  },
   "vim.insertModeKeyBindings": [
     {
-      "before": ["j", "j"],
-      "after": ["<Esc>"]
+      "before": [
+        "j",
+        "j"
+      ],
+      "after": [
+        "<Esc>"
+      ]
     }
   ],
   "vim.normalModeKeyBindings": [
     {
-      "before": [";"],
-      "after": [":"]
+      "before": [
+        ";"
+      ],
+      "after": [
+        ":"
+      ]
     }
   ],
   "vim.normalModeKeyBindingsNonRecursive": [
     {
-      "before": ["<leader>", "d"],
-      "after": ["d", "d"]
+      "before": [
+        "<leader>",
+        "d"
+      ],
+      "after": [
+        "d",
+        "d"
+      ]
     },
     {
-      "before": ["<Esc>"],
-      "after": ["<Esc>"],
-      "commands": [{"command": ":nohl"}]
+      "before": [
+        "<Esc>"
+      ],
+      "after": [
+        "<Esc>"
+      ],
+      "commands": [
+        {
+          "command": ":nohl"
+        }
+      ]
     },
     {
-      "before": ["<leader>", "q"],
-      "commands": [{"command": "workbench.actions.view.problems"}]
+      "before": [
+        "<leader>",
+        "q"
+      ],
+      "commands": [
+        {
+          "command": "workbench.actions.view.problems"
+        }
+      ]
     },
     {
-      "before": ["<leader>", "t"],
-      "commands": [{"command": "workbench.actions.view.terminal"}]
+      "before": [
+        "<leader>",
+        "t"
+      ],
+      "commands": [
+        {
+          "command": "workbench.actions.view.terminal"
+        }
+      ]
     },
     {
-      "before": ["<C-h>"],
-      "commands": [{"command": "workbench.action.focusLeftGroup"}]
+      "before": [
+        "<C-h>"
+      ],
+      "commands": [
+        {
+          "command": "workbench.action.focusLeftGroup"
+        }
+      ]
     },
     {
-      "before": ["<C-j>"],
-      "commands": [{"command": "workbench.action.focusBelowGroup"}]
+      "before": [
+        "<C-j>"
+      ],
+      "commands": [
+        {
+          "command": "workbench.action.focusBelowGroup"
+        }
+      ]
     },
     {
-      "before": ["<C-k>"],
-      "commands": [{"command": "workbench.action.focusAboveGroup"}]
+      "before": [
+        "<C-k>"
+      ],
+      "commands": [
+        {
+          "command": "workbench.action.focusAboveGroup"
+        }
+      ]
     },
     {
-      "before": ["<C-l>"],
-      "commands": [{"command": "workbench.action.focusRightGroup"}]
+      "before": [
+        "<C-l>"
+      ],
+      "commands": [
+        {
+          "command": "workbench.action.focusRightGroup"
+        }
+      ]
     }
   ],
   "vim.commandLineModeKeyBindings": [],
   "vim.commandLineModeKeyBindingsNonRecursive": [],
-  "update.mode": "start",
-  "diffEditor.maxComputationTime": 0,
-  "git.openRepositoryInParentFolders": "never",
-  "extensions.supportNodeGlobalNavigator": true,
-  "telemetry.feedback.enabled": false,
-  "telemetry.telemetryLevel": "off",
-  "chat.mcp.gallery.enabled": true,
+  // ============================================================================
+  // NEOVIM STANDALONE
+  // ============================================================================
+  "vscode-neovim.neovimExecutablePaths.linux": "/home/rmiller/.local/share/mise/installs/neovim/0.11.2/nvim-linux-x86_64/bin/nvim",
+  "vscode-neovim.neovimExecutablePaths.win32": "C:\\Program Files\\Neovim\\bin\\nvim.exe",
+  "vscode-neovim.neovimInitVimPaths.linux": "/home/rmiller/.config/nvim/init.lua",
+  "vscode-neovim.neovimInitVimPaths.win32": "C:\\Users\\Randall\\AppData\\Local\\nvim\\init.lua",
+  // ============================================================================
+  // AI AGENTS & ASSISTANTS
+  // ============================================================================
+  // Roo Cline
+  "roo-cline.allowedCommands": [
+    "npm test",
+    "npm install",
+    "tsc",
+    "git log",
+    "git diff",
+    "git show"
+  ],
+  "roo-cline.deniedCommands": [],
+  // Kilo Code
+  "kilo-code.allowedCommands": [
+    "find *",
+    "which *",
+    "ls *",
+    "git log *",
+    "git diff *",
+    "git status *",
+    "ls",
+    "dhcat",
+    "dhqsearch",
+    "grep",
+    "find",
+    "head",
+    "git status",
+    "git log",
+    "git diff",
+    "git show"
+  ],
+  "kilo-code.deniedCommands": [],
+  // MCP Discovery
   "chat.mcp.discovery.enabled": {
     "claude-desktop": true,
     "windsurf": true,
     "cursor-global": true,
     "cursor-workspace": true
   },
-  "settingsSync.enable": false,
-  "settingsSync.ignoredSettings": []
+  // ============================================================================
+  // TOOL-SPECIFIC CONFIGURATIONS
+  // ============================================================================
+  // BG3 Mod Helper
+  "bg3ModHelper.gameInstallLocation": "C:\\SteamGames\\steamapps\\common\\Baldurs Gate 3\\",
+  "bg3ModHelper.lslibPath": "D:\\My Dev\\BG3\\Packed",
+  // Arduino
+  "arduino.additionalUrls": [
+    "http://arduino.esp8266.com/stable/package_esp8266com_index.json",
+    "https://dl.espressif.com/dl/package_esp32_index.json",
+    "https://resource.heltec.cn/download/package_heltec_esp32_index.json"
+  ],
+  "arduino.logLevel": "verbose",
+"arduino.path": "C:\\ProgramData\\chocolatey\\lib\\arduino-cli\\tools",
+"C_Cpp.default.compilerPath": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+  // ============================================================================
+  // SYSTEM & MISC
+  // ============================================================================
+  "update.mode": "start",
+  "diffEditor.maxComputationTime": 0,
+  "git.openRepositoryInParentFolders": "never",
+  "extensions.supportNodeGlobalNavigator": true,
+  // Privacy & Telemetry
+  "telemetry.feedback.enabled": false,
+  "telemetry.telemetryLevel": "off",
+  "chat.mcp.gallery.enabled": true,
+  "editor.accessibilitySupport": "off",
+  "settingsSync.keybindingsPerPlatform": false,
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "terminal.external.windowsExec": "%LOCALAPPDATA%\\Programs\\Warp\\warp.exe"
+  // ============================================================================
+  // PERFORMANCE
+  // ============================================================================
+  //  "editor.tokenColorCustomizations": {
+  //   "textMateRules": [
+  //     {
+  //       "scope": [
+  //         "variable",
+  //         "variable.other",
+  //         "variable.language",
+  //         "variable.parameter"
+  //       ],
+  //       "settings": {
+  //         "fontStyle": ""
+  //       }
+  //     }
+  //   ]
+  // },
+  // Performance optimizations
+  // "editor.semanticHighlighting.enabled": false,
+  // "editor.bracketPairColorization.enabled": false,
+  // "editor.guides.bracketPairs": false,
+  // "editor.inlayHints.enabled": "off",
+  // "editor.lightbulb.enabled": "off",
+  // "editor.suggest.preview": false,
+  // "editor.quickSuggestions": {
+  //   "other": false,
+  //   "comments": false,
+  //   "strings": false
+  // },
+  //
+  // Smooth scrolling improvements
+  // "editor.smoothScrolling": false,
+  // "editor.cursorSmoothCaretAnimation": "off",
+  // "workbench.list.smoothScrolling": false,
+  //
+  // Font rendering optimizations
+  // "editor.fontLigatures": false,
+  // "editor.renderWhitespace": "none",
+  //
+  // Git performance
+  // "git.enabled": true,
+  // "git.autorefresh": false,
+  // "git.decorations.enabled": false,
+  // Disable minimap for large files
+  // "editor.minimap.enabled": false,
+  // Reduce file tree decorations
+  // "workbench.tree.renderIndentGuides": "none",
 }

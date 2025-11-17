@@ -25,5 +25,45 @@
         "key": "ctrl+p",
         "command": "workbench.action.quickOpenNavigatePrevious",
         "when": "inQuickOpen"
+    },
+    {
+        "key": "ctrl+alt+l",
+        "command": "kilo-code.ghost.generateSuggestions",
+        "when": "editorTextFocus && kilocode.ghost.enableSmartInlineTaskKeybinding && !editorTabMovesFocus && !github.copilot.completions.enabled && !inSnippetMode"
+    },
+    {
+        "key": "ctrl+l",
+        "command": "-kilo-code.ghost.generateSuggestions",
+        "when": "editorTextFocus && kilocode.ghost.enableSmartInlineTaskKeybinding && !editorTabMovesFocus && !github.copilot.completions.enabled && !inSnippetMode"
+    },
+    {
+        "key": "ctrl+alt+i",
+        "command": "kilo-code.ghost.promptCodeSuggestion",
+        "when": "editorTextFocus && kilocode.ghost.enableQuickInlineTaskKeybinding && !editorTabMovesFocus && !github.copilot.completions.enabled && !inSnippetMode"
+    },
+    {
+        "key": "ctrl+i",
+        "command": "-kilo-code.ghost.promptCodeSuggestion",
+        "when": "editorTextFocus && kilocode.ghost.enableQuickInlineTaskKeybinding && !editorTabMovesFocus && !github.copilot.completions.enabled && !inSnippetMode"
+    },
+    {
+        "key": "ctrl+alt+l",
+        "command": "kilo-code.ghost.showIncompatibilityExtensionPopup",
+        "when": "editorTextFocus && github.copilot.completions.enabled && kilocode.ghost.enableSmartInlineTaskKeybinding && !editorTabMovesFocus && !inSnippetMode"
+    },
+    {
+        "key": "ctrl+l",
+        "command": "-kilo-code.ghost.showIncompatibilityExtensionPopup",
+        "when": "editorTextFocus && github.copilot.completions.enabled && kilocode.ghost.enableSmartInlineTaskKeybinding && !editorTabMovesFocus && !inSnippetMode"
+    },
+    {
+        "key": "ctrl+alt+i",
+        "command": "kilo-code.ghost.showIncompatibilityExtensionPopup",
+        "when": "editorTextFocus && github.copilot.completions.enabled && kilocode.ghost.enableQuickInlineTaskKeybinding && !editorTabMovesFocus && !inSnippetMode"
+    },
+    {
+        "key": "ctrl+i",
+        "command": "-kilo-code.ghost.showIncompatibilityExtensionPopup",
+        "when": "editorTextFocus && github.copilot.completions.enabled && kilocode.ghost.enableQuickInlineTaskKeybinding && !editorTabMovesFocus && !inSnippetMode"
     }
 ]

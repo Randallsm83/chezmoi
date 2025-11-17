@@ -1,4 +1,3 @@
-{{- if eq .chezmoi.os "windows" -}}
 {
     "$help": "https://aka.ms/terminal-documentation",
     "$schema": "https://aka.ms/terminal-profiles-schema",
@@ -13,7 +12,8 @@
     "initialCols": 188,
     "initialPosition": "1,1",
     "initialRows": 81,
-    "keybindings": [
+    "keybindings": 
+    [
         {
             "id": "Terminal.CopyToClipboard",
             "keys": "ctrl+c"
@@ -27,13 +27,16 @@
             "keys": "alt+shift+d"
         }
     ],
-    "newTabMenu": [
+    "newTabMenu": 
+    [
         {
             "type": "remainingProfiles"
         }
     ],
-    "profiles": {
-        "defaults": {
+    "profiles": 
+    {
+        "defaults": 
+        {
             "adjustIndistinguishableColors": "indexed",
             "antialiasingMode": "cleartype",
             "backgroundImageOpacity": 0,
@@ -41,8 +44,9 @@
             "cursorHeight": 25,
             "cursorShape": "bar",
             "elevate": false,
-            "font": {
-                "face": "{{ .fonts.primary }} Nerd Font",
+            "font": 
+            {
+                "face": "Hack Nerd Font",
                 "size": 11,
                 "weight": "medium"
             },
@@ -52,11 +56,13 @@
             "scrollbarState": "hidden",
             "useAcrylic": false
         },
-        "list": [
+        "list": 
+        [
             {
                 "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-                "font": {
-                    "face": "{{ .fonts.primary }} Nerd Font",
+                "font": 
+                {
+                    "face": "Hack Nerd Font",
                     "size": 11,
                     "weight": "normal"
                 },
@@ -66,8 +72,9 @@
             },
             {
                 "commandline": "%SystemRoot%\\System32\\cmd.exe",
-                "font": {
-                    "face": "{{ .fonts.primary }} Nerd Font",
+                "font": 
+                {
+                    "face": "Hack Nerd Font",
                     "size": 11,
                     "weight": "normal"
                 },
@@ -79,10 +86,11 @@
                 "adjustIndistinguishableColors": "indexed",
                 "elevate": true,
                 "experimental.retroTerminalEffect": false,
-                "font": {
+                "font": 
+                {
                     "builtinGlyphs": true,
                     "colorGlyphs": true,
-                    "face": "{{ .fonts.primary }} Nerd Font",
+                    "face": "Hack Nerd Font",
                     "size": 11,
                     "weight": "normal"
                 },
@@ -91,10 +99,47 @@
                 "intenseTextStyle": "bright",
                 "name": "PowerShell",
                 "source": "Windows.Terminal.PowershellCore"
+            },
+            {
+                "guid": "{6cc56456-a8bb-5e68-bf1c-549df884b7be}",
+                "hidden": false,
+                "name": "Developer Command Prompt for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{a70d7ea7-0a5b-559e-8ad7-2a56fdea0e75}",
+                "hidden": false,
+                "name": "Developer PowerShell for VS 2022",
+                "source": "Windows.Terminal.VisualStudio"
+            },
+            {
+                "guid": "{cc81aa7d-3d19-5e58-8254-b74274dace15}",
+                "hidden": false,
+                "name": "Ubuntu",
+                "source": "Microsoft.WSL"
+            },
+            {
+                "guid": "{a632ebb8-2211-5996-a783-0b995cc1a7c2}",
+                "hidden": false,
+                "name": "archlinux",
+                "source": "Microsoft.WSL"
+            },
+            {
+                "guid": "{1729e1a5-58a5-56d7-8774-a6512a9caedb}",
+                "hidden": false,
+                "name": "archlinux",
+                "source": "Microsoft.WSL"
+            },
+            {
+                "guid": "{36301901-3e70-570f-a0fd-3c5a660eed4b}",
+                "hidden": false,
+                "name": "archlinux",
+                "source": "Microsoft.WSL"
             }
         ]
     },
-    "schemes": [
+    "schemes": 
+    [
         {
             "background": "#1B1B1B",
             "black": "#1B1B1B",
@@ -145,20 +190,24 @@
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": false,
     "theme": "chonk",
-    "themes": [
+    "themes": 
+    [
         {
             "name": "chonk",
-            "tab": {
+            "tab": 
+            {
                 "background": "#1E2127FF",
                 "iconStyle": "default",
                 "showCloseButton": "hover",
                 "unfocusedBackground": "#1E2127FF"
             },
-            "tabRow": {
+            "tabRow": 
+            {
                 "background": "#1E2127FF",
                 "unfocusedBackground": "#1E2127FF"
             },
-            "window": {
+            "window": 
+            {
                 "applicationTheme": "dark",
                 "experimental.rainbowFrame": false,
                 "frame": null,
@@ -169,4 +218,3 @@
     ],
     "useAcrylicInTabRow": false
 }
-{{- end -}}
