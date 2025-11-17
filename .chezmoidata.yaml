@@ -138,6 +138,7 @@ mise_runtimes:
 # Mise global tools
 mise_global_tools:
   - direnv
+  - 1password-cli  # 1Password CLI
   - usage
   - yarn
   - uv  # Fast Python package installer
