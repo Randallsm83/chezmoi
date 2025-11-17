@@ -1,0 +1,101 @@
+[colors]
+background = "#32302f" #bg1
+foreground = "#e2cca9" #fg1
+
+cursor_bg = "#a89984" #grey2
+cursor_fg = "#1b1b1b" #bg_dim
+cursor_border = "#a89984" #grey2
+
+selection_bg = "#504945" #bg4
+selection_fg = "#e2cca9" #fg1
+
+scrollbar_thumb = "#504945" #bg4
+
+split = "#5a524c" #bg5
+
+ansi = [
+  "#45403d", #bg3
+  "#f2594b", #red
+  "#b0b846", #green
+  "#e9b143", #yellow
+  "#80aa9e", #blue
+  "#d3869b", #purple
+  "#8bba7f", #aqua
+  "#d4be98"  #fg0
+]
+brights = [
+  "#504945", #bg4
+  "#f2594b", #red
+  "#b0b846", #green
+  "#e9b143", #yellow
+  "#80aa9e", #blue
+  "#d3869b", #purple
+  "#8bba7f", #aqua
+  "#a89984"  #grey2
+]
+
+[colors.indexed]
+16 = '#f28534' # orange
+
+[colors.tab_bar]
+background = "#32302f" #bg1
+
+# [copy_mode]
+# a = {
+#   bg = '#e9b143',
+#   fg = '#282828'
+# }
+# b = {
+#   bg = '#',
+#   fg =
+# }
+# c = {
+#   bg = ,
+#   fg =
+# }
+#
+# [normal_mode]
+# a = {
+#   bg = ,
+#   fg =
+# }
+# b = {
+#   bg = ,
+#   fg =
+# }
+# c = {
+#   bg = ,
+#   fg =
+# }
+#
+# [search_mode]
+# a = {
+#   bg = ,
+#   fg =
+# }
+# b = {
+#   bg = ,
+#   fg =
+# }
+# c = {
+#   bg = ,
+#   fg =
+# }
+#
+# [tab]
+# active = {
+#   bg = ,
+#   fg =
+# }
+# inactive = {
+#   bg = ,
+#   fg =
+# }
+# inactive_hover = {
+#   bg = ,
+#   fg =
+# }
+
+[metadata]
+author = 'Me'
+name = 'GruvboxDarkMediumMix'

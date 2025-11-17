@@ -1,0 +1,92 @@
+[colors]
+ansi = [
+  "#282828", #bg
+  "#fb4934", #red
+  "#b8bb26", #green
+  "#fabd2f", #yellow
+  "#83a598", #blue
+  "#d3869b", #purple
+  "#8ec07c", #aqua
+  "#ebdbb2"  #fg0
+]
+brights = [
+  "#282828",
+  "#fb4934",
+  "#b8bb26",
+  "#fabd2f",
+  "#83a598",
+  "#d3869b",
+  "#8ec07c",
+  "#ebdbb2"
+]
+
+background = '#282828'
+foreground = '#ebdbb2'
+cursor_bg = '#ebdbb2'
+cursor_fg = '#282828'
+cursor_border = '#ebdbb2'
+selection_bg = '#ebdbb2'
+selection_fg = '#3c3836' #bg3/4
+
+# [copy_mode]
+# a = {
+#   bg = '#e9b143',
+#   fg = '#282828'
+# }
+# b = {
+#   bg = '#',
+#   fg =
+# }
+# c = {
+#   bg = ,
+#   fg =
+# }
+#
+# [normal_mode]
+# a = {
+#   bg = ,
+#   fg =
+# }
+# b = {
+#   bg = ,
+#   fg =
+# }
+# c = {
+#   bg = ,
+#   fg =
+# }
+#
+# [search_mode]
+# a = {
+#   bg = ,
+#   fg =
+# }
+# b = {
+#   bg = ,
+#   fg =
+# }
+# c = {
+#   bg = ,
+#   fg =
+# }
+#
+# [tab]
+# active = {
+#   bg = ,
+#   fg =
+# }
+# inactive = {
+#   bg = ,
+#   fg =
+# }
+# inactive_hover = {
+#   bg = ,
+#   fg =
+# }
+
+[colors.indexed]
+
+[metadata]
+author = 'Me'
+name = 'GruvboxDarkMediumOrig'
+

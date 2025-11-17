@@ -1,0 +1,614 @@
+---
+workspace_dir: "~/projects"
+auto_env: true
+projects:
+  ndn:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/ndn.git
+    path: "ndn"
+    env_vars:
+      - AUTO_SYNC_WITH_LOCIZE: "false"
+      - DB_SOURCE: "/ndnsecure/etc/db"
+      - AUTH_SOURCE: "/ndnsecure/etc/auth"
+      - NDN_ENVIRONMENT: production
+      - NDN_SECURE_PATH: "~/projects/ndnsecure"
+  # If left commented, a ready-to-use staging version of each React app will be used. If uncommented, a respective React app will run locally in development mode. Uncomment only if you intend to make changes to React apps. When you uncomment, also enable the respective service in the section below by changing `enable` from `false` to `true. If you want to enable development mode for all, you can uncomment NDN_DEV_ALL instead.
+  #
+  # - NDN_DEV_DOMAINS: 'true'
+  # - NDN_REVIEWAPP: 'true'
+  # - NDN_WORKERS_NUMBER: 'true'
+  #
+  # ----- Panel + Uebernet > React UI Apps
+  # - NDN_DEV_ALL: 'true'
+  #
+  # ----- Panel > React UI Apps
+  # - NDN_DEV_AI_SEARCH_BAR: 'true'
+  # - NDN_DEV_AI_DASHBOARD: 'true'
+  # - NDN_DEV_PANEL_NAVIGATION: 'true'
+  # - NDN_DEV_DOMAINS: 'true'
+  # - NDN_DEV_GSUITE: 'true'
+  # - NDN_DEV_ONBOARDING: 'true'
+  # - NDN_DEV_SITEPANEL: 'true'
+  # - NDN_DEV_USERS: 'true'
+  # - NDN_DEV_PANEL_SEO: 'true'
+  # - NDN_DEV_DREAMASSISTANT: 'true'
+  # - NDN_DEV_WORDPRESS: 'true'
+  # - NDN_DEV_DREAMSHIELD: 'true'
+  # - NDN_DEV_UNIVERSAL_CHECKOUT: 'true'
+  # - NDN_DEV_MAIL: 'true'
+  # - NDN_DEV_PRO_SERVICES: 'true'
+  #
+  # ----- Uebernet > React UI Apps
+  # - NDN_DEV_TECHSUPPORT_WIDGET: 'true'
+  # - NDN_DEV_UEBERNET_ROADMAP: 'true'
+  # - NDN_DEV_UEBERNET_NAVIGATION: 'true'
+  # - NDN_DEV_UEBERNET_NOTIFICATIONS_CONSTRUCTOR: 'true'
+
+  # REACT/SPA APPS BELOW
+
+  ### Panel
+
+  #TODO DOES THIS WORK?
+  # - NDN_DEV_AI_SEARCH_BAR: 'true' -- makes ndn use dev js generated from here
+  # ai-search-bar:
+  # enable: 'true'
+  # repo: git@git.dreamhost.com:dreamhost/panel/ai-search-bar.git
+  # path: '~/projects/ai-search-bar'
+
+  # # - NDN_DEV_AI_DASHBOARD: 'true' -- makes ndn use dev js generated from here
+  # ai-dashboard:
+  #   repo: git@git.dreamhost.com:dreamhost/panel/ai-dashboard.git
+  # # env_vars:
+  # #  - API3_PATH: '/api3'
+  # #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  # #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  # #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  # #  - DISABLE_CSRF: 'false'
+  # #  - LOCIZE_DEV_MODE: 'true'
+  # #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  # #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_PANEL_NAVIGATION: 'true' -- makes ndn use dev js generated from here
+  # panel-navigation:
+  # enable: 'true'
+  # repo: git@git.dreamhost.com:dreamhost/panel-navigation-js.git
+  # path: 'panel-navigation-js'
+  # env_vars:
+  #  - API2_PATH: '/ndn'
+  #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #  - API2_SITEPANEL_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_sitepanel/rpc'
+  #
+  #  - API3_PATH: '/api3'
+  #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #
+  #  - LOCIZE_DEV_MODE: 'true'
+  #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #  - LOCIZE_API_KEY: '***REMOVED***'
+  #
+  #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #  - DISABLE_CSRF: 'false'
+
+  # # - NDN_DEV_DOMAINS: 'true' -- makes ndn use dev js generated from here
+  # domains:
+  #   repo: git@git.dreamhost.com:dreamhost/domains-dashboard.git
+  #   path: 'domains-dashboard'
+  #   # env_vars:
+  #   #
+  #   #  - API2_PATH: '/ndn'
+  #   #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_SITEPANEL_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - MIGRATION_URL: '/migration'
+
+  # # - NDN_DEV_ONBOARDING: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # onboarding:
+  #   repo: git@git.dreamhost.com:dreamhost/onboarding-dashboard.git
+  #   path: 'onboarding-dashboard'
+  #   # env_vars:
+  #   #  - API2_PATH: '/ndn'
+  #   #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_SITEPANEL_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_DREAMASSISTANT: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # dreamassistant:
+  #   repo: git@git.dreamhost.com:dreamhost/notifications.git
+  #   path: 'notifications'
+  #   # env_vars:
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_UNIVERSAL_CHECKOUT: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # universal-checkout:
+  #   repo: git@git.dreamhost.com:dreamhost/panel/universal-checkout-dashboard.git
+  #   path: 'universal-checkout-dashboard'
+  #   # env_vars:
+  #   #  - API2_PATH: '/ndn'
+  #   #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_SIGNUP_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_signup/rpc'
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_GSUITE: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # gsuite:
+  #   repo: git@git.dreamhost.com:dreamhost/gsuite-dashboard.git
+  #   path: 'gsuite-dashboard'
+  #   # env_vars:
+  #   #  - API2_PATH: '/ndn'
+  #   #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_SITEPANEL_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_USERS: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # users:
+  #   repo: git@git.dreamhost.com:dreamhost/users-dashboard.git
+  #   path: 'users-dashboard'
+  #   # env_vars:
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_WORDPRESS: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # wordpress:
+  #   repo: git@git.dreamhost.com:dreamhost/panel/wordpress-dashboard.git
+  #   path: 'wordpress-dashboard'
+  #   # env_vars:
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_DREAMSHIELD: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # dreamshield:
+  #   repo: git@git.dreamhost.com:dreamhost/panel/dreamshield-dashboard.git
+  #   path: 'dreamshield-dashboard'
+  #   # env_vars:
+  #   #  - API2_PATH: '/ndn'
+  #   #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_SIGNUP_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_signup/rpc'
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_MAIL: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # mail:
+  #   repo: git@git.dreamhost.com:dreamhost/mail-dashboard.git
+  #   path: 'mail-dashboard'
+  #   # env_vars:
+  #   #  - API2_PATH: '/ndn'
+  #   #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_SITEPANEL_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_PRO_SERVICES: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # pro-services:
+  #   repo: git@git.dreamhost.com:dreamhost/panel/pro-services.git
+  #   path: 'pro-services'
+  #   # env_vars:
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_ONBOARDING: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # onboarding:
+  #   repo: git@git.dreamhost.com:dreamhost/onboarding-dashboard.git
+  #   path: 'onboarding-dashboard'
+  #   # env_vars:
+  #   #  - API2_PATH: '/ndn'
+  #   #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_SITEPANEL_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # TODO: variable is not implemented on ndn level
+  # # NDN_DEV_MIGRATION  -- variable in `ndn` makes it use dev js generated from here
+  # migration:
+  #   repo: git@git.dreamhost.com:dreamhost/panel/migration-dashboard.git
+  #   path: 'migration-dashboard'
+  #   # env_vars:
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # - NDN_DEV_SITEPANEL: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # sitepanel:
+  #   repo: git@git.dreamhost.com:dreamhost/sitepanel.git
+  #   path: 'sitepanel'
+  #   # env_vars:
+  #   #  - API2_PATH: '/ndn'
+  #   #  - API2_LOGIN_PUBLIC_PATH: '${API2_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_SITEPANEL_PUBLIC_PATH: '${API2_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  # # NDN_DEV_PANEL_SEO: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # panel-seo-dashboard:
+  #   repo: git@git.dreamhost.com:dreamhost/panel-seo-dashboard.git
+  #   path: 'panel-seo-dashboard'
+  #   # env_vars:
+  #   #  - API3_PATH: '/api3'
+  #   #  - API3_LOGIN_PUBLIC_PATH: '${API3_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
+  #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
+  #   #  - DISABLE_CSRF: 'false'
+  #   #  - LOCIZE_DEV_MODE: 'true'
+  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
+  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+
+  ### Uebernet
+
+  # # - NDN_DEV_UEBERNET_NAVIGATION: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # uebernet-navigation:
+  #   repo: git@git.dreamhost.com:dreamhost/uebernet/uebernet-navigation-js.git
+  #   path: 'uebernet-navigation'
+  #   # env_vars:
+  #   #  - NDN_PATH: '/ndn'
+  #   #  - CONTENT_PUBLIC_PATH: '/${LDE_PROJECT}/'
+  #   #  - LOGIN_URL: '${NDN_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_PUBLIC_PATH: '${NDN_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - API3_PUBLIC_PATH: '/api3'
+
+  # # - NDN_DEV_UEBERNET_ROADMAP: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # roadmaps-uebernet:
+  #   repo: git@git.dreamhost.com:dreamhost/uebernet/roadmaps-dashboard.git
+  #   path: 'roadmaps-dashboard'
+  #   # env_vars:
+  #   #  - NDN_PATH: '/ndn'
+  #   #  - CONTENT_PUBLIC_PATH: '/${LDE_PROJECT}/'
+  #   #  - LOGIN_URL: '${NDN_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_PUBLIC_PATH: '${NDN_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - API3_PUBLIC_PATH: '/api3'
+  #   #  - DISABLE_CSRF: 'false'
+
+  # # - NDN_DEV_UEBERNET_NOTIFICATIONS_CONSTRUCTOR: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # uebernet-notifications-constructor:
+  #   repo: git@git.dreamhost.com:dreamhost/uebernet/notifications-constructor.git
+  #   path: 'notifications-constructor'
+  #   # env_vars:
+  #   #  - NDN_PATH: '/ndn'
+  #   #  - CONTENT_PUBLIC_PATH: '/${LDE_PROJECT}/'
+  #   #  - LOGIN_URL: '${NDN_PATH:-/ndn}/dhwebpanel/'
+  #   #  - API2_PUBLIC_PATH: '${NDN_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - API3_PUBLIC_PATH: '/api3'
+  #   #  - DISABLE_CSRF: 'false'
+
+  # # NDN_DEV_TECHSUPPORT_WIDGET: 'true' -- variable in `ndn` makes it use dev js generated from here
+  # techsupport-widget:
+  #   repo: git@git.dreamhost.com:dreamhost/uebernet/techsupport-widget.git
+  #   path: 'techsupport-widget'
+  #   # env_vars:
+  #   #  - LOGIN_PUBLIC_PATH: '${API_PATH:-/api3}/login'
+  #   #  - API3_PUBLIC_PATH: '${API_PATH:-/api3}'
+  #   #  - API2_PUBLIC_PATH: '${NDN_PATH:-/ndn}/api2_sitepanel/rpc'
+  #   #  - BUILD_BUNDLE_REPORT: '${BUILD_BUNDLE_REPORT:-true}'
+  #   #  - FIREBASE_API_KEY: '${FIREBASE_API_KEY:-***REMOVED***}'
+  #   #  - ANALYTICS_ENABLED: '${ANALYTICS_ENABLED}:-true'
+  #   #  - FIREBASE_AUTH_DOMAIN: '${FIREBASE_AUTH_DOMAIN:-***REMOVED***.firebaseapp.com}'
+  #   #  - FIREBASE_PROJECT_ID: '${FIREBASE_PROJECT_ID:-***REMOVED***}'
+  #   #  - FIREBASE_STORAGE_BUCKET: '${FIREBASE_STORAGE_BUCKET:-***REMOVED***.appspot.com}'
+  #   #  - FIREBASE_MESSAGING_SENDER_ID: '${FIREBASE_MESSAGING_SENDER_ID:-157153869609}'
+  #   #  - FIREBASE_APP_ID: '${FIREBASE_APP_ID:-1:157153869609:web:f75bc1c22a65a380ca4138}'
+
+  # Enable this one if you want to use PRODUCTION API2 endpoints. CAREFUL!
+  # api2:
+  #   enable: true
+  #   repo: git@git.dreamhost.com:dreamhost/lde-nginx-proxy.git
+  #   path: 'lde-nginx-proxy'
+  #   env_vars:
+  #   - PROXY_URL: 'https://***REMOVED***'
+
+  # Enable this one if you want to use PRODUCTION database for API3. CAREFUL!
+  # After enabling this, disable the other api3 services below.
+  # api3:
+  #   enable: true
+  #   repo: git@git.dreamhost.com:dreamhost/lde-nginx-proxy.git
+  #   path: 'lde-nginx-proxy'
+  #   env_vars:
+  #   - PROXY_URL: 'https://***REMOVED***'
+
+  # API3 services
+  api3:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/api-gateway.git
+    path: "api-gateway"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  auth-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/auth-service.git
+    path: "auth-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  person-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/person-service.git
+    path: "person-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  domain-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/domain-service.git
+    path: "domain-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  users-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/users-service.git
+    path: "users-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  dns-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/dns-service.git
+    path: "dns-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  product-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/product-service.git
+    path: "product-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  queue-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/queue-service.git
+    path: "queue-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  email-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/email-service.git
+    path: "email-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  google-workspace-service:
+    enable: false
+    repo: git@git.dreamhost.com:dreamhost/microservices/google-workspace-service.git
+    path: "google-workspace-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  inspirations-service:
+    enable: false
+    repo: git@git.dreamhost.com:dreamhost/microservices/inspirations-service.git
+    path: "inspirations-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  klaviyo-service:
+    enable: false
+    repo: git@git.dreamhost.com:dreamhost/microservices/klaviyo-service.git
+    path: "klaviyo-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  mailchannels-service:
+    enable: false
+    repo: git@git.dreamhost.com:dreamhost/microservices/mailchannels-service.git
+    path: "mailchannels-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  marketgoo-seo-service:
+    enable: false
+    repo: git@git.dreamhost.com:dreamhost/microservices/marketgoo-seo-service.git
+    path: "marketgoo-seo-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  notification-service:
+    enable: false
+    repo: git@git.dreamhost.com:dreamhost/microservices/notification-service.git
+    path: "notification-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  uebernet-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/uebernet-service.git
+    path: "uebernet-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  scanner-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/scanner-service.git
+    path: "scanner-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  search-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/search-service.git
+    path: "search-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  # END of API3 services
+
+  # API3 package watcher
+  # Used to watch and rebuild locally linked NPM packages
+  # Custom NPM packages located @ https://git.dreamhost.com/dreamhost/microservices/npm-packages
+  packages-watcher:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/packages-watcher.git
+    path: "packages-watcher"

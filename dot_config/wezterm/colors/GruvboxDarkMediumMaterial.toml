@@ -1,0 +1,135 @@
+[colors]
+foreground = "#d4be98"
+background = "#282828"
+cursor_fg = "#282828"
+cursor_bg = "#ddc7a1"
+cursor_border = "#ddc7a1"
+selection_fg = "#d4be98"
+selection_bg = "#4c3432"
+
+scrollbar_thumb = "#4c3432"
+
+split = "#d4be98"
+
+ansi = [
+  "#282828", # black (bg0)
+  "#ea6962", # red
+  "#a9b665", # green
+  "#d8a657", # yellow
+  "#7daea3", # blue
+  "#d3869b", # purple
+  "#89b482", # aqua
+  "#a89984"  # grey2
+]
+
+brights = [
+  "#32302f", # bright black (bg1)
+  "#ea6962", # bright red
+  "#a9b665", # bright green
+  "#d8a657", # bright yellow
+  "#7daea3", # bright blue
+  "#d3869b", # bright purple
+  "#89b482", # bright aqua
+  "#ddc7a1"  # bright white (fg1)
+]
+
+visual_bell = "#4c3432"
+
+[colors.tab_bar]
+background = "#32302f"
+active_tab = { bg_color = "#504945", fg_color = "#ddc7a1" }
+inactive_tab = { bg_color = "#3a3735", fg_color = "#928374" }
+inactive_tab_hover = { bg_color = "#45403d", fg_color = "#d4be98" }
+
+
+# [colors]
+# ansi = [
+#   "#3c3836", #bg
+#   "#ea6962", #red
+#   "#a9b665", #green
+#   "#d8a657", #yellow
+#   "#7daea3", #blue
+#   "#d3869b", #purple
+#   "#89b482", #aqua
+#   "#d4be98"  #fg0
+# ]
+# brights = [
+#   "#3c3836",
+#   "#ea6962",
+#   "#a9b665",
+#   "#d8a657",
+#   "#7daea3",
+#   "#d3869b",
+#   "#89b482",
+#   "#d4be98"
+# ]
+#
+# background = '#282828'
+# foreground = '#d4be98'
+# cursor_bg = '#d4be98'
+# cursor_fg = '#282828'
+# cursor_border = '#d4be98'
+# selection_bg = '#d4be98'
+# selection_fg = '#3c3836' #bg3/4
+#
+# # [copy_mode]
+# # a = {
+# #   bg = '#d8a657',
+# #   fg = '#282828'
+# # }
+# # b = {
+# #   bg = '#3d3d3d',
+# #   fg = '#d8a657'
+# # }
+# # c = {
+# #   bg = '#282828',
+# #   fg = '#d4be98'
+# # }
+# #
+# # [normal_mode]
+# # a = {
+# #   bg = '#7daea3',
+# #   fg = '#282828'
+# # }
+# # b = {
+# #   bg = '#3d3d3d',
+# #   fg = '#7daea3'
+# # }
+# # c = {
+# #   bg = '#282828',
+# #   fg = '#d4be98'
+# # }
+# #
+# # [search_mode]
+# # a = {
+# #   bg = '#a9b665',
+# #   fg = '#282828'
+# # }
+# # b = {
+# #   bg = '#3d3d3d',
+# #   fg = '#a9b665'
+# # }
+# # c = {
+# #   bg = '#282828',
+# #   fg = '#d4be98'
+# # }
+# #
+# # [tab]
+# # active = {
+# #   bg = '#3d3d3d',
+# #   fg = '#7daea3'
+# # }
+# # inactive = {
+# #   bg = '#282828',
+# #   fg = '#d4be98'
+# # }
+# # inactive_hover = {
+# #   bg = '#3d3d3d',
+# #   fg = '#d3869b'
+# # }
+#
+# [colors.indexed]
+
+[metadata]
+author = 'Me'
+name = 'GruvboxDarkMediumMaterial'

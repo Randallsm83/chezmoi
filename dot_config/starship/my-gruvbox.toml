@@ -1,0 +1,181 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[╭](fg:bg3)\
+$os\
+$username\
+$directory\
+$git_branch\
+$git_status\
+$fill\
+$perl\
+$nodejs\
+$python\
+$lua\
+$ruby\
+$golang\
+$cmd_duration\
+$docker_context\
+$shell\
+$line_break\
+$character\
+"""
+
+palette = 'gruvbox_dark'
+add_newline = true
+
+[palettes.gruvbox_dark]
+# Foreground colors
+fg0 = '#fbf1c7'               # Lightest foreground
+fg1 = '#ebdbb2'               # Primary foreground
+fg2 = '#d5c4a1'               # Secondary foreground
+fg3 = '#bdae93'               # Tertiary foreground
+fg4 = '#a89984'               # Quaternary foreground
+
+# Background colors
+bg0 = "#282828"               # Dark background
+bg1 = '#3c3836'               # Slightly lighter background
+bg2 = '#504945'               # Lighter background
+bg3 = '#665c54'               # Even lighter background
+bg4 = '#7c6f64'               # Lightest background
+bg0_soft = '#32302f'          # Softer background alternative
+bg0_hard = '#1d2021'          # Darkest background
+
+# Accent colors
+gray = '#928374'              # Neutral gray
+red = '#cc241d'               # Standard red (for errors)
+green = '#98971a'             # Standard green (for success)
+yellow = '#d79921'            # Standard yellow (for warnings)
+blue = '#458588'              # Standard blue (informational)
+purple = '#b16286'            # Standard purple (keywords)
+aqua = '#689d6a'              # Standard aqua (comments)
+orange = '#d65d0e'            # Standard orange (emphasis)
+pink = '#FF79C6'              # Standard pink
+
+# Bright accent colors
+bright_gray = '#a89984'       # Bright version of neutral gray
+bright_red = '#fb4934'        # Brighter red
+bright_green = '#b8bb26'      # Brighter green
+bright_yellow = '#fabd2f'     # Brighter yellow
+bright_blue = '#83a598'       # Brighter blue
+bright_purple = '#d3869b'     # Brighter purple
+bright_aqua = '#8ec07c'       # Brighter aqua
+bright_orange = '#fe8019'     # Brighter orange
+
+[os]
+format = '(fg:fg1)[](fg:orange)[ $symbol ](fg:fg0 bg:orange)[](fg:orange)'
+disabled = false
+
+[os.symbols]
+Windows = " "
+Ubuntu = "󰕈"
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = "󰀵"
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Amazon = ""
+Android = ""
+Arch = "󰣇"
+Artix = "󰣇"
+EndeavourOS = ""
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+Pop = ""
+
+[username]
+format = '[─](fg:bg3)[](fg:blue)[  ](fg:fg0 bg:blue)[](fg:blue bg:bg2)[ $user ](fg:fg0 bg:bg2)[](fg:bg2)'
+show_always = true
+
+[directory]
+format = '[─](fg:bg3)[](fg:yellow)[ 󰷏 ](fg:fg0 bg:yellow)[](fg:yellow bg:bg2)[$read_only$truncation_symbol $path](fg:fg0 bg:bg2)[](fg:bg2)'
+home_symbol = " ~/"
+truncation_symbol = ' '
+truncation_length = 3
+read_only = '󱧵 '
+read_only_style = ''
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+"Developer" = "󰲋 "
+
+[git_branch]
+format = '[─](fg:bg3)[](fg:aqua)[$symbol](fg:fg0 bg:aqua)[](fg:aqua bg:bg2)[ $branch](fg:fg0 bg:bg2)'
+symbol = ' '
+
+[git_status]
+style = "bg:bg2"
+format = '[[( $all_status$ahead_behind )](fg:fg0 bg:bg2)]($style)[](fg:bg2)'
+
+[perl]
+format = '[─](fg:bg3)[](fg:green)[$symbol](fg:bg0 bg:green)[](fg:green bg:bg2)[ $version](fg:fg0 bg:bg2)[](fg:bg2)'
+symbol = ' Perl'
+
+[nodejs]
+format = '[─](fg:bg3)[](fg:green)[$symbol](fg:bg0 bg:green)[](fg:green bg:bg2)[ $version](fg:fg0 bg:bg2)[](fg:bg2)'
+symbol = '󰎙 Node.js'
+
+[python]
+format = '[─](fg:bg3)[](fg:green)[$symbol](fg:bg0 bg:green)[](fg:green bg:bg2)[ $version](fg:fg0 bg:bg2)[](fg:bg2)'
+symbol = ' Python'
+
+[lua]
+format = '[─](fg:bg3)[](fg:green)[$symbol](fg:bg0 bg:green)[](fg:green bg:bg2)[ $version](fg:fg0 bg:bg2)[](fg:bg2)'
+symbol = ' Lua'
+
+[ruby]
+format = '[─](fg:bg3)[](fg:green)[$symbol](fg:bg0 bg:green)[](fg:green bg:bg2)[ $version](fg:fg0 bg:bg2)[](fg:bg2)'
+symbol = ' Ruby'
+
+[golang]
+format = '[─](fg:bg3)[](fg:green)[$symbol](fg:bg0 bg:green)[](fg:green bg:bg2)[ $version](fg:fg0 bg:bg2)[](fg:bg2)'
+symbol = ' Go'
+
+[fill]
+symbol = '─'
+style = 'fg:bg3'
+
+[cmd_duration]
+min_time = 500
+format = '[─](fg:bg3)[](fg:orange)[ ](fg:bg0 bg:orange)[](fg:orange bg:bg2)[ $duration ](fg:fg0 bg:bg2)[](fg:bg2)'
+
+[docker_context]
+symbol = "󰡨"
+style = "bg:bg2"
+format = '[[ $symbol( $context) ](fg:bright_blue bg:bg2)]($style)'
+
+[shell]
+format = '[─](fg:bg3)[](fg:purple)[ ](fg:bg0 bg:purple)[](fg:purple bg:bg2)[ $indicator ](fg:fg0 bg:bg2)[](fg:bg2)'
+unknown_indicator = 'shell'
+powershell_indicator = 'powershell'
+fish_indicator = 'fish'
+disabled = false
+
+[time]
+format = '[─](fg:bg3)[](fg:purple)[󰦖 ](fg:bg0 bg:purple)[](fg:purple bg:bg2)[ $time ](fg:fg0 bg:bg2)[](fg:bg2)'
+time_format = '%H:%M'
+disabled = false
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+format = """
+[╰─$symbol](fg:bg3) """
+success_symbol = '[](bold fg:green)'
+error_symbol = '[](bold fg:red)'
+vimcmd_symbol = '[](bold fg:green)'
+vimcmd_replace_one_symbol = '[](bold fg:purple)'
+vimcmd_replace_symbol = '[](bold fg:purple)'
+vimcmd_visual_symbol = '[](bold fg:yellow)'
+

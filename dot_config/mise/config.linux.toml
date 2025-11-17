@@ -1,0 +1,30 @@
+# =============================================================================
+# MISE CONFIGURATION - LINUX/MACOS SPECIFIC
+# =============================================================================
+# This file is automatically loaded on Linux/macOS systems only.
+# On Windows, these tools are installed via scoop instead.
+# =============================================================================
+
+[tools]
+# === Language Runtimes (Linux/macOS only) ===
+lua = "5.4.7"
+luajit = "2.1.0-beta3"
+
+# === CLI Tools (Linux/WSL/macOS only) ===
+# Terminal utilities
+"cargo:bat" = "latest"
+"cargo:eza" = "latest"
+"cargo:fd-find" = "latest"
+"cargo:ripgrep" = "latest"
+bat-extras = "latest"     # Bash-dependent wrapper scripts
+btop = "latest"
+github-cli = "latest"     # GitHub CLI (gh)
+starship = "latest"       # Cross-shell prompt
+sqlite = "latest"
+
+# Build tools
+cargo-binstall = "latest"
+
+# Editors
+neovim = "latest"
+vim = "latest"

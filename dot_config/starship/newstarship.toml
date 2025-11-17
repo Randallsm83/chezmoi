@@ -1,0 +1,226 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+$os\
+$hostname\
+$username\
+$sudo\
+$directory
+$git_branch\
+$git_status\
+$git_state\
+$nodejs\
+$perl\
+$python\
+$rust\
+$zig\
+$ruby\
+$golang\
+$lua\
+$php\
+$java\
+$c\
+$kotlin\
+$haskell\
+$package\
+$vagrant\
+$conda\
+$docker_context\
+${custom.vagrant_context}\
+$time\
+$cmd_duration
+$character"""
+
+palette = 'onedark_pro4'
+
+[palettes.onedark_pro4]
+color_fg0           = '#ABB2BF'
+color_fg1           = '#E6E6E6'
+color_red           = '#E05561'
+color_orange        = '#D18F52'
+color_yellow        = '#F0A45D'
+color_green         = '#8CC265'
+color_cyan          = '#42B3C2'
+color_blue          = '#4AA5F0'
+color_purple        = '#C162DE'
+
+[os]
+disabled = false
+style = "fg:color_blue"
+
+[os.symbols]
+Linux = "󰌽"
+
+[hostname]
+disabled = false
+ssh_only = false
+style = "fg:color_blue"
+format = '[$hostname]($style):'
+
+[username]
+show_always = true
+style_user = "fg:color_cyan"
+style_root = "fg:color_red"
+format = '[$user]($style) '
+
+[sudo]
+disabled = false
+style = "fg:color_red"
+symbol = '  '
+format = "[$symbol]($style)"
+
+[directory]
+style = "fg:color_purple bold"
+format = "[$path]($style) "
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙"
+"Downloads" = ""
+"Music" = "󰝚"
+"Pictures" = ""
+
+[git_branch]
+symbol = ""
+style = "fg:color_green"
+format = '[$symbol $branch ]($style)'
+
+[git_status]
+style = "fg:color_yellow"
+format = '[($all_status$ahead_behind )]($style)'
+
+[git_state]
+style = "fg:color_yellow"
+format = '[\($state($progress_current of $progress_total)\) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "fg:color_green"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[c]
+symbol = " "
+style = "fg:color_blue"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[rust]
+symbol = ""
+style = "fg:color_orange"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[perl]
+symbol = ""
+style = "fg:color_blue"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[ruby]
+symbol = ""
+style = "fg:color_red"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[lua]
+symbol = ""
+style = "fg:color_blue"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[zig]
+symbol = ""
+style = "fg:color_orange"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[golang]
+symbol = ""
+style = "fg:color_cyan"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[php]
+symbol = ""
+style = "fg:color_purple"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[java]
+symbol = ""
+style = "fg:color_red"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[kotlin]
+symbol = ""
+style = "fg:color_purple"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[haskell]
+symbol = ""
+style = "fg:color_purple"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[python]
+symbol = ""
+style = "fg:color_yellow"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[vagrant]
+symbol = ""
+style = "fg:color_cyan"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[package]
+symbol = ""
+style = "fg:color_orange"
+format = '[[](fg:color_fg1) $symbol ](fg:color_fg1)[$version ]($style)'
+
+[docker_context]
+symbol = ""
+style = "fg:color_blue"
+format = '[$symbol $context ]($style)'
+
+[custom.vagrant_context]
+command = """
+local state
+state=$(vagrant status --machine-readable | awk -F, '$3 == "state-human-short" { print $4 }')
+case "$state" in
+  running)
+    echo -e "Running"
+    ;;
+  poweroff)
+    echo -e "Powered Off"
+    ;;
+  "not created")
+    echo -e "Not Created"
+    ;;
+  *)
+    echo -e "Unknown"
+    ;;
+esac
+"""
+detect_files = ['Vagrantfile']
+symbol = ""
+style = "fg:color_cyan"
+format = '[$symbol $output ]($style)'
+
+[conda]
+style = "fg:color_green"
+format = '[$symbol $environment ]($style)'
+
+[time]
+disabled = true
+time_format = "%R"
+style = "fg:color_purple"
+format = '[$time ]($style)'
+
+[cmd_duration]
+min_time = 500
+style = "fg:color_yellow"
+format = '[󰔟 $duration ]($style)'
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+success_symbol = '[❯](bold fg:color_green)'
+error_symbol = '[❯](bold fg:color_red)'
+vimcmd_symbol = '[❮](bold fg:color_green)'
+vimcmd_replace_one_symbol = '[❮](bold fg:color_purple)'
+vimcmd_replace_symbol = '[❮](bold fg:color_purple)'
+vimcmd_visual_symbol = '[❮](bold fg:color_yellow)'

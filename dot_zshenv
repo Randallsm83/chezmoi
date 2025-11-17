@@ -1,0 +1,18 @@
+#!/usr/bin/env zsh
+
+# This is only the essentials, use .zprofile for the rest. Also, Mac is dumb and sources /etc/zprofile after this file
+# so you cannot set paths reliably here.
+
+export ZDOTDIR="$HOME/.config/zsh"
+[[ -d "$ZDOTDIR" ]] || mkdir -p "$ZDOTDIR" || {
+  echo "Error: Failed to create dir: $ZDOTDIR" >&2
+  return 1
+}
+
+# This is needed by Wezterm Multiplexer, otherwise the path isn't set in time for it find Wezterm to start
+export PATH="$HOME/.local/bin:$PATH"
+
+# -------------------------------------------------------------------------------------------------
+# -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
+# vim: ft=zsh sw=2 ts=2 et
+# -------------------------------------------------------------------------------------------------
