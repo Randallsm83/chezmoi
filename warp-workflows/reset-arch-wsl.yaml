@@ -33,7 +33,7 @@ command: |-
   }
   Write-Log "User confirmed operation" 'Gray'
   
-  Write-Log "`n▶ Step 1/4: Unregistering existing archlinux WSL..." 'Cyan'
+  Write-Log "`n▶ Step 1/6: Unregistering existing archlinux WSL..." 'Cyan'
   Write-Log "Running: wsl --unregister archlinux" 'Gray'
   $unregOutput = wsl --unregister archlinux 2>&1 | Out-String
   Write-Log "Exit code: $LASTEXITCODE" 'Gray'
@@ -44,7 +44,7 @@ command: |-
       Write-Log "✓ WSL instance unregistered" 'Green'
   }
   
-  Write-Log "`n▶ Step 2/4: Installing fresh Arch Linux..." 'Cyan'
+  Write-Log "`n▶ Step 2/6: Installing fresh Arch Linux..." 'Cyan'
   Write-Log "  (This may take a few minutes)" 'Gray'
   Write-Log "Running: wsl --install archlinux --no-launch" 'Gray'
   $installOutput = wsl --install archlinux --no-launch 2>&1 | Out-String
@@ -55,7 +55,7 @@ command: |-
   }
   Write-Log "✓ Arch Linux installed" 'Green'
   
-  Write-Log "`n▶ Step 3/4: Waiting for WSL to be ready..." 'Cyan'
+  Write-Log "`n▶ Step 3/6: Waiting for WSL to be ready..." 'Cyan'
   Write-Log "Initial 5 second wait..." 'Gray'
   Start-Sleep -Seconds 5
   
@@ -89,13 +89,46 @@ command: |-
       exit 1
   }
   
-  Write-Log "`n▶ Step 4/4: Bootstrapping with chezmoi dotfiles..." 'Cyan'
+  Write-Log "`n▶ Step 4/6: Creating user account..." 'Cyan'
+  $username = $env:USERNAME.ToLower()
+  Write-Log "  Using Windows username: $username" 'Gray'
+  $createUserOutput = wsl -d archlinux -u root bash -c @"
+set -e
+useradd -m -G wheel -s /bin/bash $username
+passwd -d $username
+mkdir -p /etc/sudoers.d
+echo '$username ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$username
+chmod 440 /etc/sudoers.d/$username
+"@ 2>&1 | Out-String
+  Write-Log "User output: $createUserOutput" 'Gray'
+  if ($LASTEXITCODE -ne 0) {
+      Write-Log "✗ Failed to create user" 'Red'
+      Write-Log "Full output logged to: $logFile" 'Yellow'
+      exit 1
+  }
+  Write-Log "✓ User '$username' created" 'Green'
+  
+  Write-Log "`n▶ Step 5/6: Setting default user..." 'Cyan'
+  $configUserOutput = wsl -d archlinux -u root bash -c "echo -e '[user]\ndefault=$username' > /etc/wsl.conf" 2>&1 | Out-String
+  Write-Log "Config output: $configUserOutput" 'Gray'
+  if ($LASTEXITCODE -ne 0) {
+      Write-Log "✗ Failed to set default user" 'Red'
+      exit 1
+  }
+  Write-Log "✓ Default user set to '$username'" 'Green'
+  
+  Write-Log "`n  Restarting WSL to apply user settings..." 'Gray'
+  wsl --terminate archlinux
+  Start-Sleep -Seconds 3
+  Write-Log "✓ WSL restarted" 'Green'
+  
+  Write-Log "`n▶ Step 6/6: Bootstrapping with chezmoi dotfiles..." 'Cyan'
   Write-Log "  Repository: Randallsm83/dotfiles" 'Gray'
   Write-Log "  Duration: ~10-15 minutes (installing packages and runtimes)" 'Gray'
-  Write-Log "  You can monitor progress in the WSL terminal`n" 'Gray'
+  Write-Log "  You can monitor progress below`n" 'Gray'
   
-  # Use official chezmoi one-line installer
-  Write-Log "Running official chezmoi installer..." 'Gray'
+  # Use official chezmoi one-line installer as the newly created user
+  Write-Log "Running official chezmoi installer as user '$username'..." 'Gray'
   $bootstrapOutput = wsl -d archlinux bash -c "curl -fsSL https://get.chezmoi.io | sh -s -- init --apply Randallsm83/dotfiles" 2>&1 | Out-String
   Write-Log "Exit code: $LASTEXITCODE" 'Gray'
   Write-Log "Bootstrap output:`n$bootstrapOutput" 'Gray'
