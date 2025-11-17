@@ -107,7 +107,7 @@ command: |-
   
   # Use official chezmoi one-line installer
   Write-Log "Running official chezmoi installer..." 'Gray'
-  $bootstrapOutput = wsl -d archlinux bash -c 'sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply Randallsm83/dotfiles' 2>&1 | Out-String
+  $bootstrapOutput = wsl -d archlinux bash -c "curl -fsSL https://get.chezmoi.io | sh -s -- init --apply Randallsm83/dotfiles" 2>&1 | Out-String
   Write-Log "Exit code: $LASTEXITCODE" 'Gray'
   Write-Log "Bootstrap output:`n$bootstrapOutput" 'Gray'
   
