@@ -297,9 +297,14 @@ function Add-GameSecurityExclusion {
     
     Write-Host "Game found: $GamePath" -ForegroundColor Green
     
-    # Extract game folder
+    # Extract game folder and actual exe name
     $gameFolder = Split-Path $GamePath -Parent
+    $actualExe = Split-Path $GamePath -Leaf
     Write-Verbose "Game folder: $gameFolder"
+    Write-Verbose "Actual executable: $actualExe"
+    
+    # Use actual exe name for process exclusion, not the search name
+    $gameExe = $actualExe
     
     # Get shader cache paths
     $shaderCaches = Get-ShaderCachePath -GamePath $GamePath
@@ -524,8 +529,16 @@ function Remove-GameSecurityExclusion {
     
     try {
         if ($PSCmdlet.ShouldProcess($gameExe, "Re-enable CFG")) {
-            Set-ProcessMitigation -Name $gameExe -Remove -ErrorAction Stop
-            Write-Host "  [✓] CFG re-enabled for: $gameExe" -ForegroundColor Green
+            # Check if process has any mitigations set
+            $mitigation = Get-ProcessMitigation -Name $gameExe -ErrorAction SilentlyContinue
+            
+            if ($mitigation) {
+                Set-ProcessMitigation -Name $gameExe -Reset -ErrorAction Stop
+                Write-Host "  [✓] CFG re-enabled for: $gameExe" -ForegroundColor Green
+            }
+            else {
+                Write-Host "  [✓] No custom mitigations found for: $gameExe (CFG already at system default)" -ForegroundColor Gray
+            }
         }
     }
     catch {
@@ -747,12 +760,51 @@ function Add-ShaderCacheExclusion {
     
     # Define shader cache paths
     $cachePaths = @(
+        # AMD Shader Caches
         @{
-            Name = "AMD DxCache"
+            Name = "AMD DX9 Cache"
+            Path = Join-Path $env:LOCALAPPDATA "AMD\DX9Cache"
+        },
+        @{
+            Name = "AMD DirectX Cache"
             Path = Join-Path $env:LOCALAPPDATA "AMD\DxCache"
         },
         @{
-            Name = "NVIDIA Shader Cache"
+            Name = "AMD DXC Cache"
+            Path = Join-Path $env:LOCALAPPDATA "AMD\DxcCache"
+        },
+        @{
+            Name = "AMD OpenGL Cache"
+            Path = Join-Path $env:LOCALAPPDATA "AMD\OglCache"
+        },
+        @{
+            Name = "AMD Vulkan Cache"
+            Path = Join-Path $env:LOCALAPPDATA "AMD\VkCache"
+        },
+        @{
+            Name = "AMD DirectX Cache (Low)"
+            Path = Join-Path $env:LOCALAPPDATA "..\LocalLow\AMD\DxCache"
+        },
+        
+        # NVIDIA Shader Caches
+        @{
+            Name = "NVIDIA DirectX Cache"
+            Path = Join-Path $env:LOCALAPPDATA "NVIDIA\DXCache"
+        },
+        @{
+            Name = "NVIDIA OpenGL Cache"
+            Path = Join-Path $env:LOCALAPPDATA "NVIDIA\GLCache"
+        },
+        @{
+            Name = "NVIDIA Cache (Temp)"
+            Path = Join-Path $env:LOCALAPPDATA "Temp\NVIDIA Corporation\NV_Cache"
+        },
+        @{
+            Name = "NVIDIA DirectX Cache (Low)"
+            Path = Join-Path $env:LOCALAPPDATA "..\LocalLow\NVIDIA\DXCache"
+        },
+        @{
+            Name = "NVIDIA Cache (ProgramData)"
             Path = Join-Path $env:ProgramData "NVIDIA Corporation\NV_Cache"
         }
     )
@@ -808,6 +860,249 @@ function Add-ShaderCacheExclusion {
     }
 }
 
+function Add-BulkGameExclusions {
+    <#
+    .SYNOPSIS
+        Automatically adds security exclusions for all games found in Steam and Xbox Game Pass directories.
+    
+    .DESCRIPTION
+        This function scans Steam and Xbox Game Pass installation directories for game executables
+        and adds Windows Defender exclusions and disables CFG for each game found. It looks for
+        common game executable patterns and adds exclusions for the game folders and shader caches.
+    
+    .PARAMETER SteamPath
+        Optional. Path to Steam games directory. Defaults to C:\SteamGames\steamapps\common
+    
+    .PARAMETER XboxPath
+        Optional. Path to Xbox games directory. Defaults to C:\XboxGames
+    
+    .PARAMETER WhatIf
+        Shows what would happen without actually making changes.
+    
+    .EXAMPLE
+        Add-BulkGameExclusions -Verbose
+        
+        Scans default Steam and Xbox directories and adds exclusions for all games found.
+    
+    .EXAMPLE
+        Add-BulkGameExclusions -SteamPath "D:\SteamGames\steamapps\common" -WhatIf
+        
+        Previews what exclusions would be added for games in a custom Steam directory.
+    
+    .NOTES
+        Requires: Administrator privileges
+        Platform: Windows 10/11
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter()]
+        [string]$SteamPath = "C:\SteamGames\steamapps\common",
+        
+        [Parameter()]
+        [string]$XboxPath = "C:\XboxGames"
+    )
+    
+    # Check administrator privileges
+    if (-not (Test-Administrator)) {
+        throw "This function requires administrator privileges. Please run PowerShell as Administrator."
+    }
+    
+    Write-Host "`n=== Bulk Game Exclusions ===" -ForegroundColor Cyan
+    Write-Host "Scanning for games...`n" -ForegroundColor Yellow
+    
+    $gameExecutables = @()
+    
+    # Scan Steam directory
+    if (Test-Path $SteamPath) {
+        Write-Host "Scanning Steam games: $SteamPath" -ForegroundColor Cyan
+        
+        # Get all game folders
+        $gameFolders = Get-ChildItem -Path $SteamPath -Directory -ErrorAction SilentlyContinue
+        
+        foreach ($folder in $gameFolders) {
+            # Look for executables (common patterns for game launchers)
+            $exeFiles = Get-ChildItem -Path $folder.FullName -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue -Depth 3 |
+                        Where-Object { 
+                            $_.Name -notlike "*unins*" -and 
+                            $_.Name -notlike "*installer*" -and
+                            $_.Name -notlike "*crash*" -and
+                            $_.Name -notlike "*report*" -and
+                            $_.Name -notlike "*redist*" -and
+                            $_.Name -notlike "*vcredist*" -and
+                            $_.Name -notlike "*directx*" -and
+                            $_.Name -notlike "*UnityCrashHandler*"
+                        }
+            
+            if ($exeFiles) {
+                # Prefer game launcher or main exe based on common naming
+                $mainExe = $exeFiles | Where-Object { 
+                    $_.Name -match "launcher|game|^($($folder.Name))" 
+                } | Select-Object -First 1
+                
+                if (-not $mainExe) {
+                    # If no obvious launcher, pick the first exe in the root or bin folder
+                    $mainExe = $exeFiles | Where-Object {
+                        $_.Directory.Name -in @($folder.Name, 'bin', 'Bin', 'Binaries')
+                    } | Select-Object -First 1
+                }
+                
+                if (-not $mainExe) {
+                    # Last resort: just pick first exe found
+                    $mainExe = $exeFiles | Select-Object -First 1
+                }
+                
+                if ($mainExe) {
+                    $gameExecutables += [PSCustomObject]@{
+                        Name = $folder.Name
+                        Path = $mainExe.FullName
+                        Source = "Steam"
+                    }
+                }
+            }
+        }
+        
+        Write-Host "  Found $($gameExecutables.Count) Steam games" -ForegroundColor Green
+    }
+    else {
+        Write-Warning "Steam path not found: $SteamPath"
+    }
+    
+    # Scan Xbox Game Pass directory
+    if (Test-Path $XboxPath) {
+        Write-Host "Scanning Xbox games: $XboxPath" -ForegroundColor Cyan
+        
+        $xboxFolders = Get-ChildItem -Path $XboxPath -Directory -ErrorAction SilentlyContinue
+        $xboxCount = 0
+        
+        foreach ($folder in $xboxFolders) {
+            # Xbox games often have Content subfolder
+            $contentPath = Join-Path $folder.FullName "Content"
+            $searchPath = if (Test-Path $contentPath) { $contentPath } else { $folder.FullName }
+            
+            $exeFiles = Get-ChildItem -Path $searchPath -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue -Depth 3 |
+                        Where-Object { 
+                            $_.Name -notlike "*unins*" -and 
+                            $_.Name -notlike "*installer*" -and
+                            $_.Name -notlike "*crash*" -and
+                            $_.Name -notlike "*report*" -and
+                            $_.Name -notlike "*redist*"
+                        }
+            
+            if ($exeFiles) {
+                $mainExe = $exeFiles | Where-Object { 
+                    $_.Name -match "launcher|game|helper" 
+                } | Select-Object -First 1
+                
+                if (-not $mainExe) {
+                    $mainExe = $exeFiles | Select-Object -First 1
+                }
+                
+                if ($mainExe) {
+                    $gameExecutables += [PSCustomObject]@{
+                        Name = $folder.Name
+                        Path = $mainExe.FullName
+                        Source = "Xbox"
+                    }
+                    $xboxCount++
+                }
+            }
+        }
+        
+        Write-Host "  Found $xboxCount Xbox games" -ForegroundColor Green
+    }
+    else {
+        Write-Warning "Xbox path not found: $XboxPath"
+    }
+    
+    if ($gameExecutables.Count -eq 0) {
+        Write-Warning "No games found in specified directories."
+        return
+    }
+    
+    Write-Host "`nTotal games found: $($gameExecutables.Count)" -ForegroundColor Cyan
+    Write-Host "Adding exclusions...`n" -ForegroundColor Yellow
+    
+    $successCount = 0
+    $failCount = 0
+    $skippedCount = 0
+    
+    foreach ($game in $gameExecutables) {
+        Write-Host "[$($game.Source)] $($game.Name)" -ForegroundColor White
+        
+        try {
+            # Extract paths
+            $gameFolder = Split-Path $game.Path -Parent
+            $gameExe = Split-Path $game.Path -Leaf
+            
+            # Check if already excluded
+            $currentExclusions = (Get-MpPreference).ExclusionPath
+            if ($currentExclusions -contains $gameFolder) {
+                Write-Host "  [⊘] Already excluded" -ForegroundColor Gray
+                $skippedCount++
+                continue
+            }
+            
+            if ($PSCmdlet.ShouldProcess($game.Name, "Add security exclusions")) {
+                # Add process exclusion
+                try {
+                    Add-MpPreference -ExclusionProcess $gameExe -ErrorAction Stop
+                    Write-Verbose "  Process: $gameExe"
+                }
+                catch {
+                    if ($_.Exception.Message -notlike "*already exists*") {
+                        throw
+                    }
+                }
+                
+                # Add folder exclusion
+                Add-MpPreference -ExclusionPath $gameFolder -ErrorAction Stop
+                Write-Verbose "  Folder: $gameFolder"
+                
+                # Add shader cache exclusions
+                $shaderCaches = Get-ShaderCachePath -GamePath $game.Path
+                foreach ($cache in $shaderCaches) {
+                    try {
+                        Add-MpPreference -ExclusionPath $cache -ErrorAction Stop
+                        Write-Verbose "  Cache: $cache"
+                    }
+                    catch {
+                        if ($_.Exception.Message -notlike "*already exists*") {
+                            Write-Verbose "  Cache failed: $cache"
+                        }
+                    }
+                }
+                
+                # Disable CFG
+                try {
+                    Set-ProcessMitigation -Name $gameExe -Disable CFG -ErrorAction Stop
+                    Write-Verbose "  CFG disabled: $gameExe"
+                }
+                catch {
+                    Write-Verbose "  CFG disable failed (may not be needed)"
+                }
+                
+                Write-Host "  [✓] Exclusions added" -ForegroundColor Green
+                $successCount++
+            }
+        }
+        catch {
+            Write-Host "  [✗] Failed: $_" -ForegroundColor Red
+            $failCount++
+        }
+    }
+    
+    # Summary
+    Write-Host "`n=== Summary ===" -ForegroundColor Cyan
+    Write-Host "  Total games: $($gameExecutables.Count)" -ForegroundColor White
+    Write-Host "  Successfully added: $successCount" -ForegroundColor Green
+    Write-Host "  Already excluded: $skippedCount" -ForegroundColor Gray
+    Write-Host "  Failed: $failCount" -ForegroundColor Red
+    
+    if ($successCount -gt 0) {
+        Write-Host "`nBulk exclusions completed successfully!" -ForegroundColor Green
+    }
+}
+
 #endregion
 
 # Export module members
@@ -815,5 +1110,6 @@ Export-ModuleMember -Function @(
     'Add-GameSecurityExclusion',
     'Remove-GameSecurityExclusion',
     'Get-GameSecurityExclusion',
-    'Add-ShaderCacheExclusion'
+    'Add-ShaderCacheExclusion',
+    'Add-BulkGameExclusions'
 )
