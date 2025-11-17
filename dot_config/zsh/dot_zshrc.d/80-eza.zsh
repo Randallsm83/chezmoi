@@ -31,7 +31,14 @@ _eza_flags_file() {
 _eza_build_flags() {
   local f="$(_eza_flags_file)"
   local flags=()
-  [ -f "$f" ] && flags+=("${(f)$(<"$f")}")
+  if [ -f "$f" ]; then
+    # Read flags, skip comments and empty lines
+    while IFS= read -r line; do
+      [[ "$line" =~ ^[[:space:]]*# ]] && continue
+      [[ -z "${line//[[:space:]]/}" ]] && continue
+      flags+=("$line")
+    done < "$f"
+  fi
   [ -n "$EZA_DISABLE_GDF" ] && flags=(${flags:#--group-directories-first})
   [ -n "$EZA_FLAGS_EXTRA" ] && flags+=(${=EZA_FLAGS_EXTRA})
   echo "${(j: :)flags}"

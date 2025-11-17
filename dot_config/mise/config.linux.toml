@@ -37,3 +37,6 @@ cargo-binstall = "latest"
 # Editors
 neovim = "latest"
 vim = "latest"
+
+[settings]
+# Disable plugin_repository_last_check_duration (deprecated/invalid in current mise)
