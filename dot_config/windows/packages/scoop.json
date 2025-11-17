@@ -1,0 +1,42 @@
+{
+  "comment": "Scoop package list - alternative/complement to winget",
+  "buckets": [
+    "main",
+    "extras",
+    "nerd-fonts",
+    "versions"
+  ],
+  "apps": [
+    "git",
+    "neovim",
+    "pwsh",
+    "starship",
+    "mise",
+    "ripgrep",
+    "bat",
+    "fd",
+    "fzf",
+    "zoxide",
+    "7zip",
+    "gsudo",
+    "eza",
+    "vivid",
+    "delta",
+    "btop",
+    "gh",
+    "lazygit",
+    "1password-cli",
+    "make",
+    "zig",
+    "jq",
+    "yq",
+    "curl",
+    "wget"
+  ],
+  "fonts": [
+    "FiraCode-NF",
+    "Hack-NF",
+    "JetBrainsMono-NF",
+    "CascadiaCode-NF"
+  ]
+}
