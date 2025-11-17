@@ -105,33 +105,36 @@ install_base_packages() {
     
     # Detect package manager and install
     if command_exists pacman; then
-        # Arch Linux
+        # Arch Linux - install comprehensive package set
         log_info "Using pacman (Arch Linux)"
+        local packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi"
         if [ "$EUID" -eq 0 ]; then
-            pacman -Sy --noconfirm git curl base-devel
+            pacman -Syu --noconfirm $packages
         else
-            sudo pacman -Sy --noconfirm git curl base-devel
+            sudo pacman -Syu --noconfirm $packages
         fi
     elif command_exists apt-get; then
         # Debian/Ubuntu
         log_info "Using apt-get (Debian/Ubuntu)"
+        local packages="git curl wget unzip zip build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev"
         if [ "$EUID" -eq 0 ]; then
-            apt-get update && apt-get install -y git curl build-essential
+            apt-get update && apt-get install -y $packages
         else
-            sudo apt-get update && sudo apt-get install -y git curl build-essential
+            sudo apt-get update && sudo apt-get install -y $packages
         fi
     elif command_exists dnf; then
         # Fedora/RHEL
         log_info "Using dnf (Fedora/RHEL)"
+        local packages="git curl wget unzip zip gcc gcc-c++ make openssl-devel readline-devel zlib-devel libyaml-devel libffi-devel"
         if [ "$EUID" -eq 0 ]; then
-            dnf install -y git curl gcc gcc-c++ make
+            dnf install -y $packages
         else
-            sudo dnf install -y git curl gcc gcc-c++ make
+            sudo dnf install -y $packages
         fi
     elif command_exists brew; then
         # macOS with Homebrew
         log_info "Using brew (macOS)"
-        brew install git curl
+        brew install git curl wget unzip openssl readline libyaml libffi
     else
         log_error "No supported package manager found (pacman, apt-get, dnf, brew)"
         log_error "Please install git and curl manually"

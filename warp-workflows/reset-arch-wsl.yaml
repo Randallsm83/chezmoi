@@ -33,7 +33,7 @@ command: |-
   }
   Write-Log "User confirmed operation" 'Gray'
   
-  Write-Log "`n▶ Step 1/7: Unregistering existing archlinux WSL..." 'Cyan'
+  Write-Log "`n▶ Step 1/6: Unregistering existing archlinux WSL..." 'Cyan'
   Write-Log "Running: wsl --unregister archlinux" 'Gray'
   $unregOutput = wsl --unregister archlinux 2>&1 | Out-String
   Write-Log "Exit code: $LASTEXITCODE" 'Gray'
@@ -44,7 +44,7 @@ command: |-
       Write-Log "✓ WSL instance unregistered" 'Green'
   }
   
-  Write-Log "`n▶ Step 2/7: Installing fresh Arch Linux..." 'Cyan'
+  Write-Log "`n▶ Step 2/6: Installing fresh Arch Linux..." 'Cyan'
   Write-Log "  (This may take a few minutes)" 'Gray'
   Write-Log "Running: wsl --install archlinux --no-launch" 'Gray'
   $installOutput = wsl --install archlinux --no-launch 2>&1 | Out-String
@@ -55,7 +55,7 @@ command: |-
   }
   Write-Log "✓ Arch Linux installed" 'Green'
   
-  Write-Log "`n▶ Step 3/7: Waiting for WSL to be ready..." 'Cyan'
+  Write-Log "`n▶ Step 3/6: Waiting for WSL to be ready..." 'Cyan'
   Write-Log "Initial 5 second wait..." 'Gray'
   Start-Sleep -Seconds 5
   
@@ -89,20 +89,7 @@ command: |-
       exit 1
   }
   
-  Write-Log "`n▶ Step 4/7: Installing essential system packages..." 'Cyan'
-  Write-Log "  Installing: sudo, base-devel, build tools, and libraries" 'Gray'
-  $packagesCmd = "pacman -Syu --noconfirm sudo base-devel unzip zip git openssl readline zlib libyaml libffi"
-  Write-Log "Running: $packagesCmd" 'Gray'
-  $packagesOutput = wsl -d archlinux -u root bash -c $packagesCmd 2>&1 | Out-String
-  Write-Log "Exit code: $LASTEXITCODE" 'Gray'
-  if ($LASTEXITCODE -ne 0) {
-      Write-Log "⚠ Warning: Some packages may have failed to install" 'Yellow'
-      Write-Log "Output: $packagesOutput" 'Gray'
-  } else {
-      Write-Log "✓ Essential packages installed" 'Green'
-  }
-  
-  Write-Log "`n▶ Step 5/7: Creating user account..." 'Cyan'
+  Write-Log "`n▶ Step 4/6: Creating user account..." 'Cyan'
   $username = $env:USERNAME.ToLower()
   Write-Log "  Using Windows username: $username" 'Gray'
   $userScript = "set -e; useradd -m -G wheel -s /bin/bash $username; passwd -d $username; mkdir -p /etc/sudoers.d; echo '$username ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$username; chmod 440 /etc/sudoers.d/$username"
@@ -115,7 +102,7 @@ command: |-
   }
   Write-Log "✓ User '$username' created" 'Green'
   
-  Write-Log "`n▶ Step 6/7: Setting default user..." 'Cyan'
+  Write-Log "`n▶ Step 5/6: Setting default user..." 'Cyan'
   $configUserOutput = wsl -d archlinux -u root bash -c "echo -e '[user]\ndefault=$username' > /etc/wsl.conf" 2>&1 | Out-String
   Write-Log "Config output: $configUserOutput" 'Gray'
   if ($LASTEXITCODE -ne 0) {
@@ -129,7 +116,7 @@ command: |-
   Start-Sleep -Seconds 3
   Write-Log "✓ WSL restarted" 'Green'
   
-  Write-Log "`n▶ Step 7/7: Bootstrapping with chezmoi dotfiles..." 'Cyan'
+  Write-Log "`n▶ Step 6/6: Bootstrapping with chezmoi dotfiles..." 'Cyan'
   Write-Log "  Repository: Randallsm83/dotfiles" 'Gray'
   Write-Log "  Duration: ~10-15 minutes (installing packages and runtimes)" 'Gray'
   Write-Log "  You can monitor progress below`n" 'Gray'
@@ -170,12 +157,10 @@ description: |-
   This workflow will:
   1. Unregister (delete) the existing 'archlinux' WSL distribution
   2. Install a fresh Arch Linux instance from WSL repository
-  3. Install essential system packages (sudo, base-devel, build tools, libraries)
-  4. Bootstrap with chezmoi dotfiles from GitHub
-  5. Install all tools, runtimes, and configurations automatically
+  3. Bootstrap with chezmoi dotfiles from GitHub
+  4. Install all tools, runtimes, and configurations automatically
   
   What gets installed:
-  - System packages: sudo, gcc, make, git, openssl, and build dependencies
   - mise (package & runtime manager)
   - CLI tools: ripgrep, fd, bat, eza, delta, starship, zoxide, fzf
   - Language runtimes: Node.js, Python, Ruby, Go, Rust, Lua, Bun, Deno
