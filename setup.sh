@@ -49,6 +49,54 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+is_zsh_default_shell() {
+    local current_shell
+    if [ -n "$SUDO_USER" ]; then
+        current_shell=$(getent passwd "$SUDO_USER" | cut -d: -f7)
+    else
+        current_shell=$(getent passwd "$USER" | cut -d: -f7)
+    fi
+    [ "$current_shell" = "$(command -v zsh)" ] || [ "$current_shell" = "/bin/zsh" ] || [ "$current_shell" = "/usr/bin/zsh" ]
+}
+
+set_zsh_as_default_shell() {
+    if ! command_exists zsh; then
+        log_warning "zsh not found in PATH, skipping shell change"
+        return 1
+    fi
+    
+    if is_zsh_default_shell; then
+        log_success "zsh is already the default shell"
+        return 0
+    fi
+    
+    local zsh_path
+    zsh_path=$(command -v zsh)
+    
+    log_info "Setting zsh as default shell..."
+    log_warning "You may be prompted for your password"
+    
+    if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+        # Running as root, change shell for the actual user
+        if chsh -s "$zsh_path" "$SUDO_USER" 2>/dev/null; then
+            log_success "Default shell changed to zsh for user $SUDO_USER"
+            return 0
+        fi
+    else
+        # Running as normal user
+        if chsh -s "$zsh_path" 2>/dev/null; then
+            log_success "Default shell changed to zsh"
+            return 0
+        fi
+    fi
+    
+    # chsh failed - provide fallback instructions
+    log_warning "Failed to change default shell automatically"
+    log_warning "Please run manually: chsh -s $zsh_path"
+    log_warning "Or add this to /etc/passwd if in a container environment"
+    return 1
+}
+
 detect_platform() {
     local os=""
     local is_wsl=false
@@ -117,7 +165,7 @@ install_base_packages() {
     if command_exists pacman; then
         # Arch Linux - install comprehensive package set
         log_info "Using pacman (Arch Linux)"
-        local packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi"
+        local packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi zsh"
         if [ "$EUID" -eq 0 ]; then
             pacman -Syu --noconfirm $packages
         else
@@ -126,7 +174,7 @@ install_base_packages() {
     elif command_exists apt-get; then
         # Debian/Ubuntu
         log_info "Using apt-get (Debian/Ubuntu)"
-        local packages="git curl wget unzip zip build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev"
+        local packages="git curl wget unzip zip build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev zsh"
         if [ "$EUID" -eq 0 ]; then
             apt-get update && apt-get install -y $packages
         else
@@ -135,7 +183,7 @@ install_base_packages() {
     elif command_exists dnf; then
         # Fedora/RHEL
         log_info "Using dnf (Fedora/RHEL)"
-        local packages="git curl wget unzip zip gcc gcc-c++ make openssl-devel readline-devel zlib-devel libyaml-devel libffi-devel"
+        local packages="git curl wget unzip zip gcc gcc-c++ make openssl-devel readline-devel zlib-devel libyaml-devel libffi-devel zsh"
         if [ "$EUID" -eq 0 ]; then
             dnf install -y $packages
         else
@@ -144,7 +192,7 @@ install_base_packages() {
     elif command_exists brew; then
         # macOS with Homebrew
         log_info "Using brew (macOS)"
-        brew install git curl wget unzip openssl readline libyaml libffi
+        brew install git curl wget unzip openssl readline libyaml libffi zsh
     else
         log_error "No supported package manager found (pacman, apt-get, dnf, brew)"
         log_error "Please install git and curl manually"
@@ -152,6 +200,11 @@ install_base_packages() {
     fi
     
     log_success "Essential packages installed"
+    
+    # Set zsh as default shell if installed
+    if command_exists zsh; then
+        set_zsh_as_default_shell
+    fi
 }
 
 # ============================================================================
@@ -235,9 +288,10 @@ main() {
     echo "╚═══════════════════════════════════════════╝"
     echo ""
     log_info "Next steps:"
-    echo "  1. Restart your shell or source your profile"
-    echo "  2. Run: chezmoi diff (to see applied changes)"
-    echo "  3. Run: chezmoi edit --apply <file> (to modify configs)"
+    echo "  1. Log out and back in for the shell change to take effect"
+    echo "  2. Or run: exec zsh (to start zsh immediately)"
+    echo "  3. Run: chezmoi diff (to see applied changes)"
+    echo "  4. Run: chezmoi edit --apply <file> (to modify configs)"
     echo ""
     
     case "$platform" in
