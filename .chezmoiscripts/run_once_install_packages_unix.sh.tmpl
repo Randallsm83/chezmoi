@@ -43,55 +43,16 @@ fi
 
 if command_exists mise; then
     log_success "mise is available"
+    log_info "Installing tools and runtimes via mise config..."
+    log_info "Config: ~/.config/mise/config.toml + config.linux.toml"
     
-    # Install CLI tools via mise (using cargo backend)
-{{- if ne .chezmoi.os "darwin" }}
-    log_info "Installing CLI tools via mise..."
-{{- range .mise_cli_tools }}
-    log_info "Installing {{ . }}..."
-    mise use -g {{ . }}@latest || log_warning "Failed to install {{ . }}"
-{{- end }}
-{{- end }}
-    
-    # Install language runtimes
-    log_info "Installing language runtimes..."
-{{- range $runtime, $version := .mise_runtimes }}
-    log_info "Installing {{ $runtime }}@{{ $version }}..."
-    mise use -g {{ $runtime }}@{{ $version }} || log_warning "Failed to install {{ $runtime }}"
-{{- end }}
-    
-    # Install global tools
-    log_info "Installing global tools..."
-{{- range .mise_global_tools }}
-    log_info "Installing {{ . }}..."
-    mise use -g {{ . }}@latest || log_warning "Failed to install {{ . }}"
-{{- end }}
-    
-    # Run mise install to ensure everything is available
-    log_info "Running mise install..."
+    # Mise will read config.toml and config.linux.toml automatically
     mise install || log_warning "Some mise installations may have failed"
     
     log_success "Mise tools installed"
 else
     log_warning "mise not available, skipping package installation"
 fi
-
-{{- if eq .chezmoi.os "darwin" }}
-# macOS: Install homebrew packages if homebrew is available
-if command_exists brew; then
-    log_info "Installing homebrew packages..."
-{{- range .homebrew_packages }}
-    if ! brew list {{ . }} >/dev/null 2>&1; then
-        log_info "Installing {{ . }} via homebrew..."
-        brew install {{ . }} || log_warning "Failed to install {{ . }}"
-    else
-        log_success "{{ . }} already installed"
-    fi
-{{- end }}
-else
-    log_warning "Homebrew not found, skipping homebrew package installation"
-fi
-{{- end }}
 
 echo ""
 log_success "Package installation completed!"

@@ -32,93 +32,56 @@ Write-Host "║       Installing Windows Packages       ║" -ForegroundColor Cy
 Write-Host "╚══════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
-# Install scoop packages (CLI tools)
+# Install scoop packages from export file
 if (Test-CommandExists scoop) {
-    Write-Status "Installing scoop packages..." -Type Info
-    
-    $scoopPackages = @(
-{{- range .scoop_packages }}
-        "{{ . }}"{{- if ne . (index $.scoop_packages (sub (len $.scoop_packages) 1)) }},{{ end }}
-{{- end }}
-    )
-    
-    foreach ($package in $scoopPackages) {
+    $scoopFile = "$env:USERPROFILE\.local\share\chezmoi\scoop-packages.json"
+    if (Test-Path $scoopFile) {
+        Write-Status "Installing scoop packages from $scoopFile..." -Type Info
         try {
-            if (-not (scoop list $package 2>$null)) {
-                Write-Status "Installing $package via scoop..." -Type Info
-                scoop install $package
-            } else {
-                Write-Status "$package already installed via scoop" -Type Success
-            }
+            scoop import $scoopFile
+            Write-Status "Scoop packages installed" -Type Success
         } catch {
-            Write-Status "Failed to install $package via scoop: $_" -Type Warning
+            Write-Status "Failed to import scoop packages: $_" -Type Warning
         }
+    } else {
+        Write-Status "Scoop export file not found, skipping package installation" -Type Warning
     }
 } else {
-    Write-Status "Scoop not found, skipping CLI package installation" -Type Warning
+    Write-Status "Scoop not available" -Type Error
+    exit 1
 }
 
-# Install winget packages (GUI apps)
+# Install winget packages from export file
 if (Test-CommandExists winget) {
-    Write-Status "Installing winget packages..." -Type Info
-    
-    $wingetPackages = @(
-{{- range .winget_packages }}
-        "{{ . }}"{{- if ne . (index $.winget_packages (sub (len $.winget_packages) 1)) }},{{ end }}
-{{- end }}
-    )
-    
-    foreach ($package in $wingetPackages) {
+    $wingetFile = "$env:USERPROFILE\.local\share\chezmoi\winget-packages.json"
+    if (Test-Path $wingetFile) {
+        Write-Status "Installing winget packages from $wingetFile..." -Type Info
         try {
-            Write-Status "Installing $package via winget..." -Type Info
-            winget install --id $package --source winget --accept-package-agreements --accept-source-agreements --silent
+            winget import -i $wingetFile --accept-package-agreements --accept-source-agreements --no-upgrade
+            Write-Status "Winget packages installed" -Type Success
         } catch {
-            Write-Status "Failed to install $package via winget: $_" -Type Warning
+            Write-Status "Failed to import winget packages: $_" -Type Warning
         }
+    } else {
+        Write-Status "Winget export file not found, skipping GUI app installation" -Type Warning
     }
 } else {
-    Write-Status "Winget not found, skipping GUI package installation" -Type Warning
-}
-
-# Install mise and language runtimes
-if (-not (Test-CommandExists mise)) {
-    Write-Status "Installing mise..." -Type Info
-    try {
-        if (Test-CommandExists scoop) {
-            scoop install mise
-        } else {
-            Write-Status "Scoop not available, skipping mise installation" -Type Warning
-        }
-    } catch {
-        Write-Status "Failed to install mise: $_" -Type Warning
-    }
+    Write-Status "Winget not available, skipping GUI app installation" -Type Warning
 }
 
 if (Test-CommandExists mise) {
-    Write-Status "Installing language runtimes via mise..." -Type Info
+    Write-Status "Installing tools and runtimes via mise config..." -Type Info
+    Write-Status "Config: ~/.config/mise/config.toml" -Type Info
     
-    # Install runtimes
-{{- range $runtime, $version := .mise_runtimes }}
     try {
-        Write-Status "Installing {{ $runtime }}@{{ $version }}..." -Type Info
-        mise use -g {{ $runtime }}@{{ $version }}
+        # Mise will read config.toml and config.windows.toml automatically
+        mise install
+        Write-Status "Mise tools installed successfully" -Type Success
     } catch {
-        Write-Status "Failed to install {{ $runtime }}: $_" -Type Warning
+        Write-Status "Failed to install mise tools: $_" -Type Warning
     }
-{{- end }}
-    
-    # Install global tools
-{{- range .mise_global_tools }}
-    try {
-        Write-Status "Installing {{ . }}..." -Type Info
-        mise use -g {{ . }}
-    } catch {
-        Write-Status "Failed to install {{ . }}: $_" -Type Warning
-    }
-{{- end }}
-    
-    Write-Status "Running mise install to ensure all tools are available..." -Type Info
-    mise install 2>$null
+} else {
+    Write-Status "Mise not available, skipping package installation" -Type Warning
 }
 
 Write-Host ""

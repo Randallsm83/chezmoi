@@ -1,0 +1,38 @@
+{
+  "$schema": "https://aka.ms/winget-packages.schema.2.0.json",
+  "CreationDate": "2025-01-19T00:00:00.000-00:00",
+  "Sources": [
+    {
+      "Packages": [
+        {
+          "PackageIdentifier": "Git.Git"
+        },
+        {
+          "PackageIdentifier": "Microsoft.PowerShell"
+        },
+        {
+          "PackageIdentifier": "Microsoft.WindowsTerminal"
+        },
+        {
+          "PackageIdentifier": "wez.wezterm"
+        },
+        {
+          "PackageIdentifier": "Warp.Warp"
+        },
+        {
+          "PackageIdentifier": "Microsoft.VisualStudioCode"
+        },
+        {
+          "PackageIdentifier": "7zip.7zip"
+        }
+      ],
+      "SourceDetails": {
+        "Argument": "https://cdn.winget.microsoft.com/cache",
+        "Identifier": "Microsoft.Winget.Source_8wekyb3d8bbwe",
+        "Name": "winget",
+        "Type": "Microsoft.PreIndexed.Package"
+      }
+    }
+  ],
+  "WinGetVersion": "1.7.10514"
+}

@@ -1,45 +1,107 @@
-# ███╗   ███╗██╗███████╗███████╗
-# ████╗ ████║██║██╔════╝██╔════╝
-# ██╔████╔██║██║███████╗█████╗
-# ██║╚██╔╝██║██║╚════██║██╔══╝
-# ██║ ╚═╝ ██║██║███████║███████╗
-# ╚═╝     ╚═╝╚═╝╚══════╝╚══════╝
-# Polyglot tool version manager.
+# =============================================================================
+# MISE CONFIGURATION
+# =============================================================================
+# Platform-specific tool management strategy:
 #
-
-# Mise configuration
-# https://mise.jdx.dev/configuration.html
+#   Windows:
+#     - mise: Language runtimes (node, python, ruby, go, rust, bun, deno, etc.)
+#     - scoop: CLI tools (bat, eza, fd, ripgrep, starship, neovim, etc.)
+#     - winget: GUI applications
+#
+#   Linux/WSL/macOS:
+#     - mise: Everything (CLI tools + language runtimes)
+#     - homebrew: macOS GUI apps only (warp, wezterm)
+# =============================================================================
 
 [tools]
-{{- range $runtime, $version := .mise_runtimes }}
-{{ $runtime }} = "{{ $version }}"
-{{- end }}
+# === Language Runtimes (Cross-Platform) ===
+bun = "latest"
+go = "latest"
+node = "23.7.0"
+python = "latest"
+ruby = "latest"
+rust = "stable"
+deno = "latest"
+
+# === Universal Tools (Cross-Platform) ===
+direnv = "latest"
+fzf = "latest"
+usage = "latest"
+uv = "latest"     # Python package installer
+yarn = "latest"
 
 {{- if ne .chezmoi.os "windows" }}
-# CLI tools (Unix only - Windows uses scoop)
-{{- range .mise_cli_tools }}
-"{{ . }}" = "latest"
-{{- end }}
-{{- end }}
+# === Language Runtimes (Linux/macOS only) ===
+lua = "5.4.7"
+luajit = "2.1.0-beta3"
 
-# Global tools
-{{- range .mise_global_tools }}
-"{{ . }}" = "latest"
+# === CLI Tools (Linux/WSL/macOS only) ===
+# Terminal utilities
+"cargo:bat" = "latest"
+"cargo:eza" = "latest"
+"cargo:fd-find" = "latest"
+"cargo:ripgrep" = "latest"
+bat-extras = "latest"     # Bash-dependent wrapper scripts
+btop = "latest"
+github-cli = "latest"     # GitHub CLI (gh)
+op = "latest"             # 1Password CLI
+starship = "latest"       # Cross-shell prompt
+sqlite = "latest"
+
+# Build tools
+cargo-binstall = "latest"
+
+# Editors
+neovim = "latest"
+vim = "latest"
 {{- end }}
 
 [settings]
-experimental = true
-yes = false
-quiet = false
-verbose = false
-log_level = "info"
+idiomatic_version_file = true
+idiomatic_version_file_disable_tools = []
 always_keep_download = false
 always_keep_install = false
-plugin_autoupdate_last_check_duration = "7d"
-disable_tools = []
-legacy_version_file = true
-asdf_compat = false
+plugin_autoupdate_last_check_duration = '1 week'
+trusted_config_paths = ['']
+verbose = false
+http_timeout = "30s"
+jobs = 4
+raw = false
+yes = false
+not_found_auto_install = true
+task_output = "prefix"
 paranoid = false
-shorthands_file = "~/.config/mise/shorthands.toml"
+shorthands_file = '~/.config/mise/shorthands.toml'
 disable_default_shorthands = false
-disable_hints = []
+experimental = true
+status = { missing_tools = "if_other_versions_installed", show_env = false, show_tools = false }
+
+{{- if eq .chezmoi.os "windows" }}
+# Disable tools that don't work on Windows
+disable_tools = ["lua", "luajit", "sqlite"]
+{{- else }}
+disable_tools = []
+{{- end }}
+
+# cargo
+cargo = { binstall = true }
+
+# node
+node = {}
+
+# npm - use bun instead
+npm = { bun = true }
+
+# pipx - use uv instead
+pipx = { uvx = true }
+
+# python
+python = {}
+
+# ruby
+ruby = {}
+
+[_]
+# Comments and metadata
+
+[env]
