@@ -29,7 +29,7 @@ command: |-
   
   if ($confirm -ne "y" -and $confirm -ne "Y") {
       Write-Log "`n✗ Operation cancelled" 'Red'
-      exit 0
+      return
   }
   Write-Log "User confirmed operation" 'Gray'
   
@@ -86,7 +86,7 @@ command: |-
   } else {
       Write-Log "✗ WSL instance did not become ready after 10 attempts" 'Red'
       Write-Log "Check log file for details: $logFile" 'Yellow'
-      exit 1
+      return
   }
   
   Write-Log "`n▶ Step 4/6: Creating user account..." 'Cyan'
@@ -98,7 +98,7 @@ command: |-
   if ($LASTEXITCODE -ne 0) {
       Write-Log "✗ Failed to create user" 'Red'
       Write-Log "Full output logged to: $logFile" 'Yellow'
-      exit 1
+      return
   }
   Write-Log "✓ User '$username' created" 'Green'
   
@@ -107,7 +107,7 @@ command: |-
   Write-Log "Config output: $configUserOutput" 'Gray'
   if ($LASTEXITCODE -ne 0) {
       Write-Log "✗ Failed to set default user" 'Red'
-      exit 1
+      return
   }
   Write-Log "✓ Default user set to '$username'" 'Green'
   
@@ -133,7 +133,7 @@ command: |-
       Write-Log "You can retry manually from within WSL:" 'Yellow'
       Write-Log "  wsl -d archlinux" 'White'
       Write-Log "  sh -c '$$(curl -fsLS get.chezmoi.io)' -- init --apply Randallsm83/dotfiles`n" 'White'
-      exit 1
+      return
   }
   
   Write-Log "`n╔═══════════════════════════════════════════╗" 'Green'

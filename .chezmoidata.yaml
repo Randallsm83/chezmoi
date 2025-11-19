@@ -234,7 +234,7 @@ package_features:
   ruby: true
   lua: true
   node: true
-  perl: false
+  perl: true
   php: false
   
   # Version managers (legacy/deprecated)
@@ -245,7 +245,7 @@ package_features:
   arduino: false
   glow: true
   tinted_theming: true
-  thefuck: false
+  thefuck: true
   sqlite3: true
   vim: false  # Using neovim instead
   vivid: true

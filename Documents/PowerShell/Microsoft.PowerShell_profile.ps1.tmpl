@@ -38,6 +38,15 @@ if (Get-Module -ListAvailable -Name GamePerformanceOptimizer) {
     Import-Module GamePerformanceOptimizer
 }
 
+# Source all modular scripts from Scripts directory
+$scriptsDir = Join-Path (Split-Path $PROFILE) "Scripts"
+if (Test-Path $scriptsDir) {
+    Get-ChildItem "$scriptsDir\*.ps1" -ErrorAction SilentlyContinue | ForEach-Object {
+        Write-Verbose "Sourcing: $($_.Name)"
+        . $_.FullName
+    }
+}
+
 # Source aliases and functions
 $aliasesFile = Join-Path (Split-Path $PROFILE) "aliases.ps1"
 $functionsFile = Join-Path (Split-Path $PROFILE) "functions.ps1"

@@ -1,5 +1,25 @@
 # Chezmoi ignore patterns
 # https://www.chezmoi.io/reference/special-files-and-directories/chezmoiignore/
+#
+# PLATFORM-SPECIFIC FILE STRATEGY:
+# ================================
+# For platform-specific files that should only be applied on certain OS:
+# 
+# 1. Files with platform in name (e.g., config.linux.toml, config.windows.toml):
+#    - Use .chezmoiignore with OS conditionals to exclude on wrong platforms
+#    - Example: Exclude config.linux.toml on Windows, config.windows.toml on Linux
+#
+# 2. Shell-specific files (e.g., .bashrc, .zshrc, fzf.bash):
+#    - Exclude entire Unix shell ecosystem on Windows
+#    - Exclude PowerShell ecosystem on Unix/Linux
+#
+# 3. Cross-platform files with platform-specific content:
+#    - Use .tmpl extension with {{ if eq .chezmoi.os "windows" }} guards
+#    - Example: Microsoft.PowerShell_profile.ps1.tmpl
+#
+# 4. Directory-level exclusions:
+#    - Use ** glob patterns for entire directories (e.g., .config/zsh/**)
+#    - More efficient than per-file exclusions
 
 # Development and documentation files (never apply to home directory)
 README.md
@@ -30,12 +50,14 @@ setup.sh
 # Exclude Unix-specific files on Windows
 
 # Unix shell configs
+.config/zsh/**
 .zshrc
 .zshrc.d/
 .zshenv
 .bashrc
 .bash_profile
 .profile
+.p10k.zsh
 
 # Unix-specific scripts
 *.sh
@@ -53,6 +75,19 @@ setup.sh
 .Xresources
 .tmux.conf
 
+# macOS-specific configs (iTerm2, Homebrew, etc.)
+.config/iterm2/**
+.config/karabiner/
+.config/hammerspoon/
+.config/homebrew/**
+Library/
+
+# Linux-specific configs
+.config/mise/config.linux.toml
+.config/fzf/fzf.bash
+.config/mackup/**
+.lde.yml
+
 {{- else }}
 # Exclude Windows-specific files on Unix
 
@@ -67,12 +102,12 @@ AppData/
 
 # Windows configs
 .wslconfig
+.config/mise/config.windows.toml
 
 # Windows Terminal
 AppData/Local/Packages/Microsoft.WindowsTerminal_*/
 
 {{- end }}
-
 {{- /* WSL-specific exclusions */ -}}
 {{- /* .wslconfig is managed on Windows for WSL2 configuration */ -}}
 
@@ -200,4 +235,5 @@ Library/
 {{- if not .package_features.vagrant }}
 # Vagrant package files (when migrated)
 # .cache/zsh/completions/_vagrant
+{{- end }}
 {{- end }}
