@@ -146,21 +146,66 @@ function ls {
 function ll {
     [CmdletBinding()]
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
-    if (-not $Args) { $Args = @('.') }
+    if (-not $Args) { 
+        $Args = @('.') 
+    } else {
+        # Expand ~ to home directory
+        $expandedArgs = @()
+        foreach ($arg in $Args) {
+            if ($arg -eq '~') { 
+                $expandedArgs += $HOME 
+            } elseif ($arg.StartsWith('~/') -or $arg.StartsWith('~\')) {
+                $expandedArgs += $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($arg)
+            } else { 
+                $expandedArgs += $arg 
+            }
+        }
+        $Args = $expandedArgs
+    }
     Invoke-Eza -l --all --header @Args
 }
 
 function la {
     [CmdletBinding()]
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
-    if (-not $Args) { $Args = @('.') }
+    if (-not $Args) { 
+        $Args = @('.') 
+    } else {
+        # Expand ~ to home directory
+        $expandedArgs = @()
+        foreach ($arg in $Args) {
+            if ($arg -eq '~') { 
+                $expandedArgs += $HOME 
+            } elseif ($arg.StartsWith('~/') -or $arg.StartsWith('~\')) {
+                $expandedArgs += $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($arg)
+            } else { 
+                $expandedArgs += $arg 
+            }
+        }
+        $Args = $expandedArgs
+    }
     Invoke-Eza -la @Args
 }
 
 function lt {
     [CmdletBinding()]
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
-    if (-not $Args) { $Args = @('.') }
+    if (-not $Args) { 
+        $Args = @('.') 
+    } else {
+        # Expand ~ to home directory
+        $expandedArgs = @()
+        foreach ($arg in $Args) {
+            if ($arg -eq '~') { 
+                $expandedArgs += $HOME 
+            } elseif ($arg.StartsWith('~/') -or $arg.StartsWith('~\')) {
+                $expandedArgs += $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($arg)
+            } else { 
+                $expandedArgs += $arg 
+            }
+        }
+        $Args = $expandedArgs
+    }
     Invoke-Eza --tree @Args
 }
 
