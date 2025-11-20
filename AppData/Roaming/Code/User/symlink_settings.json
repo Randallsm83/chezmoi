@@ -25,16 +25,16 @@
   // FONTS & TYPOGRAPHY
   // ============================================================================
   // Editor Font
-  "editor.fontFamily": "FiraCode Nerd Font, Hack Nerd Font, Consolas, 'Courier New', monospace",
+  "editor.fontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
   "editor.fontSize": 14,
   "editor.lineHeight": 1.4,
   "editor.fontWeight": "normal",
   "editor.fontLigatures": true,
   // Code Lens Font
-  "editor.codeLensFontFamily": "FiraCode Nerd Font, Hack Nerd Font, Consolas, 'Courier New', monospace",
+  "editor.codeLensFontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
   "editor.codeLensFontSize": 13,
   // Terminal Font
-  "terminal.integrated.fontFamily": "FiraCode Nerd Font, Hack Nerd Font, Consolas, 'Courier New', monospace",
+  "terminal.integrated.fontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
   "terminal.integrated.fontSize": 13,
   "terminal.integrated.lineHeight": 1.2,
   "terminal.integrated.fontWeight": "normal",
@@ -119,6 +119,21 @@
       100,
       120
     ]
+  },
+  "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+      "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[html]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   // ============================================================================
   // EXTENSIONS
@@ -325,7 +340,10 @@
     "git status",
     "git log",
     "git diff",
-    "git show"
+    "git show",
+    "alias",
+    "cat",
+    "echo"
   ],
   "kilo-code.deniedCommands": [],
   // MCP Discovery
@@ -348,8 +366,8 @@
     "https://resource.heltec.cn/download/package_heltec_esp32_index.json"
   ],
   "arduino.logLevel": "verbose",
-"arduino.path": "C:\\ProgramData\\chocolatey\\lib\\arduino-cli\\tools",
-"C_Cpp.default.compilerPath": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+  "arduino.path": "C:\\ProgramData\\chocolatey\\lib\\arduino-cli\\tools",
+  "C_Cpp.default.compilerPath": "c:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
   // ============================================================================
   // SYSTEM & MISC
   // ============================================================================

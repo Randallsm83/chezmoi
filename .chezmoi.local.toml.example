@@ -1,0 +1,194 @@
+# ============================================================================
+# Local Machine Configuration Example
+# ============================================================================
+# 
+# This file demonstrates how to create machine-specific overrides for your
+# dotfiles configuration. Copy this file to `.chezmoi.local.toml` (without
+# the .example extension) and customize it for each machine.
+#
+# NOTE: `.chezmoi.local.toml` is automatically ignored by git (see .gitignore)
+#
+# Usage:
+#   1. Copy: cp .chezmoi.local.toml.example .chezmoi.local.toml
+#   2. Edit: chezmoi edit .chezmoi.local.toml
+#   3. Apply: chezmoi apply
+#
+# The settings in this file will override values from .chezmoi.toml.tmpl
+# ============================================================================
+
+[data]
+    # ========================================================================
+    # Machine Classification
+    # ========================================================================
+    # Uncomment and set these flags to classify this machine
+    
+    # is_personal = true      # Personal machine (home laptop/desktop)
+    # is_work = false         # Work machine (company laptop)
+    # is_remote = false       # Remote server (SSH access only)
+    # is_minimal = false      # Minimal install (limited packages)
+    
+    # ========================================================================
+    # Permission Flags
+    # ========================================================================
+    # Set these based on what this machine can do
+    
+    # has_sudo = true         # Can use sudo for package installation
+    # can_install_system = true  # Can install system packages
+    # developer_mode = true   # Windows Developer Mode enabled (for symlinks)
+    
+    # ========================================================================
+    # User Information Overrides
+    # ========================================================================
+    # Override user information for this machine
+    
+    # email = "work.email@company.com"
+    # name = "Randall (Work)"
+    # github_username = "randall-work"
+    
+    # ========================================================================
+    # Theme Overrides
+    # ========================================================================
+    # Use a different theme on this machine
+    
+    # theme = "gruvbox-material"  # Override default theme
+    # font = "JetBrainsMono"      # Override default font
+    
+    # ========================================================================
+    # Feature Flag Overrides
+    # ========================================================================
+    # Enable/disable specific features on this machine
+    
+    # [data.package_features]
+    #     rust = false         # Disable Rust on this machine
+    #     python = true        # Ensure Python is installed
+    #     golang = false       # Disable Go on this machine
+    #     node = true          # Ensure Node.js is installed
+    
+    # ========================================================================
+    # Secrets Management
+    # ========================================================================
+    # Configure secrets management for this machine
+    
+    # use_1password = true         # Use 1Password for secrets
+    # use_age = false              # Use age encryption instead
+    # onepassword_vault = "Personal"  # Specific vault name
+    
+    # ========================================================================
+    # Installation Preferences
+    # ========================================================================
+    # Control installation behavior
+    
+    # skip_package_updates = false  # Skip package updates (faster bootstrap)
+    # dry_run = false               # Dry-run mode (don't make changes)
+    # debug = false                 # Enable debug logging
+    
+    # parallel_jobs = 4             # Number of parallel install jobs
+    # cache_downloads = true        # Cache downloaded packages
+
+# ============================================================================
+# Configuration File Overrides
+# ============================================================================
+# Override paths to configuration files if needed
+
+# [cd]
+#     command = "nvim"  # Different editor on this machine
+
+# [diff]
+#     command = "delta"
+#     args = ["--side-by-side", "--paging=never"]
+
+# [git]
+#     autoCommit = false
+#     autoPush = false
+
+# ============================================================================
+# Examples by Machine Type
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Example 1: Personal Laptop (Full Setup)
+# ----------------------------------------------------------------------------
+# [data]
+#     is_personal = true
+#     is_work = false
+#     is_remote = false
+#     has_sudo = true
+#     developer_mode = true
+#     use_1password = true
+#     
+#     [data.package_features]
+#         rust = true
+#         golang = true
+#         python = true
+#         node = true
+
+# ----------------------------------------------------------------------------
+# Example 2: Work Laptop (Limited Personal Tools)
+# ----------------------------------------------------------------------------
+# [data]
+#     is_personal = false
+#     is_work = true
+#     is_remote = false
+#     has_sudo = true
+#     
+#     email = "randall@company.com"
+#     name = "Randall Smith"
+#     
+#     [data.package_features]
+#         rust = false        # Company restricts Rust
+#         golang = true       # Work uses Go
+#         python = true       # Work uses Python
+#         node = true         # Work uses Node.js
+#         warp = false        # Use company terminal only
+
+# ----------------------------------------------------------------------------
+# Example 3: Remote Linux Server (Minimal, No Sudo)
+# ----------------------------------------------------------------------------
+# [data]
+#     is_personal = false
+#     is_work = false
+#     is_remote = true
+#     is_minimal = true
+#     has_sudo = false
+#     can_install_system = false
+#     
+#     # Minimal feature set
+#     [data.package_features]
+#         rust = false
+#         golang = false
+#         python = true       # Only Python needed
+#         node = false
+#         glow = false
+#         vivid = false
+#         warp = false
+
+# ----------------------------------------------------------------------------
+# Example 4: Development Container (Minimal CLI)
+# ----------------------------------------------------------------------------
+# [data]
+#     is_remote = true
+#     is_minimal = true
+#     has_sudo = true
+#     
+#     [data.package_features]
+#         # Only essential dev tools
+#         rust = true
+#         python = true
+#         node = true
+#         
+#         # Disable GUI/theme tools
+#         warp = false
+#         vivid = false
+#         glow = false
+
+# ============================================================================
+# Tips
+# ============================================================================
+#
+# 1. Start with one of the examples above and customize
+# 2. Use `chezmoi data` to see all available variables
+# 3. Use `chezmoi execute-template` to test template logic
+# 4. Use `chezmoi diff` to see what would change before applying
+# 5. Remember: This file is never committed to git (it's in .gitignore)
+#
+# ============================================================================

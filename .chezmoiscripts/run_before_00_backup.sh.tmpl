@@ -1,0 +1,105 @@
+{{- if ne .chezmoi.os "windows" -}}
+{{ template "common-header" . }}
+
+#
+# Pre-apply backup script
+# Creates backups before applying changes for easy rollback
+# Backups stored in: ~/.local/state/chezmoi/backups/
+#
+
+# ============================================================================
+# Configuration
+# ============================================================================
+
+BACKUP_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/chezmoi/backups"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_PATH="${BACKUP_DIR}/${TIMESTAMP}"
+MAX_BACKUPS=10  # Keep only last 10 backups
+
+# ============================================================================
+# Backup Functions
+# ============================================================================
+
+create_backup() {
+    log_info "Creating backup before applying changes..."
+    
+    # Create backup directory
+    mkdir -p "${BACKUP_PATH}"
+    
+    # Get list of files chezmoi will modify
+    local files_to_backup
+    files_to_backup=$(chezmoi managed 2>/dev/null || true)
+    
+    if [ -z "$files_to_backup" ]; then
+        log_info "No managed files to backup"
+        return 0
+    fi
+    
+    local backup_count=0
+    while IFS= read -r file; do
+        local full_path="$HOME/$file"
+        if [ -f "$full_path" ]; then
+            # Create directory structure in backup
+            local backup_file="${BACKUP_PATH}/${file}"
+            mkdir -p "$(dirname "$backup_file")"
+            cp "$full_path" "$backup_file"
+            backup_count=$((backup_count + 1))
+        fi
+    done <<< "$files_to_backup"
+    
+    # Create metadata file
+    cat > "${BACKUP_PATH}/metadata.txt" <<EOF
+Backup created: $(date)
+Hostname: $(hostname)
+User: $USER
+Files backed up: $backup_count
+Chezmoi version: $(chezmoi --version 2>/dev/null || echo "unknown")
+EOF
+    
+    log_success "Backed up $backup_count files to ${BACKUP_PATH}"
+}
+
+cleanup_old_backups() {
+    log_info "Cleaning up old backups (keeping last ${MAX_BACKUPS})..."
+    
+    if [ ! -d "${BACKUP_DIR}" ]; then
+        return 0
+    fi
+    
+    # Count backups
+    local backup_count
+    backup_count=$(find "${BACKUP_DIR}" -mindepth 1 -maxdepth 1 -type d | wc -l)
+    
+    if [ "$backup_count" -le "$MAX_BACKUPS" ]; then
+        log_info "Only $backup_count backups exist, no cleanup needed"
+        return 0
+    fi
+    
+    # Remove oldest backups
+    local to_remove=$((backup_count - MAX_BACKUPS))
+    find "${BACKUP_DIR}" -mindepth 1 -maxdepth 1 -type d -printf '%T+ %p\n' | \
+        sort | head -n "$to_remove" | cut -d' ' -f2- | \
+        while read -r old_backup; do
+            log_info "Removing old backup: $(basename "$old_backup")"
+            rm -rf "$old_backup"
+        done
+}
+
+# ============================================================================
+# Main
+# ============================================================================
+
+# Only create backup if files exist (skip on first install)
+if chezmoi managed >/dev/null 2>&1; then
+    create_backup
+    cleanup_old_backups
+    
+    log_info ""
+    log_info "Backup complete! To rollback:"
+    log_info "  ~/.local/state/chezmoi/backups/rollback.sh ${TIMESTAMP}"
+    log_info ""
+else
+    log_info "First-time install detected, skipping backup"
+fi
+
+{{- end -}}

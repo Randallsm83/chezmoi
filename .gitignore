@@ -15,3 +15,12 @@ bin/
 # Temporary files
 *.tmp
 tmp/
+
+# Local machine-specific configuration (never commit)
+.chezmoi.local.toml
+.chezmoi.local.yaml
+.chezmoi.local.json
+
+# Backup files
+*.bak
+*.backup

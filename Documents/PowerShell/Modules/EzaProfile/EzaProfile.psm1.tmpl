@@ -68,7 +68,7 @@ function Get-EzaDefaultFlags {
 }
 
 # Load LS_COLORS from generated file if available
-$theme = if ($env:VIVID_THEME) { $env:VIVID_THEME } else { '{{ .theme.name }}' }
+$theme = if ($env:VIVID_THEME) { $env:VIVID_THEME } else { '{{ .theme }}' }
 $lscolorsFile = Join-Path $env:XDG_CONFIG_HOME "lscolors/$theme.txt"
 
 if (-not $env:LS_COLORS -and (Test-Path $lscolorsFile)) {

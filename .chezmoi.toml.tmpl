@@ -1,40 +1,120 @@
 # Chezmoi configuration file
 # https://www.chezmoi.io/reference/configuration-file/
+# Version: 2.0.0
+
+{{- /* ========================================================================== */ -}}
+{{- /* User Information (can be overridden in .chezmoi.local.toml)            */ -}}
+{{- /* ========================================================================== */ -}}
 
 {{- $email := "randallsm83@gmail.com" -}}
 {{- $name := "Randall" -}}
 {{- $github_username := "Randallsm83" -}}
 
-{{- /* Detect platform */ -}}
+{{- /* ========================================================================== */ -}}
+{{- /* Platform Detection                                                      */ -}}
+{{- /* ========================================================================== */ -}}
+
 {{- $is_windows := eq .chezmoi.os "windows" -}}
 {{- $is_darwin := eq .chezmoi.os "darwin" -}}
 {{- $is_linux := eq .chezmoi.os "linux" -}}
 {{- $is_wsl := and $is_linux (or (.chezmoi.kernel.osrelease | lower | contains "microsoft") (.chezmoi.kernel.osrelease | lower | contains "wsl")) -}}
 
+{{- /* ========================================================================== */ -}}
+{{- /* Machine Type Detection (Remote/Personal/Work)                          */ -}}
+{{- /* ========================================================================== */ -}}
+
+{{- $hostname := .chezmoi.hostname | lower -}}
+
+{{- /* Check for remote indicators */ -}}
+{{- $is_remote := or (env "SSH_CONNECTION") (env "SSH_CLIENT") (env "SSH_TTY") -}}
+{{- $is_remote = or $is_remote (eq (env "TERM_PROGRAM") "vscode") -}}
+
+{{- /* Check for container */ -}}
+{{- $is_container := false -}}
+{{- if $is_linux -}}
+  {{- if stat "/.dockerenv" -}}
+    {{- $is_container = true -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Classify machine based on hostname patterns */ -}}
+{{- $is_work := false -}}
+{{- $is_personal := false -}}
+
+{{- if or (contains "work" $hostname) (contains "corp" $hostname) (contains "company" $hostname) (contains "office" $hostname) -}}
+  {{- $is_work = true -}}
+{{- else if or (contains "home" $hostname) (contains "personal" $hostname) (contains "laptop" $hostname) (contains "desktop" $hostname) -}}
+  {{- $is_personal = true -}}
+{{- else if not $is_remote -}}
+  {{- /* Default local machines to personal */ -}}
+  {{- $is_personal = true -}}
+{{- end -}}
+
+{{- /* ========================================================================== */ -}}
+{{- /* Permission Detection                                                    */ -}}
+{{- /* ========================================================================== */ -}}
+
+{{- /* On Unix, we'll check sudo at runtime, but we can make educated guesses */ -}}
+{{- $has_sudo := false -}}
+{{- if $is_windows -}}
+  {{- /* Windows always has admin capability (elevation) */ -}}
+  {{- $has_sudo = true -}}
+{{- else if not $is_remote -}}
+  {{- /* Local machines typically have sudo */ -}}
+  {{- $has_sudo = true -}}
+{{- end -}}
+
+{{- /* ========================================================================== */ -}}
+{{- /* XDG Base Directory Specification                                        */ -}}
+{{- /* https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html */ -}}
+{{- /* ========================================================================== */ -}}
+
+{{- $xdg_config_home := "" -}}
+{{- $xdg_data_home := "" -}}
+{{- $xdg_state_home := "" -}}
+{{- $xdg_cache_home := "" -}}
+
+{{- if $is_windows -}}
+  {{- $xdg_config_home = joinPath .chezmoi.homeDir ".config" -}}
+  {{- $xdg_data_home = joinPath .chezmoi.homeDir ".local" "share" -}}
+  {{- $xdg_state_home = joinPath .chezmoi.homeDir ".local" "state" -}}
+  {{- $xdg_cache_home = joinPath .chezmoi.homeDir ".cache" -}}
+{{- else -}}
+  {{- $xdg_config_home = joinPath .chezmoi.homeDir ".config" -}}
+  {{- $xdg_data_home = joinPath .chezmoi.homeDir ".local" "share" -}}
+  {{- $xdg_state_home = joinPath .chezmoi.homeDir ".local" "state" -}}
+  {{- $xdg_cache_home = joinPath .chezmoi.homeDir ".cache" -}}
+{{- end -}}
+
+{{- /* ========================================================================== */ -}}
+{{- /* Data Section - Exposed to all templates                                 */ -}}
+{{- /* ========================================================================== */}}
+
 [data]
+    # User information
     email = {{ $email | quote }}
     name = {{ $name | quote }}
     github_username = {{ $github_username | quote }}
     
-    # Platform flags
+    # Platform detection flags
     is_windows = {{ $is_windows }}
     is_darwin = {{ $is_darwin }}
     is_linux = {{ $is_linux }}
     is_wsl = {{ $is_wsl }}
+    is_container = {{ $is_container }}
     
-    # XDG Base Directory Specification
-    # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
-{{- if $is_windows }}
-    xdg_config_home = "{{ .chezmoi.homeDir }}\\.config"
-    xdg_data_home = "{{ .chezmoi.homeDir }}\\.local\\share"
-    xdg_state_home = "{{ .chezmoi.homeDir }}\\.local\\state"
-    xdg_cache_home = "{{ .chezmoi.homeDir }}\\.cache"
-{{- else }}
-    xdg_config_home = "{{ .chezmoi.homeDir }}/.config"
-    xdg_data_home = "{{ .chezmoi.homeDir }}/.local/share"
-    xdg_state_home = "{{ .chezmoi.homeDir }}/.local/state"
-    xdg_cache_home = "{{ .chezmoi.homeDir }}/.cache"
-{{- end }}
+    # Machine type classification
+    is_remote = {{ $is_remote }}
+    is_personal = {{ $is_personal }}
+    is_work = {{ $is_work }}
+    has_sudo = {{ $has_sudo }}  # Estimated, scripts should verify at runtime
+    hostname = {{ .chezmoi.hostname | quote }}
+    
+    # XDG Base Directory paths
+    xdg_config_home = {{ $xdg_config_home | quote }}
+    xdg_data_home = {{ $xdg_data_home | quote }}
+    xdg_state_home = {{ $xdg_state_home | quote }}
+    xdg_cache_home = {{ $xdg_cache_home | quote }}
 
     # Package manager preferences
 {{- if $is_windows }}
@@ -52,23 +132,28 @@
     # Shell preferences
 {{- if $is_windows }}
     shell = "pwsh"
-    shell_profile = "{{ .chezmoi.homeDir }}\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1"
+    shell_profile = {{ joinPath .chezmoi.homeDir "Documents" "PowerShell" "Microsoft.PowerShell_profile.ps1" | quote }}
 {{- else }}
     shell = "zsh"
-    shell_profile = "{{ .chezmoi.homeDir }}/.zshrc"
+    shell_profile = {{ joinPath .chezmoi.homeDir ".zshrc" | quote }}
 {{- end }}
 
-    # Theme and styling
+    # Theme and styling (can be overridden via .chezmoi.local.toml or .chezmoidata.yaml)
     theme = "spaceduck"  # Primary: spaceduck, Secondary: onedark, gruvbox-material
     font = "Hack"
     font_fallback = "FiraCode"
     nerd_font = "Hack Nerd Font"
     
-    # Feature flags
-    install_packages = true
+    # Feature flags (can be overridden in .chezmoi.local.toml)
+    install_packages = {{ and (not $is_remote) (not $is_container) }}  # Skip on remote/containers by default
     install_runtimes = true
     setup_git_ssh = true
-    setup_1password = true
+    setup_1password = {{ not $is_remote }}  # Skip on remote by default
+    remote_minimal = {{ $is_remote }}  # Use minimal package set on remote machines
+
+{{- /* ========================================================================== */ -}}
+{{- /* Chezmoi Tool Configuration                                              */ -}}
+{{- /* ========================================================================== */}}
 
 [edit]
     command = "nvim"
@@ -81,7 +166,21 @@
     command = "nvim"
     args = ["-d"]
 
-# Git repository settings
+{{- /* ========================================================================== */ -}}
+{{- /* Git Repository Settings                                                 */ -}}
+{{- /* ========================================================================== */}}
+
 [git]
     autoCommit = false
     autoPush = false
+
+{{- /* ========================================================================== */ -}}
+{{- /* Local Overrides                                                         */ -}}
+{{- /* ========================================================================== */ -}}
+{{- /* Create a .chezmoi.local.toml file to override any settings above.       */ -}}
+{{- /* Example: .chezmoi.local.toml                                            */ -}}
+{{- /* [data]                                                                  */ -}}
+{{- /*     is_work = true                                                      */ -}}
+{{- /*     has_sudo = false                                                    */ -}}
+{{- /*     install_packages = false                                            */ -}}
+{{- /* ========================================================================== */ -}}

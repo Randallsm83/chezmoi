@@ -49,6 +49,42 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Check if user has sudo access
+has_sudo() {
+    # If running as root, always return true
+    if [ "$EUID" -eq 0 ]; then
+        return 0
+    fi
+    
+    # Check if sudo command exists
+    if ! command_exists sudo; then
+        return 1
+    fi
+    
+    # Try to run sudo with non-interactive password check
+    if sudo -n true 2>/dev/null; then
+        return 0
+    fi
+    
+    # sudo exists but requires password or is denied
+    return 1
+}
+
+# Try to run command with sudo if available, otherwise run without
+execute_with_privilege() {
+    if [ "$EUID" -eq 0 ]; then
+        # Already root, execute directly
+        "$@"
+    elif has_sudo; then
+        # Has sudo, use it
+        sudo "$@"
+    else
+        # No sudo, try without (will fail if privileges needed)
+        log_warning "No sudo access, attempting without privileges..."
+        "$@"
+    fi
+}
+
 is_zsh_default_shell() {
     local current_shell
     if [ -n "$SUDO_USER" ]; then
@@ -125,6 +161,65 @@ detect_platform() {
 }
 
 # ============================================================================
+# Pre-flight Checks
+# ============================================================================
+
+run_preflight_checks() {
+    log_info "Running pre-flight checks..."
+    echo ""
+    
+    local all_passed=true
+    
+    # Check 1: Internet connectivity
+    printf "  [1/4] Internet connectivity..."
+    if curl -fsSL --connect-timeout 5 https://github.com >/dev/null 2>&1; then
+        echo " ✓"
+    else
+        echo " ✗"
+        log_error "Cannot reach github.com"
+        all_passed=false
+    fi
+    
+    # Check 2: Sudo availability
+    printf "  [2/4] Sudo access..."
+    if has_sudo; then
+        echo " ✓"
+    else
+        echo " ⚠"
+        log_warning "No sudo access detected"
+        log_info "Will attempt user-space installations via mise"
+    fi
+    
+    # Check 3: Required tools
+    printf "  [3/4] Essential tools (git, curl)..."
+    if command_exists git && command_exists curl; then
+        echo " ✓"
+    else
+        echo " ⚠"
+        log_warning "Some essential tools missing (will attempt to install)"
+    fi
+    
+    # Check 4: Shell
+    printf "  [4/4] Shell environment..."
+    if [ -n "${SHELL}" ]; then
+        echo " ✓"
+    else
+        echo " ⚠"
+        log_warning "SHELL variable not set"
+    fi
+    
+    echo ""
+    
+    if [ "$all_passed" = true ]; then
+        log_success "Pre-flight checks passed!"
+        return 0
+    else
+        log_warning "Some pre-flight checks failed, but continuing..."
+        return 0  # Don't fail bootstrap on warnings
+    fi
+}
+
+# ============================================================================
 # Package Installation
 # ============================================================================
 
@@ -166,35 +261,34 @@ install_base_packages() {
         # Arch Linux - install comprehensive package set
         log_info "Using pacman (Arch Linux)"
         local packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi zsh"
-        if [ "$EUID" -eq 0 ]; then
-            pacman -Syu --noconfirm $packages
-        else
-            sudo pacman -Syu --noconfirm $packages
-        fi
+        execute_with_privilege pacman -Syu --noconfirm $packages
     elif command_exists apt-get; then
         # Debian/Ubuntu
         log_info "Using apt-get (Debian/Ubuntu)"
         local packages="git curl wget unzip zip build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev zsh"
-        if [ "$EUID" -eq 0 ]; then
-            apt-get update && apt-get install -y $packages
+        if has_sudo || [ "$EUID" -eq 0 ]; then
+            execute_with_privilege apt-get update
+            execute_with_privilege apt-get install -y $packages
         else
-            sudo apt-get update && sudo apt-get install -y $packages
+            log_warning "No sudo access - skipping system packages"
+            log_info "Essential tools will be installed via mise in user space"
+            return 0
         fi
     elif command_exists dnf; then
         # Fedora/RHEL
         log_info "Using dnf (Fedora/RHEL)"
         local packages="git curl wget unzip zip gcc gcc-c++ make openssl-devel readline-devel zlib-devel libyaml-devel libffi-devel zsh"
-        if [ "$EUID" -eq 0 ]; then
-            dnf install -y $packages
-        else
-            sudo dnf install -y $packages
-        fi
+        execute_with_privilege dnf install -y $packages
     elif command_exists brew; then
         # macOS with Homebrew
         log_info "Using brew (macOS)"
         brew install git curl wget unzip openssl readline libyaml libffi zsh
     else
         log_error "No supported package manager found (pacman, apt-get, dnf, brew)"
+        if ! has_sudo; then
+            log_info "No sudo access - will rely on mise for user-space installations"
+            return 0
+        fi
         log_error "Please install git and curl manually"
         return 1
     fi
@@ -258,6 +352,7 @@ main() {
     echo ""
     echo "╔═══════════════════════════════════════════╗"
     echo "║   Dotfiles Bootstrap (Unix)              ║"
+    echo "║           Version 2.0.0                  ║"
     echo "╚═══════════════════════════════════════════╝"
     echo ""
     
@@ -265,21 +360,40 @@ main() {
     local platform
     platform=$(detect_platform)
     log_info "Platform: $platform"
+    echo ""
     
-    # Install base packages if needed
-    if ! install_base_packages; then
-        log_error "Failed to install base packages"
+    # Run pre-flight checks
+    if ! run_preflight_checks; then
+        log_error "Pre-flight checks failed"
         exit 1
     fi
+    echo ""
+    
+    # Install base packages if needed
+    log_info "Step 1/4: Installing essential packages..."
+    if ! install_base_packages; then
+        log_warning "Some packages may not have installed"
+        log_info "Continuing with bootstrap (mise will handle remaining tools)..."
+    fi
+    echo ""
     
     # Setup XDG environment
+    log_info "Step 2/4: Setting up XDG environment..."
     setup_xdg_env
+    echo ""
     
     # Install chezmoi and apply dotfiles in one step
+    log_info "Step 3/4: Installing chezmoi and applying dotfiles..."
+    log_info "This will clone $REPO and apply all configurations"
+    echo ""
     if ! install_and_apply_dotfiles; then
         log_error "Bootstrap failed: Could not install chezmoi and apply dotfiles"
         exit 1
     fi
+    echo ""
+    
+    # Finalize
+    log_info "Step 4/4: Finalizing setup..."
     
     # Summary
     echo ""

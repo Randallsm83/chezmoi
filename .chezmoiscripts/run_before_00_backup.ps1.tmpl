@@ -1,0 +1,132 @@
+{{- if eq .chezmoi.os "windows" -}}
+#Requires -Version 7.0
+<#
+.SYNOPSIS
+    Pre-apply backup script for chezmoi on Windows
+.DESCRIPTION
+    Creates backups before applying changes for easy rollback
+    Backups stored in: $env:LOCALAPPDATA\chezmoi\backups\
+#>
+
+# ============================================================================
+# Configuration
+# ============================================================================
+
+$BackupDir = "$env:LOCALAPPDATA\chezmoi\backups"
+$Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$BackupPath = Join-Path $BackupDir $Timestamp
+$MaxBackups = 10
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+function Write-ColorOutput {
+    param(
+        [string]$Message,
+        [string]$Type = "Info"
+    )
+    
+    $symbol = switch ($Type) {
+        "Success" { "✓"; $color = "Green" }
+        "Warning" { "⚠"; $color = "Yellow" }
+        "Error" { "✗"; $color = "Red" }
+        default { "ℹ"; $color = "Cyan" }
+    }
+    
+    Write-Host "$symbol " -ForegroundColor $color -NoNewline
+    Write-Host $Message
+}
+
+# ============================================================================
+# Backup Functions
+# ============================================================================
+
+function New-Backup {
+    Write-ColorOutput "Creating backup before applying changes..." -Type Info
+    
+    # Create backup directory
+    New-Item -ItemType Directory -Path $BackupPath -Force | Out-Null
+    
+    # Get list of managed files
+    $managedFiles = chezmoi managed 2>$null
+    if (-not $managedFiles) {
+        Write-ColorOutput "No managed files to backup" -Type Info
+        return 0
+    }
+    
+    $backupCount = 0
+    foreach ($file in $managedFiles) {
+        $fullPath = Join-Path $env:USERPROFILE $file
+        if (Test-Path $fullPath -PathType Leaf) {
+            # Create directory structure in backup
+            $backupFile = Join-Path $BackupPath $file
+            $backupDir = Split-Path $backupFile -Parent
+            New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+            Copy-Item $fullPath $backupFile -Force
+            $backupCount++
+        }
+    }
+    
+    # Create metadata file
+    $chezmoiVersion = (chezmoi --version 2>$null) -join "`n"
+    $metadata = @"
+Backup created: $(Get-Date)
+Hostname: $env:COMPUTERNAME
+User: $env:USERNAME
+Files backed up: $backupCount
+Chezmoi version: $chezmoiVersion
+"@
+    $metadata | Out-File (Join-Path $BackupPath "metadata.txt") -Encoding utf8
+    
+    Write-ColorOutput "Backed up $backupCount files to $BackupPath" -Type Success
+    return $backupCount
+}
+
+function Remove-OldBackups {
+    Write-ColorOutput "Cleaning up old backups (keeping last $MaxBackups)..." -Type Info
+    
+    if (-not (Test-Path $BackupDir)) {
+        return
+    }
+    
+    $backups = Get-ChildItem $BackupDir -Directory | Sort-Object CreationTime -Descending
+    $backupCount = $backups.Count
+    
+    if ($backupCount -le $MaxBackups) {
+        Write-ColorOutput "Only $backupCount backups exist, no cleanup needed" -Type Info
+        return
+    }
+    
+    $toRemove = $backups | Select-Object -Skip $MaxBackups
+    foreach ($backup in $toRemove) {
+        Write-ColorOutput "Removing old backup: $($backup.Name)" -Type Info
+        Remove-Item $backup.FullName -Recurse -Force
+    }
+}
+
+# ============================================================================
+# Main
+# ============================================================================
+
+try {
+    # Only create backup if files exist (skip on first install)
+    $hasManagedFiles = (chezmoi managed 2>$null | Measure-Object).Count -gt 0
+    
+    if ($hasManagedFiles) {
+        $fileCount = New-Backup
+        Remove-OldBackups
+        
+        Write-Host ""
+        Write-ColorOutput "Backup complete! To rollback:" -Type Info
+        Write-Host "  $env:LOCALAPPDATA\chezmoi\backups\rollback.ps1 $Timestamp"
+        Write-Host ""
+    } else {
+        Write-ColorOutput "First-time install detected, skipping backup" -Type Info
+    }
+} catch {
+    Write-ColorOutput "Backup failed: $_" -Type Error
+    # Don't fail the whole process, just warn
+    exit 0
+}
+{{- end -}}

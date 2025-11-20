@@ -11,8 +11,8 @@
 # Managed by chezmoi - https://www.chezmoi.io/
 
 [user]
-	name = {{ .user.name }}
-	email = {{ .user.email }}
+	name = {{ .name }}
+	email = {{ .email }}
 
 [core]
 	editor = nvim
@@ -129,7 +129,7 @@
 	remote = cyan bold
 
 # 1Password SSH Agent
-{{- if .features.setup_1password }}
+{{- if .setup_1password }}
 {{- if eq .chezmoi.os "windows" }}
 [core]
 	# Windows: 1Password SSH agent via named pipe

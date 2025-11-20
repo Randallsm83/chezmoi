@@ -1,5 +1,10 @@
-# Chezmoi ignore patterns
+# ============================================================================
+# Chezmoi Ignore Patterns
+# ============================================================================
 # https://www.chezmoi.io/reference/special-files-and-directories/chezmoiignore/
+#
+# IMPORTANT: This file uses Go text/template syntax for conditionals
+# Validation: Run `chezmoi execute-template < .chezmoiignore` to test syntax
 #
 # PLATFORM-SPECIFIC FILE STRATEGY:
 # ================================
@@ -20,6 +25,14 @@
 # 4. Directory-level exclusions:
 #    - Use ** glob patterns for entire directories (e.g., .config/zsh/**)
 #    - More efficient than per-file exclusions
+#
+# 5. Remote machine exclusions:
+#    - GUI applications and heavy tools excluded on remote machines
+#    - Minimal installs further reduce configs deployed
+#
+# ============================================================================
+# Repository Files (Never Deployed to Home)
+# ============================================================================
 
 # Development and documentation files (never apply to home directory)
 README.md
@@ -27,10 +40,22 @@ LICENSE
 *.Tests.ps1
 *.example
 WARP.md
+IMPLEMENTATION-PROGRESS.md
+INSTALL-GUIDE.md
+SECRETS.md
+REMOTE.md
+ARCHITECTURE.md
+CONTRIBUTING.md
 
 # Bootstrap scripts (stored in repo root, not applied to home)
 bootstrap.ps1
 setup.sh
+
+# Package manager lists (used by bootstrap/install scripts, not applied to home)
+scoop-packages.json
+winget-packages.json
+Brewfile
+packages/
 
 # Git metadata
 .git/
@@ -51,6 +76,7 @@ setup.sh
 
 # Unix shell configs
 .config/zsh/**
+.cache/zsh/**
 .zshrc
 .zshrc.d/
 .zshenv
@@ -117,6 +143,20 @@ AppData/Local/Packages/Microsoft.WindowsTerminal_*/
 .config/karabiner/
 .config/hammerspoon/
 Library/
+{{- end }}
+
+{{- /* Remote machine exclusions */ -}}
+{{- if .is_remote }}
+# Exclude on remote machines (GUI apps, heavy tools)
+.config/wezterm/**
+.config/warp/**
+.config/alacritty/**
+.config/kitty/**
+{{- if .remote_minimal }}
+# Additional exclusions for minimal remote installs
+.config/btop/**
+.config/bottom/**
+{{- end }}
 {{- end }}
 
 {{- /* Package feature flag exclusions */ -}}

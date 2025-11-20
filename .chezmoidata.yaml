@@ -1,26 +1,29 @@
 # Chezmoi data file
 # https://www.chezmoi.io/user-guide/manage-machine-to-machine-differences/
-
-# User information
-user:
-  name: "Randall"
-  email: "randallsm83@gmail.com"
-  github: "Randallsm83"
-
-# Shell preferences
-shell: "pwsh"  # pwsh (PowerShell), wsl, zsh, bash
+# Version: 2.0.0
+#
+# This file contains:
+# - Package lists for automated installation
+# - Theme colors and font configurations
+# - Package feature flags (which optional configs to deploy)
+#
+# NOTE: User info, platform detection, and machine type are in .chezmoi.toml.tmpl
+# NOTE: Use .chezmoi.local.toml for machine-specific overrides
 
 # Package lists for automated installation
 packages:
   scoop:
+    # Version control
     - git
     - gh
     - lazygit
+    # Core tools
     - chezmoi
     - mise
     - starship
     - zoxide
     - fzf
+    # CLI utilities
     - ripgrep
     - fd
     - bat
@@ -29,17 +32,22 @@ packages:
     - delta
     - jq
     - yq
+    # Development
     - neovim
+    - sqlite
     - 1password-cli
     - cygwin
     - make
-    - zig
+    # Network tools
     - curl
     - wget
+    # Utilities
     - 7zip
     - btop
 
-# Windows scoop packages (CLI tools - no admin required) - DEPRECATED, use packages.scoop
+# Windows scoop packages (CLI tools - no admin required)
+# DEPRECATED: Use packages.scoop above instead
+# This is kept for reference but should match packages.scoop list
 scoop_packages:
   # Version control
   - git
@@ -63,10 +71,10 @@ scoop_packages:
   
   # Development tools
   - neovim
+  - sqlite
   - 1password-cli
   - cygwin
   - make
-  - zig
   - curl
   - wget
   - 7zip
@@ -91,6 +99,7 @@ winget_packages:
 
 # Mise-managed tools (cross-platform CLI tools via cargo)
 # Used on Linux/WSL/macOS, not Windows (scoop handles these)
+# Templates should check: if not .is_windows and .install_packages
 mise_cli_tools:
   - ripgrep
   - fd
@@ -101,29 +110,13 @@ mise_cli_tools:
   - starship
   - zoxide
 
-# Homebrew packages (macOS)
-homebrew_packages:
-  # Terminals
-  - warp
-  - wezterm
-  
-  # Core utilities (if not using mise)
-  - starship
-  - zoxide
-  - fzf
-  - ripgrep
-  - fd
-  - bat
-  - eza
-  - delta
-  - btop
-  
-  # Development
-  - neovim
-  - gh
-  - lazygit
+# Homebrew packages (macOS bootstrap only - mise replaces these)
+# Only used for initial stow installation
+homebrew_bootstrap:
+  - stow  # For dotfile symlinking on first bootstrap
 
 # Language runtimes (mise manages these on all platforms)
+# Templates should check: if .install_runtimes and (package_features.node, etc.)
 mise_runtimes:
   node: "lts"
   python: "3.12"
@@ -135,17 +128,22 @@ mise_runtimes:
   bun: "latest"
   deno: "latest"
   
-# Mise global tools
+# Mise global tools (always installed when mise is available)
 mise_global_tools:
-  - direnv
-  - 1password-cli  # 1Password CLI
-  - usage
-  - yarn
-  - uv  # Fast Python package installer
+  - direnv      # Per-directory environment variables
+  - usage       # Tool for generating shell completions
+  - yarn        # JavaScript package manager
+  - uv          # Fast Python package installer
 
-# Theme colors (for reference in configs)
+# ============================================================================
+# Theme Colors
+# ============================================================================
+# Referenced in: neovim, starship, wezterm, eza/vivid configs
+# Override active theme in .chezmoi.local.toml: [data] theme = "onedark"
+
 theme:
-  name: "spaceduck"  # Active theme: spaceduck, onedark
+  name: "spaceduck"  # Active theme: spaceduck, onedark, gruvbox-material
+  
   spaceduck:
     background: "#0f111b"
     foreground: "#ecf0c1"
@@ -167,8 +165,24 @@ theme:
     blue: "#61afef"
     cyan: "#56b6c2"
     yellow: "#e5c07b"
+  
+  gruvbox-material:
+    background: "#1d2021"
+    foreground: "#d4be98"
+    purple: "#d3869b"
+    pink: "#ea6962"
+    green: "#a9b665"
+    orange: "#e78a4e"
+    blue: "#7daea3"
+    cyan: "#89b482"
+    yellow: "#d8a657"
 
+# ============================================================================
 # Fonts
+# ============================================================================
+# Referenced in: wezterm, alacritty, Windows Terminal configs
+# Override in .chezmoi.local.toml: [data] font = "JetBrainsMono"
+
 fonts:
   primary: "Hack"
   fallback: "FiraCode"
@@ -180,7 +194,7 @@ fonts:
   emoji: "Noto Color Emoji"
   symbols: "Symbols Nerd Font Mono"
   
-  # Fira Code ligature settings
+  # Fira Code ligature settings (OpenType features)
   fira_code_stylistic_sets:
     - ss02  # >= <= != == === !== 
     - ss03  # ->
@@ -192,65 +206,98 @@ fonts:
     - cv24  # >=
     - cv29  # {}
 
-# Platform-specific paths (for reference in templates)
-paths:
-  windows:
-    config: "%USERPROFILE%\\.config"
-    data: "%USERPROFILE%\\.local\\share"
-    state: "%USERPROFILE%\\.local\\state"
-    cache: "%USERPROFILE%\\.cache"
-    scoop: "%USERPROFILE%\\scoop"
-    mise: "%USERPROFILE%\\.local\\share\\mise"
-  
-  unix:
-    config: "~/.config"
-    data: "~/.local/share"
-    state: "~/.local/state"
-    cache: "~/.cache"
-    mise: "~/.local/share/mise"
+# ============================================================================
+# SSH and Authentication
+# ============================================================================
+# 1Password SSH agent configuration
+# See SECRETS.md for setup instructions
 
-# SSH and authentication
 ssh:
   agent: "1password"  # Use 1Password SSH agent
   windows_pipe: "\\\\.\\pipe\\openssh-ssh-agent"
   unix_socket: "~/.1password/agent.sock"
 
-# Feature toggles
-features:
-  install_packages: true
-  install_runtimes: true
-  setup_ssh: true
-  setup_1password: true
-  setup_wsl: true  # Windows only
-  setup_symlinks: true  # Windows Developer Mode required
+# ============================================================================
+# Package Feature Flags
+# ============================================================================
+# Controls which optional configuration files are deployed
+# Core packages are always enabled: git, nvim, wezterm, starship, mise, bat, 
+# direnv, eza, fzf, ripgrep, wget, zsh, ssh, 1password, windows, wsl
+#
+# Usage in templates:
+#   {{- if index .package_features "rust" }}
+#   # Deploy ~/.config/rust/* configs
+#   {{- end }}
+#
+# Override in .chezmoi.local.toml:
+#   [data.package_features]
+#   rust = false
+#   golang = false
 
-# Package feature flags (control which optional configs are deployed)
-# Core packages (git, nvim, wezterm, starship, mise, bat, direnv, eza, fzf, ripgrep, wget, zsh, ssh, 1password, windows, wsl) are always enabled
 package_features:
-  # Language packages (optional, controlled by feature flags)
-  rust: true
-  golang: true
-  python: true
-  ruby: true
-  lua: true
-  node: true
-  perl: true
-  php: false
+  # Language-specific configurations
+  rust: true        # ~/.cargo/config.toml, rust-analyzer settings
+  golang: true      # ~/go/env, gopls settings
+  python: true      # ~/.config/pip, poetry, black, ruff configs
+  ruby: true        # ~/.gemrc, bundler config
+  lua: true         # ~/.luarc.json, luarocks config
+  node: true        # ~/.npmrc, yarn config
+  perl: true        # ~/.cpan config
+  php: false        # php.ini, composer config
   
   # Version managers (legacy/deprecated)
-  asdf: false  # Replaced by mise
-  nvm: false   # Replaced by mise
+  asdf: false       # DEPRECATED: Replaced by mise
+  nvm: false        # DEPRECATED: Replaced by mise
   
   # Development tools (optional)
-  arduino: false
-  glow: true
-  tinted_theming: true
-  thefuck: true
-  sqlite3: true
-  vim: false  # Using neovim instead
-  vivid: true
-  warp: true
+  arduino: false    # Arduino CLI and IDE configs
+  glow: true        # Markdown renderer configs
+  tinted_theming: true  # Base16/Base24 theme system
+  thefuck: true     # Command correction tool
+  sqlite3: true     # SQLite CLI configs
+  vim: false        # DEPRECATED: Using neovim instead
+  vivid: true       # LS_COLORS generator
+  warp: true        # Warp terminal configs (if installed)
   
   # Utilities (optional)
-  homebrew: false  # Only for bootstrap, not managed
-  vagrant: false
+  homebrew: false   # Only used for bootstrap, not managed
+  vagrant: false    # Vagrant and VirtualBox configs
+
+# Remote machine package sets
+# When is_remote=true and remote_minimal=true, only install essential tools
+remote_packages:
+  # Minimal set for remote servers (no sudo required)
+  minimal:
+    runtimes:
+      - node     # JavaScript runtime
+      - python   # Python runtime
+      - go       # Go runtime
+    tools:
+      - direnv   # Per-directory environment
+      - fzf      # Fuzzy finder
+      - ripgrep  # Fast grep
+      - fd       # Fast find
+      - bat      # Cat with syntax highlighting
+      - delta    # Git diff viewer
+      - neovim   # Text editor
+  
+  # Full set for remote workstations (with sudo)
+  full:
+    runtimes:
+      - node
+      - python
+      - ruby
+      - go
+      - rust
+    tools:
+      - direnv
+      - fzf
+      - ripgrep
+      - fd
+      - bat
+      - eza
+      - delta
+      - starship
+      - zoxide
+      - neovim
+      - sqlite

@@ -22,11 +22,10 @@ python = "latest"
 ruby = "latest"
 rust = "stable"
 deno = "latest"
+zig = "latest"
 
 # === Universal Tools (Cross-Platform) ===
 direnv = "latest"
-fzf = "latest"
-usage = "latest"
 uv = "latest"     # Python package installer
 yarn = "latest"
 
@@ -35,7 +34,8 @@ yarn = "latest"
 lua = "5.4.7"
 luajit = "2.1.0-beta3"
 
-# === CLI Tools (Linux/WSL/macOS only) ===
+# === CLI Tools (Linux/WSL/macOS only - Windows uses scoop) ===
+fzf = "latest"
 # Terminal utilities
 "cargo:bat" = "latest"
 "cargo:eza" = "latest"
@@ -77,8 +77,8 @@ experimental = true
 status = { missing_tools = "if_other_versions_installed", show_env = false, show_tools = false }
 
 {{- if eq .chezmoi.os "windows" }}
-# Disable tools that don't work on Windows
-disable_tools = ["lua", "luajit", "sqlite"]
+# Disable tools that don't work well via mise on Windows
+disable_tools = ["lua", "luajit"]
 {{- else }}
 disable_tools = []
 {{- end }}

@@ -42,9 +42,20 @@ if (Get-Command eza -ErrorAction SilentlyContinue) {
 if (Get-Module -ListAvailable -Name PSFzf) {
     Import-Module PSFzf -ErrorAction SilentlyContinue
     
-    # Set keybindings
-    Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r'
-    
-    # Enable tab completion
-    Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
+    if (Get-Module PSFzf) {
+        # Set keybindings - use explicit PSReadLineKeyHandler for better Warp compatibility
+        try {
+            Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r' -ErrorAction Stop
+        } catch {
+            # Fallback: Set keybindings directly if Set-PsFzfOption fails
+            Set-PSReadLineKeyHandler -Key 'Ctrl+t' -ScriptBlock {
+                [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
+                [Microsoft.PowerShell.PSConsoleReadLine]::Insert("Invoke-FzfPsReadlineHandlerProvider")
+                [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+            }
+        }
+        
+        # Enable tab completion
+        Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
+    }
 }

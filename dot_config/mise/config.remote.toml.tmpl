@@ -1,0 +1,80 @@
+# =============================================================================
+# MISE CONFIGURATION FOR REMOTE MACHINES
+# =============================================================================
+# This configuration is used when:
+#   - is_remote = true
+#   - remote_minimal = true
+#
+# Purpose: Minimal tool set for remote servers with limited permissions
+# Strategy: Only install essential tools via user-space mise installation
+# =============================================================================
+{{- if and .is_remote .remote_minimal }}
+
+[tools]
+# === Essential Language Runtimes ===
+{{ if index .package_features "node" -}}
+node = "latest"
+{{- end }}
+
+{{ if index .package_features "python" -}}
+python = "latest"
+{{- end }}
+
+{{ if index .package_features "golang" -}}
+go = "latest"
+{{- end }}
+
+# === Universal Tools ===
+direnv = "latest"
+
+# === Minimal CLI Tools ===
+fzf = "latest"
+"cargo:bat" = "latest"
+"cargo:fd-find" = "latest"
+"cargo:ripgrep" = "latest"
+neovim = "latest"
+
+# Git diff viewer (lightweight)
+"cargo:git-delta" = "latest"
+
+[settings]
+idiomatic_version_file = true
+idiomatic_version_file_disable_tools = []
+always_keep_download = false
+always_keep_install = false
+plugin_autoupdate_last_check_duration = '1 week'
+trusted_config_paths = ['']
+verbose = false
+http_timeout = "30s"
+jobs = 2  # Reduced for remote systems
+raw = false
+yes = false
+not_found_auto_install = true
+task_output = "prefix"
+paranoid = false
+shorthands_file = '~/.config/mise/shorthands.toml'
+disable_default_shorthands = false
+experimental = true
+status = { missing_tools = "if_other_versions_installed", show_env = false, show_tools = false }
+disable_tools = ["lua", "luajit", "deno", "bun"]  # Skip non-essential runtimes
+
+# cargo - always use binstall for speed
+cargo = { binstall = true }
+
+# node
+node = {}
+
+# npm - use built-in npm on remote
+npm = { bun = false }
+
+# python
+python = {}
+
+[_]
+# Minimal configuration for remote machines
+# Override with .chezmoi.local.toml if you need more tools
+
+[env]
+# Environment variables for remote machines
+
+{{- end }}

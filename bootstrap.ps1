@@ -57,6 +57,9 @@ $Script:Stats = @{
     ScoopInstalled = $false
     PackagesInstalled = 0
     ConfigsApplied = $false
+    PreflightPassed = $false
+    DevModeEnabled = $false
+    OnePasswordAvailable = $false
 }
 
 # ============================================================================
@@ -101,6 +104,211 @@ function Test-CommandExists {
     #>
     param([string]$Command)
     $null -ne (Get-Command $Command -ErrorAction SilentlyContinue)
+}
+
+function Write-Progress {
+    <#
+    .SYNOPSIS
+        Show progress bar with step information
+    #>
+    param(
+        [int]$Step,
+        [int]$TotalSteps,
+        [string]$Activity,
+        [string]$Status
+    )
+    
+    $percentComplete = ($Step / $TotalSteps) * 100
+    Microsoft.PowerShell.Utility\Write-Progress -Activity $Activity -Status "$Status (Step $Step of $TotalSteps)" -PercentComplete $percentComplete
+}
+
+function Test-DeveloperMode {
+    <#
+    .SYNOPSIS
+        Check if Windows Developer Mode is enabled
+    .DESCRIPTION
+        Developer Mode is required for creating symlinks without elevation.
+        Checks the registry key that controls this setting.
+    #>
+    try {
+        $devModeKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
+        $allowDevelopmentWithoutDevLicense = Get-ItemProperty -Path $devModeKey -Name 'AllowDevelopmentWithoutDevLicense' -ErrorAction SilentlyContinue
+        
+        if ($null -ne $allowDevelopmentWithoutDevLicense -and $allowDevelopmentWithoutDevLicense.AllowDevelopmentWithoutDevLicense -eq 1) {
+            return $true
+        }
+        return $false
+    } catch {
+        return $false
+    }
+}
+
+function Enable-DeveloperMode {
+    <#
+    .SYNOPSIS
+        Enable Windows Developer Mode (requires elevation)
+    #>
+    Write-Status "Attempting to enable Developer Mode..." -Type Info
+    Write-Status "This requires administrator privileges" -Type Warning
+    
+    try {
+        # Check if running as admin
+        $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        
+        if (-not $isAdmin) {
+            Write-Status "Please run PowerShell as Administrator to enable Developer Mode" -Type Error
+            Write-Host ""
+            Write-Host "  To enable manually:"
+            Write-Host "  1. Open Settings > Privacy & Security > For developers"
+            Write-Host "  2. Enable 'Developer Mode'"
+            Write-Host "  3. Restart this script"
+            Write-Host ""
+            return $false
+        }
+        
+        # Enable Developer Mode via registry
+        $devModeKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
+        if (-not (Test-Path $devModeKey)) {
+            New-Item -Path $devModeKey -Force | Out-Null
+        }
+        Set-ItemProperty -Path $devModeKey -Name 'AllowDevelopmentWithoutDevLicense' -Value 1 -Type DWord
+        
+        Write-Status "Developer Mode enabled successfully" -Type Success
+        return $true
+    } catch {
+        Write-Status "Failed to enable Developer Mode: $_" -Type Error
+        return $false
+    }
+}
+
+function Test-OnePasswordCLI {
+    <#
+    .SYNOPSIS
+        Check if 1Password CLI is available and authenticated
+    #>
+    if (-not (Test-CommandExists op)) {
+        return @{
+            Available = $false
+            Authenticated = $false
+            Message = '1Password CLI not installed'
+        }
+    }
+    
+    # Test if authenticated by trying to list items
+    try {
+        $null = op item list --format=json 2>$null
+        return @{
+            Available = $true
+            Authenticated = $true
+            Message = '1Password CLI available and authenticated'
+        }
+    } catch {
+        return @{
+            Available = $true
+            Authenticated = $false
+            Message = '1Password CLI installed but not authenticated'
+        }
+    }
+}
+
+# ============================================================================
+# Pre-flight Validation
+# ============================================================================
+
+function Invoke-PreflightChecks {
+    <#
+    .SYNOPSIS
+        Perform pre-flight validation before bootstrap
+    .DESCRIPTION
+        Checks system requirements and provides clear guidance for missing prerequisites
+    #>
+    Write-Host ""
+    Write-Status "Running pre-flight checks..." -Type Info
+    Write-Host ""
+    
+    $allPassed = $true
+    
+    # Check 1: PowerShell version
+    Write-Host "  [1/5] PowerShell version..." -NoNewline
+    if ($PSVersionTable.PSVersion.Major -ge 5) {
+        Write-Host " ✓" -ForegroundColor Green
+    } else {
+        Write-Host " ✗" -ForegroundColor Red
+        Write-Status "PowerShell 5.1 or later required" -Type Error
+        $allPassed = $false
+    }
+    
+    # Check 2: Developer Mode (required for symlinks)
+    Write-Host "  [2/5] Developer Mode..." -NoNewline
+    if (Test-DeveloperMode) {
+        Write-Host " ✓" -ForegroundColor Green
+        $Script:Stats.DevModeEnabled = $true
+    } else {
+        Write-Host " ⚠" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Status "Developer Mode is NOT enabled" -Type Warning
+        Write-Status "Chezmoi uses symlinks which require Developer Mode on Windows" -Type Info
+        Write-Host ""
+        
+        $response = Read-Host "  Would you like to enable Developer Mode now? (y/N)"
+        if ($response -eq 'y' -or $response -eq 'Y') {
+            if (Enable-DeveloperMode) {
+                $Script:Stats.DevModeEnabled = $true
+            } else {
+                Write-Status "Cannot continue without Developer Mode" -Type Error
+                Write-Status "Chezmoi will fall back to copy mode (less efficient)" -Type Warning
+            }
+        } else {
+            Write-Status "Continuing without Developer Mode" -Type Warning
+            Write-Status "Symlinks will not work - chezmoi will use copy mode" -Type Info
+        }
+    }
+    
+    # Check 3: Internet connectivity
+    Write-Host "  [3/5] Internet connectivity..." -NoNewline
+    try {
+        $null = Invoke-WebRequest -Uri "https://github.com" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+        Write-Host " ✓" -ForegroundColor Green
+    } catch {
+        Write-Host " ✗" -ForegroundColor Red
+        Write-Status "Cannot reach github.com" -Type Error
+        $allPassed = $false
+    }
+    
+    # Check 4: Package manager availability
+    Write-Host "  [4/5] Package manager..." -NoNewline
+    if ((Test-CommandExists scoop) -or (Test-CommandExists winget)) {
+        Write-Host " ✓" -ForegroundColor Green
+    } else {
+        Write-Host " ⚠" -ForegroundColor Yellow
+        Write-Status "Neither scoop nor winget found (will install scoop)" -Type Info
+    }
+    
+    # Check 5: 1Password CLI (optional but recommended)
+    Write-Host "  [5/5] 1Password CLI..." -NoNewline
+    $opStatus = Test-OnePasswordCLI
+    if ($opStatus.Authenticated) {
+        Write-Host " ✓" -ForegroundColor Green
+        $Script:Stats.OnePasswordAvailable = $true
+    } elseif ($opStatus.Available) {
+        Write-Host " ⚠" -ForegroundColor Yellow
+        Write-Status "$($opStatus.Message)" -Type Warning
+        Write-Status "You'll need to authenticate: op signin" -Type Info
+    } else {
+        Write-Host " -" -ForegroundColor Gray
+        Write-Status "Optional: 1Password CLI not installed (secrets management unavailable)" -Type Info
+    }
+    
+    Write-Host ""
+    
+    if ($allPassed) {
+        Write-Status "Pre-flight checks passed!" -Type Success
+        $Script:Stats.PreflightPassed = $true
+        return $true
+    } else {
+        Write-Status "Some pre-flight checks failed" -Type Error
+        return $false
+    }
 }
 
 # ============================================================================
@@ -282,29 +490,55 @@ function Main {
     Write-Host ""
     Write-Host "╔═══════════════════════════════════════════╗" -ForegroundColor Cyan
     Write-Host "║      Dotfiles Bootstrap (Windows)        ║" -ForegroundColor Cyan
+    Write-Host "║              Version 2.0.0                ║" -ForegroundColor Cyan
     Write-Host "╚═══════════════════════════════════════════╝" -ForegroundColor Cyan
-    Write-Host ""
     
-    # Step 1: Install chezmoi
+    $totalSteps = 5
+    
+    # Step 0: Pre-flight validation
+    Write-Progress -Step 0 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Running pre-flight checks"
+    if (-not (Invoke-PreflightChecks)) {
+        Write-Status "Pre-flight checks failed - please fix the issues above" -Type Error
+        Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
+        exit 1
+    }
+    
+    # Step 1: Configure XDG environment (do this early)
+    Write-Progress -Step 1 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Setting up XDG environment"
+    Set-EnvironmentVariables
+    
+    # Step 2: Install chezmoi
+    Write-Progress -Step 2 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Installing chezmoi"
     if (-not (Install-Chezmoi)) {
         Write-Status "Bootstrap failed: Could not install chezmoi" -Type Error
+        Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
         exit 1
     }
     
-    # Step 2: Install scoop (if needed for packages)
+    # Step 3: Install scoop (if needed for packages)
+    Write-Progress -Step 3 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Setting up package manager"
     if (-not $SkipPackages) {
         Install-Scoop | Out-Null
+    } else {
+        Write-Status "Skipping package manager setup (--SkipPackages specified)" -Type Info
     }
     
-    # Step 3: Initialize chezmoi and apply dotfiles
-    # This will trigger package installation scripts automatically
+    # Step 4: Initialize chezmoi and apply dotfiles
+    Write-Progress -Step 4 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Applying dotfiles configuration"
+    Write-Host ""
+    Write-Status "This will clone the repository and apply all configurations..." -Type Info
+    Write-Status "Package installation scripts will run automatically" -Type Info
+    Write-Host ""
+    
     if (-not (Initialize-Chezmoi -Repo $Repository -Branch $Branch)) {
         Write-Status "Bootstrap failed: Could not apply dotfiles" -Type Error
+        Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
         exit 1
     }
     
-    # Step 4: Configure XDG environment variables
-    Set-EnvironmentVariables
+    # Step 5: Finalize
+    Write-Progress -Step 5 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Finalizing setup"
+    Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
     
     # Summary
     Write-Host ""
@@ -312,20 +546,38 @@ function Main {
     Write-Host "║          Bootstrap Complete! 🎉           ║" -ForegroundColor Green
     Write-Host "╚═══════════════════════════════════════════╝" -ForegroundColor Green
     Write-Host ""
-    Write-Status "Chezmoi installed: $($Script:Stats.ChezmoiInstalled)" -Type Info
-    Write-Status "Scoop installed: $($Script:Stats.ScoopInstalled)" -Type Info
-    Write-Status "Configs applied: $($Script:Stats.ConfigsApplied)" -Type Info
+    
+    # Show statistics
+    Write-Status "Bootstrap Statistics:" -Type Info
+    Write-Host "  • Pre-flight passed: $($Script:Stats.PreflightPassed)"
+    Write-Host "  • Developer Mode: $(if ($Script:Stats.DevModeEnabled) { 'Enabled' } else { 'Disabled' })"
+    Write-Host "  • 1Password available: $(if ($Script:Stats.OnePasswordAvailable) { 'Yes' } else { 'No' })"
+    Write-Host "  • Chezmoi installed: $($Script:Stats.ChezmoiInstalled)"
+    Write-Host "  • Scoop installed: $($Script:Stats.ScoopInstalled)"
+    Write-Host "  • Configs applied: $($Script:Stats.ConfigsApplied)"
     
     $elapsed = (Get-Date) - $Script:Stats.StartTime
-    Write-Status "Total time: $($elapsed.TotalSeconds.ToString('F2'))s" -Type Info
+    Write-Host "  • Total time: $($elapsed.TotalSeconds.ToString('F2'))s"
     
     Write-Host ""
     Write-Status "Next steps:" -Type Info
     Write-Host "  1. Restart your terminal to load new configs"
     Write-Host "  2. Run: chezmoi diff (to see applied changes)"
     Write-Host "  3. Run: chezmoi edit --apply <file> (to modify configs)"
-    Write-Host ""
-    Write-Status "Package installation runs automatically via chezmoi scripts" -Type Info
+    
+    if (-not $Script:Stats.DevModeEnabled) {
+        Write-Host ""
+        Write-Status "Recommendation: Enable Developer Mode for better performance" -Type Warning
+        Write-Host "  Settings > Privacy & Security > For developers > Developer Mode"
+    }
+    
+    if (-not $Script:Stats.OnePasswordAvailable) {
+        Write-Host ""
+        Write-Status "Optional: Install 1Password CLI for secrets management" -Type Info
+        Write-Host "  scoop install 1password-cli"
+        Write-Host "  Then run: op signin"
+    }
+    
     Write-Host ""
 }
 

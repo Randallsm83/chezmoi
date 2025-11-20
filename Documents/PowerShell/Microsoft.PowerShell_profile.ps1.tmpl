@@ -63,9 +63,9 @@ if ($env:TERM_PROGRAM -eq "vscode") {
     . "$(code --locate-shell-integration-path pwsh)"
 }
 
-# Set LS_COLORS using Vivid ({{ .theme.name }} theme)
-{{- if .packages.scoop | has "vivid" }}
-$env:LS_COLORS = (vivid generate {{ .theme.name }})
+# Set LS_COLORS using Vivid ({{ .theme }} theme)
+{{- if index .package_features "vivid" }}
+$env:LS_COLORS = (vivid generate {{ .theme }})
 {{- end }}
 
 # PSReadLine configuration - Vi mode with enhanced history
@@ -125,10 +125,10 @@ Set-PSReadLineKeyHandler -Key Spacebar -ScriptBlock {
 }
 
 # 1Password SSH Agent integration
-{{- if .features.setup_1password }}
+{{- if .setup_1password }}
 $env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"
 {{- end }}
 
 # Welcome message (optional - comment out if you prefer clean startup)
-# Write-Host "PowerShell $($PSVersionTable.PSVersion) - Welcome, {{ .user.name }}!" -ForegroundColor Cyan
+# Write-Host "PowerShell $($PSVersionTable.PSVersion) - Welcome, {{ .name }}!" -ForegroundColor Cyan
 {{- end -}}
