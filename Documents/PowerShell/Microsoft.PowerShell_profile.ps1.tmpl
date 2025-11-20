@@ -33,6 +33,23 @@ Invoke-Expression (& mise activate pwsh | Out-String)
 # Initialize Zoxide (smart cd)
 Invoke-Expression (& zoxide init powershell | Out-String)
 
+# PSFzf (fzf integration for PowerShell) — optional
+{{- if index .package_features "fzf" }}
+if (Get-Module -ListAvailable -Name PSFzf) {
+    Import-Module PSFzf
+
+    # Key bindings
+    Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r'
+
+    # Use fd for better performance
+    $env:FZF_DEFAULT_COMMAND = 'fd --type f --hidden --follow --exclude .git'
+    $env:FZF_CTRL_T_COMMAND = $env:FZF_DEFAULT_COMMAND
+
+    # UI options (compatible with your theme)
+    $env:FZF_DEFAULT_OPTS = '--height 40% --layout=reverse --border --inline-info'
+}
+{{- end }}
+
 # Import GamePerformanceOptimizer module (for game security exclusions)
 if (Get-Module -ListAvailable -Name GamePerformanceOptimizer) {
     Import-Module GamePerformanceOptimizer

@@ -251,6 +251,7 @@ package_features:
   
   # Development tools (optional)
   arduino: false    # Arduino CLI and IDE configs
+  fzf: true         # Fuzzy finder (PSFzf on Windows, fzf everywhere)
   glow: true        # Markdown renderer configs
   tinted_theming: true  # Base16/Base24 theme system
   thefuck: true     # Command correction tool
