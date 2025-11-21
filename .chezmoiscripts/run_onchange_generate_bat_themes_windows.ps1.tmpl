@@ -1,0 +1,177 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Generate .tmTheme files for bat from color palettes in .chezmoidata.yaml
+# Runs when .chezmoidata.yaml theme section changes
+
+$ErrorActionPreference = 'Stop'
+
+$BatThemesDir = if ($env:XDG_CONFIG_HOME) {
+    Join-Path $env:XDG_CONFIG_HOME "bat\themes"
+} else {
+    Join-Path $HOME ".config\bat\themes"
+}
+
+New-Item -ItemType Directory -Force -Path $BatThemesDir | Out-Null
+
+# Function to generate .tmTheme file
+function New-BatTheme {
+    param(
+        [string]$Name,
+        [string]$Background,
+        [string]$Foreground,
+        [string]$Purple,
+        [string]$Pink,
+        [string]$Green,
+        [string]$Orange,
+        [string]$Blue,
+        [string]$Cyan,
+        [string]$Yellow
+    )
+    
+    $ThemeContent = @"
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>$Name</string>
+	<key>settings</key>
+	<array>
+		<dict>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>$Background</string>
+				<key>foreground</key>
+				<string>$Foreground</string>
+				<key>caret</key>
+				<string>$Foreground</string>
+				<key>lineHighlight</key>
+				<string>${Background}40</string>
+				<key>selection</key>
+				<string>${Blue}40</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Comment</string>
+			<key>scope</key>
+			<string>comment</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${Cyan}80</string>
+				<key>fontStyle</key>
+				<string>italic</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>String</string>
+			<key>scope</key>
+			<string>string</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>$Green</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Number</string>
+			<key>scope</key>
+			<string>constant.numeric</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>$Orange</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Keyword</string>
+			<key>scope</key>
+			<string>keyword, storage</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>$Purple</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Function</string>
+			<key>scope</key>
+			<string>entity.name.function, support.function</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>$Blue</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Class</string>
+			<key>scope</key>
+			<string>entity.name.class, entity.name.type, support.class</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>$Yellow</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Variable</string>
+			<key>scope</key>
+			<string>variable</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>$Foreground</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Constant</string>
+			<key>scope</key>
+			<string>constant</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>$Pink</string>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>
+"@
+    
+    Set-Content -Path (Join-Path $BatThemesDir "$Name.tmTheme") -Value $ThemeContent -Encoding UTF8
+}
+
+# Generate all themes from .chezmoidata.yaml
+{{- range $theme_name, $colors := .theme }}
+{{- if ne $theme_name "name" }}
+New-BatTheme `
+    -Name "{{ $theme_name }}" `
+    -Background "{{ $colors.background }}" `
+    -Foreground "{{ $colors.foreground }}" `
+    -Purple "{{ $colors.purple }}" `
+    -Pink "{{ $colors.pink }}" `
+    -Green "{{ $colors.green }}" `
+    -Orange "{{ $colors.orange }}" `
+    -Blue "{{ $colors.blue }}" `
+    -Cyan "{{ $colors.cyan }}" `
+    -Yellow "{{ $colors.yellow }}"
+{{- end }}
+{{- end }}
+
+# Rebuild bat cache to include new themes
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+    bat cache --build
+    Write-Host "✓ Generated bat themes and rebuilt cache" -ForegroundColor Green
+} else {
+    Write-Host "⚠ bat not found - themes generated but cache not rebuilt" -ForegroundColor Yellow
+}
+{{- end }}
