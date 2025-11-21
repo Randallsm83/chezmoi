@@ -151,8 +151,9 @@ function New-BatTheme {
 }
 
 # Generate all themes from .chezmoidata.yaml
-{{- range $theme_name, $colors := .theme }}
-{{- if ne $theme_name "name" }}
+{{- $themes := (index (fromYaml (include ".chezmoidata.yaml")) "theme") }}
+{{- range $theme_name, $colors := $themes }}
+{{- if and (ne $theme_name "name") (kindIs "map" $colors) }}
 New-BatTheme `
     -Name "{{ $theme_name }}" `
     -Background "{{ $colors.background }}" `
