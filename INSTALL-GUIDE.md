@@ -87,9 +87,7 @@ graph TD
     
     InstallRuntimes --> InstallMiseTools[Install mise global tools<br/>direnv, yarn, uv, usage]
     
-    InstallMiseTools --> RunAfter[Run run_after scripts<br/>run_after_install_vscode_extensions]
-    
-    RunAfter --> SetXDG[Set XDG environment variables<br/>XDG_CONFIG_HOME, etc.]
+    InstallMiseTools --> SetXDG[Set XDG environment variables<br/>XDG_CONFIG_HOME, etc.]
     
     SetXDG --> Complete([✅ Installation Complete])
     
@@ -120,7 +118,6 @@ graph TD
 **Scripts executed**:
 - `bootstrap.ps1` - Main bootstrap script
 - `.chezmoiscripts/run_once_install_packages_windows.ps1.tmpl` - Package installation
-- `.chezmoiscripts/run_after_install_vscode_extensions_windows.ps1.tmpl` - VS Code extensions
 
 ---
 
@@ -420,13 +417,6 @@ sequenceDiagram
     Scripts-->>Chezmoi: Package installation complete
     deactivate Scripts
     
-    Note over Chezmoi,Scripts: Phase 4: After Scripts
-    Chezmoi->>Scripts: run_after_*<br/>(VS Code extensions, etc.)
-    activate Scripts
-    Scripts->>System: Install VS Code extensions (Windows)
-    Scripts-->>Chezmoi: Post-install tasks complete
-    deactivate Scripts
-    
     Chezmoi-->>Bootstrap: Chezmoi apply complete
     deactivate Chezmoi
     
@@ -448,10 +438,6 @@ Chezmoi executes scripts in the following order:
 3. **`run_once_*`**: Run once after file application
    - Example: `run_once_install_packages_windows.ps1.tmpl`, `run_once_install_packages_unix.sh.tmpl`
    - Used for: Installing packages via scoop/winget/mise
-
-4. **`run_after_*`**: Run after all other operations
-   - Example: `run_after_install_vscode_extensions_windows.ps1.tmpl`
-   - Used for: Post-installation tasks
 
 **Script naming conventions**:
 - `run_once_*`: Runs once (tracked in `~/.local/share/chezmoi/chezmoistate.boltdb`)

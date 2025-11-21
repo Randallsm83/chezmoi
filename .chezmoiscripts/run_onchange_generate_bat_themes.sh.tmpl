@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# Generate .tmTheme files for bat from color palettes in .chezmoidata.yaml
+# Runs when .chezmoidata.yaml theme section changes
+
+set -euo pipefail
+
+BAT_THEMES_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/bat/themes"
+mkdir -p "$BAT_THEMES_DIR"
+
+# Function to generate .tmTheme file
+generate_theme() {
+    local name="$1"
+    local bg="$2"
+    local fg="$3"
+    local purple="$4"
+    local pink="$5"
+    local green="$6"
+    local orange="$7"
+    local blue="$8"
+    local cyan="$9"
+    local yellow="${10}"
+    
+    cat > "$BAT_THEMES_DIR/${name}.tmTheme" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>${name}</string>
+	<key>settings</key>
+	<array>
+		<dict>
+			<key>settings</key>
+			<dict>
+				<key>background</key>
+				<string>${bg}</string>
+				<key>foreground</key>
+				<string>${fg}</string>
+				<key>caret</key>
+				<string>${fg}</string>
+				<key>lineHighlight</key>
+				<string>${bg}40</string>
+				<key>selection</key>
+				<string>${blue}40</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Comment</string>
+			<key>scope</key>
+			<string>comment</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${cyan}80</string>
+				<key>fontStyle</key>
+				<string>italic</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>String</string>
+			<key>scope</key>
+			<string>string</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${green}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Number</string>
+			<key>scope</key>
+			<string>constant.numeric</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${orange}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Keyword</string>
+			<key>scope</key>
+			<string>keyword, storage</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${purple}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Function</string>
+			<key>scope</key>
+			<string>entity.name.function, support.function</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${blue}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Class</string>
+			<key>scope</key>
+			<string>entity.name.class, entity.name.type, support.class</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${yellow}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Variable</string>
+			<key>scope</key>
+			<string>variable</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${fg}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Constant</string>
+			<key>scope</key>
+			<string>constant</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>${pink}</string>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>
+EOF
+}
+
+# Generate all themes from .chezmoidata.yaml
+{{- range $theme_name, $colors := .theme }}
+{{- if ne $theme_name "name" }}
+generate_theme \
+    "{{ $theme_name }}" \
+    "{{ $colors.background }}" \
+    "{{ $colors.foreground }}" \
+    "{{ $colors.purple }}" \
+    "{{ $colors.pink }}" \
+    "{{ $colors.green }}" \
+    "{{ $colors.orange }}" \
+    "{{ $colors.blue }}" \
+    "{{ $colors.cyan }}" \
+    "{{ $colors.yellow }}"
+{{- end }}
+{{- end }}
+
+# Rebuild bat cache to include new themes
+if command -v bat >/dev/null 2>&1; then
+    bat cache --build
+    echo "✓ Generated bat themes and rebuilt cache"
+else
+    echo "⚠ bat not found - themes generated but cache not rebuilt"
+fi

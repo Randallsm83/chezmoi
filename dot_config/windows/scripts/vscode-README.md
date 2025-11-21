@@ -53,15 +53,6 @@ Using both dotfiles and Settings Sync will cause conflicts:
 - **mcp.json** - Model Context Protocol configuration
   - Server configurations for AI assistants
 
-- **extensions.txt** - List of installed extensions (57 extensions)
-  - One extension ID per line
-  - Can include comments starting with #
-
-- **extensions-install.ps1** - Automated extension installer
-  - Reads extensions.txt
-  - Installs missing extensions
-  - Skips already installed extensions
-
 ## Bootstrap Integration
 
 The Windows bootstrap script handles VS Code setup when you use the `-IncludeVSCode` flag:
@@ -88,22 +79,10 @@ The Windows bootstrap script handles VS Code setup when you use the `-IncludeVSC
    - `keybindings.json` → `%APPDATA%\Code\User\keybindings.json`
    - `mcp.json` → `%APPDATA%\Code\User\mcp.json`
 
-3. **Installs Extensions**
-   - Runs `extensions-install.ps1`
-   - Installs all extensions from `extensions.txt`
-
-4. **Backs Up Existing Files**
+3. **Backs Up Existing Files**
    - Creates timestamped backups in `~/.dotfiles-backup/`
    - Won't overwrite without permission (unless `-Force` used)
 
-## Updating Extensions List
-
-To update the extensions list after installing new extensions:
-
-```powershell
-# From dotfiles root
-code --list-extensions | Out-File windows\vscode\extensions.txt -Encoding UTF8
-```
 
 ## Platform-Specific Notes
 
@@ -203,10 +182,6 @@ The settings.json file includes platform-specific paths using VS Code's platform
 - Check if files are symlinked: `Get-Item "$env:APPDATA\Code\User\settings.json" | Select-Object Target`
 - If regular file, re-run bootstrap: `.\windows\bootstrap.ps1 -IncludeVSCode -Force`
 
-### Extensions not installing
-- Ensure `code` command is in PATH
-- Try manual installation: `code --install-extension <extension-id>`
-- Check extensions.txt format (one ID per line, no extra whitespace)
 
 ### Conflicts with Settings Sync
 - **Disable Settings Sync**: Set `"settingsSync.enable": false` in settings.json

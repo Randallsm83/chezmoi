@@ -274,6 +274,27 @@ theme_mappings:
     tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
     kanagawa: "molokai"  # fallback - vivid doesn't have kanagawa
+  
+  # Bat (cat with syntax highlighting) and Delta (git diff)
+  # Use custom .tmTheme files generated from our color palettes
+  bat:
+    spaceduck: "spaceduck"
+    onedark: "onedark"
+    gruvbox-material: "gruvbox-material"
+    tokyonight: "tokyonight"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"
+  
+  # Delta uses same theme names as bat
+  delta:
+    spaceduck: "spaceduck"
+    onedark: "onedark"
+    gruvbox-material: "gruvbox-material"
+    tokyonight: "tokyonight"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"
 
 # ============================================================================
 # Fonts
@@ -351,7 +372,7 @@ package_features:
   arduino: false    # Arduino CLI and IDE configs
   fzf: true         # Fuzzy finder (PSFzf on Windows, fzf everywhere)
   glow: true        # Markdown renderer configs
-  tinted_theming: true  # Base16/Base24 theme system
+  tinted_theming: false  # DEPRECATED: Base16/Base24 theme system (replaced by unified theme system)
   thefuck: true     # Command correction tool
   sqlite3: true     # SQLite CLI configs
   vim: false        # DEPRECATED: Using neovim instead

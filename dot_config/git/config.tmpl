@@ -87,11 +87,12 @@
 {{- end }}
 
 # Delta (diff tool) configuration
+{{- $delta_theme := index .theme_mappings.delta .theme }}
 [delta]
 	navigate = true
 	line-numbers = true
 	side-by-side = false
-	syntax-theme = OneHalfDark
+	syntax-theme = {{ $delta_theme }}
 	features = decorations
 
 [delta "decorations"]
