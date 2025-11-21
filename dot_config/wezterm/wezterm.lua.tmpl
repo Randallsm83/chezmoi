@@ -49,7 +49,7 @@ config.term = "wezterm"
 -------------------- Colorscheme -----------------------------------------------
 
 -- Dynamic theme selection based on chezmoi data
-{{- $wezterm_theme := index .theme_mappings.wezterm .theme.name }}
+{{- $wezterm_theme := index .theme_mappings.wezterm .theme }}
 wezterm.GLOBAL.theme = "{{ $wezterm_theme }}"
 
 -- Load Scheme Here

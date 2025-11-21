@@ -28,7 +28,7 @@
 -- end
 
 {{- /* Dynamic colorscheme selection based on chezmoi theme */ -}}
-{{- $nvim_colorscheme := index .theme_mappings.neovim .theme.name -}}
+{{- $nvim_colorscheme := index .theme_mappings.neovim .theme -}}
 vim.g.tinted_colorspace = 256
 vim.cmd.colorscheme('{{ $nvim_colorscheme }}')
 

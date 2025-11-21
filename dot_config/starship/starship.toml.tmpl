@@ -52,7 +52,7 @@ $cmd_duration\
 $line_break$character"""
 
 {{- /* Dynamic palette selection based on theme */ -}}
-{{- $starship_palette := index .theme_mappings.starship .theme.name -}}
+{{- $starship_palette := index .theme_mappings.starship .theme -}}
 palette = '{{ $starship_palette }}'
 
 [palettes.gruvbox_dark_medium]

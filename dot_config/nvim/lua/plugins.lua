@@ -394,7 +394,7 @@ require('lazy').setup({
       options = {
         icons_enabled = true,
 {{- /* Dynamic lualine theme - use same mapping as colorscheme */ -}}
-{{- $lualine_theme := index .theme_mappings.neovim .theme.name -}}
+{{- $lualine_theme := index .theme_mappings.neovim .theme -}}
         theme = '{{ $lualine_theme }}',
         component_separators = { left = '', right = '' },
         section_separators = { left = '', right = '' },
