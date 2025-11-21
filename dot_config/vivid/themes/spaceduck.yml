@@ -5,169 +5,129 @@
 #  ╚████╔╝ ██║ ╚████╔╝ ██║██████╔╝
 #   ╚═══╝  ╚═╝  ╚═══╝  ╚═╝╚═════╝
 # LS_COLORS generator.
-#
+# Official Spaceduck ANSI palette from https://github.com/pineapplegiant/spaceduck
 
 colors:
-  # Spaceduck color palette
-  # Based on https://github.com/pineapplegiant/spaceduck
-  
-  background   : '0f111b'
-  foreground   : 'ecf0c1'
-  
-  red          : 'e33400'
-  orange       : 'e39400'
-  yellow       : 'f2ce00'
-  green        : '5ccc96'
-  cyan         : '00a3cc'
-  blue         : '7a5ccc'
-  purple       : 'b3a1e6'
-  magenta      : 'ce6f8f'
-  
-  dark_purple  : '30365F'
-  dark_purple2 : '686f9a'
-  grey         : '818596'
-  grey2        : 'c1c3cc'
-  
-  white        : 'ffffff'
-  black        : '000000'
+  # Theme colors (ANSI palette)
+  background: '0f111b'
+  black:   '000000'
+  red:     'e33400'
+  green:   '5ccc96'
+  yellow:  'b3a1e6'
+  blue:    '00a3cc'
+  magenta: 'f2ce00'
+  cyan:    '7a5ccc'
+  white:   'f0f1ce'
 
 core:
-  normal_text:
-    foreground: foreground
-  
-  regular_file:
-    foreground: foreground
-  
-  reset_to_normal:
-    foreground: foreground
+  regular_file: {}
 
   directory:
-    foreground: cyan
-    font-style: bold
-
-  symlink:
-    foreground: purple
-    font-style: bold
-
-  multi_hard_link:
-    foreground: magenta
-    font-style: bold
-
-  fifo:
-    foreground: yellow
-    font-style: underline
-
-  socket:
-    foreground: red
-    font-style: underline
-
-  door:
-    foreground: magenta
-    font-style: underline
-
-  block_device:
-    foreground: orange
-    font-style: bold
-
-  character_device:
-    foreground: yellow
-    font-style: bold
-
-  broken_symlink:
-    foreground: red
-    background: black
-    font-style: bold
-
-  missing_symlink_target:
-    foreground: red
-    background: black
-    font-style: bold
-
-  setuid:
-    foreground: white
-    background: red
-    font-style: bold
-
-  setgid:
-    foreground: black
-    background: yellow
-    font-style: bold
-
-  file_with_capability:
-    foreground: white
-    background: red
-
-  sticky_other_writable:
-    foreground: black
-    background: green
-
-  other_writable:
     foreground: blue
     font-style: bold
 
-  sticky:
-    foreground: white
-    background: blue
-
   executable_file:
-    foreground: green
+    foreground: yellow
     font-style: bold
+
+  symlink:
+    foreground: yellow
+
+  broken_symlink:
+    foreground: yellow
+    background: red
+  missing_symlink_target:
+    foreground: yellow
+    background: red
+  fifo:
+    foreground: magenta
+
+  socket:
+    foreground: magenta
+
+  character_device:
+    foreground: blue
+
+  block_device: {}
+
+  setuid: {}
+
+  setgid: {}
+
+  reset_to_normal: {}
+
+  multi_hard_link: {}
+
+  file_with_capability: {}
+
+  door: {}
+
+  normal_text:
+    {}
+
+  sticky:
+    {}
+
+  sticky_other_writable:
+    {}
+
+  other_writable:
+    {}
 
 text:
   special:
     foreground: yellow
-    font-style: bold
+    font-style: underline
 
   todo:
-    foreground: magenta
-    font-style: bold
+    foreground: green
 
   licenses:
-    foreground: grey2
-    font-style: bold
+    foreground: green
+    font-style: italic
 
   configuration:
-    foreground: grey2
+    foreground: green
 
   other:
-    foreground: grey
+    foreground: white
 
 markup:
   foreground: yellow
 
+  other:
+    foreground: green
+
 programming:
   source:
-    foreground: cyan
+    foreground: magenta
 
   tooling:
-    foreground: magenta
+    foreground: green
+
 
 media:
-  image:
-    foreground: purple
-
-  audio:
-    foreground: cyan
-
-  video:
-    foreground: magenta
-
-  fonts:
-    foreground: purple
-
-  3d:
-    foreground: purple
+  foreground: green
 
 office:
-  foreground: blue
+  document:
+    foreground: cyan
+  spreadsheet:
+    foreground: green
+  presentation:
+    foreground: cyan
+  calendar:
+    foreground: cyan
+    font-style: underline
 
 archives:
   foreground: red
-  font-style: bold
+  font-style: underline
 
 executable:
-  foreground: green
+  foreground: yellow
   font-style: bold
 
 unimportant:
-  foreground: grey
+  foreground: white
+  font-style: italic
