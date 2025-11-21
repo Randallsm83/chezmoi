@@ -2,13 +2,18 @@
   // ============================================================================
   // THEME & APPEARANCE
   // ============================================================================
-  // Active Theme: One Dark Pro
-  "workbench.colorTheme": "One Dark Pro Night Flat",
-  "workbench.preferredDarkColorTheme": "One Dark Pro Night Flat",
+  // Spaceduck
+  "workbench.colorTheme": "spaceduck",
+  "workbench.preferredDarkColorTheme": "spaceduck",
   "workbench.iconTheme": "a-file-icon-vscode",
   "workbench.productIconTheme": "a-file-icon-vscode-product-icon-theme",
-  "oneDarkPro.editorTheme": "One Dark Pro Night Flat",
-  "oneDarkPro.vivid": true,
+  // One Dark Pro
+  // "workbench.colorTheme": "One Dark Pro Night Flat",
+  // "workbench.preferredDarkColorTheme": "One Dark Pro Night Flat",
+  // "workbench.iconTheme": "a-file-icon-vscode",
+  // "workbench.productIconTheme": "a-file-icon-vscode-product-icon-theme",
+  // "oneDarkPro.editorTheme": "One Dark Pro Night Flat",
+  // "oneDarkPro.vivid": true,
   // Alternative Themes (uncomment to switch)
   // Gruvbox Concoctis
   // "gruvboxConcoctis.useBoldFont": true,
@@ -17,28 +22,33 @@
   // "workbench.colorTheme": "gruvboxConcoctis dark medium",
   // "workbench.preferredDarkColorTheme": "gruvboxConcoctis dark medium",
   // "workbench.iconTheme": "gruvbox-material-icon-theme",
+  // "workbench.productIconTheme": "a-file-icon-vscode-product-icon-theme",
   // Tokyo Night
   // "workbench.colorTheme": "Tokyo Night",
   // "workbench.preferredDarkColorTheme": "Tokyo Night",
   // "workbench.iconTheme": "material-icon-theme",
+  // "workbench.productIconTheme": "a-file-icon-vscode-product-icon-theme",
   // ============================================================================
   // FONTS & TYPOGRAPHY
   // ============================================================================
   // Editor Font
   "editor.fontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
   "editor.fontSize": 14,
-  "editor.lineHeight": 1.4,
-  "editor.fontWeight": "normal",
+  "editor.lineHeight": 1.6,
+  "editor.letterSpacing": 0.5,
+  "editor.fontWeight": 100,
   "editor.fontLigatures": true,
-  // Code Lens Font
-  "editor.codeLensFontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
-  "editor.codeLensFontSize": 13,
   // Terminal Font
   "terminal.integrated.fontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
   "terminal.integrated.fontSize": 13,
-  "terminal.integrated.lineHeight": 1.2,
-  "terminal.integrated.fontWeight": "normal",
+  "terminal.integrated.lineHeight": 1.4,
+  "terminal.integrated.letterSpacing": -1,
+  "terminal.integrated.fontWeight": 100,
   "terminal.integrated.fontLigatures.enabled": true,
+  "terminal.integrated.cursorBlinking": true,
+  // Code Lens Font
+  "editor.codeLensFontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
+  "editor.codeLensFontSize": 14,
   // ============================================================================
   // EDITOR BEHAVIOR
   // ============================================================================
@@ -303,6 +313,20 @@
   ],
   "vim.commandLineModeKeyBindings": [],
   "vim.commandLineModeKeyBindingsNonRecursive": [],
+  "vim.searchHighlightColor": "#686f9a",
+  "vim.searchHighlightTextColor": "#0f111a",
+  "vim.statusBarColorControl": true,
+  "vim.statusBarColors.commandlineinprogress": ["#5f87af", "#0f111a"],
+  "vim.statusBarColors.easymotioninputmode": ["#5f87af", "#0f111a"],
+  "vim.statusBarColors.easymotionmode": ["#5f87af", "#0f111a"],
+  "vim.statusBarColors.insert": ["#ce6f8f", "#0f111a"],
+  "vim.statusBarColors.normal": ["#686f9a", "#0f111a"],
+  "vim.statusBarColors.replace": ["#e39400", "#0f111a"],
+  "vim.statusBarColors.searchinprogressmode": ["#5f87af", "#0f111a"],
+  "vim.statusBarColors.surroundinputmode": ["#5f87af", "#0f111a"],
+  "vim.statusBarColors.visual": ["#a37acc", "#0f111a"],
+  "vim.statusBarColors.visualblock": ["#7ab87a", "#0f111a"],
+  "vim.statusBarColors.visualline": ["#a37acc", "#0f111a"],
   // ============================================================================
   // NEOVIM STANDALONE
   // ============================================================================
@@ -382,7 +406,14 @@
   "editor.accessibilitySupport": "off",
   "settingsSync.keybindingsPerPlatform": false,
   "terminal.integrated.defaultProfile.linux": "zsh",
-  "terminal.external.windowsExec": "%LOCALAPPDATA%\\Programs\\Warp\\warp.exe"
+  "terminal.external.windowsExec": "%LOCALAPPDATA%\\Programs\\Warp\\warp.exe",
+  "workbench.colorCustomizations": {
+    "statusBar.background": "#686f9a",
+    "statusBar.noFolderBackground": "#686f9a",
+    "statusBar.debuggingBackground": "#686f9a",
+    "statusBar.foreground": "#0f111a",
+    "statusBar.debuggingForeground": "#0f111a"
+  }
   // ============================================================================
   // PERFORMANCE
   // ============================================================================

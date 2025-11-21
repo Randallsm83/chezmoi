@@ -2,6 +2,12 @@
 # PowerShell Profile - Managed by chezmoi
 # Last updated: {{ now | date "2006-01-02" }}
 
+# Suppress non-fatal GetHistoryItems errors from Starship/PSReadLine
+$global:ErrorActionPreference = 'SilentlyContinue'
+
+# XDG Base Directory specification
+$global:ErrorActionPreference = 'SilentlyContinue'
+
 # XDG Base Directory specification
 # Ensure these are always set (even if bootstrap didn't run)
 if (-not $env:XDG_CONFIG_HOME) { $env:XDG_CONFIG_HOME = "$HOME\.config" }
@@ -22,6 +28,32 @@ foreach ($dir in $toolStateDirs) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
+}
+
+# PSReadLine configuration - load BEFORE Starship to avoid GetHistoryItems errors
+if (Get-Module -ListAvailable -Name PSReadLine) {
+    Import-Module PSReadLine
+    
+    # Vi mode
+    Set-PSReadLineOption -EditMode Vi
+    
+    # History settings
+    Set-PSReadLineOption -HistorySearchCursorMovesToEnd
+    Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
+    Set-PSReadLineOption -MaximumHistoryCount 10000
+    
+    # Predictive IntelliSense
+    Set-PSReadLineOption -PredictionSource History
+    Set-PSReadLineOption -PredictionViewStyle ListView
+    
+    # Starship uses 2-line prompt - set ExtraPromptLineCount for proper PSFzf rendering
+    Set-PSReadLineOption -ExtraPromptLineCount 1
+    
+    # Key bindings
+    Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+    Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+    Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
 }
 
 # Initialize Starship prompt
@@ -85,29 +117,6 @@ if ($env:TERM_PROGRAM -eq "vscode") {
 $env:LS_COLORS = (vivid generate {{ .theme }})
 {{- end }}
 
-# PSReadLine configuration - Vi mode with enhanced history
-if (Get-Module -ListAvailable -Name PSReadLine) {
-    Import-Module PSReadLine
-    
-    # Vi mode
-    Set-PSReadLineOption -EditMode Vi
-    
-    # History settings
-    Set-PSReadLineOption -HistorySearchCursorMovesToEnd
-    Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
-    Set-PSReadLineOption -MaximumHistoryCount 10000
-    
-    # Predictive IntelliSense
-    Set-PSReadLineOption -PredictionSource History
-    Set-PSReadLineOption -PredictionViewStyle ListView
-    
-    # Key bindings
-    Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
-    Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
-    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
-    Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
-}
-
 # Bash-style history expansion (!!, !$)
 Set-PSReadLineKeyHandler -Key Spacebar -ScriptBlock {
     $line = $null
@@ -140,6 +149,9 @@ Set-PSReadLineKeyHandler -Key Spacebar -ScriptBlock {
     # Insert the space
     [Microsoft.PowerShell.PSConsoleReadLine]::Insert(' ')
 }
+
+# Restore error action preference after profile loads
+$global:ErrorActionPreference = 'Continue'
 
 # 1Password SSH Agent integration
 {{- if .setup_1password }}

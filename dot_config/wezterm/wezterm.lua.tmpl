@@ -48,35 +48,12 @@ config.term = "wezterm"
 
 -------------------- Colorscheme -----------------------------------------------
 
--- Builtin
--- wezterm.GLOBAL.theme = "Espresso (base16)"
-
--- wezterm.GLOBAL.theme = "Catppuccin Mocha"
--- wezterm.GLOBAL.theme = "Catppuccin Macchiato"
--- wezterm.GLOBAL.theme = "Catppuccin Frappe"
-
-wezterm.GLOBAL.theme = "Gruvbox Material (Gogh)"
--- wezterm.GLOBAL.theme = "Gruvbox Dark (Gogh)"
--- wezterm.GLOBAL.theme = "Gruvbox dark, hard (base16)"
--- wezterm.GLOBAL.theme = "Gruvbox dark, medium (base16)"
--- wezterm.GLOBAL.theme = "Gruvbox dark, soft (base16)"
--- wezterm.GLOBAL.theme = "Gruvbox dark, pale (base16)"
--- wezterm.GLOBAL.theme = "GruvboxDark"
--- wezterm.GLOBAL.theme = "GruvboxDarkHard"
+-- Dynamic theme selection based on chezmoi data
+{{- $wezterm_theme := index .theme_mappings.wezterm .theme.name }}
+wezterm.GLOBAL.theme = "{{ $wezterm_theme }}"
 
 -- Load Scheme Here
 wezterm.GLOBAL.scheme = wezterm.color.get_builtin_schemes()[wezterm.GLOBAL.theme]
-
---- Custom
--- wezterm.GLOBAL.theme = 'GruvboxDarkHardMaterial'
--- wezterm.GLOBAL.theme = 'GruvboxDarkHardOrig'
--- wezterm.GLOBAL.theme = 'GruvboxDarkHardMix'
--- wezterm.GLOBAL.theme = 'GruvboxDarkMediumMaterial'
--- wezterm.GLOBAL.theme = 'GruvboxDarkMediumOrig'
--- wezterm.GLOBAL.theme = "GruvboxDarkMediumMix"
-
--- Load Scheme Here
--- wezterm.GLOBAL.scheme = wezterm.color.load_scheme( wezterm.config_dir .. "/colors/" .. wezterm.GLOBAL.theme .. ".toml")
 
 -- Enable Theme Here
 config.color_scheme = wezterm.GLOBAL.theme

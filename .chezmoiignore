@@ -194,36 +194,37 @@ Library/
 {{- end }}
 
 {{- if not .package_features.perl }}
-# Perl package files (when migrated)
-# .config/perl/**
-# .perltidyrc
-# .cache/zsh/completions/_cpanm
+# Perl package files
+.config/perl/**
+.perltidyrc
+.cache/zsh/completions/_cpanm
+.config/zsh/.zshrc.d/70-perl.zsh
 {{- end }}
 
 {{- if not .package_features.php }}
-# PHP package files (when migrated)
-# .config/php/**
-# .config/zsh/.zshrc.d/70-php.zsh
+# PHP package files
+.config/php/**
+.config/zsh/.zshrc.d/70-php.zsh
 {{- end }}
 
 {{- if not .package_features.asdf }}
 # ASDF package files (deprecated - replaced by mise)
-# .config/asdf/**
-# .asdfrc
-# .tool-versions
-# .config/zsh/.zshrc.d/50-asdf.zsh
+.config/asdf/**
+.asdfrc
+.tool-versions
+.config/zsh/.zshrc.d/50-asdf.zsh
 {{- end }}
 
 {{- if not .package_features.nvm }}
 # NVM package files (deprecated - replaced by mise)
-# .config/nvm/**
-# .config/zsh/.zshrc.d/70-nvm.zsh
+.config/nvm/**
+.config/zsh/.zshrc.d/70-nvm.zsh
 {{- end }}
 
 {{- if not .package_features.arduino }}
-# Arduino package files (when migrated)
-# .config/arduino/**
-# .config/zsh/.zshrc.d/70-arduino.zsh
+# Arduino package files
+.local/share/arduino/**
+.config/zsh/.zshrc.d/70-arduino.zsh
 {{- end }}
 
 {{- if not .package_features.glow }}
@@ -240,9 +241,9 @@ Library/
 {{- end }}
 
 {{- if not .package_features.thefuck }}
-# Thefuck package files (when migrated)
-# .config/thefuck/**
-# .config/zsh/.zshrc.d/thefuck.zsh
+# Thefuck package files
+.config/thefuck/**
+.config/zsh/.zshrc.d/thefuck.zsh
 {{- end }}
 
 {{- if not .package_features.sqlite3 }}
@@ -251,9 +252,9 @@ Library/
 {{- end }}
 
 {{- if not .package_features.vim }}
-# Vim package files (when migrated, separate from neovim)
-# .config/vim/**
-# .vimrc
+# Vim package files (separate from neovim)
+.config/vim/**
+.vimrc
 {{- end }}
 
 {{- if not .package_features.vivid }}
@@ -268,12 +269,13 @@ Library/
 
 {{- if not .package_features.homebrew }}
 # Homebrew package files (bootstrap only, not actively managed)
-# .config/homebrew/**
-# .config/zsh/.zshrc.d/50-homebrew.zsh
+.config/homebrew/**
+.config/zsh/.zshrc.d/50-homebrew.zsh
 {{- end }}
 
 {{- if not .package_features.vagrant }}
-# Vagrant package files (when migrated)
-# .cache/zsh/completions/_vagrant
+# Vagrant package files
+.cache/zsh/completions/_vagrant
+.config/zsh/.zshrc.d/60-vagrant.zsh
 {{- end }}
 {{- end }}

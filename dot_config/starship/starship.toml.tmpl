@@ -9,6 +9,10 @@
 
 "$schema" = 'https://starship.rs/config-schema.json'
 
+# Disable transient prompt to prevent GetHistoryItems error on empty history
+[transient_prompt]
+enable = false
+
 format = """
 [ ](bg:color_blue)\
 $os\
@@ -47,7 +51,9 @@ $cmd_duration\
 [](fg:color_bg1)\
 $line_break$character"""
 
-palette = 'onedark_pro4'
+{{- /* Dynamic palette selection based on theme */ -}}
+{{- $starship_palette := index .theme_mappings.starship .theme.name -}}
+palette = '{{ $starship_palette }}'
 
 [palettes.gruvbox_dark_medium]
 color_bg0           = '#282828'
@@ -195,6 +201,85 @@ color_bright_green  = '#abdc89'  # Green 2
 color_bright_cyan   = '#66d7e6'  # Cyan 2
 color_bright_blue   = '#65b6f8'  # Blue 2
 color_bright_purple = '#d682f0'  # Purple 2
+
+[palettes.spaceduck]
+color_bg0           = '#0f111b'  # Background
+color_bg1           = '#16192e'  # Slightly lighter
+color_bg2           = '#1e2340'  # Selection
+color_fg0           = '#ecf0c1'  # Foreground
+color_fg1           = '#f0f1ce'  # Bright white
+color_white         = '#f0f1ce'  # Bright white
+color_red           = '#e33400'  # Red
+color_orange        = '#e33400'  # Orange
+color_yellow        = '#b3a1e6'  # Yellow (their ANSI 3)
+color_green         = '#5ccc96'  # Green
+color_cyan          = '#7a5ccc'  # Cyan (their ANSI 6)
+color_blue          = '#00a3cc'  # Blue
+color_purple        = '#f2ce00'  # Purple (their ANSI 5)
+
+[palettes.tokyonight]
+color_bg0           = '#1a1b26'  # Background
+color_bg1           = '#24283b'  # Slightly lighter
+color_bg2           = '#292e42'  # Selection
+color_bg3           = '#414868'  # Comments
+color_fg0           = '#c0caf5'  # Foreground
+color_fg1           = '#c0caf5'  # Bright
+color_white         = '#c0caf5'  # White
+color_red           = '#f7768e'  # Red
+color_orange        = '#ff9e64'  # Orange
+color_yellow        = '#e0af68'  # Yellow
+color_green         = '#9ece6a'  # Green
+color_cyan          = '#7dcfff'  # Cyan
+color_blue          = '#7aa2f7'  # Blue
+color_purple        = '#bb9af7'  # Purple
+
+[palettes.tokyonight_storm]
+color_bg0           = '#24283b'  # Background
+color_bg1           = '#292e42'  # Slightly lighter
+color_bg2           = '#343b58'  # Selection
+color_bg3           = '#414868'  # Comments
+color_fg0           = '#c0caf5'  # Foreground
+color_fg1           = '#c0caf5'  # Bright
+color_white         = '#c0caf5'  # White
+color_red           = '#f7768e'  # Red
+color_orange        = '#ff9e64'  # Orange
+color_yellow        = '#e0af68'  # Yellow
+color_green         = '#9ece6a'  # Green
+color_cyan          = '#7dcfff'  # Cyan
+color_blue          = '#7aa2f7'  # Blue
+color_purple        = '#bb9af7'  # Purple
+
+[palettes.dracula]
+color_bg0           = '#282a36'  # Background
+color_bg1           = '#343746'  # Slightly lighter
+color_bg2           = '#44475a'  # Selection
+color_bg3           = '#6272a4'  # Comments
+color_fg0           = '#f8f8f2'  # Foreground
+color_fg1           = '#f8f8f2'  # Bright
+color_white         = '#f8f8f2'  # White
+color_red           = '#ff5555'  # Red
+color_orange        = '#ffb86c'  # Orange
+color_yellow        = '#f1fa8c'  # Yellow
+color_green         = '#50fa7b'  # Green
+color_cyan          = '#8be9fd'  # Cyan
+color_blue          = '#8be9fd'  # Blue
+color_purple        = '#bd93f9'  # Purple
+
+[palettes.kanagawa]
+color_bg0           = '#1f1f28'  # sumiInk3
+color_bg1           = '#2a2a37'  # sumiInk4
+color_bg2           = '#363646'  # sumiInk5
+color_bg3           = '#54546d'  # sumiInk6
+color_fg0           = '#dcd7ba'  # fujiWhite
+color_fg1           = '#dcd7ba'  # fujiWhite
+color_white         = '#dcd7ba'  # fujiWhite
+color_red           = '#c34043'  # autumnRed
+color_orange        = '#ffa066'  # surimiOrange
+color_yellow        = '#e6c384'  # carpYellow
+color_green         = '#98bb6c'  # springGreen
+color_cyan          = '#7fb4ca'  # springBlue
+color_blue          = '#7e9cd8'  # crystalBlue
+color_purple        = '#957fb8'  # oniViolet
 
 [os]
 disabled = false

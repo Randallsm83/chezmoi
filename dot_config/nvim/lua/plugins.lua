@@ -204,7 +204,7 @@ require('lazy').setup({
   { 'norcalli/nvim-colorizer.lua' },
   ----------------------------------------------------------------------------
   -- INFO: Colorschemes
-  { 'tinted-theming/tinted-vim' },
+  { 'pineapplegiant/spaceduck', branch = 'main' },
   {
     "navarasu/onedark.nvim",
     priority = 1000, -- make sure to load this before all the other start plugins
@@ -393,8 +393,23 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = true,
-        theme = 'onedark',
-        component_separators = { left = '', right = '' },
+{{- /* Dynamic lualine theme selection */ -}}
+{{- $lualine_theme := "auto" -}}
+{{- if eq .theme.name "spaceduck" -}}
+  {{- $lualine_theme = "auto" -}}
+{{- else if eq .theme.name "onedark" -}}
+  {{- $lualine_theme = "onedark" -}}
+{{- else if eq .theme.name "gruvbox-material" -}}
+  {{- $lualine_theme = "gruvbox-material" -}}
+{{- else if or (eq .theme.name "tokyonight") (eq .theme.name "tokyonight-storm") -}}
+  {{- $lualine_theme = "tokyonight" -}}
+{{- else if eq .theme.name "dracula" -}}
+  {{- $lualine_theme = "dracula" -}}
+{{- else if eq .theme.name "kanagawa" -}}
+  {{- $lualine_theme = "kanagawa" -}}
+{{- end -}}
+        theme = '{{ $lualine_theme }}',
+        component_separators = { left = '', right = '' },
         section_separators = { left = '', right = '' },
         disabled_filetypes = {
           statusline = {},
