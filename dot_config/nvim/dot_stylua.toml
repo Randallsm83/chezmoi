@@ -13,3 +13,5 @@ indent_type = "Spaces"
 indent_width = 2
 quote_style = "AutoPreferSingle"
 call_parentheses = "None"
+
+# vim: ts=2 sts=2 sw=2 et

@@ -14,46 +14,91 @@
 # =============================================================================
 
 [tools]
-# === Language Runtimes (Cross-Platform) ===
-bun = "latest"
-go = "latest"
-node = "23.7.0"
+# === Language Runtimes (based on feature flags) ===
+{{- if .package_features.node }}
+node = "lts"
+{{- end }}
+{{- if .package_features.python }}
 python = "latest"
+{{- end }}
+{{- if .package_features.ruby }}
 ruby = "latest"
+{{- end }}
+{{- if .package_features.golang }}
+go = "latest"
+{{- end }}
+{{- if .package_features.rust }}
 rust = "stable"
-deno = "latest"
-zig = "latest"
+{{- end }}
+{{- if .package_features.lua }}
+lua = "latest"
+{{- end }}
+{{- if .package_features.perl }}
+perl = "latest"
+{{- end }}
+{{- if .package_features.php }}
+php = "latest"
+{{- end }}
 
-# === Universal Tools (Cross-Platform) ===
+# === Always-installed runtimes ===
+bun = "latest"
+deno = "latest"
+
+# === Universal Tools ===
+{{- if .package_features.direnv }}
 direnv = "latest"
-uv = "latest"     # Python package installer
-yarn = "latest"
+{{- end }}
+{{- range .always_install.mise }}
+{{ . }} = "latest"
+{{- end }}
 
 {{- if ne .chezmoi.os "windows" }}
-# === Language Runtimes (Linux/macOS only) ===
-lua = "5.4.7"
-luajit = "2.1.0-beta3"
-
-# === CLI Tools (Linux/WSL/macOS only - Windows uses scoop) ===
-fzf = "latest"
-# Terminal utilities
+# === CLI Tools (Linux/WSL/macOS only - based on feature flags) ===
+{{- if .package_features.git }}
+github-cli = "latest"  # gh
+{{- end }}
+{{- if .package_features.1password }}
+op = "latest"  # 1Password CLI
+{{- end }}
+{{- if .package_features.nvim }}
+neovim = "latest"
+{{- end }}
+{{- if .package_features.starship }}
+starship = "latest"
+{{- end }}
+{{- if .package_features.bat }}
 "cargo:bat" = "latest"
+{{- end }}
+{{- if .package_features.eza }}
 "cargo:eza" = "latest"
-"cargo:fd-find" = "latest"
+{{- end }}
+{{- if .package_features.ripgrep }}
 "cargo:ripgrep" = "latest"
-bat-extras = "latest"     # Bash-dependent wrapper scripts
-btop = "latest"
-github-cli = "latest"     # GitHub CLI (gh)
-op = "latest"             # 1Password CLI
-starship = "latest"       # Cross-shell prompt
+{{- end }}
+{{- if .package_features.fd }}
+"cargo:fd-find" = "latest"
+{{- end }}
+{{- if .package_features.fzf }}
+fzf = "latest"
+{{- end }}
+{{- if .package_features.zoxide }}
+"cargo:zoxide" = "latest"
+{{- end }}
+{{- if .package_features.delta }}
+"cargo:git-delta" = "latest"
+{{- end }}
+{{- if .package_features.vivid }}
+"cargo:vivid" = "latest"
+{{- end }}
+{{- if .package_features.glow }}
+glow = "latest"
+{{- end }}
+{{- if .package_features.sqlite3 }}
 sqlite = "latest"
+{{- end }}
 
 # Build tools
 cargo-binstall = "latest"
-
-# Editors
-neovim = "latest"
-vim = "latest"
 {{- end }}
 
 [settings]

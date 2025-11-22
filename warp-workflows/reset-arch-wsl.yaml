@@ -174,3 +174,5 @@ description: |-
   
   ⚠️ WARNING: This is a DESTRUCTIVE operation. All data in the current
   archlinux WSL instance will be deleted. You will be prompted to confirm.
+
+# vim: ts=2 sts=2 sw=2 et

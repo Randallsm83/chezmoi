@@ -334,3 +334,5 @@ if ($DryRun) {
 Process-ConfigDirectory -Path $ConfigDir -IsDryRun $DryRun
 
 Write-Host "`n✅ Complete!" -ForegroundColor Green
+
+# vim: ts=2 sts=2 sw=2 et

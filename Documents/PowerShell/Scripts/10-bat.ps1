@@ -17,3 +17,5 @@ $env:BAT_THEME = "OneHalfDark"
 
 # Set bat style (line numbers, git changes)
 $env:BAT_STYLE = "numbers,changes,header"
+
+# vim: ts=2 sts=2 sw=2 et

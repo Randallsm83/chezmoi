@@ -110,3 +110,5 @@ control_char: {foreground: "#00a3cc"}
 broken_symlink: {foreground: "#e33400"}
 broken_path_overlay: {foreground: "#686f9a"}
 
+
+# vim: ts=2 sts=2 sw=2 et

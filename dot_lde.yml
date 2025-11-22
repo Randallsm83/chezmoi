@@ -612,3 +612,5 @@ projects:
     enable: true
     repo: git@git.dreamhost.com:dreamhost/microservices/packages-watcher.git
     path: "packages-watcher"
+
+# vim: ts=2 sts=2 sw=2 et

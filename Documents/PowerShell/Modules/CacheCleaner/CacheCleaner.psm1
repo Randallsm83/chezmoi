@@ -347,3 +347,5 @@ function Clear-Cache {
 }
 
 Export-ModuleMember -Function Clear-Cache
+
+# vim: ts=2 sts=2 sw=2 et

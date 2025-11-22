@@ -214,3 +214,5 @@ $flags['--update'] = @{
  '--release-notes', '--event-viewer', '--mount', '--status', '--update') | ForEach-Object {
      $flags[$_].isCommand = $true
 }
+
+# vim: ts=2 sts=2 sw=2 et

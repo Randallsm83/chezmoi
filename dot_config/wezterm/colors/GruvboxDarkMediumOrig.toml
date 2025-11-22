@@ -99,3 +99,5 @@ selection_fg = '#3c3836' #bg3/4
 author = 'Me'
 name = 'GruvboxDarkMediumOrig'
 
+
+# vim: ts=2 sts=2 sw=2 et

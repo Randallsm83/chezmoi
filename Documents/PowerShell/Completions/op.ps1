@@ -8,3 +8,5 @@ if (Get-Command op -ErrorAction SilentlyContinue) {
         Invoke-Expression $signInOutput
     }
 }
+
+# vim: ts=2 sts=2 sw=2 et

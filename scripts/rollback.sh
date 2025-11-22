@@ -133,3 +133,5 @@ fi
 
 BACKUP_PATH="${BACKUP_DIR}/${TIMESTAMP}"
 restore_backup "$BACKUP_PATH"
+
+# vim: ts=2 sts=2 sw=2 et

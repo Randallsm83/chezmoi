@@ -15,3 +15,4 @@ Foreach($import in @($Public + $Private))
 
 #Export-ModuleMember Register-WSLArgumentCompleter
 Register-WSLArgumentCompleter
+# vim: ts=2 sts=2 sw=2 et

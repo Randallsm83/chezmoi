@@ -48,3 +48,5 @@ export FZF_ALT_C_OPTS="
 # Completion options
 export FZF_COMPLETION_TRIGGER='**'
 export FZF_COMPLETION_OPTS='--border --info=inline'
+
+# vim: ts=2 sts=2 sw=2 et

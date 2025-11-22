@@ -191,3 +191,5 @@ Register-ArgumentCompleter -Native -CommandName 'eza' -ScriptBlock {
         $completions.Where{ $_.CompletionText -like "$wordToComplete*" } |
         Sort-Object -Property completionText
 }
+
+# vim: ts=2 sts=2 sw=2 et

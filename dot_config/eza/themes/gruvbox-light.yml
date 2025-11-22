@@ -109,3 +109,5 @@ symlink_path: {foreground: "#427b58"}
 control_char: {foreground: "#076678"}
 broken_symlink: {foreground: "#9d0006"}
 broken_path_overlay: {foreground: "#7c6f64"}
+
+# vim: ts=2 sts=2 sw=2 et

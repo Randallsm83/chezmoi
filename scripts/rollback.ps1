@@ -60,3 +60,5 @@ Get-ChildItem $BackupPath -Recurse -File | Where-Object { $_.Name -ne 'metadata.
 
 Write-ColorOutput "Rollback complete!" -Type Success
 Write-ColorOutput "You may want to run: chezmoi diff" -Type Warning
+
+# vim: ts=2 sts=2 sw=2 et

@@ -9,11 +9,11 @@
 
 # FZF Configuration for PowerShell
 
-# Colors matching onedark theme
+# Colors matching spaceduck theme
 $env:FZF_DEFAULT_OPTS = @"
---color=bg+:#3e4452,bg:#282c34,spinner:#61afef,hl:#c678dd
---color=fg:#abb2bf,header:#61afef,info:#98c379,pointer:#e06c75
---color=marker:#e5c07b,fg+:#abb2bf,prompt:#61afef,hl+:#c678dd
+--color=bg+:#1b1c36,bg:#0f111b,spinner:#00a3cc,hl:#b3a1e6
+--color=fg:#f0f1ce,header:#00a3cc,info:#5ccc96,pointer:#e33400
+--color=marker:#f2ce00,fg+:#f0f1ce,prompt:#00a3cc,hl+:#b3a1e6
 --border --height=40% --layout=reverse --info=inline
 --margin=1 --padding=1
 "@
@@ -59,3 +59,5 @@ if (Get-Module -ListAvailable -Name PSFzf) {
         Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
     }
 }
+
+# vim: ts=2 sts=2 sw=2 et

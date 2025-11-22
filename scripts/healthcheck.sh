@@ -222,3 +222,5 @@ log_info "Health check complete!"
 log_info "For updates, run: chezmoi update"
 log_info "For mise updates, run: mise upgrade"
 echo ""
+
+# vim: ts=2 sts=2 sw=2 et

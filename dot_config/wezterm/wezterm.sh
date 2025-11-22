@@ -567,3 +567,5 @@ if [[ -z "${WEZTERM_SHELL_SKIP_CWD-}" ]] ; then
 fi
 
 true
+
+# vim: ts=2 sts=2 sw=2 et

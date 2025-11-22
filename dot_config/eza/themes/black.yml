@@ -117,3 +117,5 @@ filenames:
 extensions:
   # Custom extension-based overrides
   # rs: {filename: {foreground: Red}, icon: {glyph: 🦀}}
+
+# vim: ts=2 sts=2 sw=2 et

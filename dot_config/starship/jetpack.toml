@@ -322,3 +322,5 @@ unknown_msg = '[◌](bold dimmed ellow)'
 [spack]
 symbol = "◇ "
 format = " spack [$symbol$environment]($style)"
+
+# vim: ts=2 sts=2 sw=2 et

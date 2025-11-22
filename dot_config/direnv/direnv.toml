@@ -28,3 +28,5 @@ extra_args = []
 [whitelist]
 # Trust all directories by default (you can restrict this)
 # prefix = []
+
+# vim: ts=2 sts=2 sw=2 et

@@ -1,23 +1,14 @@
 {{- if eq .chezmoi.os "windows" -}}
 #!/usr/bin/env pwsh
-#
-# Install packages on Windows
-# This script runs once after chezmoi initialization
+# Install packages on Windows based on feature flags
 
-$ErrorActionPreference = 'Continue'  # Continue on non-critical errors
+$ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
 
-# Status logging functions
 function Write-Status {
-    param(
-        [string]$Message,
-        [ValidateSet('Info', 'Success', 'Warning', 'Error')]
-        [string]$Type = 'Info'
-    )
-    
-    $colors = @{ Info = 'Cyan'; Success = 'Green'; Warning = 'Yellow'; Error = 'Red' }
-    $symbols = @{ Info = 'ℹ'; Success = '✓'; Warning = '⚠'; Error = '✗' }
-    
+    param([string]$Message, [ValidateSet('Info','Success','Warning','Error')][string]$Type = 'Info')
+    $colors = @{ Info='Cyan'; Success='Green'; Warning='Yellow'; Error='Red' }
+    $symbols = @{ Info='ℹ'; Success='✓'; Warning='⚠'; Error='✗' }
     Write-Host "$($symbols[$Type]) " -ForegroundColor $colors[$Type] -NoNewline
     Write-Host $Message
 }
@@ -28,60 +19,93 @@ function Test-CommandExists {
 }
 
 Write-Host "╔══════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║       Installing Windows Packages       ║" -ForegroundColor Cyan  
+Write-Host "║       Installing Windows Packages       ║" -ForegroundColor Cyan
 Write-Host "╚══════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
-# Install scoop packages from export file
-if (Test-CommandExists scoop) {
-    $scoopFile = "$env:USERPROFILE\.local\share\chezmoi\scoop-packages.json"
-    if (Test-Path $scoopFile) {
-        Write-Status "Installing scoop packages from $scoopFile..." -Type Info
-        try {
-            scoop import $scoopFile
-            Write-Status "Scoop packages installed" -Type Success
-        } catch {
-            Write-Status "Failed to import scoop packages: $_" -Type Warning
-        }
-    } else {
-        Write-Status "Scoop export file not found, skipping package installation" -Type Warning
-    }
-} else {
-    Write-Status "Scoop not available" -Type Error
-    exit 1
-}
+# Build package lists from feature flags
+$scoopPackages = @(
+{{- range .always_install.scoop }}
+    '{{ . }}'
+{{- end }}
+{{- range $feature, $enabled := .package_features }}
+  {{- if $enabled }}
+    {{- if hasKey $.package_mapping $feature }}
+      {{- $mapping := index $.package_mapping $feature }}
+      {{- if hasKey $mapping "scoop" }}
+        {{- range index $mapping "scoop" }}
+    '{{ . }}'
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+) | Select-Object -Unique
 
-# Install winget packages from export file
-if (Test-CommandExists winget) {
-    $wingetFile = "$env:USERPROFILE\.local\share\chezmoi\winget-packages.json"
-    if (Test-Path $wingetFile) {
-        Write-Status "Installing winget packages from $wingetFile..." -Type Info
-        try {
-            winget import -i $wingetFile --accept-package-agreements --accept-source-agreements --no-upgrade
-            Write-Status "Winget packages installed" -Type Success
-        } catch {
-            Write-Status "Failed to import winget packages: $_" -Type Warning
-        }
-    } else {
-        Write-Status "Winget export file not found, skipping GUI app installation" -Type Warning
-    }
-} else {
-    Write-Status "Winget not available, skipping GUI app installation" -Type Warning
-}
+$wingetPackages = @(
+{{- range .always_install.winget }}
+    '{{ . }}'
+{{- end }}
+{{- range $feature, $enabled := .package_features }}
+  {{- if $enabled }}
+    {{- if hasKey $.package_mapping $feature }}
+      {{- $mapping := index $.package_mapping $feature }}
+      {{- if hasKey $mapping "winget" }}
+        {{- range index $mapping "winget" }}
+    '{{ . }}'
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+) | Select-Object -Unique
 
+Write-Status "Packages to install: $($scoopPackages.Count) scoop, $($wingetPackages.Count) winget" -Type Info
+Write-Host ""
+
+# Install scoop packages
+if ((Test-CommandExists scoop) -and $scoopPackages.Count -gt 0) {
+    Write-Status "Installing scoop packages..." -Type Info
+    $installed=0; $failed=0
+    foreach ($pkg in $scoopPackages) {
+        try {
+            $isInstalled = scoop list $pkg 2>$null | Select-String -Pattern "^\s*$pkg" -Quiet
+            if ($isInstalled) { Write-Host "  ✓ $pkg (already installed)" -ForegroundColor Gray; continue }
+            Write-Host "  → Installing $pkg..." -NoNewline
+            scoop install $pkg --skip 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) { Write-Host " ✓" -ForegroundColor Green; $installed++ }
+            else { Write-Host " ✗" -ForegroundColor Red; $failed++ }
+        } catch { Write-Host " ✗" -ForegroundColor Red; $failed++ }
+    }
+    Write-Status "Scoop: $installed installed, $failed failed" -Type $(if ($failed -eq 0) { 'Success' } else { 'Warning' })
+}
+Write-Host ""
+
+# Install winget packages
+if ((Test-CommandExists winget) -and $wingetPackages.Count -gt 0) {
+    Write-Status "Installing winget packages..." -Type Info
+    $installed=0; $failed=0
+    foreach ($pkg in $wingetPackages) {
+        try {
+            $isInstalled = winget list --id $pkg --exact 2>$null | Select-String -Pattern $pkg -Quiet
+            if ($isInstalled) { Write-Host "  ✓ $pkg (already installed)" -ForegroundColor Gray; continue }
+            Write-Host "  → Installing $pkg..." -NoNewline
+            winget install --id $pkg --source winget --accept-package-agreements --accept-source-agreements --silent 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) { Write-Host " ✓" -ForegroundColor Green; $installed++ }
+            else { Write-Host " ✗" -ForegroundColor Red; $failed++ }
+        } catch { Write-Host " ✗" -ForegroundColor Red; $failed++ }
+    }
+    Write-Status "Winget: $installed installed, $failed failed" -Type $(if ($failed -eq 0) { 'Success' } else { 'Warning' })
+}
+Write-Host ""
+
+# Install mise tools (reads templated ~/.config/mise/config.toml)
 if (Test-CommandExists mise) {
-    Write-Status "Installing tools and runtimes via mise config..." -Type Info
-    Write-Status "Config: ~/.config/mise/config.toml" -Type Info
-    
+    Write-Status "Installing tools and runtimes via mise..." -Type Info
     try {
-        # Mise will read config.toml and config.windows.toml automatically
-        mise install
+        mise install 2>&1 | Out-Null
         Write-Status "Mise tools installed successfully" -Type Success
-    } catch {
-        Write-Status "Failed to install mise tools: $_" -Type Warning
-    }
-} else {
-    Write-Status "Mise not available, skipping package installation" -Type Warning
+    } catch { Write-Status "Failed to install mise tools: $_" -Type Warning }
 }
 
 Write-Host ""

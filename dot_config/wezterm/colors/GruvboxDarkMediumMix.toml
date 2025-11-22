@@ -108,3 +108,5 @@ background = "#32302f" #bg1
 [metadata]
 author = 'Me'
 name = 'GruvboxDarkMediumMix'
+
+# vim: ts=2 sts=2 sw=2 et

@@ -1,5 +1,22 @@
-{
-    "buckets": [
+{{- /* Scoop package list based on feature flags */ -}}
+[
+{{- range .always_install.scoop }}
+    "{{ . }}",
+{{- end }}
+{{- range $feature, $enabled := .package_features }}
+  {{- if $enabled }}
+    {{- if hasKey $.package_mapping $feature }}
+      {{- $mapping := index $.package_mapping $feature }}
+      {{- if hasKey $mapping "scoop" }}
+        {{- range index $mapping "scoop" }}
+    "{{ . }}",
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+    "__end__"
+]
         {
             "Name": "main",
             "Source": "https://github.com/ScoopInstaller/Main.git",

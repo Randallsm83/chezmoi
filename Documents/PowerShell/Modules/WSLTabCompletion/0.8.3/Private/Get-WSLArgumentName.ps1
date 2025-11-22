@@ -37,3 +37,4 @@ function Get-WSLArgumentName {
             $flags[$_].description
     }
 }
+# vim: ts=2 sts=2 sw=2 et

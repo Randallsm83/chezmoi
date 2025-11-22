@@ -142,3 +142,5 @@ inactive_tab_hover = { bg_color = "#45403d", fg_color = "#d4be98" }
 [metadata]
 author = 'Me'
 name = 'GruvboxDarkMediumMaterial'
+
+# vim: ts=2 sts=2 sw=2 et

@@ -10,130 +10,6 @@
 # NOTE: User info, platform detection, and machine type are in .chezmoi.toml.tmpl
 # NOTE: Use .chezmoi.local.toml for machine-specific overrides
 
-# Package lists for automated installation
-packages:
-  scoop:
-    # Version control
-    - git
-    - gh
-    - lazygit
-    # Core tools
-    - chezmoi
-    - mise
-    - starship
-    - zoxide
-    - fzf
-    # CLI utilities
-    - ripgrep
-    - fd
-    - bat
-    - eza
-    - vivid
-    - delta
-    - jq
-    - yq
-    # Development
-    - neovim
-    - sqlite
-    - 1password-cli
-    - cygwin
-    - make
-    # Network tools
-    - curl
-    - wget
-    # Utilities
-    - 7zip
-    - btop
-
-# Windows scoop packages (CLI tools - no admin required)
-# DEPRECATED: Use packages.scoop above instead
-# This is kept for reference but should match packages.scoop list
-scoop_packages:
-  # Version control
-  - git
-  - gh
-  - lazygit
-  
-  # Core utilities
-  - chezmoi
-  - mise
-  - starship
-  - zoxide
-  - fzf
-  - ripgrep
-  - fd
-  - bat
-  - eza
-  - vivid
-  - delta
-  - jq
-  - yq
-  
-  # Development tools
-  - neovim
-  - sqlite
-  - 1password-cli
-  - cygwin
-  - make
-  - curl
-  - wget
-  - 7zip
-  
-  # System monitoring
-  - btop
-
-# Windows winget packages (GUI apps and tools requiring admin)
-winget_packages:
-  # Core development
-  - Git.Git  # Includes Git Credential Manager
-  - Microsoft.PowerShell
-  - Microsoft.WindowsTerminal
-  - wez.wezterm
-  - Warp.Warp  # Warp terminal
-  
-  # Editors
-  - Microsoft.VisualStudioCode
-  
-  # Utilities
-  - 7zip.7zip
-
-# Mise-managed tools (cross-platform CLI tools via cargo)
-# Used on Linux/WSL/macOS, not Windows (scoop handles these)
-# Templates should check: if not .is_windows and .install_packages
-mise_cli_tools:
-  - ripgrep
-  - fd
-  - bat
-  - eza
-  - delta
-  - bottom  # btop alternative
-  - starship
-  - zoxide
-
-# Homebrew packages (macOS bootstrap only - mise replaces these)
-# Only used for initial stow installation
-homebrew_bootstrap:
-  - stow  # For dotfile symlinking on first bootstrap
-
-# Language runtimes (mise manages these on all platforms)
-# Templates should check: if .install_runtimes and (package_features.node, etc.)
-mise_runtimes:
-  node: "lts"
-  python: "3.12"
-  ruby: "latest"
-  perl: "latest"
-  go: "latest"
-  rust: "stable"
-  lua: "latest"
-  bun: "latest"
-  deno: "latest"
-  
-# Mise global tools (always installed when mise is available)
-mise_global_tools:
-  - direnv      # Per-directory environment variables
-  - usage       # Tool for generating shell completions
-  - yarn        # JavaScript package manager
-  - uv          # Fast Python package installer
 
 # ============================================================================
 # Theme Colors
@@ -339,13 +215,16 @@ ssh:
 # ============================================================================
 # Package Feature Flags
 # ============================================================================
-# Controls which optional configuration files are deployed
-# Core packages are always enabled: git, nvim, wezterm, starship, mise, bat, 
-# direnv, eza, fzf, ripgrep, wget, zsh, ssh, 1password, windows, wsl
+# Controls which configuration files are deployed by chezmoi
 #
 # Usage in templates:
 #   {{- if index .package_features "rust" }}
 #   # Deploy ~/.config/rust/* configs
+#   {{- end }}
+#
+# Group flags (convenience shortcuts):
+#   {{- if .package_features.essentials }}
+#   # Enables: git, ssh, 1password, mise, direnv
 #   {{- end }}
 #
 # Override in .chezmoi.local.toml:
@@ -354,34 +233,376 @@ ssh:
 #   golang = false
 
 package_features:
-  # Language-specific configurations
-  rust: true        # ~/.cargo/config.toml, rust-analyzer settings
-  golang: true      # ~/go/env, gopls settings
-  python: true      # ~/.config/pip, poetry, black, ruff configs
-  ruby: true        # ~/.gemrc, bundler config
-  lua: true         # ~/.luarc.json, luarocks config
-  node: true        # ~/.npmrc, yarn config
-  perl: true        # ~/.cpan config
-  php: false        # php.ini, composer config
+  # ============================================================================
+  # Group Flags (convenience shortcuts)
+  # ============================================================================
+  essentials: true      # git, ssh, 1password, mise, direnv
+  shell_tools: true     # starship, zsh, bat, eza, ripgrep, fd, fzf, zoxide, delta, vivid, wget, glow, thefuck
+  languages: true       # All language runtimes (node, python, ruby, go, rust, lua)
+  editors: true         # nvim, vscode
+  terminals: true       # wezterm, warp, windows_terminal
   
-  # Version managers (legacy/deprecated)
-  asdf: false       # DEPRECATED: Replaced by mise
-  nvm: false        # DEPRECATED: Replaced by mise
+  # ============================================================================
+  # Version Control & Authentication (sane defaults)
+  # ============================================================================
+  git: true
+  ssh: true
+  1password: true
   
-  # Development tools (optional)
-  arduino: false    # Arduino CLI and IDE configs
-  fzf: true         # Fuzzy finder (PSFzf on Windows, fzf everywhere)
-  glow: true        # Markdown renderer configs
-  tinted_theming: false  # DEPRECATED: Base16/Base24 theme system (replaced by unified theme system)
-  thefuck: true     # Command correction tool
-  sqlite3: true     # SQLite CLI configs
-  vim: false        # DEPRECATED: Using neovim instead
-  vivid: true       # LS_COLORS generator
-  warp: true        # Warp terminal configs (if installed)
+  # ============================================================================
+  # Package & Tool Version Management (sane defaults)
+  # ============================================================================
+  mise: true            # Version manager (replaces asdf/nvm)
+  direnv: true          # Per-directory environments
+  homebrew: true        # Package manager (Linux/macOS)
   
-  # Utilities (optional)
-  homebrew: false   # Only used for bootstrap, not managed
-  vagrant: false    # Vagrant and VirtualBox configs
+  # ============================================================================
+  # Terminal Emulators (recommended)
+  # ============================================================================
+  wezterm: true
+  warp: true
+  windows_terminal: true
+  
+  # ============================================================================
+  # Text Editors (recommended)
+  # ============================================================================
+  nvim: true
+  vscode: true
+  
+  # ============================================================================
+  # Shell Tools (recommended)
+  # ============================================================================
+  starship: true        # Cross-platform prompt
+  zsh: true             # Unix shells only
+  powershell: true      # Windows shell
+  bat: true             # Better cat
+  eza: true             # Better ls
+  ripgrep: true         # Fast grep
+  fd: true              # Fast find
+  fzf: true             # Fuzzy finder
+  zoxide: true          # Smart cd
+  delta: true           # Git diff viewer
+  vivid: true           # LS_COLORS generator
+  wget: true            # Downloader
+  glow: true            # Markdown renderer
+  thefuck: true         # Command correction
+  
+  # ============================================================================
+  # Language Runtimes (optional - enable as needed)
+  # ============================================================================
+  rust: true
+  golang: true
+  python: true
+  ruby: true
+  lua: true
+  node: true
+  perl: true
+  php: false
+  
+  # ============================================================================
+  # Development Tools (optional)
+  # ============================================================================
+  sqlite3: true
+  arduino: false
+  vagrant: false        # Virtualization
+  
+  # ============================================================================
+  # Legacy/Deprecated (disabled)
+  # ============================================================================
+  asdf: false           # DEPRECATED: Replaced by mise
+  nvm: false            # DEPRECATED: Replaced by mise
+  tinted_theming: false # DEPRECATED: Replaced by unified theme system
+  vim: false            # DEPRECATED: Use nvim
+
+# ============================================================================
+# Package Mapping
+# ============================================================================
+# Maps feature flags to actual packages per platform/manager
+# This allows feature flags to control BOTH config deployment AND package installation
+#
+# Package manager priority on Unix:
+#   1. mise - If available via mise, use it
+#   2. brew - Only for tools not in mise (zsh, thefuck) and GUI apps
+#   3. System pkg manager - Only build-essential
+#
+# Bootstrap order on Unix:
+#   1. Build from source (if needed): git, curl → ~/.local/share/
+#   2. Install homebrew → ~/.local/share/homebrew (Linux) or /opt/homebrew (macOS)
+#   3. brew installs base tools
+#   4. mise installs CLI tools and language runtimes
+
+package_mapping:
+  # Version Control & Authentication
+  git:
+    scoop: [git, gh, lazygit]
+    winget: [Git.Git]
+    brew: [git, gh, lazygit]
+    mise: []
+  
+  ssh:
+    scoop: []
+    winget: []
+    brew: []
+    mise: []
+  
+  1password:
+    scoop: [1password-cli]
+    winget: [AgileBits.1Password]
+    brew: [1password-cli]
+    brew_cask: [1password]  # macOS GUI
+    mise: []
+  
+  # Package & Tool Version Management
+  mise:
+    scoop: [mise]
+    winget: []
+    brew: [mise]
+    mise: []
+  
+  direnv:
+    scoop: []
+    winget: []
+    brew: []
+    mise: [direnv]
+  
+  homebrew:
+    scoop: []
+    winget: []
+    brew: []
+    mise: []
+  
+  # Terminal Emulators
+  wezterm:
+    scoop: []
+    winget: [wez.wezterm]
+    brew: []
+    brew_cask: [wezterm]
+    mise: []
+  
+  warp:
+    scoop: []
+    winget: [Warp.Warp]
+    brew: []
+    brew_cask: [warp]
+    mise: []
+  
+  windows_terminal:
+    scoop: []
+    winget: [Microsoft.WindowsTerminal]
+    brew: []
+    mise: []
+  
+  # Text Editors
+  nvim:
+    scoop: [neovim]
+    winget: []
+    brew: []
+    mise: [neovim]
+  
+  vscode:
+    scoop: []
+    winget: [Microsoft.VisualStudioCode]
+    brew: []
+    brew_cask: [visual-studio-code]
+    mise: []
+  
+  # Shell Tools
+  starship:
+    scoop: [starship]
+    winget: []
+    brew: []
+    mise: [cargo:starship]
+  
+  zsh:
+    scoop: []
+    winget: []
+    brew: [zsh]
+    mise: []
+  
+  powershell:
+    scoop: []
+    winget: [Microsoft.PowerShell]
+    brew: []
+    brew_cask: [powershell]
+    mise: []
+  
+  bat:
+    scoop: [bat]
+    winget: []
+    brew: []
+    mise: [cargo:bat]
+  
+  eza:
+    scoop: [eza]
+    winget: []
+    brew: []
+    mise: [cargo:eza]
+  
+  ripgrep:
+    scoop: [ripgrep]
+    winget: []
+    brew: []
+    mise: [cargo:ripgrep]
+  
+  fd:
+    scoop: [fd]
+    winget: []
+    brew: []
+    mise: [cargo:fd-find]
+  
+  fzf:
+    scoop: [fzf]
+    winget: []
+    brew: []
+    mise: [fzf]
+  
+  zoxide:
+    scoop: [zoxide]
+    winget: []
+    brew: []
+    mise: [cargo:zoxide]
+  
+  delta:
+    scoop: [delta]
+    winget: []
+    brew: []
+    mise: [cargo:git-delta]
+  
+  vivid:
+    scoop: [vivid]
+    winget: []
+    brew: []
+    mise: [cargo:vivid]
+  
+  wget:
+    scoop: [wget, curl]
+    winget: []
+    brew: [wget, curl]
+    mise: []
+  
+  glow:
+    scoop: [glow]
+    winget: []
+    brew: []
+    mise: [glow]
+  
+  thefuck:
+    scoop: []
+    winget: []
+    brew: [thefuck]
+    mise: []
+  
+  # Language Runtimes (all via mise)
+  rust:
+    scoop: []
+    winget: []
+    brew: []
+    mise_runtime:
+      name: rust
+      version: stable
+  
+  golang:
+    scoop: []
+    winget: []
+    brew: []
+    mise_runtime:
+      name: go
+      version: latest
+  
+  python:
+    scoop: []
+    winget: []
+    brew: []
+    mise_runtime:
+      name: python
+      version: "3.12"
+  
+  ruby:
+    scoop: []
+    winget: []
+    brew: []
+    mise_runtime:
+      name: ruby
+      version: latest
+  
+  lua:
+    scoop: []
+    winget: []
+    brew: []
+    mise_runtime:
+      name: lua
+      version: latest
+  
+  node:
+    scoop: []
+    winget: []
+    brew: []
+    mise_runtime:
+      name: node
+      version: lts
+  
+  perl:
+    scoop: []
+    winget: []
+    brew: []
+    mise_runtime:
+      name: perl
+      version: latest
+  
+  php:
+    scoop: []
+    winget: []
+    brew: []
+    mise_runtime:
+      name: php
+      version: latest
+  
+  # Development Tools
+  sqlite3:
+    scoop: [sqlite]
+    winget: []
+    brew: [sqlite]
+    mise: []
+  
+  arduino:
+    scoop: []
+    winget: []
+    brew: []
+    brew_cask: [arduino-ide]
+    mise: []
+  
+  vagrant:
+    scoop: []
+    winget: []
+    brew: []
+    brew_cask: [vagrant]
+    mise: []
+
+# Always-installed packages (not controlled by feature flags)
+always_install:
+  scoop:
+    - chezmoi
+    - jq
+    - yq
+    - make
+    - 7zip
+    - btop
+  
+  winget:
+    - 7zip.7zip
+  
+  brew:
+    - jq
+    - yq
+  
+  mise:
+    - usage
+    - yarn
+    - uv
+  
+  mise_runtimes:
+    bun: latest
+    deno: latest
 
 # Remote machine package sets
 # When is_remote=true and remote_minimal=true, only install essential tools
@@ -421,3 +642,5 @@ remote_packages:
       - zoxide
       - neovim
       - sqlite
+
+# vim: ts=2 sts=2 sw=2 et

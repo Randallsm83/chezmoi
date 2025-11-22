@@ -55,3 +55,5 @@ try {
     Write-Host "✗ Failed to generate LS_COLORS: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
+
+# vim: ts=2 sts=2 sw=2 et

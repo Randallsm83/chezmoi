@@ -34,3 +34,5 @@ supported-systems = ["base16", "base24"]
 # name = "fzf"
 # themes-dir = "bash"
 # hook = ". %f"
+
+# vim: ts=2 sts=2 sw=2 et

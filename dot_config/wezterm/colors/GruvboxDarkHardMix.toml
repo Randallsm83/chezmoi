@@ -42,3 +42,5 @@ selection_fg = '#3c3836' #bg3/4
 [metadata]
 author = 'Me'
 name = 'GruvboxDarkHardMix'
+
+# vim: ts=2 sts=2 sw=2 et

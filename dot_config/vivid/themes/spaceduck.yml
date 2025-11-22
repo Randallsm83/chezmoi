@@ -131,3 +131,5 @@ executable:
 unimportant:
   foreground: white
   font-style: italic
+
+# vim: ts=2 sts=2 sw=2 et

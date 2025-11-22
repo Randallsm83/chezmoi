@@ -55,3 +55,5 @@ windows:
 #
 # Multiple options combined:
 #   - exec: ssh -i ~/.ssh/key -p 2222 -o ServerAliveInterval=60 username@hostname
+
+# vim: ts=2 sts=2 sw=2 et

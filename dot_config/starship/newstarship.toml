@@ -233,3 +233,4 @@ vimcmd_symbol = '[❮](bold fg:color_green)'
 vimcmd_replace_one_symbol = '[❮](bold fg:color_purple)'
 vimcmd_replace_symbol = '[❮](bold fg:color_purple)'
 vimcmd_visual_symbol = '[❮](bold fg:color_yellow)'
+# vim: ts=2 sts=2 sw=2 et

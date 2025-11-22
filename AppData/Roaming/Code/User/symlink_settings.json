@@ -34,16 +34,16 @@
   // Editor Font
   "editor.fontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
   "editor.fontSize": 14,
-  "editor.lineHeight": 1.6,
-  "editor.letterSpacing": 0.5,
-  "editor.fontWeight": 100,
+  "editor.lineHeight": 1.5,
+  // "editor.letterSpacing": 0,
+  // "editor.fontWeight": 100,
   "editor.fontLigatures": true,
   // Terminal Font
   "terminal.integrated.fontFamily": "'FiraCode Nerd Font', 'Hack Nerd Font', Consolas, monospace",
-  "terminal.integrated.fontSize": 13,
-  "terminal.integrated.lineHeight": 1.4,
-  "terminal.integrated.letterSpacing": -1,
-  "terminal.integrated.fontWeight": 100,
+  "terminal.integrated.fontSize": 14,
+  // "terminal.integrated.lineHeight": 0,
+  // "terminal.integrated.letterSpacing": 0,
+  // "terminal.integrated.fontWeight": 100,
   "terminal.integrated.fontLigatures.enabled": true,
   "terminal.integrated.cursorBlinking": true,
   // Code Lens Font
@@ -79,10 +79,6 @@
   "editor.hover.enabled": true,
   "editor.suggest.preview": true,
   "editor.screenReaderAnnounceInlineSuggestion": false,
-  // Code Features
-  "editor.codeLens": false,
-  "editor.aiStats.enabled": true,
-  "editor.semanticHighlighting.enabled": true,
   // Minimap
   "editor.minimap.size": "fill",
   // Scrolling
@@ -90,6 +86,35 @@
   "editor.mouseWheelScrollSensitivity": 2,
   // Performance
   "editor.experimentalGpuAcceleration": "on",
+  // Code Features
+  "editor.codeLens": false,
+  "editor.aiStats.enabled": true,
+  "editor.semanticHighlighting.enabled": true,
+  // No italics to fix display issue
+  // "editor.tokenColorCustomizations": {
+  //   "textMateRules": [
+  //     {
+  //       "scope": [
+  //         "keyword",
+  //         "keyword.control",
+  //         "keyword.operator",
+  //         "storage.type",
+  //         "storage.modifier",
+  //         "variable",
+  //         "variable.other",
+  //         "variable.language",
+  //         "entity.name.function",
+  //         "entity.name.type",
+  //         "comment",
+  //         "comment.line",
+  //         "comment.block"
+  //       ],
+  //       "settings": {
+  //         "fontStyle": ""
+  //       }
+  //     }
+  //   ]
+  // },
   // ============================================================================
   // WORKBENCH BEHAVIOR
   // ============================================================================
