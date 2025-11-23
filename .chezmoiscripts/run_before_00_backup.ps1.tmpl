@@ -57,14 +57,29 @@ function New-Backup {
     
     $backupCount = 0
     foreach ($file in $managedFiles) {
-        $fullPath = Join-Path $env:USERPROFILE $file
-        if (Test-Path $fullPath -PathType Leaf) {
+        try {
+            $fullPath = Join-Path $env:USERPROFILE $file
+            
+            # Skip if file doesn't exist
+            if (-not (Test-Path $fullPath -PathType Leaf)) {
+                continue
+            }
+            
             # Create directory structure in backup
             $backupFile = Join-Path $BackupPath $file
             $backupDir = Split-Path $backupFile -Parent
-            New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
-            Copy-Item $fullPath $backupFile -Force
+            
+            # Ensure directory exists with error handling
+            if (-not (Test-Path $backupDir)) {
+                New-Item -ItemType Directory -Path $backupDir -Force -ErrorAction Stop | Out-Null
+            }
+            
+            # Copy file with error handling
+            Copy-Item $fullPath $backupFile -Force -ErrorAction Stop
             $backupCount++
+        } catch {
+            # Log error but continue with other files
+            Write-Verbose "Skipped backup of '$file': $_"
         }
     }
     

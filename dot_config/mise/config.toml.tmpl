@@ -30,9 +30,10 @@ go = "latest"
 {{- if .package_features.rust }}
 rust = "stable"
 {{- end }}
-{{- if .package_features.lua }}
+{{- if and .package_features.lua (ne .chezmoi.os "windows") }}
 lua = "latest"
 {{- end }}
+zig = "latest"
 {{- if .package_features.perl }}
 perl = "latest"
 {{- end }}
@@ -57,7 +58,7 @@ direnv = "latest"
 {{- if .package_features.git }}
 github-cli = "latest"  # gh
 {{- end }}
-{{- if .package_features.1password }}
+{{- if index .package_features "1password" }}
 op = "latest"  # 1Password CLI
 {{- end }}
 {{- if .package_features.nvim }}

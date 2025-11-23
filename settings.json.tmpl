@@ -355,9 +355,9 @@
   // ============================================================================
   // NEOVIM STANDALONE
   // ============================================================================
-  "vscode-neovim.neovimExecutablePaths.linux": "/home/rmiller/.local/share/mise/installs/neovim/0.11.2/nvim-linux-x86_64/bin/nvim",
-  "vscode-neovim.neovimExecutablePaths.win32": "C:\\Program Files\\Neovim\\bin\\nvim.exe",
-  "vscode-neovim.neovimInitVimPaths.linux": "/home/rmiller/.config/nvim/init.lua",
+  "vscode-neovim.neovimExecutablePaths.linux": "{{ .chezmoi.homeDir }}/.local/share/mise/installs/neovim/0.11.2/nvim-linux-x86_64/bin/nvim",
+  "vscode-neovim.neovimExecutablePaths.darwin": "{{ .chezmoi.homeDir | replace "\\" "/" }}/.local/share/mise/installs/neovim/0.11.2/nvim-macos-arm64/bin/nvim",
+  "vscode-neovim.neovimInitVimPaths.linux": "{{ .chezmoi.homeDir }}/.config/nvim/init.lua",
   "vscode-neovim.neovimInitVimPaths.win32": "C:\\Users\\Randall\\AppData\\Local\\nvim\\init.lua",
   // ============================================================================
   // AI AGENTS & ASSISTANTS

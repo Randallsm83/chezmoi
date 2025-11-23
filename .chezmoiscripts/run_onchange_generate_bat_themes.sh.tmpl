@@ -1,3 +1,4 @@
+{{- if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Generate .tmTheme files for bat from color palettes in .chezmoidata.yaml
 # Runs when .chezmoidata.yaml theme section changes
@@ -165,3 +166,4 @@ if command -v bat >/dev/null 2>&1; then
 else
     echo "⚠ bat not found - themes generated but cache not rebuilt"
 fi
+{{- end }}

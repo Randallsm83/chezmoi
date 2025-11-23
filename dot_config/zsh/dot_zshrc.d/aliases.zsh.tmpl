@@ -19,7 +19,7 @@ alias aliases='alias | sed "s/=.*//"'
 alias functions='declare -f | grep "^[a-z].* ()" | sed "s/{$//"'
 
 # Navigate to projects root
-alias cdp='cd /home/rmiller/projects'
+alias cdp='cd {{ .chezmoi.homeDir }}/projects'
 
 # Quick navigation to repos
 alias cdn='cd $HOME/projects/ndn'
@@ -28,7 +28,7 @@ alias cdcdn='cd $HOME/projects/cdn-service'
 
 # Run command in all repos
 function dhgitall() {
-    for dir in /home/rmiller/projects/*/; do
+    for dir in {{ .chezmoi.homeDir }}/projects/*/; do
         (cd "$dir" && echo "=== $(basename $dir) ===" && git "$@")
     done
 }

@@ -1,0 +1,79 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/bin/sh
+# Declarative package installation for Unix (Linux/macOS)
+# This script only runs when package lists change
+# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+
+echo "Checking package installation..."
+
+# Ensure mise is installed
+if ! type mise >/dev/null 2>&1; then
+    echo "mise not found. Installing..."
+    curl https://mise.run | sh
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Collect mise packages
+mise_packages=""
+{{- range $feature, $enabled := .package_features }}
+{{- if $enabled }}
+{{- $mapping := index $.package_mapping $feature }}
+{{- if $mapping }}
+{{- if $mapping.mise }}
+{{- range $mapping.mise }}
+mise_packages="$mise_packages {{ . }}"
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+# Install mise packages
+if [ -n "$mise_packages" ]; then
+    echo ""
+    echo "Installing mise tools/runtimes..."
+    for pkg in $mise_packages; do
+        if ! mise list "$pkg" 2>/dev/null | grep -q "$pkg"; then
+            echo "  Installing: $pkg"
+            mise install "$pkg@latest"
+        else
+            echo "  Already installed: $pkg"
+        fi
+    done
+fi
+
+# macOS-specific: Install brew casks
+{{- if eq .chezmoi.os "darwin" }}
+if type brew >/dev/null 2>&1; then
+    brew_casks=""
+    {{- range $feature, $enabled := .package_features }}
+    {{- if $enabled }}
+    {{- $mapping := index $.package_mapping $feature }}
+    {{- if $mapping }}
+    {{- if $mapping.brew_cask }}
+    {{- range $mapping.brew_cask }}
+    brew_casks="$brew_casks {{ . }}"
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    
+    if [ -n "$brew_casks" ]; then
+        echo ""
+        echo "Installing brew casks..."
+        for cask in $brew_casks; do
+            if ! brew list --cask "$cask" >/dev/null 2>&1; then
+                echo "  Installing: $cask"
+                brew install --cask "$cask"
+            else
+                echo "  Already installed: $cask"
+            fi
+        done
+    fi
+fi
+{{- end }}
+
+echo ""
+echo "✓ Package installation complete"
+{{- end -}}

@@ -1,0 +1,71 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Declarative package installation for Windows
+# This script only runs when package lists change
+# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+
+Write-Host "Checking package installation..." -ForegroundColor Cyan
+
+# Ensure scoop is installed
+if (!(Get-Command scoop -ErrorAction SilentlyContinue)) {
+    Write-Host "Scoop not found. Please run bootstrap.ps1 first." -ForegroundColor Yellow
+    exit 0
+}
+
+# Collect all packages to install
+$scoopPackages = @()
+$wingetPackages = @()
+
+{{- range $feature, $enabled := .package_features }}
+{{- if $enabled }}
+{{- $mapping := index $.package_mapping $feature }}
+{{- if $mapping }}
+{{- if $mapping.scoop }}
+{{- range $mapping.scoop }}
+$scoopPackages += "{{ . }}"
+{{- end }}
+{{- end }}
+{{- if $mapping.winget }}
+{{- range $mapping.winget }}
+$wingetPackages += "{{ . }}"
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+# Install scoop packages
+if ($scoopPackages.Count -gt 0) {
+    $scoopPackages = $scoopPackages | Select-Object -Unique
+    Write-Host "`nInstalling scoop packages..." -ForegroundColor Cyan
+    foreach ($pkg in $scoopPackages) {
+        if (!(scoop list $pkg 2>$null)) {
+            Write-Host "  Installing: $pkg" -ForegroundColor Green
+            scoop install $pkg
+        } else {
+            Write-Host "  Already installed: $pkg" -ForegroundColor Gray
+        }
+    }
+}
+
+# Install winget packages
+if ($wingetPackages.Count -gt 0) {
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        $wingetPackages = $wingetPackages | Select-Object -Unique
+        Write-Host "`nInstalling winget packages..." -ForegroundColor Cyan
+        foreach ($pkg in $wingetPackages) {
+            $installed = winget list --id $pkg --exact 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "  Installing: $pkg" -ForegroundColor Green
+                winget install --id $pkg --silent --accept-source-agreements --accept-package-agreements
+            } else {
+                Write-Host "  Already installed: $pkg" -ForegroundColor Gray
+            }
+        }
+    } else {
+        Write-Host "`nwinget not available, skipping GUI app installation" -ForegroundColor Yellow
+    }
+}
+
+Write-Host "`n✓ Package installation complete" -ForegroundColor Green
+{{- end -}}

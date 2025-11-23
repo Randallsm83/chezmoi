@@ -166,6 +166,28 @@
     command = "nvim"
     args = ["-d"]
 
+{{- if $is_windows }}
+# Use PowerShell 7 (pwsh.exe) instead of Windows PowerShell 5.1
+[interpreters.ps1]
+    command = "pwsh"
+    args = ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"]
+{{- end }}
+
+{{- /* ========================================================================== */ -}}
+{{- /* 1Password Integration                                                   */ -}}
+{{- /* ========================================================================== */}}
+
+{{- if eq .chezmoi.os "windows" }}
+[hooks.read-source-state.pre]
+    command = ".local/share/chezmoi/.install-1password.ps1"
+{{- else }}
+[hooks.read-source-state.pre]
+    command = ".local/share/chezmoi/.install-1password.sh"
+{{- end }}
+
+[onepassword]
+    prompt = false
+
 {{- /* ========================================================================== */ -}}
 {{- /* Git Repository Settings                                                 */ -}}
 {{- /* ========================================================================== */}}

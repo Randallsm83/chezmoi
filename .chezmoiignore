@@ -279,3 +279,8 @@ Library/
 .config/zsh/.zshrc.d/60-vagrant.zsh
 {{- end }}
 {{- end }}
+extensions.json
+keybindings.json
+mcp.json
+settings.json
+tasks.json

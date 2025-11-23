@@ -32,7 +32,7 @@ windows:
           split_direction: vertical
           panes:
             # Main working pane
-            - cwd: /home/rmiller/
+            - cwd: {{ .chezmoi.homeDir }}/
               is_focused: true
               commands:
                 - exec: ssh rmiller@your-main-server.com
@@ -44,7 +44,7 @@ windows:
       # Development Server
       - title: Dev Server
         layout:
-          cwd: /home/rmiller/projects
+          cwd: {{ .chezmoi.homeDir }}/projects
           commands:
             # 1Password handles authentication automatically
             - exec: ssh dev

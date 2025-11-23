@@ -1,208 +1,136 @@
 # WARP.md
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+This file provides guidance to Warp AI Agent Mode when working with this dotfiles repository.
+
+## ⚠️ CRITICAL: Read This First
+
+**Before making ANY changes to this repository, you MUST read [CHEZMOI-GUIDE.md](./CHEZMOI-GUIDE.md).**
+
+This guide documents chezmoi best practices from the official documentation. It exists because previous implementations made assumptions instead of following the docs, creating technical debt.
+
+The guide covers:
+- File management (especially externally-modified files like VS Code settings)
+- Password manager integration (1Password hooks)
+- Declarative package management
+- Templates and machine-to-machine differences
+- Scripts and hooks
+- Implementation checklist for required fixes
+
+**Always reference CHEZMOI-GUIDE.md when:**
+- Adding new managed files
+- Creating templates
+- Setting up scripts
+- Integrating password managers
+- Managing packages
+
+---
 
 ## Repository Overview
 
-This is a **production chezmoi dotfiles repository** migrated from GNU Stow. Enables one-command provisioning of identical development environments across Windows, WSL2, Linux, and macOS.
+**Type:** Production chezmoi dotfiles repository  
+**Purpose:** One-command provisioning of identical development environments  
+**Platforms:** Windows 11, WSL2 (Ubuntu, Arch), Linux, macOS  
+**Version:** v1.0.0  
+**Architecture:** Template-based dotfile management using chezmoi v2.67.0
 
-**Current State:** v1.0.0 - Fully migrated with 155+ managed configurations, feature flag system, and production-ready bootstrap scripts.
+### Key Features
+- 155+ managed configurations
+- Feature flag system for optional packages
+- Cross-platform Go templating
+- Automated bootstrap provisioning
+- XDG Base Directory compliance (all platforms)
+- 1Password SSH agent integration
 
-**Architecture:** Template-based dotfile management using chezmoi v2.67.0 with automated bootstrap provisioning, feature flags for optional packages, and cross-platform Go templating.
+---
 
 ## Essential Chezmoi Commands
 
-### Development Workflow
+### Daily Workflow
 
 ```powershell
-# Check what would be applied without making changes (safe)
+# Safe: Preview changes without applying
 chezmoi apply --dry-run --verbose
 
-# See differences between current and managed state
+# Show differences between managed and current state
 chezmoi diff
 
 # Apply all changes
 chezmoi apply
 
+# Apply with force (skip confirmation prompts)
+chezmoi apply --force
+
 # Apply specific file
 chezmoi apply ~/.gitconfig
 
-# Navigate to chezmoi source directory
-chezmoi cd
-
-# Return to previous directory
-cd -
+# Check what files have changed
+chezmoi status
 ```
 
-### Adding and Editing Files
+### Managing Files
 
 ```powershell
 # Add existing file to chezmoi
 chezmoi add ~/.gitconfig
 
-# Add file as template (for platform-specific content)
+# Add as template (for platform-specific content)
 chezmoi add --template ~/.config/git/config
 
-# Edit a managed file
+# Edit a managed file (opens in editor)
 chezmoi edit ~/.gitconfig
 
 # Edit and immediately apply
 chezmoi edit --apply ~/.gitconfig
+
+# Remove file from chezmoi management
+chezmoi forget ~/.gitconfig
+
+# Re-add externally modified file
+chezmoi re-add ~/.vscode/settings.json
 ```
 
-### Repository Management
+### Repository Operations
 
 ```powershell
-# Check repository status (show pending changes)
-chezmoi status
+# Navigate to chezmoi source directory
+chezmoi cd
+
+# Return to previous directory
+cd -
 
 # List all managed files
 chezmoi managed
 
-# View chezmoi configuration and template variables
+# View template variables and configuration
 chezmoi data
 
 # Update from remote repository
 chezmoi update
 
-# Re-run scripts (useful for testing .chezmoiscripts)
+# Re-run all scripts (testing)
 chezmoi state delete-bucket --bucket=scriptState
 chezmoi apply
 ```
 
-## Testing with Pester
+---
 
-### Prerequisites
+## File Naming Conventions
 
-```powershell
-# Install Pester 5.0.0 or later
-Install-Module -Name Pester -MinimumVersion 5.0.0 -Force -SkipPublisherCheck
+### Chezmoi Prefixes and Attributes
 
-# Verify installation
-Get-Module -Name Pester -ListAvailable
-```
+| Source File | Target | Purpose |
+|-------------|--------|---------|
+| `dot_config/` | `~/.config/` | Directory: `_` → `.` |
+| `dot_gitconfig` | `~/.gitconfig` | File: `_` → `.` |
+| `dot_gitconfig.tmpl` | `~/.gitconfig` | Templated file |
+| `private_dot_ssh/` | `~/.ssh/` (600) | Private directory |
+| `executable_script.sh` | `~/script.sh` (755) | Executable file |
+| `symlink_file.tmpl` | `~/file` → target | Symlink (contains path) |
+| `modify_file.tmpl` | `~/file` | Script output → file |
 
-### Running Tests
+**Reference:** https://www.chezmoi.io/reference/source-state-attributes/
 
-```powershell
-# Run all tests
-Invoke-Pester -Path .\bootstrap.Tests.ps1
-
-# Run with detailed output
-Invoke-Pester -Path .\bootstrap.Tests.ps1 -Output Detailed
-
-# Run specific test suite (by function name)
-Invoke-Pester -Path .\bootstrap.Tests.ps1 -FullNameFilter '*Install-Chezmoi*'
-```
-
-### Code Coverage
-
-```powershell
-# Generate code coverage report
-$config = New-PesterConfiguration
-$config.Run.Path = '.\bootstrap.Tests.ps1'
-$config.CodeCoverage.Enabled = $true
-$config.CodeCoverage.Path = '.\bootstrap.ps1.example'
-$config.CodeCoverage.OutputFormat = 'JaCoCo'
-$config.CodeCoverage.OutputPath = '.\coverage.xml'
-
-Invoke-Pester -Configuration $config
-```
-
-### Test Suite Organization
-
-The test suite (`bootstrap.Tests.ps1`) covers:
-
-- **Install-Chezmoi**: Detects existing installations, installs via scoop (preferred) or winget (fallback), handles missing package managers
-- **Install-Scoop**: Detects existing installation, handles execution policy restrictions, installs from official URL
-- **Initialize-Chezmoi**: Converts GitHub shorthand to URLs, handles branch parameters, uses `--apply` flag
-- **Set-EnvironmentVariables**: Sets XDG paths (CONFIG_HOME, DATA_HOME, STATE_HOME, CACHE_HOME), persists at User scope
-- **Test-CommandExists**: Helper function for detecting installed commands
-
-**Mocking Strategy:** Tests use extensive mocking to isolate functions from external dependencies and avoid system modifications. Example:
-
-```powershell
-Mock Test-CommandExists { $true } -ParameterFilter { $Command -eq 'scoop' }
-```
-
-## Bootstrap Script Architecture
-
-**File:** `bootstrap.ps1.example`
-
-### Core Functions
-
-#### Install-Chezmoi
-- **Strategy:** Prefer scoop → fallback to winget → fail gracefully
-- **Updates:** `$Script:Stats.ChezmoiInstalled`
-- **Returns:** Boolean success/failure
-
-#### Install-Scoop
-- **Strategy:** Check existing → modify execution policy if restricted → install from `https://get.scoop.sh`
-- **Updates:** `$Script:Stats.ScoopInstalled`
-- **Returns:** Boolean success/failure
-
-#### Initialize-Chezmoi
-- **Strategy:** Convert GitHub shorthand (`user/repo`) to full URL → run `chezmoi init --apply --branch <branch> <url>`
-- **Updates:** `$Script:Stats.ConfigsApplied`
-- **Returns:** Boolean success/failure
-
-#### Set-EnvironmentVariables
-- **Strategy:** Set XDG paths using `$env:USERPROFILE` as base → persist at User scope → update current session
-- **Variables:** XDG_CONFIG_HOME, XDG_DATA_HOME, XDG_STATE_HOME, XDG_CACHE_HOME
-- **No return value**
-
-### Statistics Tracking
-
-The script maintains a `$Script:Stats` hashtable:
-
-```powershell
-@{
-    StartTime = Get-Date
-    ChezmoiInstalled = $false
-    ScoopInstalled = $false
-    PackagesInstalled = 0
-    ConfigsApplied = $false
-}
-```
-
-### Error Handling Pattern
-
-Functions use try-catch blocks with detailed error messages via `Write-Status`:
-
-```powershell
-try {
-    # Operation
-    Write-Status "Success message" -Type Success
-    return $true
-} catch {
-    Write-Status "Failed: $_" -Type Error
-    return $false
-}
-```
-
-## Chezmoi Migration Architecture
-
-### File Naming Conventions
-
-**Chezmoi Dotfile Naming Convention (Standard):**
-
-| Source File (in chezmoi) | Target Location | Notes |
-|--------------------------|-----------------|-------|
-| `dot_config/` | `~/.config/` | Directories: underscore → dot |
-| `dot_local/` | `~/.local/` | Directories: underscore → dot |
-| `dot_config/zsh/dot_zshrc` | `~/.config/zsh/.zshrc` | Files: underscore → dot |
-| `dot_config/zsh/dot_zprofile` | `~/.config/zsh/.zprofile` | Files: underscore → dot |
-| `dot_config/zsh/dot_zshrc.d/` | `~/.config/zsh/.zshrc.d/` | Nested dotfile directories |
-| `dot_gitconfig.tmpl` | `~/.gitconfig` | Templated dotfiles |
-| `Documents/PowerShell/profile.ps1.tmpl` | `~/Documents/PowerShell/profile.ps1` | Windows non-dotfile |
-| `executable_script.sh` | `~/script.sh` (executable) | Sets executable bit |
-
-**Convention**: Uses chezmoi's standard dotfile prefix:
-- `dot_` → `.` (underscore converts to dot for both directories AND files)
-
-### Template Syntax (Go Templates)
-
-**Platform Detection:**
+### Template Syntax Examples
 
 ```go
 {{- if eq .chezmoi.os "windows" }}
@@ -212,323 +140,377 @@ try {
 {{- else }}
 # Linux-specific content
 {{- end }}
-```
 
-**WSL Detection:**
-
-```go
-{{- if eq .chezmoi.os "linux" }}
-{{-   if (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
-# WSL-specific
-{{-   else }}
-# Native Linux
-{{-   end }}
+{{- if .is_wsl }}
+# WSL-specific content
 {{- end }}
+
+# Use variables from .chezmoi.toml.tmpl
+{{ .chezmoi.homeDir }}
+{{ .email }}
+{{ .github_username }}
+{{ .theme }}
 ```
 
-**Template Variables:**
+---
 
-Available via `.chezmoidata.yaml` or built-in:
+## Configuration Hierarchy
 
-```go
-{{ .email }}              # Custom data variable
-{{ .chezmoi.os }}         # windows/linux/darwin
-{{ .chezmoi.arch }}       # amd64/arm64/etc
-{{ .chezmoi.hostname }}   # Machine hostname
-{{ .chezmoi.username }}   # Current user
-```
+1. **`.chezmoi.toml.tmpl`** - Main config with platform detection, generated on each run
+2. **`.chezmoidata.yaml`** - Static data (themes, fonts, package lists, feature flags)
+3. **`.chezmoi.local.toml`** - Machine-specific overrides (NOT committed to git)
 
-### Auto-Run Scripts
+### Platform Detection
 
-Scripts in `.chezmoiscripts/` run automatically:
+Available variables in templates (from `.chezmoi.toml.tmpl`):
+- `.is_windows` - Windows 11
+- `.is_darwin` - macOS
+- `.is_linux` - Linux (native)
+- `.is_wsl` - Windows Subsystem for Linux
+- `.is_remote` - SSH session or remote environment
+- `.is_personal` - Personal machine
+- `.is_work` - Work machine
+- `.has_sudo` - Sudo/admin privileges available
 
-- `run_once_before_*.sh.tmpl` - Runs once before applying configs (Unix)
-- `run_once_before_*.ps1.tmpl` - Runs once before applying configs (Windows)
-- `run_once_install_*.sh.tmpl` - Runs once for package installation (Unix)
-- `run_once_install_*.ps1.tmpl` - Runs once for package installation (Windows)
+---
 
-**Pattern:** Use `run_once_` prefix for idempotent operations that should only run once per machine.
+## Package Management Strategy
 
-### Platform-Specific File Inclusion
+### Windows
+- **scoop**: CLI tools (git, neovim, starship, ripgrep, bat, fd, fzf, eza, vivid, btop, delta, gh, lazygit, zoxide)
+- **winget**: GUI apps (Git.Git w/GCM, wez.wezterm, Microsoft.PowerShell, WindowsTerminal, VS Code, 7zip)
+- **mise**: Language runtimes ONLY (node, python, ruby, go, rust, lua, bun, uv, yarn, direnv, usage, zig)
 
-Use `.chezmoiignore` to exclude files by platform:
+### Linux/WSL/macOS
+- **mise**: Everything (CLI tools via cargo + language runtimes)
+- **homebrew**: Bootstrap only (stow installation), then unused
+- **apt/dnf/pacman**: System bootstrap only (git, build-essential) when sudo available
 
-```
-# Ignore Windows files on Unix
-{{ if ne .chezmoi.os "windows" }}
-Documents/
-AppData/
-.wslconfig
-{{ end }}
+---
 
-# Ignore Unix files on Windows
-{{ if eq .chezmoi.os "windows" }}
-.zshrc
-.zshenv
-.bashrc
-{{ end }}
-```
+## Feature Flag System
 
-## Package Feature Flags
+### How It Works
 
-The dotfiles use a conditional configuration system to manage 155+ configuration files across packages. Feature flags are defined in `.chezmoidata.yaml` under `package_features` and control which files are included via `.chezmoiignore` template logic.
-
-### Core Packages (Always Enabled)
-
-These packages are always enabled and cannot be disabled:
-
-- **git** - Version control configuration with platform-specific conditionals
-- **nvim** - Neovim editor configuration (44+ files)
-- **wezterm** - Terminal emulator configuration
-- **starship** - Cross-shell prompt with custom onedark theme
-- **mise** - Runtime and tool version manager
-- **bat** - Enhanced cat with syntax highlighting
-- **direnv** - Directory-specific environment variables
-- **eza** - Modern ls replacement
-- **fzf** - Fuzzy finder with shell integrations
-- **ripgrep** - Fast text search tool
-- **wget** - HTTP/FTP file downloader
-- **zsh** - Z shell configuration (Unix only)
-- **ssh** - SSH client configuration with 1Password agent
-- **1password** - 1Password CLI and SSH agent integration
-- **windows** - Windows-specific configurations (PowerShell, VS Code)
-- **wsl** - WSL2-specific configurations
-
-### Optional Language Packages
-
-Language runtime configurations controlled by feature flags:
-
-| Package | Flag | Default | Includes |
-|---------|------|---------|----------|
-| **rust** | `package_features.rust` | ✅ Enabled | Cargo config, zsh integration, rustc completions |
-| **golang** | `package_features.golang` | ✅ Enabled | GOPATH/GOROOT env, zsh integration |
-| **python** | `package_features.python` | ✅ Enabled | pip config, virtualenv, zsh integration |
-| **ruby** | `package_features.ruby` | ✅ Enabled | gem config, bundler, zsh integration |
-| **lua** | `package_features.lua` | ✅ Enabled | Lua config, zsh integration |
-| **node** | `package_features.node` | ✅ Enabled | npm/yarn config, bun, zsh integration |
-| **perl** | `package_features.perl` | ❌ Disabled | Perl config, cpanm completions |
-| **php** | `package_features.php` | ❌ Disabled | PHP config, zsh integration |
-
-### Optional Tool Packages
-
-Additional development tools:
-
-| Package | Flag | Default | Description |
-|---------|------|---------|-------------|
-| **glow** | `package_features.glow` | ✅ Enabled | Markdown renderer in terminal |
-| **tinted_theming** | `package_features.tinted_theming` | ✅ Enabled | Base16/Base24 theme manager (tinty) |
-| **sqlite3** | `package_features.sqlite3` | ✅ Enabled | SQLite CLI configuration |
-| **vivid** | `package_features.vivid` | ✅ Enabled | LS_COLORS generator (spaceduck theme) |
-| **warp** | `package_features.warp` | ✅ Enabled | Warp terminal launch configurations |
-| **arduino** | `package_features.arduino` | ❌ Disabled | Arduino IDE configuration |
-| **thefuck** | `package_features.thefuck` | ❌ Disabled | Command correction tool |
-| **vim** | `package_features.vim` | ❌ Disabled | Vim editor (separate from neovim) |
-
-### Deprecated Packages
-
-Legacy tools replaced by mise:
-
-- **asdf** (`package_features.asdf` = false) - Superseded by mise (aliased for compatibility)
-- **nvm** (`package_features.nvm` = false) - Superseded by mise node runtime management
-
-### Utility Packages
-
-Package managers and infrastructure:
-
-- **homebrew** (`package_features.homebrew` = false) - macOS/Linux package manager (bootstrap only, not actively managed)
-- **vagrant** (`package_features.vagrant` = false) - VM management tool (rarely used)
-
-### How Feature Flags Work
-
-**Configuration Location:**
-
-Feature flags are defined in `.chezmoidata.yaml`:
+Feature flags in `.chezmoidata.yaml` control which configurations are deployed:
 
 ```yaml
 package_features:
-  rust: true
-  golang: true
-  python: true
-  # ...
+  rust: true      # Deploy rust configs
+  python: true    # Deploy python configs
+  arduino: false  # Skip arduino configs
 ```
 
-**Template Logic in `.chezmoiignore`:**
+Files are excluded via `.chezmoiignore` template logic:
 
 ```go
 {{- if not .package_features.rust }}
-# Rust package files
 .config/zsh/.zshrc.d/70-rust.zsh
 .cache/zsh/completions/_rustc
 {{- end }}
 ```
 
-When a feature flag is `false`, its files are listed in `.chezmoiignore` and won't be deployed to the home directory.
+### Core Packages (Always Enabled)
+git, nvim, wezterm, starship, mise, bat, direnv, eza, fzf, ripgrep, zsh (Unix), ssh, 1password, windows, wsl
 
-**Enabling/Disabling Packages:**
+### Optional Language Packages
+- **Enabled by default**: rust, golang, python, ruby, lua, node
+- **Disabled by default**: perl, php
 
-1. Edit `.chezmoidata.yaml` in the chezmoi source directory:
-   ```bash
-   chezmoi cd
-   # Edit .chezmoidata.yaml, set package_features.rust: true or false
-   ```
+### Optional Tool Packages
+- **Enabled by default**: glow, tinted_theming, sqlite3, vivid, warp
+- **Disabled by default**: arduino, thefuck, vim
 
-2. Apply changes:
-   ```bash
-   chezmoi apply
-   ```
+### Deprecated Packages
+- **asdf** - Replaced by mise
+- **nvm** - Replaced by mise node management
 
-3. Verify which files are active:
-   ```bash
-   chezmoi managed | grep rust
-   ```
+---
 
-**File Organization Patterns:**
+## Bootstrap Scripts
 
-- **Zsh integrations**: Numbered files in `.config/zsh/.zshrc.d/` control load order:
-  - `50-*` - Package managers (asdf, homebrew)
-  - `70-*` - Language environments (rust, golang, python, ruby, lua, node, php)
-  - `80-*` - Theming tools (tinty)
-  - `90-*` - Utility tools (glow, thefuck)
+### Windows
 
-- **Shell completions**: Stored in `.cache/zsh/completions/_<command>`
-
-- **Config locations**: Follow XDG Base Directory specification:
-  - `~/.config/<package>/` - Configuration files
-  - `~/.local/share/<package>/` - Data files
-  - `~/.cache/<package>/` - Cache files
-
-- **Conditional templates**: Files ending in `.tmpl` are processed with Go templates before deployment
-
-**Migration Status:** v1.0.0 - Feature flag system is production-ready with full migration from GNU Stow completed (November 2025).
-
-## Project Structure
-
-### Documentation Files
-
-- **CHEZMOI_MIGRATION_GUIDE.md** - Comprehensive migration guide with workflow, concepts, and examples
-- **MIGRATION_SUMMARY.md** - Quick reference with command cheatsheet and migration phases
-- **STOW_VS_CHEZMOI.md** - Detailed comparison between GNU Stow and chezmoi approaches
-- **TESTING.md** - Complete Pester testing guide with commands, coverage, and patterns
-
-### Implementation Files
-
-- **bootstrap.ps1.example** - Production bootstrap script (Windows entry point)
-- **bootstrap.Tests.ps1** - Pester test suite with ~240 lines of comprehensive tests
-- **setup.sh** *(planned)* - Unix bootstrap entry point (not yet implemented)
-
-### Chezmoi Configuration Files
-
-*(Not yet created - will be added during migration:)*
-
-- `.chezmoi.toml.tmpl` - Chezmoi configuration (can be templated)
-- `.chezmoidata.yaml` - Template variables and platform data
-- `.chezmoiignore` - Platform-specific exclusions
-- `.chezmoitemplates/` - Reusable template snippets
-
-## Migration Context
-
-**Old Setup (GNU Stow - Deprecated):**
-- Location: `C:\Users\Randall\.config\dotfiles`
-- 40+ config directories managed with symlinks
-- Separate Windows/WSL bootstrap scripts
-- Manual platform-specific handling
-
-**Current Setup (Chezmoi - Production):**
-- Location: `C:\Users\Randall\.local\share\chezmoi`
-- 170+ managed configurations
-- Template-based with automatic platform detection
-- Feature flag system for optional packages
-- Integrated bootstrap with auto-install
-- One-command provisioning achieved
-- Repository: `Randallsm83/dotfiles`
-
-**Migration Completed:** November 15, 2025 (v1.0.0)
-- All core configs migrated and tested (170+ files)
-- Windows, WSL, and Linux validated
-- Package feature flag system implemented
-- Production-ready bootstrap scripts deployed
-- Language runtime integrations: rust, golang, python, ruby, lua, node, npm
-- SSH configuration with 1Password agent integration
-- 1Password CLI completions (zsh, PowerShell)
-- Utility scripts: gcc relinker, SSH key manager, cache cleaner
-- Deprecated packages: asdf, nvm, perl, php (disabled by default)
-
-## Target End State
-
-Once migration is complete, provisioning a new machine will be:
-
-**Windows:**
 ```powershell
-iwr -useb https://raw.githubusercontent.com/USERNAME/chezmoi-dotfiles/main/bootstrap.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 | iex
 ```
 
-**Unix:**
+**What it does:**
+1. Installs chezmoi (via scoop → winget fallback)
+2. Installs scoop if missing
+3. Sets XDG environment variables
+4. Runs `chezmoi init --apply Randallsm83/dotfiles`
+5. Applies all configurations
+6. Installs package managers if missing
+7. Ready in ~10 minutes
+
+### Unix (Planned)
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/USERNAME/chezmoi-dotfiles/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
 ```
 
-This single command will:
-1. Install chezmoi (scoop/winget/mise)
-2. Clone dotfiles repository
-3. Apply all configurations (rendered from templates)
-4. Install package managers if missing
-5. Install all packages from manifests
-6. Configure environment variables
-7. Ready to work in <10 minutes
+---
 
-## Package Management Strategy
+## Theme Configuration
 
-Per the environment rules:
+**Active Theme:** spaceduck  
+**Available:** spaceduck, onedark, gruvbox-material, tokyonight, tokyonight-storm, dracula, kanagawa
 
-**Windows:**
-- `scoop` - CLI tools (git, neovim, starship, ripgrep, bat, fd, fzf, eza, btop, delta, gh, lazygit, etc.)
-- `winget` - GUI apps (Git.Git, wez.wezterm, Microsoft.PowerShell, VS Code, 7zip)
-- `mise` - Language runtimes only (node, python, ruby, go, rust, lua, bun, direnv, usage)
+### Theme Customization
 
-**Linux/WSL/macOS:**
-- `mise` - Everything (CLI tools via cargo + language runtimes)
-- `homebrew` - Bootstrap only (stow installation), then unused
-- `apt/dnf/pacman` - System bootstrap only when sudo available
+Override in `.chezmoi.local.toml`:
 
-**Configuration Files (to be added):**
-- `dot_config/scoop/scoop.json.tmpl` - Windows CLI packages
-- `dot_config/mise/config.toml.tmpl` - Cross-platform runtimes and Unix tools
-- `.chezmoiscripts/run_once_install_packages_*.tmpl` - Auto-installation scripts
+```toml
+[data]
+    theme = "onedark"
+    font = "JetBrainsMono"
+```
+
+### Theme Mappings
+
+Themes are mapped to application-specific names in `.chezmoidata.yaml`:
+- **Neovim**: Plugin colorscheme names
+- **WezTerm**: Builtin colorscheme names
+- **Starship**: Custom palette names in starship.toml
+- **Vivid**: Theme names for LS_COLORS generation
+- **Bat/Delta**: Custom .tmTheme files
+
+---
+
+## SSH & Authentication
+
+### 1Password SSH Agent
+
+**Windows:** Uses named pipe at `\\\\.\\pipe\\openssh-ssh-agent`  
+**Unix:** Socket at `~/.1password/agent.sock`
+
+Git SSH configured to use Windows native OpenSSH: `C:/Windows/System32/OpenSSH/ssh.exe`
+
+### Configuration Files
+- `dot_ssh/config.tmpl` - SSH client config
+- `dot_config/git/config.tmpl` - Git config with conditional includes
+- `dot_config/git/config.d/` - Platform-specific git configs
+
+---
+
+## XDG Base Directory Compliance
+
+**All platforms** (including Windows) use XDG directories:
+
+```
+~/.config      # XDG_CONFIG_HOME
+~/.local/share # XDG_DATA_HOME
+~/.local/state # XDG_STATE_HOME
+~/.cache       # XDG_CACHE_HOME
+```
+
+Bootstrap scripts set these as environment variables on Windows.
+
+---
+
+## Testing
+
+### Pester Tests (Windows)
+
+```powershell
+# Install Pester
+Install-Module -Name Pester -MinimumVersion 5.0.0 -Force
+
+# Run all tests
+Invoke-Pester -Path .\bootstrap.Tests.ps1
+
+# Run with coverage
+$config = New-PesterConfiguration
+$config.CodeCoverage.Enabled = $true
+$config.CodeCoverage.Path = '.\bootstrap.ps1'
+Invoke-Pester -Configuration $config
+```
+
+### Test Coverage
+- Install-Chezmoi (scoop/winget fallback)
+- Install-Scoop (execution policy handling)
+- Initialize-Chezmoi (GitHub shorthand conversion)
+- Set-EnvironmentVariables (XDG paths)
+
+---
 
 ## Line Ending Requirements
 
-**CRITICAL**: Files used in Linux/WSL environments MUST use LF (Unix) line endings, NOT CRLF (Windows) line endings.
+**CRITICAL**: Files for Linux/WSL MUST use LF endings, NOT CRLF.
 
-### Files that MUST use LF:
-- All shell scripts (`*.sh`, `*.bash`, `.tmpl` files for Unix)
-- All zsh configuration files (`dot-zshrc`, `.zsh` files)
-- All files in `.chezmoiscripts/` that target Unix (even if they have `.tmpl` extension)
-- Any configuration files that will be read by Linux/WSL tools
+### LF Required
+- All shell scripts (`*.sh`, `*.bash`)
+- Zsh configuration files
+- Unix-targeted `.tmpl` files in `.chezmoiscripts/`
+- Any files read by Linux/WSL tools
 
-### Files that should use CRLF:
-- PowerShell scripts (`*.ps1`, `.ps1.tmpl`)
-- Windows-specific configuration files
+### CRLF Acceptable
+- PowerShell scripts (`*.ps1`)
+- Windows-specific configs
 
-### Checking line endings:
+### Checking/Converting
 
 ```powershell
-# In PowerShell
-$content = [System.IO.File]::ReadAllText("filename")
+# Check
+$content = [System.IO.File]::ReadAllText("file")
 if ($content -match "`r`n") { "CRLF" } else { "LF" }
-```
 
-### Converting CRLF to LF:
-
-```powershell
-# In PowerShell
-$content = [System.IO.File]::ReadAllText("filename")
+# Convert CRLF → LF
 $content = $content -replace "`r`n", "`n"
-[System.IO.File]::WriteAllText("filename", $content)
+[System.IO.File]::WriteAllText("file", $content)
 ```
 
 ```bash
-# In WSL/Linux
-sed -i 's/\r$//' filename
+# WSL/Linux
+sed -i 's/\r$//' file
 ```
 
-**AI Agent Note**: Always check and ensure correct line endings when creating or modifying files for Linux/WSL environments.
+---
+
+## Important Warp Integration Notes
+
+### Context Usage
+
+Warp agents can access:
+- **This notebook** (WARP.md) - Repository guidance
+- **CHEZMOI-GUIDE.md** - Chezmoi best practices
+- **Codebase index** - Git-tracked files (no code sent to servers)
+- **Warp Drive** - Workflows, notebooks, prompts
+- **Rules** - Persistent context about your preferences
+
+### Rules for This Repository
+
+The user's Rules include:
+- Platform & environment details (Windows 11, WSL2, shells, terminals)
+- Package management strategy (scoop/winget/mise on Windows, mise on Unix)
+- XDG compliance requirements
+- Theme preferences (spaceduck primary, onedark secondary)
+- Font configuration (Hack primary, FiraCode fallback)
+- SSH & auth setup (1Password SSH agent)
+
+**Always respect these rules when suggesting changes.**
+
+### Workflows
+
+Warp Workflows for this repo are stored in `warp-workflows/`:
+- `reset-arch-wsl.yaml` - Full Arch Linux WSL reset and bootstrap
+
+Import via Warp Drive or Command Palette (`Cmd+P` / `Ctrl+P`).
+
+---
+
+## Common Operations
+
+### Adding a New Config File
+
+```powershell
+# 1. Add to chezmoi
+chezmoi add --template ~/.config/new-tool/config.yaml
+
+# 2. Navigate to source
+chezmoi cd
+
+# 3. Edit template, add platform conditionals if needed
+# 4. Apply and verify
+chezmoi apply --dry-run
+chezmoi apply
+```
+
+### Enabling a Package Feature
+
+```powershell
+# 1. Edit feature flags
+chezmoi edit ~/.local/share/chezmoi/.chezmoidata.yaml
+
+# 2. Set flag to true
+package_features:
+  arduino: true  # Was false
+
+# 3. Apply changes
+chezmoi apply
+
+# 4. Verify
+chezmoi managed | grep arduino
+```
+
+### Testing on Fresh Machine
+
+```powershell
+# 1. Backup current state
+chezmoi archive > backup.tar.gz
+
+# 2. Test bootstrap in VM/container
+# Windows:
+iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 | iex
+
+# 3. Verify no errors during:
+# - Hook execution
+# - Template rendering
+# - Package installation
+# - Script execution
+```
+
+---
+
+## Troubleshooting
+
+### Templates Not Rendering
+- Check syntax with `chezmoi execute-template`
+- View data with `chezmoi data`
+- Verify variables exist in `.chezmoi.toml.tmpl` or `.chezmoidata.yaml`
+
+### Files Not Applying
+- Check `.chezmoiignore` for exclusions
+- Verify feature flags in `.chezmoidata.yaml`
+- Run `chezmoi status` to see conflicts
+- Check file permissions (private_, executable_)
+
+### Scripts Not Running
+- Check script name prefix (run_once_, run_onchange_, etc.)
+- Verify script has correct line endings (LF for Unix)
+- Check interpreter config in `.chezmoi.toml.tmpl`
+- Clear script state: `chezmoi state delete-bucket --bucket=scriptState`
+
+### Package Installation Issues
+- Windows: Verify scoop/winget installed
+- Unix: Verify mise installed
+- Check package names in configs
+- Review install script logs in `.chezmoiscripts/`
+
+---
+
+## References
+
+- **Chezmoi Docs**: https://www.chezmoi.io/
+- **Warp Docs**: https://docs.warp.dev/
+- **Repository**: https://github.com/Randallsm83/dotfiles
+- **CHEZMOI-GUIDE.md**: Best practices and implementation checklist
+- **ARCHITECTURE.md**: Detailed technical architecture
+- **SECRETS.md**: 1Password integration guide
+
+---
+
+## Maintenance Notes
+
+### When Adding Features
+1. Check official chezmoi docs first
+2. Use templates for cross-platform compatibility
+3. Use `run_onchange_` for declarative installation
+4. Test on multiple platforms
+5. Document in this guide
+6. Update CHEZMOI-GUIDE.md if patterns change
+
+### When Fixing Issues
+1. Reference CHEZMOI-GUIDE.md for correct patterns
+2. Check implementation checklist for known issues
+3. Verify against official chezmoi documentation
+4. Don't make assumptions - validate first
+
+**Remember:** When you make assumptions instead of following the docs, you create technical debt. Always verify.
+
+---
+
+**Last Updated:** November 23, 2025  
+**Maintained By:** Randall  
+**Version:** 2.0.0
