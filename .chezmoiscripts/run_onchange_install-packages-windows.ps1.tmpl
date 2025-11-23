@@ -15,6 +15,7 @@ if (!(Get-Command scoop -ErrorAction SilentlyContinue)) {
 # Collect all packages to install
 $scoopPackages = @()
 $wingetPackages = @()
+$misePackages = @()
 
 {{- range $feature, $enabled := .package_features }}
 {{- if $enabled }}
@@ -28,6 +29,11 @@ $scoopPackages += "{{ . }}"
 {{- if $mapping.winget }}
 {{- range $mapping.winget }}
 $wingetPackages += "{{ . }}"
+{{- end }}
+{{- end }}
+{{- if $mapping.mise }}
+{{- range $mapping.mise }}
+$misePackages += "{{ . }}"
 {{- end }}
 {{- end }}
 {{- end }}
@@ -64,6 +70,25 @@ if ($wingetPackages.Count -gt 0) {
         }
     } else {
         Write-Host "`nwinget not available, skipping GUI app installation" -ForegroundColor Yellow
+    }
+}
+
+# Install mise packages (language runtimes)
+if ($misePackages.Count -gt 0) {
+    if (Get-Command mise -ErrorAction SilentlyContinue) {
+        $misePackages = $misePackages | Select-Object -Unique
+        Write-Host "`nInstalling mise tools/runtimes..." -ForegroundColor Cyan
+        foreach ($pkg in $misePackages) {
+            $installed = mise list $pkg 2>$null
+            if (!$installed -or $installed -notmatch $pkg) {
+                Write-Host "  Installing: $pkg" -ForegroundColor Green
+                mise install "$pkg@latest"
+            } else {
+                Write-Host "  Already installed: $pkg" -ForegroundColor Gray
+            }
+        }
+    } else {
+        Write-Host "`nmise not available. Install via: scoop install mise" -ForegroundColor Yellow
     }
 }
 
