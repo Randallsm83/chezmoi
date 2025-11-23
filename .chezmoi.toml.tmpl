@@ -179,10 +179,11 @@
 
 {{- if eq .chezmoi.os "windows" }}
 [hooks.read-source-state.pre]
-    command = ".local/share/chezmoi/.install-1password.ps1"
+    command = "pwsh"
+    args = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "{{ .chezmoi.sourceDir }}/.install-1password.ps1"]
 {{- else }}
 [hooks.read-source-state.pre]
-    command = ".local/share/chezmoi/.install-1password.sh"
+    command = "{{ .chezmoi.sourceDir }}/.install-1password.sh"
 {{- end }}
 
 [onepassword]

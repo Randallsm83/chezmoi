@@ -19,10 +19,13 @@ mise_packages=""
 {{- if $enabled }}
 {{- $mapping := index $.package_mapping $feature }}
 {{- if $mapping }}
-{{- if $mapping.mise }}
+{{- if hasKey $mapping "mise" }}
 {{- range $mapping.mise }}
 mise_packages="$mise_packages {{ . }}"
 {{- end }}
+{{- end }}
+{{- if hasKey $mapping "mise_runtime" }}
+mise_packages="$mise_packages {{ $mapping.mise_runtime.name }}@{{ $mapping.mise_runtime.version }}"
 {{- end }}
 {{- end }}
 {{- end }}
@@ -33,9 +36,10 @@ if [ -n "$mise_packages" ]; then
     echo ""
     echo "Installing mise tools/runtimes..."
     for pkg in $mise_packages; do
-        if ! mise list "$pkg" 2>/dev/null | grep -q "$pkg"; then
+        tool_name=$(echo "$pkg" | sed 's/@.*$//')
+        if ! mise list "$tool_name" 2>/dev/null | grep -q "$tool_name"; then
             echo "  Installing: $pkg"
-            mise install "$pkg@latest"
+            mise install "$pkg"
         else
             echo "  Already installed: $pkg"
         fi
