@@ -52,6 +52,13 @@ direnv = "latest"
 {{- range .always_install.mise }}
 {{ . }} = "latest"
 {{- end }}
+{{- if .package_features.node }}
+yarn = "latest"
+{{- end }}
+{{- if .package_features.python }}
+uv = "latest"
+pipx = "latest"
+{{- end }}
 
 {{- if ne .chezmoi.os "windows" }}
 # === CLI Tools (Linux/WSL/macOS only - based on feature flags) ===
@@ -94,12 +101,22 @@ fzf = "latest"
 {{- if .package_features.glow }}
 glow = "latest"
 {{- end }}
+{{- if .package_features.bat }}
+bat-extras = "latest"
+{{- end }}
+{{- if .package_features.btop }}
+btop = "latest"
+{{- end }}
 {{- if .package_features.sqlite3 }}
 sqlite = "latest"
 {{- end }}
 
 # Build tools
 cargo-binstall = "latest"
+{{- if .package_features.thefuck }}
+# thefuck requires git install due to setuptools issues in Python 3.12+
+"pipx:git+https://github.com/nvbn/thefuck.git" = "master"
+{{- end }}
 {{- end }}
 
 [settings]

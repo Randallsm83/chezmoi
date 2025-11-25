@@ -23,18 +23,15 @@ local is_mac = wezterm.target_triple:find("apple") ~= nil
 
 -- Environment setup
 if is_windows then
-  -- Windows: default to PowerShell (can override with WSL)
-{{- if eq .shell "pwsh" }}
+  -- Windows: use PowerShell
   config.default_prog = { "pwsh.exe", "-NoLogo" }
-{{- else }}
-  config.default_prog = { "wsl.exe", "-d", "Ubuntu" }
-{{- end }}
   config.set_environment_variables = {
     PATH = wezterm.home_dir .. "\\bin;" .. os.getenv("PATH"),
     COLORTERM = "truecolor",
   }
 elseif is_linux or is_mac then
-  -- Unix: setup PATH and terminfo
+  -- Unix: use zsh
+  config.default_prog = { "zsh", "-l" }
   local path_prefix = is_mac and "/opt/homebrew/bin:" or ""
   config.set_environment_variables = {
     PATH = path_prefix .. wezterm.home_dir .. "/.local/bin:" .. os.getenv("PATH"),

@@ -158,4 +158,133 @@ if command_exists zsh; then
     log_info "Note: You may need to log out and back in for the shell change to take effect"
 fi
 
+# Create XDG directories
+log_info "Creating XDG directories..."
+mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}"
+mkdir -p "${XDG_DATA_HOME:-$HOME/.local/share}"
+mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}"
+mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}"
+mkdir -p "$HOME/.local/bin"
+log_success "XDG directories created"
+
+{{- if .features.setup_1password }}
+# Install 1Password CLI (requires system package manager for setgid permissions)
+install_1password_cli() {
+    if command_exists op; then
+        log_success "1Password CLI already installed"
+        return 0
+    fi
+
+    log_info "Installing 1Password CLI..."
+
+    if command_exists pacman; then
+        # 1password-cli is in AUR, not official repos
+        if command_exists paru; then
+            paru -S --noconfirm 1password-cli
+        elif command_exists yay; then
+            yay -S --noconfirm 1password-cli
+        else
+            log_warning "No AUR helper found (paru/yay). Install 1password-cli manually:"
+            log_warning "  paru -S 1password-cli  OR  yay -S 1password-cli"
+            return 1
+        fi
+    elif command_exists apt-get; then
+        if command_exists sudo; then
+            curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
+                sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg 2>/dev/null || true
+            echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' | \
+                sudo tee /etc/apt/sources.list.d/1password.list >/dev/null
+            sudo apt-get update && sudo apt-get install -y 1password-cli
+        else
+            log_warning "sudo required to install 1password-cli"
+            return 1
+        fi
+    elif command_exists dnf; then
+        if command_exists sudo; then
+            sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
+            sudo sh -c 'echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=https://downloads.1password.com/linux/keys/1password.asc" > /etc/yum.repos.d/1password.repo'
+            sudo dnf install -y 1password-cli
+        else
+            log_warning "sudo required to install 1password-cli"
+            return 1
+        fi
+    elif command_exists brew; then
+        brew install 1password-cli
+    else
+        log_warning "Cannot auto-install 1Password CLI. Install manually."
+        return 1
+    fi
+
+    if command_exists op; then
+        log_success "1Password CLI installed"
+    fi
+}
+
+# Install 1Password desktop app (required for SSH agent)
+install_1password_desktop() {
+    # Check if already installed
+    if command_exists 1password || [ -f /opt/1Password/1password ]; then
+        log_success "1Password desktop app already installed"
+        return 0
+    fi
+
+    log_info "Installing 1Password desktop app (required for SSH agent)..."
+
+    if command_exists pacman; then
+        # Arch Linux - try AUR helpers
+        if command_exists paru; then
+            log_info "Installing 1password via paru..."
+            paru -S --noconfirm 1password || log_warning "Failed to install 1password via paru"
+        elif command_exists yay; then
+            log_info "Installing 1password via yay..."
+            yay -S --noconfirm 1password || log_warning "Failed to install 1password via yay"
+        else
+            log_warning "No AUR helper found (paru/yay). Install 1Password manually:"
+            log_warning "  paru -S 1password  OR  yay -S 1password"
+            return 1
+        fi
+    elif command_exists apt-get; then
+        # Debian/Ubuntu - add 1Password repo
+        log_info "Adding 1Password apt repository..."
+        if command_exists sudo; then
+            curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
+                sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg 2>/dev/null || true
+            echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' | \
+                sudo tee /etc/apt/sources.list.d/1password.list >/dev/null
+            sudo apt-get update && sudo apt-get install -y 1password || log_warning "Failed to install 1password via apt"
+        else
+            log_warning "sudo required to add 1Password repo. Install manually."
+            return 1
+        fi
+    elif command_exists dnf; then
+        # Fedora/RHEL - add 1Password repo
+        log_info "Adding 1Password rpm repository..."
+        if command_exists sudo; then
+            sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
+            sudo sh -c 'echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=https://downloads.1password.com/linux/keys/1password.asc" > /etc/yum.repos.d/1password.repo'
+            sudo dnf install -y 1password || log_warning "Failed to install 1password via dnf"
+        else
+            log_warning "sudo required to add 1Password repo. Install manually."
+            return 1
+        fi
+    elif command_exists brew; then
+        # macOS
+        log_info "Installing 1Password via Homebrew cask..."
+        brew install --cask 1password || log_warning "Failed to install 1password via brew"
+    else
+        log_warning "Cannot auto-install 1Password desktop. Install manually from:"
+        log_warning "  https://1password.com/downloads/linux/"
+        return 1
+    fi
+
+    if command_exists 1password || [ -f /opt/1Password/1password ]; then
+        log_success "1Password desktop app installed"
+        log_info "Remember to enable 'Integrate with 1Password CLI' in Settings > Developer"
+    fi
+}
+
+install_1password_cli
+install_1password_desktop
+{{- end }}
+
 {{- end -}}

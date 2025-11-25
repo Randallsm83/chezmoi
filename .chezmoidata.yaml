@@ -267,6 +267,7 @@ package_features:
   # Text Editors (recommended)
   # ============================================================================
   nvim: true
+  vim: true
   vscode: true
   
   # ============================================================================
@@ -286,6 +287,7 @@ package_features:
   wget: true            # Downloader
   glow: true            # Markdown renderer
   thefuck: true         # Command correction
+  btop: true            # System monitor
   
   # ============================================================================
   # Language Runtimes (optional - enable as needed)
@@ -312,7 +314,6 @@ package_features:
   asdf: false           # DEPRECATED: Replaced by mise
   nvm: false            # DEPRECATED: Replaced by mise
   tinted_theming: false # DEPRECATED: Replaced by unified theme system
-  vim: false            # DEPRECATED: Use nvim
 
 # ============================================================================
 # Package Mapping
@@ -597,8 +598,6 @@ always_install:
   
   mise:
     - usage
-    - yarn
-    - uv
   
   mise_runtimes:
     bun: latest

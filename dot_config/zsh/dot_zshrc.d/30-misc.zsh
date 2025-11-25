@@ -30,6 +30,16 @@ export MYSQL_HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/mysql/history"
 
 export SQLITE_HISTORY="${XDG_STATE_HOME:-$HOME/.local/state}/sqlite/history"
 
+# Colored man pages
+export LESS_TERMCAP_md="$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null)"
+export LESS_TERMCAP_me="$(tput sgr0 2>/dev/null)"
+
+# Skip uninteresting commands in history
+export HISTIGNORE="&:[bf]g:c:clear:history:exit:q:pwd:* --help"
+
+# pkgfile "command not found" handler (Arch)
+[[ -f /usr/share/doc/pkgfile/command-not-found.zsh ]] && source /usr/share/doc/pkgfile/command-not-found.zsh
+
 env_dirs=(
   "$ENV_DIRS"
   "$DOCKER_CONFIG"

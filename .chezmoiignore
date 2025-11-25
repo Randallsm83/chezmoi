@@ -19,7 +19,7 @@
 #    - Exclude PowerShell ecosystem on Unix/Linux
 #
 # 3. Cross-platform files with platform-specific content:
-#    - Use .tmpl extension with {{ if eq .chezmoi.os "windows" }} guards
+#    - Use .tmpl extension with {{"{{"}} if eq .chezmoi.os "windows" {{"}}"}} guards
 #    - Example: Microsoft.PowerShell_profile.ps1.tmpl
 #
 # 4. Directory-level exclusions:
@@ -36,7 +36,15 @@
 
 # Development and documentation files (never apply to home directory)
 README.md
+**/README.md
 LICENSE
+**/LICENSE
+CHANGELOG.md
+**/CHANGELOG.md
+CONTRIBUTING.md
+**/CONTRIBUTING.md
+INSTALL*.md
+**/INSTALL*.md
 *.Tests.ps1
 *.example
 WARP.md
@@ -51,7 +59,11 @@ CONTRIBUTING.md
 bootstrap.ps1
 setup.sh
 
-# Package manager lists (used by bootstrap/install scripts, not applied to home)
+# Warp workflows (repo reference only, import manually into Warp)
+warp-workflows/
+
+# Scripts and package manager lists (repo reference only, not synced)
+scripts/
 scoop-packages.json
 winget-packages.json
 Brewfile
@@ -101,17 +113,9 @@ packages/
 .Xresources
 .tmux.conf
 
-# macOS-specific configs (iTerm2, Homebrew, etc.)
-.config/iterm2/**
-.config/karabiner/
-.config/hammerspoon/
-.config/homebrew/**
-Library/
-
 # Linux-specific configs
 .config/mise/config.linux.toml
 .config/fzf/fzf.bash
-.config/mackup/**
 .lde.yml
 
 {{- else }}
@@ -123,26 +127,31 @@ AppData/
 
 # Windows-specific scripts
 *.ps1
-.chezmoiscripts/**/run_*.ps1.tmpl
-.chezmoiscripts/**/run_*.ps1
+*.ps1.tmpl
 
 # Windows configs
 .wslconfig
 .config/mise/config.windows.toml
+.config/windows/**
 
 # Windows Terminal
 AppData/Local/Packages/Microsoft.WindowsTerminal_*/
 
 {{- end }}
-{{- /* WSL-specific exclusions */ -}}
-{{- /* .wslconfig is managed on Windows for WSL2 configuration */ -}}
 
 {{- /* macOS-specific exclusions */ -}}
 {{- if ne .chezmoi.os "darwin" }}
-# Exclude macOS-specific files on non-macOS
-.config/karabiner/
-.config/hammerspoon/
-Library/
+# Exclude macOS-specific files on non-macOS (Linux AND Windows)
+.config/iterm2
+.config/iterm2/**
+.config/karabiner
+.config/karabiner/**
+.config/hammerspoon
+.config/hammerspoon/**
+.config/mackup
+.config/mackup/**
+Library
+Library/**
 {{- end }}
 
 {{- /* Remote machine exclusions */ -}}
@@ -243,7 +252,7 @@ Library/
 {{- if not .package_features.thefuck }}
 # Thefuck package files
 .config/thefuck/**
-.config/zsh/.zshrc.d/thefuck.zsh
+.config/zsh/.zshrc.d/90-thefuck.zsh
 {{- end }}
 
 {{- if not .package_features.sqlite3 }}
@@ -277,7 +286,6 @@ Library/
 # Vagrant package files
 .cache/zsh/completions/_vagrant
 .config/zsh/.zshrc.d/60-vagrant.zsh
-{{- end }}
 {{- end }}
 extensions.json
 keybindings.json

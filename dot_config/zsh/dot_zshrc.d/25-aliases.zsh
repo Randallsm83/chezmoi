@@ -19,7 +19,7 @@ alias aliases='alias | sed "s/=.*//"'
 alias functions='declare -f | grep "^[a-z].* ()" | sed "s/{$//"'
 
 # Navigate to projects root
-alias cdp='cd {{ .chezmoi.homeDir }}/projects'
+alias cdp='cd /home/rmiller/projects'
 
 # Quick navigation to repos
 alias cdn='cd $HOME/projects/ndn'
@@ -28,7 +28,7 @@ alias cdcdn='cd $HOME/projects/cdn-service'
 
 # Run command in all repos
 function dhgitall() {
-    for dir in {{ .chezmoi.homeDir }}/projects/*/; do
+    for dir in /home/rmiller/projects/*/; do
         (cd "$dir" && echo "=== $(basename $dir) ===" && git "$@")
     done
 }
@@ -81,8 +81,8 @@ alias stowdir='stow --no-folding --dotfiles --verbose=1 -R -t ~ '
 alias unstowdir='stow --verbose=1 -D '
 
 # Nvim
-alias vi='${=EDITOR}'
-alias vim='${=EDITOR}'
+vi() { ${=EDITOR} "$@" }
+vim() { ${=EDITOR} "$@" }
 
 # Git
 alias gg='git grep -E'
@@ -97,6 +97,24 @@ alias ardc='arduino-cloud-cli'
 
 # Wget
 alias wget='wget --hsts-file=$XDG_CACHE_HOME/wget/wget-hsts'
+
+# Build (parallel)
+alias make="make -j$(nproc)"
+alias ninja="ninja -j$(nproc)"
+alias n="ninja"
+
+# Arch/Pacman
+alias update="sudo pacman -Syu"
+alias rmpkg="sudo pacman -Rsn"
+alias cleanch="sudo pacman -Scc"
+alias fixpacman="sudo rm /var/lib/pacman/db.lck"
+alias cleanup='sudo pacman -Rsn $(pacman -Qtdq)'
+
+# Journalctl errors
+alias jctl="journalctl -p 3 -xb"
+
+# Recent installed packages
+alias rip="expac --timefmt='%Y-%m-%d %T' '%l\t%n %v' | sort | tail -200 | nl"
 
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
