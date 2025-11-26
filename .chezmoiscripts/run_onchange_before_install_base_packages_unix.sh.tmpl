@@ -102,6 +102,11 @@ fi
 
 if [ "$needs_install" = false ]; then
     log_success "Base packages already installed"
+    # Still check and set zsh as default shell if needed
+    if command_exists zsh && ! is_zsh_default_shell; then
+        set_zsh_as_default_shell
+        log_info "Note: You may need to log out and back in for the shell change to take effect"
+    fi
     exit 0
 fi
 
