@@ -14,36 +14,46 @@
 # =============================================================================
 
 [tools]
-# === Language Runtimes (based on feature flags) ===
+# === Language Runtimes ===
 {{- if .package_features.node }}
-node = "lts"
+{{- $nodeMapping := index .package_mapping "node" }}
+node = "{{ $nodeMapping.mise_runtime.version }}"
 {{- end }}
 {{- if .package_features.python }}
-python = "latest"
+{{- $pythonMapping := index .package_mapping "python" }}
+python = "{{ $pythonMapping.mise_runtime.version }}"
 {{- end }}
 {{- if .package_features.ruby }}
-ruby = "latest"
+{{- $rubyMapping := index .package_mapping "ruby" }}
+ruby = "{{ $rubyMapping.mise_runtime.version }}"
 {{- end }}
 {{- if .package_features.golang }}
-go = "latest"
+{{- $goMapping := index .package_mapping "golang" }}
+go = "{{ $goMapping.mise_runtime.version }}"
 {{- end }}
 {{- if .package_features.rust }}
-rust = "stable"
+{{- $rustMapping := index .package_mapping "rust" }}
+rust = "{{ $rustMapping.mise_runtime.version }}"
 {{- end }}
 {{- if and .package_features.lua (ne .chezmoi.os "windows") }}
-lua = "latest"
+{{- $luaMapping := index .package_mapping "lua" }}
+lua = "{{ $luaMapping.mise_runtime.version }}"
+luajit = "latest"
 {{- end }}
 zig = "latest"
 {{- if .package_features.perl }}
-perl = "latest"
+{{- $perlMapping := index .package_mapping "perl" }}
+perl = "{{ $perlMapping.mise_runtime.version }}"
 {{- end }}
 {{- if .package_features.php }}
-php = "latest"
+{{- $phpMapping := index .package_mapping "php" }}
+php = "{{ $phpMapping.mise_runtime.version }}"
 {{- end }}
 
 # === Always-installed runtimes ===
-bun = "latest"
-deno = "latest"
+{{- range $runtime, $version := .always_install.mise_runtimes }}
+{{ $runtime }} = "{{ $version }}"
+{{- end }}
 
 # === Universal Tools ===
 {{- if .package_features.direnv }}
@@ -61,15 +71,15 @@ pipx = "latest"
 {{- end }}
 
 {{- if ne .chezmoi.os "windows" }}
-# === CLI Tools (Linux/WSL/macOS only - based on feature flags) ===
+# === CLI Tools (Linux/WSL/macOS) ===
 {{- if .package_features.git }}
 github-cli = "latest"  # gh
 {{- end }}
-{{- if index .package_features "1password" }}
-op = "latest"  # 1Password CLI
-{{- end }}
 {{- if .package_features.nvim }}
 neovim = "latest"
+{{- end }}
+{{- if .package_features.vim }}
+vim = "latest"
 {{- end }}
 {{- if .package_features.starship }}
 starship = "latest"
@@ -113,6 +123,7 @@ sqlite = "latest"
 
 # Build tools
 cargo-binstall = "latest"
+chezmoi = "latest"
 {{- if .package_features.thefuck }}
 # thefuck requires git install due to setuptools issues in Python 3.12+
 "pipx:git+https://github.com/nvbn/thefuck.git" = "master"
