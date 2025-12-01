@@ -135,7 +135,7 @@
     shell_profile = {{ joinPath .chezmoi.homeDir "Documents" "PowerShell" "Microsoft.PowerShell_profile.ps1" | quote }}
 {{- else }}
     shell = "zsh"
-    shell_profile = {{ joinPath .chezmoi.homeDir ".zshrc" | quote }}
+    shell_profile = {{ joinPath .chezmoi.homeDir ".config" "zsh" ".zshrc" | quote }}
 {{- end }}
 
     # Theme and styling (can be overridden via .chezmoi.local.toml or .chezmoidata.yaml)
