@@ -181,6 +181,26 @@ theme_mappings:
     tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
     kanagawa: "kanagawa"
+  
+  # Vim colorscheme names (vim-plug plugin names)
+  vim:
+    spaceduck: "spaceduck"           # pineapplegiant/spaceduck
+    onedark: "onedark"               # joshdick/onedark.vim
+    gruvbox-material: "gruvbox"      # morhetz/gruvbox (no gruvbox-material for vim)
+    tokyonight: "tokyonight"         # ghifarit53/tokyonight-vim
+    tokyonight-storm: "tokyonight"   # ghifarit53/tokyonight-vim
+    dracula: "dracula"               # dracula/vim
+    kanagawa: "kanagawa"             # rebelot/kanagawa.nvim (works in vim)
+  
+  # Vim airline theme names
+  vim_airline:
+    spaceduck: "spaceduck"           # comes with spaceduck plugin
+    onedark: "onedark"               # comes with onedark plugin
+    gruvbox-material: "gruvbox"      # comes with gruvbox plugin
+    tokyonight: "tokyonight"         # comes with tokyonight plugin
+    tokyonight-storm: "tokyonight"   # comes with tokyonight plugin
+    dracula: "dracula"               # comes with dracula plugin
+    kanagawa: "kanagawa"             # comes with kanagawa plugin
 
 # ============================================================================
 # Fonts
