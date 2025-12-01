@@ -16,7 +16,7 @@ _has() { command -v "$1" >/dev/null 2>&1; }
 
 # Set LS_COLORS via vivid to match theme
 if [ -z "$LS_COLORS" ] && _has vivid; then
-  export LS_COLORS="$(vivid generate {{ index .theme_mappings.vivid .theme.name | quote }} 2>/dev/null)"
+  export LS_COLORS="$(vivid generate {{ index .theme_mappings.vivid .theme | quote }} 2>/dev/null)"
 fi
 
 _eza_flags_file() {
