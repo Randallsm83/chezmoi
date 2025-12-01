@@ -52,15 +52,15 @@ Languages and tools are controlled by feature flags in `.chezmoidata.yaml`:
 | `lua` | ✅ Enabled | Lua environment |
 | `node` | ✅ Enabled | Node.js environment |
 | `glow` | ✅ Enabled | Markdown viewer |
-| `vivid` | ✅ Enabled | LS_COLORS generator (spaceduck theme) |
+| `vivid` | ✅ Enabled | LS_COLORS generator (follows theme setting) |
 | `sqlite3` | ✅ Enabled | SQLite CLI config |
-| `tinted_theming` | ✅ Enabled | Base16/Base24 theme manager |
 | `warp` | ✅ Enabled | Warp terminal configurations |
-| `perl` | ❌ Disabled | Perl environment |
+| `vim` | ✅ Enabled | Vim config |
+| `thefuck` | ✅ Enabled | Command correction tool |
+| `perl` | ✅ Enabled | Perl environment |
+| `tinted_theming` | ❌ Disabled | Base16/Base24 theme manager (replaced by unified theme system) |
 | `php` | ❌ Disabled | PHP environment |
-| `vim` | ❌ Disabled | Vim config (using neovim) |
 | `arduino` | ❌ Disabled | Arduino IDE config |
-| `thefuck` | ❌ Disabled | Command correction tool |
 
 **Total managed files**: 155+ configurations
 
@@ -68,10 +68,19 @@ Languages and tools are controlled by feature flags in `.chezmoidata.yaml`:
 
 ## 🎨 Theme & Appearance
 
-- **Color Scheme**: Spaceduck (terminals), OneDark (neovim, starship)
+**Unified Theme System**: All apps use a single theme setting in `.chezmoidata.yaml`.
+
+- **Active Theme**: Set via `theme.name` in `.chezmoidata.yaml` (default: `spaceduck`)
+- **Available Themes**: spaceduck, onedark, gruvbox-material, tokyonight, tokyonight-storm, dracula, kanagawa
+- **Apps Using Theme**: neovim, wezterm, starship, eza, vivid (LS_COLORS), bat, delta
 - **Fonts**: Hack Nerd Font (primary), FiraCode Nerd Font (fallback with ligatures)
-- **Style**: Dark themes optimized for relatively dark environments
-- **Palette**: Purples, pinks, greens, oranges, blues, cyans - neon/vibrant colors
+
+To change theme:
+```yaml
+# .chezmoidata.yaml
+theme:
+  name: "onedark"  # Change this, run chezmoi apply
+```
 
 ---
 

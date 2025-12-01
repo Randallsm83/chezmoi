@@ -263,9 +263,7 @@ AppData/
 
 # Ignore Unix files on Windows
 {{ if eq .chezmoi.os "windows" }}
-.zshrc
-.zshenv
-.bashrc
+.config/zsh/
 {{ end }}
 ```
 
@@ -316,13 +314,13 @@ Additional development tools:
 | Package | Flag | Default | Description |
 |---------|------|---------|-------------|
 | **glow** | `package_features.glow` | ✅ Enabled | Markdown renderer in terminal |
-| **tinted_theming** | `package_features.tinted_theming` | ✅ Enabled | Base16/Base24 theme manager (tinty) |
+| **tinted_theming** | `package_features.tinted_theming` | ❌ Disabled | Base16/Base24 theme manager (tinty) - replaced by unified theme system |
 | **sqlite3** | `package_features.sqlite3` | ✅ Enabled | SQLite CLI configuration |
-| **vivid** | `package_features.vivid` | ✅ Enabled | LS_COLORS generator (spaceduck theme) |
+| **vivid** | `package_features.vivid` | ✅ Enabled | LS_COLORS generator (follows unified theme) |
 | **warp** | `package_features.warp` | ✅ Enabled | Warp terminal launch configurations |
 | **arduino** | `package_features.arduino` | ❌ Disabled | Arduino IDE configuration |
 | **thefuck** | `package_features.thefuck` | ✅ Enabled | Command correction tool (requires setuptools for Python 3.12+) |
-| **vim** | `package_features.vim` | ❌ Disabled | Vim editor (separate from neovim) |
+| **vim** | `package_features.vim` | ✅ Enabled | Vim editor (separate from neovim) |
 
 ### Deprecated Packages
 
@@ -335,7 +333,7 @@ Legacy tools replaced by mise:
 
 Package managers and infrastructure:
 
-- **homebrew** (`package_features.homebrew` = false) - macOS/Linux package manager (bootstrap only, not actively managed)
+- **homebrew** (`package_features.homebrew` = true) - macOS/Linux package manager (bootstrap only, then unused)
 - **vagrant** (`package_features.vagrant` = false) - VM management tool (rarely used)
 
 ### How Feature Flags Work
@@ -385,9 +383,9 @@ When a feature flag is `false`, its files are listed in `.chezmoiignore` and won
 **File Organization Patterns:**
 
 - **Zsh integrations**: Numbered files in `.config/zsh/.zshrc.d/` control load order:
-  - `50-*` - Package managers (asdf, homebrew)
+  - `50-*` - Package managers (homebrew)
   - `70-*` - Language environments (rust, golang, python, ruby, lua, node, php)
-  - `80-*` - Theming tools (tinty)
+  - `80-*` - Tools (eza, vivid)
   - `90-*` - Utility tools (glow, thefuck)
 
 - **Shell completions**: Stored in `.cache/zsh/completions/_<command>`
@@ -418,11 +416,9 @@ When a feature flag is `false`, its files are listed in `.chezmoiignore` and won
 
 ### Chezmoi Configuration Files
 
-*(Not yet created - will be added during migration:)*
-
-- `.chezmoi.toml.tmpl` - Chezmoi configuration (can be templated)
-- `.chezmoidata.yaml` - Template variables and platform data
-- `.chezmoiignore` - Platform-specific exclusions
+- `.chezmoi.toml.tmpl` - Chezmoi configuration (templated per-platform)
+- `.chezmoidata.yaml` - Template variables, theme colors, package feature flags
+- `.chezmoiignore` - Platform-specific file exclusions
 - `.chezmoitemplates/` - Reusable template snippets
 
 ## Migration Context
@@ -502,7 +498,7 @@ Per the environment rules:
 
 ### Files that MUST use LF:
 - All shell scripts (`*.sh`, `*.bash`, `.tmpl` files for Unix)
-- All zsh configuration files (`dot-zshrc`, `.zsh` files)
+- All zsh configuration files (`dot_zshrc`, `.zsh` files in `dot_config/zsh/`)
 - All files in `.chezmoiscripts/` that target Unix (even if they have `.tmpl` extension)
 - Any configuration files that will be read by Linux/WSL tools
 
