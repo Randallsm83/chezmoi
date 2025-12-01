@@ -95,15 +95,21 @@ Plug 'bling/vim-airline'
 Plug 'edkolev/tmuxline.vim'
 
 " ----- Colorscheme Choice -----
-Plug 'dracula/vim', { 'as': 'dracula' }
-Plug 'catppuccin/vim', { 'as': 'catppuccin' }
+" All themes for unified theme system
+Plug 'pineapplegiant/spaceduck', { 'branch': 'main' }
+Plug 'joshdick/onedark.vim'
 Plug 'morhetz/gruvbox', { 'as': 'gruvbox' }
+Plug 'ghifarit53/tokyonight-vim'
+Plug 'dracula/vim', { 'as': 'dracula' }
+Plug 'rebelot/kanagawa.nvim'  " Works in vim too
 
 call plug#end()
 
 " ============================================
 "               Colorscheme Settings
 " ============================================
+" Theme controlled by chezmoi unified theme system
+" Current theme: {{ .theme }}
 
 " Set terminal colors
 if &term =~ '256color'
@@ -117,18 +123,22 @@ if &term =~ '256color'
 
   set background=dark
 
-  " Dracula theme
-  " let g:dracula_bold = 1
-  " let g:dracula_italic = 1
-  " let g:dracula_italic_comment = 1
-  " let g:dracula_underline = 1
-  " let g:dracula_high_contrast = 1
-  " let g:dracula_colorterm = 1
-  " autocmd vimenter * ++nested colorscheme dracula
-
-  " Gruvbox theme
+  " Theme-specific settings
+{{- if eq .theme "gruvbox-material" }}
   let g:gruvbox_contrast_dark = 'medium'
-  autocmd vimenter * ++nested colorscheme gruvbox
+{{- else if eq .theme "tokyonight" }}
+  let g:tokyonight_style = 'night'
+  let g:tokyonight_enable_italic = 1
+{{- else if eq .theme "tokyonight-storm" }}
+  let g:tokyonight_style = 'storm'
+  let g:tokyonight_enable_italic = 1
+{{- else if eq .theme "spaceduck" }}
+  " Spaceduck settings
+  let g:spaceduck_italic = 1
+{{- end }}
+
+  " Apply colorscheme
+  autocmd vimenter * ++nested colorscheme {{ index .theme_mappings.vim .theme }}
 endif
 
 " ============================================
@@ -326,12 +336,8 @@ let mapleader=','
 " <F2> to toggle paste mode
 set pastetoggle=<F2>
 
-" <Space> toggle search highlighting and manage highlights while searching
-" nnoremap <silent> <Space> :set hlsearch!<CR>
-nnoremap <silent> <Space> :call gruvbox#hls_toggle()<CR>
-nnoremap * :let @/ = ""<CR>:call gruvbox#hls_show()<CR>*
-nnoremap / :let @/ = ""<CR>:call gruvbox#hls_show()<CR>/
-nnoremap ? :let @/ = ""<CR>:call gruvbox#hls_show()<CR>?
+" <Space> toggle search highlighting
+nnoremap <silent> <Space> :set hlsearch!<CR>
 
 " Ctrl-N and Ctrl-P to navigate between buffers
 nnoremap <C-n> :bnext<CR>
@@ -481,7 +487,7 @@ let g:coc_global_extensions = [
 \ ]
 
 " Vim-airline
-let g:airline_theme='gruvbox'
+let g:airline_theme='{{ index .theme_mappings.vim_airline .theme }}'
 let g:airline_powerline_fonts = 1
 let g:airline_extensions = ['branch', 'coc']
 " let g:airline#extensions#ale#open_lnum_symbol = ':L'
