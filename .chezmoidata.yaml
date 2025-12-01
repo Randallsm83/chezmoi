@@ -400,6 +400,12 @@ package_mapping:
     brew: []
     mise: [neovim]
   
+  vim:
+    scoop: [vim]
+    winget: []
+    brew: [vim]
+    mise: [vim]
+  
   vscode:
     scoop: []
     winget: [Microsoft.VisualStudioCode]
@@ -492,6 +498,12 @@ package_mapping:
     winget: []
     brew: [thefuck]
     mise: []
+  
+  btop:
+    scoop: [btop]
+    winget: []
+    brew: [btop]
+    mise: [btop]
   
   # Language Runtimes (all via mise)
   rust:
@@ -587,7 +599,6 @@ always_install:
     - yq
     - make
     - 7zip
-    - btop
   
   winget:
     - 7zip.7zip
