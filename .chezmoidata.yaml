@@ -144,12 +144,22 @@ theme_mappings:
   # Vivid theme names (for LS_COLORS generation)
   vivid:
     spaceduck: "spaceduck"
-    onedark: "onedark"
+    onedark: "one-dark"
     gruvbox-material: "gruvbox-dark"
-    tokyonight: "tokyonight"
+    tokyonight: "tokyonight-night"
     tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
     kanagawa: "molokai"  # fallback - vivid doesn't have kanagawa
+  
+  # Eza theme filenames (in ~/.config/eza/themes/)
+  eza:
+    spaceduck: "spaceduck"
+    onedark: "one-dark"
+    gruvbox-material: "gruvbox-dark"
+    tokyonight: "tokyonight-night"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"  # TODO: create eza kanagawa theme
   
   # Bat (cat with syntax highlighting) and Delta (git diff)
   # Use custom .tmTheme files generated from our color palettes
