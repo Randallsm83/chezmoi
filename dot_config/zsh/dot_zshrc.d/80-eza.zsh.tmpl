@@ -12,13 +12,12 @@
 
 [[ $TERM == 'dumb' ]] && return 1
 
-# Ensure LS_COLORS is loaded from vivid if generated
-: ${XDG_CONFIG_HOME:=${HOME}/.config}
-if [ -z "$LS_COLORS" ] && [ -f "$XDG_CONFIG_HOME/lscolors/${VIVID_THEME:-one-dark}.txt" ]; then
-  export LS_COLORS="$(< "$XDG_CONFIG_HOME/lscolors/${VIVID_THEME:-one-dark}.txt")"
-fi
-
 _has() { command -v "$1" >/dev/null 2>&1; }
+
+# Set LS_COLORS via vivid to match theme
+if [ -z "$LS_COLORS" ] && _has vivid; then
+  export LS_COLORS="$(vivid generate {{ index .theme_mappings.vivid .theme.name | quote }} 2>/dev/null)"
+fi
 
 _eza_flags_file() {
   local base="$XDG_CONFIG_HOME/eza"
