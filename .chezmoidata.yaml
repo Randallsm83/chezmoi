@@ -558,7 +558,7 @@ package_mapping:
     brew: []
     mise_runtime:
       name: python
-      version: "3.12"
+      version: latest
   
   ruby:
     scoop: []
