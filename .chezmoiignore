@@ -54,8 +54,9 @@ SECRETS.md
 REMOTE.md
 ARCHITECTURE.md
 CONTRIBUTING.md
+CHEZMOI-GUIDE.md
 
-# Bootstrap scripts (stored in repo root, not applied to home)
+# Bootstrap scripts
 bootstrap.ps1
 setup.sh
 
@@ -73,6 +74,10 @@ packages/
 .git/
 .gitignore
 .gitattributes
+
+# Chezmoi scripts directory (scripts are executed, not deployed)
+.chezmoiscripts
+.chezmoiscripts/**
 
 # Editor artifacts
 .vscode/
@@ -155,13 +160,13 @@ Library/**
 {{- end }}
 
 {{- /* Remote machine exclusions */ -}}
-{{- if .is_remote }}
+{{- if (index . "is_remote" | default false) }}
 # Exclude on remote machines (GUI apps, heavy tools)
 .config/wezterm/**
 .config/warp/**
 .config/alacritty/**
 .config/kitty/**
-{{- if .remote_minimal }}
+{{- if (index . "remote_minimal" | default false) }}
 # Additional exclusions for minimal remote installs
 .config/btop/**
 .config/bottom/**

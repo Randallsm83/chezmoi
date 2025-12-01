@@ -167,7 +167,7 @@ mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$HOME/.local/bin"
 log_success "XDG directories created"
 
-{{- if .features.setup_1password }}
+{{- if (index . "setup_1password" | default true) }}
 # Install 1Password CLI (requires system package manager for setgid permissions)
 install_1password_cli() {
     if command_exists op; then
