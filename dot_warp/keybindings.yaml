@@ -1,0 +1,9 @@
+# Vim-style pane navigation
+- command: terminal:focus_pane_left
+  keys: ctrl-h
+- command: terminal:focus_pane_down
+  keys: ctrl-j
+- command: terminal:focus_pane_up
+  keys: ctrl-k
+- command: terminal:focus_pane_right
+  keys: ctrl-l
