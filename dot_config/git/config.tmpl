@@ -16,11 +16,8 @@
 
 [core]
 	editor = nvim
-{{- if eq .chezmoi.os "windows" }}
-	# Windows: Use delta for paging (installed via scoop)
 	pager = delta
-	# Windows: Use native OpenSSH for 1Password SSH agent integration
-	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
+{{- if eq .chezmoi.os "windows" }}
 	# Windows: Normalize line endings (LF in repo, CRLF on checkout)
 	autocrlf = true
 	# Windows: Disable file mode tracking (no chmod)
@@ -28,10 +25,6 @@
 	# Windows: Enable long path support (>260 characters)
 	longpaths = true
 {{- else }}
-	# Unix: Use delta for paging
-	pager = delta
-	# Unix: Use system ssh
-	sshCommand = ssh
 	# Unix: Keep LF line endings
 	autocrlf = input
 {{- end }}
