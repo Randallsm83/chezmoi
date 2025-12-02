@@ -123,8 +123,8 @@
 {{- if .setup_1password }}
 {{- if eq .chezmoi.os "windows" }}
 [core]
-	# Windows: 1Password SSH agent via named pipe
-	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe -F /dev/null -o IdentityAgent=\\\\.\\pipe\\openssh-ssh-agent
+	# Windows: Use native OpenSSH which reads ~/.ssh/config for 1Password agent
+	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
 {{- else if .chezmoi.kernel.osrelease | lower | contains "microsoft" }}
 [core]
 	# WSL: Use Windows SSH to access 1Password agent on Windows host
