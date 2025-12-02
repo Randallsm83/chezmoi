@@ -21,21 +21,16 @@ $misePackages = @()
 {{- if $enabled }}
 {{- $mapping := index $.package_mapping $feature }}
 {{- if $mapping }}
-{{- if hasKey $mapping "scoop" }}
-{{- range $mapping.scoop }}
+{{- $win := index $mapping "windows" }}
+{{- if $win }}
+{{- range $win.scoop }}
 $scoopPackages += "{{ . }}"
 {{- end }}
-{{- end }}
-{{- if hasKey $mapping "winget" }}
-{{- range $mapping.winget }}
+{{- range $win.winget }}
 $wingetPackages += "{{ . }}"
 {{- end }}
-{{- end }}
-{{- /* On Windows, only install language runtimes via mise, not CLI tools */ -}}
-{{- /* Skip lua on Windows - it doesn't work well via mise */ -}}
-{{- if hasKey $mapping "mise_runtime" }}
-{{- if ne $mapping.mise_runtime.name "lua" }}
-$misePackages += "{{ $mapping.mise_runtime.name }}@{{ $mapping.mise_runtime.version }}"
+{{- range $win.mise }}
+$misePackages += "{{ . }}"
 {{- end }}
 {{- end }}
 {{- end }}

@@ -362,73 +362,170 @@ package_features:
 #   3. brew installs base tools
 #   4. mise installs CLI tools and language runtimes
 
+# Package Mapping - Platform-based structure
+# Each package specifies installation sources per platform.
+#
+# Windows: scoop (CLI), winget (GUI/system), mise (runtimes)
+# Linux: apt/dnf/pacman (bootstrap only), brew, mise
+# Darwin: brew, mise
+#
+# System package managers (apt/dnf/pacman) are ONLY for bootstrap essentials.
+# After bootstrap, brew and mise handle everything - never overlap.
+
 package_mapping:
   # Version Control & Authentication
   git:
-    scoop: [git, gh, lazygit]
-    winget: [Git.Git]
-    brew: [git, gh, lazygit]
-    mise: []
+    windows:
+      scoop: [git, gh, lazygit]
+      winget: [Git.Git]
+      mise: []
+    linux:
+      apt: [git]
+      dnf: [git]
+      pacman: [git]
+      brew: [gh, lazygit]
+      mise: []
+    darwin:
+      brew: [git, gh, lazygit]
+      mise: []
   
   ssh:
-    scoop: []
-    winget: []
-    brew: []
-    mise: []
+    windows:
+      scoop: []
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: []
+    darwin:
+      brew: []
+      mise: []
   
   1password:
-    scoop: [1password-cli]
-    winget: [AgileBits.1Password]
-    brew: [1password-cli]
-    brew_cask: [1password]  # macOS GUI
-    mise: []
+    windows:
+      scoop: [1password-cli]
+      winget: [AgileBits.1Password]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [1password-cli, 1password]
+      mise: []
+    darwin:
+      brew: [1password-cli, 1password]
+      mise: []
   
   # Package & Tool Version Management
   mise:
-    scoop: [mise]
-    winget: []
-    brew: [mise]
-    mise: []
+    windows:
+      scoop: [mise]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [mise]
+      mise: []
+    darwin:
+      brew: [mise]
+      mise: []
   
   direnv:
-    scoop: []
-    winget: []
-    brew: []
-    mise: [direnv]
+    windows:
+      scoop: []
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [direnv]
+    darwin:
+      brew: []
+      mise: [direnv]
   
   homebrew:
-    scoop: []
-    winget: []
-    brew: []
-    mise: []
+    windows:
+      scoop: []
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: []
+    darwin:
+      brew: []
+      mise: []
   
   # Terminal Emulators
   wezterm:
-    scoop: []
-    winget: [wez.wezterm]
-    brew: []
-    brew_cask: [wezterm]
-    mise: []
+    windows:
+      scoop: []
+      winget: [wez.wezterm]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [wezterm]
+      mise: []
+    darwin:
+      brew: [wezterm]
+      mise: []
   
   warp:
-    scoop: []
-    winget: [Warp.Warp]
-    brew: []
-    brew_cask: [warp]
-    mise: []
+    windows:
+      scoop: []
+      winget: [Warp.Warp]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [warp]
+      mise: []
+    darwin:
+      brew: [warp]
+      mise: []
   
   windows_terminal:
-    scoop: []
-    winget: [Microsoft.WindowsTerminal]
-    brew: []
-    mise: []
+    windows:
+      scoop: []
+      winget: [Microsoft.WindowsTerminal]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: []
+    darwin:
+      brew: []
+      mise: []
   
   # Text Editors
   nvim:
-    scoop: [neovim]
-    winget: []
-    brew: []
-    mise: [neovim]
+    windows:
+      scoop: [neovim]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [neovim]
+    darwin:
+      brew: []
+      mise: [neovim]
   
   vim:
     scoop: [vim]
@@ -437,189 +534,412 @@ package_mapping:
     mise: [vim]
   
   vscode:
-    scoop: []
-    winget: [Microsoft.VisualStudioCode]
-    brew: []
-    brew_cask: [visual-studio-code]
-    mise: []
+    windows:
+      scoop: []
+      winget: [Microsoft.VisualStudioCode]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [visual-studio-code]
+      mise: []
+    darwin:
+      brew: [visual-studio-code]
+      mise: []
   
   # Shell Tools
   starship:
-    scoop: [starship]
-    winget: []
-    brew: []
-    mise: [cargo:starship]
+    windows:
+      scoop: [starship]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:starship]
+    darwin:
+      brew: []
+      mise: [cargo:starship]
   
   zsh:
-    scoop: []
-    winget: []
-    brew: [zsh]
-    mise: []
+    windows:
+      scoop: []
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [zsh]
+      mise: []
+    darwin:
+      brew: [zsh]
+      mise: []
   
   powershell:
-    scoop: []
-    winget: [Microsoft.PowerShell]
-    brew: []
-    brew_cask: [powershell]
-    mise: []
+    windows:
+      scoop: []
+      winget: [Microsoft.PowerShell]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [powershell]
+      mise: []
+    darwin:
+      brew: [powershell]
+      mise: []
   
   bat:
-    scoop: [bat]
-    winget: []
-    brew: []
-    mise: [cargo:bat]
+    windows:
+      scoop: [bat]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:bat]
+    darwin:
+      brew: []
+      mise: [cargo:bat]
   
   eza:
-    scoop: [eza]
-    winget: []
-    brew: []
-    mise: [cargo:eza]
+    windows:
+      scoop: [eza]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:eza]
+    darwin:
+      brew: []
+      mise: [cargo:eza]
   
   ripgrep:
-    scoop: [ripgrep]
-    winget: []
-    brew: []
-    mise: [cargo:ripgrep]
+    windows:
+      scoop: [ripgrep]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:ripgrep]
+    darwin:
+      brew: []
+      mise: [cargo:ripgrep]
   
   fd:
-    scoop: [fd]
-    winget: []
-    brew: []
-    mise: [cargo:fd-find]
+    windows:
+      scoop: [fd]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:fd-find]
+    darwin:
+      brew: []
+      mise: [cargo:fd-find]
   
   fzf:
-    scoop: [fzf]
-    winget: []
-    brew: []
-    mise: [fzf]
+    windows:
+      scoop: [fzf]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [fzf]
+    darwin:
+      brew: []
+      mise: [fzf]
   
   zoxide:
-    scoop: [zoxide]
-    winget: []
-    brew: []
-    mise: [cargo:zoxide]
+    windows:
+      scoop: [zoxide]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:zoxide]
+    darwin:
+      brew: []
+      mise: [cargo:zoxide]
   
   delta:
-    scoop: [delta]
-    winget: []
-    brew: []
-    mise: [cargo:git-delta]
+    windows:
+      scoop: [delta]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:git-delta]
+    darwin:
+      brew: []
+      mise: [cargo:git-delta]
   
   vivid:
-    scoop: [vivid]
-    winget: []
-    brew: []
-    mise: [cargo:vivid]
+    windows:
+      scoop: [vivid]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:vivid]
+    darwin:
+      brew: []
+      mise: [cargo:vivid]
   
   wget:
-    scoop: [wget, curl]
-    winget: []
-    brew: [wget, curl]
-    mise: []
+    windows:
+      scoop: [wget, curl]
+      winget: []
+      mise: []
+    linux:
+      apt: [curl]
+      dnf: [curl]
+      pacman: [curl]
+      brew: [wget]
+      mise: []
+    darwin:
+      brew: [wget]
+      mise: []
   
   glow:
-    scoop: [glow]
-    winget: []
-    brew: []
-    mise: [glow]
+    windows:
+      scoop: [glow]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [glow]
+    darwin:
+      brew: []
+      mise: [glow]
   
   thefuck:
-    scoop: []
-    winget: []
-    brew: [thefuck]
-    mise: []
+    windows:
+      scoop: []
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [thefuck]
+      mise: []
+    darwin:
+      brew: [thefuck]
+      mise: []
   
   btop:
-    scoop: [btop]
-    winget: []
-    brew: [btop]
-    mise: [btop]
+    windows:
+      scoop: [btop]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [btop]
+      mise: []
+    darwin:
+      brew: [btop]
+      mise: []
   
-  # Language Runtimes (all via mise)
+  # Language Runtimes
   rust:
-    scoop: []
-    winget: []
-    brew: []
-    mise_runtime:
-      name: rust
-      version: stable
+    windows:
+      scoop: []
+      winget: []
+      mise: [rust@stable]
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [rust@stable]
+    darwin:
+      brew: []
+      mise: [rust@stable]
   
   golang:
-    scoop: []
-    winget: []
-    brew: []
-    mise_runtime:
-      name: go
-      version: latest
+    windows:
+      scoop: []
+      winget: []
+      mise: [go@latest]
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [go@latest]
+    darwin:
+      brew: []
+      mise: [go@latest]
   
   python:
-    scoop: []
-    winget: []
-    brew: []
-    mise_runtime:
-      name: python
-      version: latest
+    windows:
+      scoop: []
+      winget: []
+      mise: [python@latest, uv]
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [python@latest, uv]
+    darwin:
+      brew: []
+      mise: [python@latest, uv]
   
   ruby:
-    scoop: []
-    winget: []
-    brew: []
-    mise_runtime:
-      name: ruby
-      version: latest
+    windows:
+      scoop: []
+      winget: []
+      mise: [ruby@latest]
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [ruby@latest]
+    darwin:
+      brew: []
+      mise: [ruby@latest]
   
   lua:
-    scoop: []
-    winget: []
-    brew: []
-    mise_runtime:
-      name: lua
-      version: latest
+    windows:
+      scoop: []
+      winget: []
+      mise: []  # mise lua doesn't work on Windows
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [lua@latest]
+    darwin:
+      brew: []
+      mise: [lua@latest]
   
   node:
-    scoop: []
-    winget: []
-    brew: []
-    mise_runtime:
-      name: node
-      version: lts
+    windows:
+      scoop: []
+      winget: []
+      mise: [node@lts, yarn, bun@latest, deno@latest]
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [node@lts, yarn, bun@latest, deno@latest]
+    darwin:
+      brew: []
+      mise: [node@lts, yarn, bun@latest, deno@latest]
   
   perl:
-    scoop: []
-    winget: []
-    brew: []
-    mise_runtime:
-      name: perl
-      version: latest
+    windows:
+      scoop: []
+      winget: [StrawberryPerl.StrawberryPerl]
+      mise: []  # mise perl doesn't work on Windows
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [perl@latest]
+    darwin:
+      brew: []
+      mise: [perl@latest]
   
   php:
-    scoop: []
-    winget: []
-    brew: []
-    mise_runtime:
-      name: php
-      version: latest
+    windows:
+      scoop: []
+      winget: []
+      mise: []  # mise php doesn't work on Windows
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [php@latest]
+    darwin:
+      brew: []
+      mise: [php@latest]
   
   # Development Tools
   sqlite3:
-    scoop: [sqlite]
-    winget: []
-    brew: [sqlite]
-    mise: []
+    windows:
+      scoop: [sqlite]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [sqlite]
+      mise: []
+    darwin:
+      brew: [sqlite]
+      mise: []
   
   arduino:
-    scoop: []
-    winget: []
-    brew: []
-    brew_cask: [arduino-ide]
-    mise: []
+    windows:
+      scoop: []
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [arduino-ide]
+      mise: []
+    darwin:
+      brew: [arduino-ide]
+      mise: []
   
   vagrant:
-    scoop: []
-    winget: []
-    brew: []
-    brew_cask: [vagrant]
-    mise: []
+    windows:
+      scoop: []
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [vagrant]
+      mise: []
+    darwin:
+      brew: [vagrant]
+      mise: []
 
 # Always-installed packages (not controlled by feature flags)
 always_install:
@@ -630,8 +950,7 @@ always_install:
     - make
     - 7zip
   
-  winget:
-    - 7zip.7zip
+  winget: []
   
   brew:
     - jq
@@ -639,10 +958,6 @@ always_install:
   
   mise:
     - usage
-  
-  mise_runtimes:
-    bun: latest
-    deno: latest
 
 # Remote machine package sets
 # When is_remote=true and remote_minimal=true, only install essential tools

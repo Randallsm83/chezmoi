@@ -6,37 +6,137 @@
 
 echo "Checking package installation..."
 
+# Detect system package manager (Linux only, for bootstrap packages)
+detect_pkg_manager() {
+    if command -v apt-get >/dev/null 2>&1; then
+        echo "apt"
+    elif command -v dnf >/dev/null 2>&1; then
+        echo "dnf"
+    elif command -v pacman >/dev/null 2>&1; then
+        echo "pacman"
+    else
+        echo ""
+    fi
+}
+
 # Ensure mise is installed
-if ! type mise >/dev/null 2>&1; then
+if ! command -v mise >/dev/null 2>&1; then
     echo "mise not found. Installing..."
     curl https://mise.run | sh
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Collect mise packages
+# Collect packages per manager
 mise_packages=""
+brew_packages=""
+apt_packages=""
+dnf_packages=""
+pacman_packages=""
+
 {{- range $feature, $enabled := .package_features }}
 {{- if $enabled }}
 {{- $mapping := index $.package_mapping $feature }}
 {{- if $mapping }}
-{{- if hasKey $mapping "mise" }}
-{{- range $mapping.mise }}
+{{- $platform := index $mapping $.chezmoi.os }}
+{{- if $platform }}
+{{- range $platform.mise }}
 mise_packages="$mise_packages {{ . }}"
 {{- end }}
+{{- range $platform.brew }}
+brew_packages="$brew_packages {{ . }}"
 {{- end }}
-{{- if hasKey $mapping "mise_runtime" }}
-mise_packages="$mise_packages {{ $mapping.mise_runtime.name }}@{{ $mapping.mise_runtime.version }}"
+{{- if eq $.chezmoi.os "linux" }}
+{{- range $platform.apt }}
+apt_packages="$apt_packages {{ . }}"
+{{- end }}
+{{- range $platform.dnf }}
+dnf_packages="$dnf_packages {{ . }}"
+{{- end }}
+{{- range $platform.pacman }}
+pacman_packages="$pacman_packages {{ . }}"
 {{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
+{{- end }}
+{{- end }}
+
+# Install bootstrap packages via system package manager (Linux only)
+{{- if eq .chezmoi.os "linux" }}
+pkg_manager=$(detect_pkg_manager)
+if [ -n "$pkg_manager" ]; then
+    case "$pkg_manager" in
+        apt)
+            if [ -n "$apt_packages" ]; then
+                echo ""
+                echo "Installing bootstrap packages via apt..."
+                sudo apt-get update -qq
+                for pkg in $apt_packages; do
+                    if ! dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+                        echo "  Installing: $pkg"
+                        sudo apt-get install -y -qq "$pkg"
+                    else
+                        echo "  Already installed: $pkg"
+                    fi
+                done
+            fi
+            ;;
+        dnf)
+            if [ -n "$dnf_packages" ]; then
+                echo ""
+                echo "Installing bootstrap packages via dnf..."
+                for pkg in $dnf_packages; do
+                    if ! rpm -q "$pkg" >/dev/null 2>&1; then
+                        echo "  Installing: $pkg"
+                        sudo dnf install -y -q "$pkg"
+                    else
+                        echo "  Already installed: $pkg"
+                    fi
+                done
+            fi
+            ;;
+        pacman)
+            if [ -n "$pacman_packages" ]; then
+                echo ""
+                echo "Installing bootstrap packages via pacman..."
+                for pkg in $pacman_packages; do
+                    if ! pacman -Q "$pkg" >/dev/null 2>&1; then
+                        echo "  Installing: $pkg"
+                        sudo pacman -S --noconfirm "$pkg"
+                    else
+                        echo "  Already installed: $pkg"
+                    fi
+                done
+            fi
+            ;;
+    esac
+fi
+{{- end }}
+
+# Install brew packages
+if [ -n "$brew_packages" ]; then
+    if command -v brew >/dev/null 2>&1; then
+        echo ""
+        echo "Installing brew packages..."
+        for pkg in $brew_packages; do
+            if ! brew list "$pkg" >/dev/null 2>&1; then
+                echo "  Installing: $pkg"
+                brew install "$pkg"
+            else
+                echo "  Already installed: $pkg"
+            fi
+        done
+    else
+        echo "brew not found, skipping brew packages"
+    fi
+fi
 
 # Install mise packages
 if [ -n "$mise_packages" ]; then
     echo ""
     echo "Installing mise tools/runtimes..."
     for pkg in $mise_packages; do
-        tool_name=$(echo "$pkg" | sed 's/@.*$//')
+        tool_name=$(echo "$pkg" | sed 's/@.*$//' | sed 's/cargo://')
         if ! mise list "$tool_name" 2>/dev/null | grep -q "$tool_name"; then
             echo "  Installing: $pkg"
             mise install "$pkg"
@@ -45,38 +145,6 @@ if [ -n "$mise_packages" ]; then
         fi
     done
 fi
-
-# macOS-specific: Install brew casks
-{{- if eq .chezmoi.os "darwin" }}
-if type brew >/dev/null 2>&1; then
-    brew_casks=""
-    {{- range $feature, $enabled := .package_features }}
-    {{- if $enabled }}
-    {{- $mapping := index $.package_mapping $feature }}
-    {{- if $mapping }}
-    {{- if $mapping.brew_cask }}
-    {{- range $mapping.brew_cask }}
-    brew_casks="$brew_casks {{ . }}"
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    
-    if [ -n "$brew_casks" ]; then
-        echo ""
-        echo "Installing brew casks..."
-        for cask in $brew_casks; do
-            if ! brew list --cask "$cask" >/dev/null 2>&1; then
-                echo "  Installing: $cask"
-                brew install --cask "$cask"
-            else
-                echo "  Already installed: $cask"
-            fi
-        done
-    fi
-fi
-{{- end }}
 
 echo ""
 echo "✓ Package installation complete"
