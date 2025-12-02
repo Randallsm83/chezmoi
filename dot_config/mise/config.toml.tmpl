@@ -15,70 +15,31 @@
 
 [tools]
 # === Language Runtimes ===
-# Versions extracted from package_mapping.{lang}.{os}.mise arrays
 {{- if .package_features.node }}
-{{- $mapping := index .package_mapping "node" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-node = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+node = "lts"
 {{- end }}
 {{- if .package_features.python }}
-{{- $mapping := index .package_mapping "python" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-python = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+python = "latest"
 {{- end }}
 {{- if .package_features.ruby }}
-{{- $mapping := index .package_mapping "ruby" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-ruby = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+ruby = "latest"
 {{- end }}
 {{- if .package_features.golang }}
-{{- $mapping := index .package_mapping "golang" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-go = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+go = "latest"
 {{- end }}
 {{- if .package_features.rust }}
-{{- $mapping := index .package_mapping "rust" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-rust = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+rust = "stable"
 {{- end }}
 {{- if and .package_features.lua (ne .chezmoi.os "windows") }}
-{{- $mapping := index .package_mapping "lua" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- if $miseList }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-lua = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
-{{- end }}
+lua = "latest"
 luajit = "latest"
 {{- end }}
 zig = "latest"
-{{- if .package_features.php }}
-{{- $mapping := index .package_mapping "php" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- if $miseList }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-php = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
-{{- end }}
-{{- end }}
 {{- if .package_features.perl }}
-{{- $mapping := index .package_mapping "perl" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- if $miseList }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-perl = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+perl = "latest"
 {{- end }}
+{{- if .package_features.php }}
+php = "latest"
 {{- end }}
 
 # === Universal Tools ===

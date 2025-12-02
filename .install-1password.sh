@@ -19,14 +19,30 @@ Darwin)
     exit 1
     ;;
 Linux)
-    # Linux - use mise
+    # Linux - prefer mise for consistency across platforms
     if type mise >/dev/null 2>&1; then
-        mise install op@latest
+        mise install 1password-cli@latest
         exit 0
     fi
     
     # Fallback to package manager
-    if type apt-get >/dev/null 2>&1; then
+    if type pacman >/dev/null 2>&1; then
+        # Arch Linux - use AUR helper if available, otherwise manual build
+        if type yay >/dev/null 2>&1; then
+            yay -S --noconfirm 1password-cli
+            exit 0
+        elif type paru >/dev/null 2>&1; then
+            paru -S --noconfirm 1password-cli
+            exit 0
+        else
+            # Manual AUR build (skip GPG check since key may not be imported)
+            tmpdir=$(mktemp -d)
+            git clone https://aur.archlinux.org/1password-cli.git "$tmpdir/1password-cli"
+            cd "$tmpdir/1password-cli" && makepkg -si --noconfirm --skippgpcheck
+            rm -rf "$tmpdir"
+            exit 0
+        fi
+    elif type apt-get >/dev/null 2>&1; then
         # Debian/Ubuntu
         curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
             sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
@@ -48,7 +64,7 @@ Linux)
         exit 0
     fi
     
-    echo "Error: No supported package manager found (apt, dnf, or mise)" >&2
+echo "Error: No supported package manager found (mise, pacman, apt, or dnf)" >&2
     exit 1
     ;;
 *)
