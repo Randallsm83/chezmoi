@@ -62,15 +62,6 @@ lua = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 luajit = "latest"
 {{- end }}
 zig = "latest"
-{{- if .package_features.perl }}
-{{- $mapping := index .package_mapping "perl" }}
-{{- $miseList := index $mapping .chezmoi.os "mise" }}
-{{- if $miseList }}
-{{- $first := index $miseList 0 }}
-{{- $parts := splitList "@" $first }}
-perl = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
-{{- end }}
-{{- end }}
 {{- if .package_features.php }}
 {{- $mapping := index .package_mapping "php" }}
 {{- $miseList := index $mapping .chezmoi.os "mise" }}
@@ -78,6 +69,15 @@ perl = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 {{- $first := index $miseList 0 }}
 {{- $parts := splitList "@" $first }}
 php = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+{{- end }}
+{{- end }}
+{{- if .package_features.perl }}
+{{- $mapping := index .package_mapping "perl" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- if $miseList }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+perl = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 {{- end }}
 {{- end }}
 
