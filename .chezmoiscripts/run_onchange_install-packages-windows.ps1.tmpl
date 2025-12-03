@@ -16,6 +16,7 @@ if (!(Get-Command scoop -ErrorAction SilentlyContinue)) {
 $scoopPackages = @()
 $wingetPackages = @()
 $misePackages = @()
+$pipPackages = @()
 
 {{- range $feature, $enabled := .package_features }}
 {{- if $enabled }}
@@ -31,6 +32,9 @@ $wingetPackages += "{{ . }}"
 {{- end }}
 {{- range $win.mise }}
 $misePackages += "{{ . }}"
+{{- end }}
+{{- range $win.pip }}
+$pipPackages += "{{ . }}"
 {{- end }}
 {{- end }}
 {{- end }}
@@ -89,6 +93,109 @@ if ($misePackages.Count -gt 0) {
         Write-Host "`nmise not available. Install via: scoop install mise" -ForegroundColor Yellow
     }
 }
+
+# Install pip packages (packages not available via scoop/winget/mise on Windows)
+if ($pipPackages.Count -gt 0) {
+    if (Get-Command pip -ErrorAction SilentlyContinue) {
+        $pipPackages = $pipPackages | Select-Object -Unique
+        Write-Host "`nInstalling pip packages..." -ForegroundColor Cyan
+        foreach ($pkg in $pipPackages) {
+            $installed = pip show $pkg 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "  Installing: $pkg" -ForegroundColor Green
+                pip install --user $pkg
+            } else {
+                Write-Host "  Already installed: $pkg" -ForegroundColor Gray
+            }
+        }
+        # Ensure pipx PATH is configured
+        if ($pipPackages -contains "pipx") {
+            $pipxPath = "$env:APPDATA\Python\Python*\Scripts\pipx.exe"
+            if (Test-Path $pipxPath) {
+                Write-Host "  Configuring pipx PATH..." -ForegroundColor Cyan
+                & (Get-Item $pipxPath | Select-Object -First 1).FullName ensurepath 2>$null
+            }
+        }
+    } else {
+        Write-Host "`npip not available, skipping pip package installation" -ForegroundColor Yellow
+    }
+}
+
+{{- if and .package_features.nvim .package_features.python }}
+# pip pynvim package (for Python provider)
+Write-Host "`nInstalling Neovim Python provider..." -ForegroundColor Cyan
+if (Get-Command pip -ErrorAction SilentlyContinue) {
+    $pipNvimCheck = pip show pynvim 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Installing: pynvim (Python provider)" -ForegroundColor Green
+        pip install --user pynvim
+    } else {
+        Write-Host "  Already installed: pynvim" -ForegroundColor Gray
+    }
+} else {
+    Write-Host "  pip not available, skipping Python provider" -ForegroundColor Yellow
+}
+{{- end }}
+
+{{- if and .package_features.nvim .package_features.node }}
+# npm neovim package (for Node.js provider)
+Write-Host "`nInstalling Neovim Node.js provider..." -ForegroundColor Cyan
+if (Get-Command npm -ErrorAction SilentlyContinue) {
+    $npmGlobalList = npm list -g neovim 2>$null
+    if ($LASTEXITCODE -ne 0 -or $npmGlobalList -notmatch "neovim") {
+        Write-Host "  Installing: npm neovim (Node.js provider)" -ForegroundColor Green
+        npm install -g neovim
+    } else {
+        Write-Host "  Already installed: npm neovim" -ForegroundColor Gray
+    }
+} else {
+    Write-Host "  npm not available, skipping Node.js provider" -ForegroundColor Yellow
+}
+{{- end }}
+
+{{- if and .package_features.nvim .package_features.ruby }}
+# gem neovim package (for Ruby provider)
+Write-Host "`nInstalling Neovim Ruby provider..." -ForegroundColor Cyan
+if (Get-Command gem -ErrorAction SilentlyContinue) {
+    $gemList = gem list neovim 2>$null
+    if ($gemList -notmatch "^neovim ") {
+        # neovim gem requires native extensions - ensure MSYS2 toolchain is installed
+        if (Get-Command ridk -ErrorAction SilentlyContinue) {
+            Write-Host "  Ensuring MSYS2 toolchain is installed..." -ForegroundColor Cyan
+            ridk install 3
+        }
+        Write-Host "  Installing: neovim gem (Ruby provider)" -ForegroundColor Green
+        gem install neovim
+    } else {
+        Write-Host "  Already installed: neovim gem" -ForegroundColor Gray
+    }
+} else {
+    Write-Host "  gem not available, skipping Ruby provider" -ForegroundColor Yellow
+}
+{{- end }}
+
+{{- if and .package_features.nvim .package_features.perl }}
+# cpan Neovim::Ext module (for Perl provider)
+Write-Host "`nInstalling Neovim Perl provider..." -ForegroundColor Cyan
+if (Get-Command perl -ErrorAction SilentlyContinue) {
+    # Ensure .cpanm directory exists for cpanm to work
+    $cpanmHome = "$env:USERPROFILE\.cpanm"
+    if (!(Test-Path $cpanmHome)) {
+        New-Item -ItemType Directory -Path $cpanmHome -Force | Out-Null
+    }
+    
+    $perlCheck = perl -MNeovim::Ext -e "1" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Installing: Neovim::Ext (Perl provider)" -ForegroundColor Green
+        # Use -T to skip tests (IO::Async tests fail on Windows)
+        cpan -T Neovim::Ext
+    } else {
+        Write-Host "  Already installed: Neovim::Ext" -ForegroundColor Gray
+    }
+} else {
+    Write-Host "  perl not available, skipping Perl provider" -ForegroundColor Yellow
+}
+{{- end }}
 
 Write-Host "`n✓ Package installation complete" -ForegroundColor Green
 {{- end -}}

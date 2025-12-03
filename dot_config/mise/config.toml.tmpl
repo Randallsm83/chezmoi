@@ -95,7 +95,9 @@ yarn = "latest"
 {{- end }}
 {{- if .package_features.python }}
 uv = "latest"
+{{- if ne .chezmoi.os "windows" }}
 pipx = "latest"
+{{- end }}
 {{- end }}
 
 {{- if ne .chezmoi.os "windows" }}
@@ -194,8 +196,10 @@ node = {}
 # npm - use bun instead
 npm = { bun = true }
 
+{{- if ne .chezmoi.os "windows" }}
 # pipx - use uv instead
 pipx = { uvx = true }
+{{- end }}
 
 # python
 python = {}

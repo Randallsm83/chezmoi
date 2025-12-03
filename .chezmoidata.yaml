@@ -329,7 +329,8 @@ package_features:
   lua: true
   node: true
   perl: true
-  php: false
+  julia: true
+  php: true
   
   # ============================================================================
   # Development Tools (optional)
@@ -810,15 +811,16 @@ package_mapping:
       scoop: []
       winget: []
       mise: [python@latest, uv]
+      pip: [pipx]  # pipx via pip on Windows (mise aqua backend doesn't support Windows)
     linux:
       apt: []
       dnf: []
       pacman: []
       brew: []
-      mise: [python@latest, uv]
+      mise: [python@latest, uv, pipx]
     darwin:
       brew: []
-      mise: [python@latest, uv]
+      mise: [python@latest, uv, pipx]
   
   ruby:
     windows:
@@ -837,18 +839,18 @@ package_mapping:
   
   lua:
     windows:
-      scoop: []
+      scoop: [lua51, luarocks, luajit]  # lua51 from versions bucket
       winget: []
-      mise: []  # mise lua doesn't work on Windows
+      mise: []
     linux:
       apt: []
       dnf: []
       pacman: []
-      brew: []
-      mise: [lua@latest]
+      brew: [lua@5.1, luarocks, luajit]
+      mise: []
     darwin:
-      brew: []
-      mise: [lua@latest]
+      brew: [lua@5.1, luarocks, luajit]
+      mise: []
   
   node:
     windows:
@@ -880,11 +882,26 @@ package_mapping:
       brew: []
       mise: [perl@latest]
   
+  julia:
+    windows:
+      scoop: [juliaup]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [juliaup]
+      mise: []
+    darwin:
+      brew: [juliaup]
+      mise: []
+  
   php:
     windows:
       scoop: []
       winget: []
-      mise: []  # mise php doesn't work on Windows
+      mise: [php@latest]
     linux:
       apt: []
       dnf: []
@@ -949,6 +966,8 @@ always_install:
     - yq
     - make
     - 7zip
+    - unzip
+    - gzip
   
   winget: []
   

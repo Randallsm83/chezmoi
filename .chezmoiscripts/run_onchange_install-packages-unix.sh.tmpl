@@ -146,6 +146,78 @@ if [ -n "$mise_packages" ]; then
     done
 fi
 
+{{- if and .package_features.nvim .package_features.python }}
+# pip pynvim package (for Python provider)
+echo ""
+echo "Installing Neovim Python provider..."
+if command -v pip >/dev/null 2>&1 || command -v pip3 >/dev/null 2>&1; then
+    pip_cmd="pip"
+    command -v pip >/dev/null 2>&1 || pip_cmd="pip3"
+    if ! $pip_cmd show pynvim >/dev/null 2>&1; then
+        echo "  Installing: pynvim (Python provider)"
+        $pip_cmd install --user pynvim
+    else
+        echo "  Already installed: pynvim"
+    fi
+else
+    echo "  pip not available, skipping Python provider"
+fi
+{{- end }}
+
+{{- if and .package_features.nvim .package_features.node }}
+# npm neovim package (for Node.js provider)
+echo ""
+echo "Installing Neovim Node.js provider..."
+if command -v npm >/dev/null 2>&1; then
+    if ! npm list -g neovim >/dev/null 2>&1; then
+        echo "  Installing: npm neovim (Node.js provider)"
+        npm install -g neovim
+    else
+        echo "  Already installed: npm neovim"
+    fi
+else
+    echo "  npm not available, skipping Node.js provider"
+fi
+{{- end }}
+
+{{- if and .package_features.nvim .package_features.ruby }}
+# gem neovim package (for Ruby provider)
+echo ""
+echo "Installing Neovim Ruby provider..."
+if command -v gem >/dev/null 2>&1; then
+    if ! gem list neovim | grep -q "^neovim "; then
+        echo "  Installing: neovim gem (Ruby provider)"
+        gem install neovim
+    else
+        echo "  Already installed: neovim gem"
+    fi
+else
+    echo "  gem not available, skipping Ruby provider"
+fi
+{{- end }}
+
+{{- if and .package_features.nvim .package_features.perl }}
+# cpan Neovim::Ext module (for Perl provider)
+echo ""
+echo "Installing Neovim Perl provider..."
+if command -v perl >/dev/null 2>&1; then
+    if ! perl -MNeovim::Ext -e 1 >/dev/null 2>&1; then
+        echo "  Installing: Neovim::Ext (Perl provider)"
+        if command -v cpanm >/dev/null 2>&1; then
+            cpanm -n Neovim::Ext
+        elif command -v cpan >/dev/null 2>&1; then
+            cpan -T Neovim::Ext
+        else
+            echo "  Neither cpanm nor cpan available, skipping Perl provider"
+        fi
+    else
+        echo "  Already installed: Neovim::Ext"
+    fi
+else
+    echo "  perl not available, skipping Perl provider"
+fi
+{{- end }}
+
 echo ""
 echo "✓ Package installation complete"
 {{- end -}}

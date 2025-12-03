@@ -1,5 +1,8 @@
 -- [[ Vim Opts ]]
 
+-- Node provider (skip yarn detection)
+vim.g.node_host_prog = vim.fn.exepath('neovim-node-host')
+
 -- Wildmenu
 vim.opt.wildmode = "longest:full,full"
 vim.opt.wildoptions = "pum,tagfile,fuzzy"
