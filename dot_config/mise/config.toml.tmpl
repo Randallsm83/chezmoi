@@ -15,44 +15,70 @@
 
 [tools]
 # === Language Runtimes ===
+# Versions extracted from package_mapping.{lang}.{os}.mise arrays
 {{- if .package_features.node }}
-{{- $nodeMapping := index .package_mapping "node" }}
-node = "{{ $nodeMapping.mise_runtime.version }}"
+{{- $mapping := index .package_mapping "node" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+node = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 {{- end }}
 {{- if .package_features.python }}
-{{- $pythonMapping := index .package_mapping "python" }}
-python = "{{ $pythonMapping.mise_runtime.version }}"
+{{- $mapping := index .package_mapping "python" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+python = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 {{- end }}
 {{- if .package_features.ruby }}
-{{- $rubyMapping := index .package_mapping "ruby" }}
-ruby = "{{ $rubyMapping.mise_runtime.version }}"
+{{- $mapping := index .package_mapping "ruby" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+ruby = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 {{- end }}
 {{- if .package_features.golang }}
-{{- $goMapping := index .package_mapping "golang" }}
-go = "{{ $goMapping.mise_runtime.version }}"
+{{- $mapping := index .package_mapping "golang" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+go = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 {{- end }}
 {{- if .package_features.rust }}
-{{- $rustMapping := index .package_mapping "rust" }}
-rust = "{{ $rustMapping.mise_runtime.version }}"
+{{- $mapping := index .package_mapping "rust" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+rust = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 {{- end }}
 {{- if and .package_features.lua (ne .chezmoi.os "windows") }}
-{{- $luaMapping := index .package_mapping "lua" }}
-lua = "{{ $luaMapping.mise_runtime.version }}"
+{{- $mapping := index .package_mapping "lua" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- if $miseList }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+lua = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+{{- end }}
 luajit = "latest"
 {{- end }}
 zig = "latest"
 {{- if .package_features.perl }}
-{{- $perlMapping := index .package_mapping "perl" }}
-perl = "{{ $perlMapping.mise_runtime.version }}"
+{{- $mapping := index .package_mapping "perl" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- if $miseList }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+perl = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
+{{- end }}
 {{- end }}
 {{- if .package_features.php }}
-{{- $phpMapping := index .package_mapping "php" }}
-php = "{{ $phpMapping.mise_runtime.version }}"
+{{- $mapping := index .package_mapping "php" }}
+{{- $miseList := index $mapping .chezmoi.os "mise" }}
+{{- if $miseList }}
+{{- $first := index $miseList 0 }}
+{{- $parts := splitList "@" $first }}
+php = "{{ if gt (len $parts) 1 }}{{ index $parts 1 }}{{ else }}latest{{ end }}"
 {{- end }}
-
-# === Always-installed runtimes ===
-{{- range $runtime, $version := .always_install.mise_runtimes }}
-{{ $runtime }} = "{{ $version }}"
 {{- end }}
 
 # === Universal Tools ===
@@ -63,6 +89,8 @@ direnv = "latest"
 {{ . }} = "latest"
 {{- end }}
 {{- if .package_features.node }}
+bun = "latest"
+deno = "latest"
 yarn = "latest"
 {{- end }}
 {{- if .package_features.python }}
