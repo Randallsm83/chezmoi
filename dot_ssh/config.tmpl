@@ -8,9 +8,13 @@ Include config.d/*
 
 # Global defaults - security hardening and reliability
 Host *
-  # 1Password SSH agent
+  # 1Password SSH agent (platform-specific path)
+{{- if eq .chezmoi.os "windows" }}
+  IdentityAgent "//./pipe/openssh-ssh-agent"
+{{- else }}
   IdentityAgent ~/.1password/agent.sock
-  
+{{- end }}
+
   # Security settings
   IdentitiesOnly no
   AddKeysToAgent no
