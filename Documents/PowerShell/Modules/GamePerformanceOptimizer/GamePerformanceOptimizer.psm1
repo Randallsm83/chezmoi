@@ -116,6 +116,20 @@ function Find-GameExecutable {
         $searchPaths += $gogPath
     }
     
+    # Xbox Game Pass
+    $xboxPaths = @(
+        "C:\XboxGames",
+        "A:\XboxGames",
+        "B:\XboxGames",
+        "D:\XboxGames",
+        "E:\XboxGames"
+    )
+    foreach ($xboxPath in $xboxPaths) {
+        if (Test-Path $xboxPath) {
+            $searchPaths += $xboxPath
+        }
+    }
+    
     # Common game installation directories
     $commonPaths = @(
         "C:\Program Files",
