@@ -29,6 +29,55 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Setup locale (required for many tools to work correctly)
+setup_locale() {
+    # Check if en_US.UTF-8 locale is available
+    if locale -a 2>/dev/null | grep -qi "en_US.utf8\|en_US.UTF-8"; then
+        log_success "en_US.UTF-8 locale already available"
+        return 0
+    fi
+    
+    log_info "Generating en_US.UTF-8 locale..."
+    
+    if command_exists pacman; then
+        # Arch Linux - uncomment locale in locale.gen and generate
+        if [ -f /etc/locale.gen ]; then
+            if [ "$EUID" -eq 0 ]; then
+                sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+                locale-gen
+            elif command_exists sudo; then
+                sudo sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+                sudo locale-gen
+            else
+                log_warning "Cannot generate locale without root/sudo"
+                return 1
+            fi
+        fi
+    elif command_exists apt-get; then
+        # Debian/Ubuntu
+        if command_exists locale-gen; then
+            if [ "$EUID" -eq 0 ]; then
+                locale-gen en_US.UTF-8
+            elif command_exists sudo; then
+                sudo locale-gen en_US.UTF-8
+            fi
+        fi
+    elif command_exists dnf; then
+        # Fedora/RHEL - install glibc-langpack
+        if [ "$EUID" -eq 0 ]; then
+            dnf install -y glibc-langpack-en
+        elif command_exists sudo; then
+            sudo dnf install -y glibc-langpack-en
+        fi
+    fi
+    
+    # Set locale environment variables for current session
+    export LANG="en_US.UTF-8"
+    export LC_ALL="en_US.UTF-8"
+    
+    log_success "Locale configured"
+}
+
 is_zsh_default_shell() {
     local current_shell
     if [ -n "$SUDO_USER" ]; then
@@ -76,6 +125,9 @@ set_zsh_as_default_shell() {
     log_warning "Or add this to /etc/passwd if in a container environment"
     return 1
 }
+
+# Setup locale first (required for many tools)
+setup_locale
 
 # Check if we need to install packages
 needs_install=false

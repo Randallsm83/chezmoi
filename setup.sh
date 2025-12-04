@@ -223,6 +223,49 @@ run_preflight_checks() {
 # Package Installation
 # ============================================================================
 
+# ============================================================================
+# Locale Setup
+# ============================================================================
+
+setup_locale() {
+    log_info "Checking locale configuration..."
+    
+    # Only needed on Linux
+    if [ "$(uname -s)" != "Linux" ]; then
+        return 0
+    fi
+    
+    # Check if en_US.UTF-8 locale is available
+    if locale -a 2>/dev/null | grep -qi "en_US.utf8\|en_US.UTF-8"; then
+        log_success "en_US.UTF-8 locale already available"
+        return 0
+    fi
+    
+    log_info "Generating en_US.UTF-8 locale..."
+    
+    if command_exists pacman; then
+        # Arch Linux - uncomment locale in locale.gen and generate
+        if [ -f /etc/locale.gen ]; then
+            execute_with_privilege sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+            execute_with_privilege locale-gen
+        fi
+    elif command_exists apt-get; then
+        # Debian/Ubuntu
+        if command_exists locale-gen; then
+            execute_with_privilege locale-gen en_US.UTF-8
+        fi
+    elif command_exists dnf; then
+        # Fedora/RHEL - install glibc-langpack
+        execute_with_privilege dnf install -y glibc-langpack-en
+    fi
+    
+    # Set locale environment variables for current session
+    export LANG="en_US.UTF-8"
+    export LC_ALL="en_US.UTF-8"
+    
+    log_success "Locale configured"
+}
+
 install_base_packages() {
     log_info "Checking for essential packages..."
     
@@ -369,8 +412,13 @@ main() {
     fi
     echo ""
     
+    # Setup locale first (required for many tools)
+    log_info "Step 1/5: Setting up locale..."
+    setup_locale
+    echo ""
+    
     # Install base packages if needed
-    log_info "Step 1/4: Installing essential packages..."
+    log_info "Step 2/5: Installing essential packages..."
     if ! install_base_packages; then
         log_warning "Some packages may not have installed"
         log_info "Continuing with bootstrap (mise will handle remaining tools)..."
@@ -378,12 +426,12 @@ main() {
     echo ""
     
     # Setup XDG environment
-    log_info "Step 2/4: Setting up XDG environment..."
+    log_info "Step 3/5: Setting up XDG environment..."
     setup_xdg_env
     echo ""
     
     # Install chezmoi and apply dotfiles in one step
-    log_info "Step 3/4: Installing chezmoi and applying dotfiles..."
+    log_info "Step 4/5: Installing chezmoi and applying dotfiles..."
     log_info "This will clone $REPO and apply all configurations"
     echo ""
     if ! install_and_apply_dotfiles; then
@@ -393,7 +441,7 @@ main() {
     echo ""
     
     # Finalize
-    log_info "Step 4/4: Finalizing setup..."
+    log_info "Step 5/5: Finalizing setup..."
     
     # Summary
     echo ""
