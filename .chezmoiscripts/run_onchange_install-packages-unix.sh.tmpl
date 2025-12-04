@@ -131,19 +131,22 @@ if [ -n "$brew_packages" ]; then
     fi
 fi
 
-# Install mise packages
+# Install mise packages globally
 if [ -n "$mise_packages" ]; then
     echo ""
-    echo "Installing mise tools/runtimes..."
+    echo "Installing mise tools/runtimes globally..."
     for pkg in $mise_packages; do
         tool_name=$(echo "$pkg" | sed 's/@.*$//' | sed 's/cargo://')
         if ! mise list "$tool_name" 2>/dev/null | grep -q "$tool_name"; then
             echo "  Installing: $pkg"
-            mise install "$pkg"
+            mise use -g "$pkg"
         else
             echo "  Already installed: $pkg"
         fi
     done
+    
+    # Ensure shims are in PATH for subsequent operations
+    export PATH="$HOME/.local/share/mise/shims:$PATH"
 fi
 
 {{- if and .package_features.nvim .package_features.python }}
