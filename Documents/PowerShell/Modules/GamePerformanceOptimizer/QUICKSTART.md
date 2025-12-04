@@ -62,6 +62,16 @@ Get-GameSecurityExclusion
 Add-ShaderCacheExclusion -Verbose
 ```
 
+### Add exclusions for ALL games at once
+
+```powershell
+# Scans Steam and Xbox Game Pass directories automatically
+Add-BulkGameExclusions -Verbose
+
+# Or specify custom paths
+Add-BulkGameExclusions -SteamPath "D:\SteamGames\steamapps\common" -Verbose
+```
+
 ## How to Run PowerShell as Administrator
 
 ### Method 1: Start Menu
@@ -205,6 +215,7 @@ Get-Help Add-GameSecurityExclusion -Full
 Get-Help Remove-GameSecurityExclusion -Examples
 Get-Help Get-GameSecurityExclusion -Detailed
 Get-Help Add-ShaderCacheExclusion -Full
+Get-Help Add-BulkGameExclusions -Full
 ```
 
 ---

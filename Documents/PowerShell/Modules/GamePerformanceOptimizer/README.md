@@ -12,6 +12,7 @@ This module automates the process of adding security exclusions for games, which
 - Detects games from Steam libraries (with multi-library support)
 - Scans Epic Games Launcher installations
 - Finds GOG Galaxy games
+- Detects Xbox Game Pass installations
 - Searches common installation directories
 - File picker fallback for manual selection
 
@@ -24,7 +25,8 @@ This module automates the process of adding security exclusions for games, which
 ✅ **Shader Cache Support**
 - Auto-detects Steam shader cache folders
 - Per-game shader cache detection
-- Permanent AMD DxCache and NVIDIA NV_Cache exclusions
+- Comprehensive AMD shader cache exclusions (DX9, DxCache, DxcCache, OglCache, VkCache)
+- Comprehensive NVIDIA shader cache exclusions (DXCache, GLCache, NV_Cache)
 
 ✅ **Safety Features**
 - Full `-WhatIf` support for previewing changes
@@ -190,8 +192,36 @@ Adds permanent exclusions for shader cache directories.
 - `Verbose`: Show detailed progress
 
 **What it does:**
-- Adds exclusion for AMD DxCache: `%LOCALAPPDATA%\AMD\DxCache`
-- Adds exclusion for NVIDIA cache: `%ProgramData%\NVIDIA Corporation\NV_Cache`
+- Adds exclusions for AMD shader caches:
+  - `%LOCALAPPDATA%\AMD\DX9Cache`
+  - `%LOCALAPPDATA%\AMD\DxCache`
+  - `%LOCALAPPDATA%\AMD\DxcCache`
+  - `%LOCALAPPDATA%\AMD\OglCache`
+  - `%LOCALAPPDATA%\AMD\VkCache`
+  - `%LOCALAPPDATA%Low\AMD\DxCache`
+- Adds exclusions for NVIDIA shader caches:
+  - `%LOCALAPPDATA%\NVIDIA\DXCache`
+  - `%LOCALAPPDATA%\NVIDIA\GLCache`
+  - `%LOCALAPPDATA%\Temp\NVIDIA Corporation\NV_Cache`
+  - `%LOCALAPPDATA%Low\NVIDIA\DXCache`
+  - `%ProgramData%\NVIDIA Corporation\NV_Cache`
+
+### `Add-BulkGameExclusions`
+
+Automatically adds security exclusions for all games found in Steam and Xbox Game Pass directories.
+
+**Parameters:**
+- `SteamPath` (Optional): Path to Steam games directory (default: `C:\SteamGames\steamapps\common`)
+- `XboxPath` (Optional): Path to Xbox games directory (default: `C:\XboxGames`)
+- `WhatIf`: Preview changes without applying
+- `Verbose`: Show detailed progress
+
+**What it does:**
+1. Scans Steam and Xbox Game Pass directories for game executables
+2. Filters out non-game executables (installers, crash handlers, redistributables)
+3. Adds Windows Defender process and path exclusions for each game
+4. Adds shader cache exclusions for each game
+5. Disables CFG for each game executable
 
 ## Examples
 
@@ -254,17 +284,59 @@ Add-ShaderCacheExclusion -Verbose
 **Output:**
 ```
 === Adding Shader Cache Exclusions ===
-  [✓] AMD DxCache exclusion added: C:\Users\Randall\AppData\Local\AMD\DxCache
-  [✓] NVIDIA Shader Cache exclusion added: C:\ProgramData\NVIDIA Corporation\NV_Cache
+  [✓] AMD DX9 Cache exclusion added: C:\Users\Randall\AppData\Local\AMD\DX9Cache
+  [✓] AMD DirectX Cache exclusion added: C:\Users\Randall\AppData\Local\AMD\DxCache
+  [✓] AMD DXC Cache exclusion added: C:\Users\Randall\AppData\Local\AMD\DxcCache
+  [✓] AMD OpenGL Cache exclusion added: C:\Users\Randall\AppData\Local\AMD\OglCache
+  [✓] AMD Vulkan Cache exclusion added: C:\Users\Randall\AppData\Local\AMD\VkCache
+  [✓] NVIDIA DirectX Cache exclusion added: C:\Users\Randall\AppData\Local\NVIDIA\DXCache
+  [✓] NVIDIA OpenGL Cache exclusion added: C:\Users\Randall\AppData\Local\NVIDIA\GLCache
+  [✓] NVIDIA Cache (ProgramData) exclusion added: C:\ProgramData\NVIDIA Corporation\NV_Cache
 
 === Summary ===
-  Added: 2
+  Added: 8
   Skipped (already excluded): 0
 
 Shader cache exclusions configured successfully!
 ```
 
-### Example 4: Preview Changes Before Applying
+### Example 4: Add Exclusions for All Games (Bulk)
+
+```powershell
+Add-BulkGameExclusions -Verbose
+```
+
+**Output:**
+```
+=== Bulk Game Exclusions ===
+Scanning for games...
+
+Scanning Steam games: C:\SteamGames\steamapps\common
+  Found 15 Steam games
+Scanning Xbox games: C:\XboxGames
+  Found 3 Xbox games
+
+Total games found: 18
+Adding exclusions...
+
+[Steam] Cyberpunk 2077
+  [✓] Exclusions added
+[Steam] Elden Ring
+  [✓] Exclusions added
+[Xbox] Starfield
+  [✓] Exclusions added
+...
+
+=== Summary ===
+  Total games: 18
+  Successfully added: 16
+  Already excluded: 2
+  Failed: 0
+
+Bulk exclusions completed successfully!
+```
+
+### Example 5: Preview Changes Before Applying
 
 ```powershell
 Add-GameSecurityExclusion -GameName "EldenRing" -WhatIf
@@ -294,7 +366,10 @@ What if: Performing the operation "Disable CFG" on target "eldenring.exe".
    - Checks registry for GOG installations
    - Searches default path `C:\GOG Games\`
 
-4. **Fallback:**
+4. **Xbox Game Pass Detection:**
+   - Searches common Xbox installation paths (`C:\XboxGames`, `D:\XboxGames`, etc.)
+
+5. **Fallback:**
    - Searches common directories (`C:\Program Files`, `D:\Games`, etc.)
    - Opens file picker dialog if not found
 
@@ -402,8 +477,9 @@ This module is provided as-is for personal use.
 - Add-GameSecurityExclusion function
 - Remove-GameSecurityExclusion function
 - Get-GameSecurityExclusion function
-- Add-ShaderCacheExclusion function
-- Auto-detection for Steam, Epic Games, GOG
+- Add-ShaderCacheExclusion function (supports 11 AMD/NVIDIA cache paths)
+- Add-BulkGameExclusions function for batch processing
+- Auto-detection for Steam, Epic Games, GOG, Xbox Game Pass
 - Steam multi-library support
 - Shader cache auto-detection
 - Full -WhatIf support
