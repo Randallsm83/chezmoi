@@ -1,7 +1,0 @@
-# WSL-specific SSH configuration
-# When using ssh.exe (Windows SSH client), no additional configuration needed!
-# The Windows SSH client automatically connects to the 1Password SSH agent.
-# This file is kept for future WSL-specific SSH settings if needed.
-
-# Host *
-  # Not needed when using ssh.exe - Windows SSH handles 1Password integration
