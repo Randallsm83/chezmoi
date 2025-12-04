@@ -87,7 +87,7 @@ execute_with_privilege() {
 
 is_zsh_default_shell() {
     local current_shell
-    if [ -n "$SUDO_USER" ]; then
+    if [ -n "${SUDO_USER:-}" ]; then
         current_shell=$(getent passwd "$SUDO_USER" | cut -d: -f7)
     else
         current_shell=$(getent passwd "$USER" | cut -d: -f7)
@@ -112,7 +112,7 @@ set_zsh_as_default_shell() {
     log_info "Setting zsh as default shell..."
     log_warning "You may be prompted for your password"
     
-    if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+    if [ "$EUID" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
         # Running as root, change shell for the actual user
         if chsh -s "$zsh_path" "$SUDO_USER" 2>/dev/null; then
             log_success "Default shell changed to zsh for user $SUDO_USER"
