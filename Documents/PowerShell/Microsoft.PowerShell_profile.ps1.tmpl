@@ -65,6 +65,11 @@ Invoke-Expression (& mise activate pwsh | Out-String)
 # Initialize Zoxide (smart cd)
 Invoke-Expression (& zoxide init powershell | Out-String)
 
+# PSCompletions (completion manager)
+if (Get-Module -ListAvailable -Name PSCompletions) {
+    Import-Module PSCompletions
+}
+
 # PSFzf (fzf integration for PowerShell) — optional
 {{- if index .package_features "fzf" }}
 if (Get-Module -ListAvailable -Name PSFzf) {

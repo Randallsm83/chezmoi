@@ -585,6 +585,7 @@ package_mapping:
       scoop: []
       winget: [Microsoft.PowerShell]
       mise: []
+      pwsh_modules: [PSFzf, PSCompletions, Terminal-Icons, WSLTabCompletion]
     linux:
       apt: []
       dnf: []

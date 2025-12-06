@@ -17,6 +17,7 @@ $scoopPackages = @()
 $wingetPackages = @()
 $misePackages = @()
 $pipPackages = @()
+$pwshModules = @()
 
 {{- range $feature, $enabled := .package_features }}
 {{- if $enabled }}
@@ -35,6 +36,9 @@ $misePackages += "{{ . }}"
 {{- end }}
 {{- range $win.pip }}
 $pipPackages += "{{ . }}"
+{{- end }}
+{{- range $win.pwsh_modules }}
+$pwshModules += "{{ . }}"
 {{- end }}
 {{- end }}
 {{- end }}
@@ -91,6 +95,20 @@ if ($misePackages.Count -gt 0) {
         }
     } else {
         Write-Host "`nmise not available. Install via: scoop install mise" -ForegroundColor Yellow
+    }
+}
+
+# Install PowerShell modules
+if ($pwshModules.Count -gt 0) {
+    $pwshModules = $pwshModules | Select-Object -Unique
+    Write-Host "`nInstalling PowerShell modules..." -ForegroundColor Cyan
+    foreach ($module in $pwshModules) {
+        if (!(Get-Module -ListAvailable -Name $module)) {
+            Write-Host "  Installing: $module" -ForegroundColor Green
+            Install-Module $module -Scope CurrentUser -Force -SkipPublisherCheck
+        } else {
+            Write-Host "  Already installed: $module" -ForegroundColor Gray
+        }
     }
 }
 
