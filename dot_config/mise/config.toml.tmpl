@@ -35,7 +35,7 @@ lua = "latest"
 luajit = "latest"
 {{- end }}
 zig = "latest"
-{{- if .package_features.perl }}
+{{- if and .package_features.perl (ne .chezmoi.os "windows") }}
 perl = "latest"
 {{- end }}
 {{- if .package_features.php }}
