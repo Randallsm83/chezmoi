@@ -318,6 +318,7 @@ package_features:
   glow: true            # Markdown renderer
   thefuck: true         # Command correction
   btop: true            # System monitor
+  navi: true            # Interactive cheatsheet tool
   
   # ============================================================================
   # Language Runtimes (optional - enable as needed)
@@ -775,6 +776,21 @@ package_mapping:
     darwin:
       brew: [btop]
       mise: []
+  
+  navi:
+    windows:
+      scoop: [navi]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [cargo:navi]
+    darwin:
+      brew: []
+      mise: [cargo:navi]
   
   # Language Runtimes
   rust:
