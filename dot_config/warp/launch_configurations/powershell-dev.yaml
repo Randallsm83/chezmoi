@@ -63,12 +63,17 @@ windows:
         layout:
           split_direction: vertical
           panes:
+            - split_direction: horizontal
+              panes:
+                - cwd: C:\Users\Randall
+                  commands:
+                    - exec: fastfetch
+                - cwd: C:\Users\Randall
+                  commands:
+                    - exec: Invoke-RestMethod https://wttr.in
             - cwd: C:\Users\Randall
               commands:
                 - exec: btop
-            - cwd: C:\Users\Randall
-              commands:
-                - exec: Invoke-RestMethod https://wttr.in
         color: magenta
 
 # vim: ts=2 sts=2 sw=2 et
