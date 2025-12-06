@@ -56,18 +56,24 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
 }
 
+# PSCompletions (completion manager) - must load AFTER PSReadLine key bindings
+# as it overrides Tab with its own custom menu
+if (Get-Module -ListAvailable -Name PSCompletions) {
+    Import-Module PSCompletions
+}
+
+# Initialize Zoxide (smart cd)
+Invoke-Expression (& zoxide init powershell | Out-String)
+
 # Initialize Starship prompt
 Invoke-Expression (&starship init powershell)
 
 # Initialize Mise (tool version manager)
 Invoke-Expression (& mise activate pwsh | Out-String)
 
-# Initialize Zoxide (smart cd)
-Invoke-Expression (& zoxide init powershell | Out-String)
-
-# PSCompletions (completion manager)
-if (Get-Module -ListAvailable -Name PSCompletions) {
-    Import-Module PSCompletions
+# WSL Tab Completion
+if (Get-Module -ListAvailable -Name WSLTabCompletion) {
+    Import-Module WSLTabCompletion
 }
 
 # PSFzf (fzf integration for PowerShell) — optional

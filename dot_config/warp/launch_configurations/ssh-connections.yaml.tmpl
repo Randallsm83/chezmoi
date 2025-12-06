@@ -22,6 +22,7 @@
 
 ---
 name: SSH Connections
+shell: pwsh
 active_window_index: 0
 windows:
   - active_tab_index: 0
@@ -93,14 +94,14 @@ windows:
                 - exec: ssh server2.example.com -t "htop"
         color: cyan
 
-      # WSL to Remote (Windows-specific)
-      - title: From WSL
-        shell: archlinux
-        layout:
-          cwd: ~
-          commands:
-            # SSH from within WSL
-            - exec: ssh rmiller@remote-server.com
-        color: purple
+      # # WSL to Remote (Windows-specific)
+      # - title: From WSL
+      #   shell: archlinux
+      #   layout:
+      #     cwd: ~
+      #     commands:
+      #       # SSH from within WSL
+      #       - exec: ssh rmiller@remote-server.com
+      #   color: purple
 
 # vim: ts=2 sts=2 sw=2 et

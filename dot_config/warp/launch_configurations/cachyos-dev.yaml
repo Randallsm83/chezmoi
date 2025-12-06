@@ -17,6 +17,7 @@
 
 ---
 name: CachyOS Development
+shell: CachyOS_Zen4
 active_window_index: 0
 windows:
   - active_tab_index: 0

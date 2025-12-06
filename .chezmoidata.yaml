@@ -319,6 +319,7 @@ package_features:
   thefuck: true         # Command correction
   btop: true            # System monitor
   navi: true            # Interactive cheatsheet tool
+  fastfetch: true       # System info display
   
   # ============================================================================
   # Language Runtimes (optional - enable as needed)
@@ -791,6 +792,21 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:navi]
+  
+  fastfetch:
+    windows:
+      scoop: [fastfetch]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [fastfetch]
+      mise: []
+    darwin:
+      brew: [fastfetch]
+      mise: []
   
   # Language Runtimes
   rust:
