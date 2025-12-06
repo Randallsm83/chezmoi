@@ -1,5 +1,5 @@
 {
   "env": {
-    "PATH": "C:\\Users\\Randall\\.local\\share\\mise\\shims;%PATH%"
+    "PATH": "C:\\Users\\Randall\\.local\\share\\mise\\shims;${PATH}"
   }
 }
