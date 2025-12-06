@@ -19,14 +19,17 @@ vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Open diagn
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 
--- Smart Splits
-vim.keymap.set("n", "<A-h>", require("smart-splits").resize_left)
-vim.keymap.set("n", "<A-j>", require("smart-splits").resize_down)
-vim.keymap.set("n", "<A-k>", require("smart-splits").resize_up)
-vim.keymap.set("n", "<A-l>", require("smart-splits").resize_right)
-vim.keymap.set("n", "<C-h>", require("smart-splits").move_cursor_left)
-vim.keymap.set("n", "<C-j>", require("smart-splits").move_cursor_down)
-vim.keymap.set("n", "<C-k>", require("smart-splits").move_cursor_up)
-vim.keymap.set("n", "<C-l>", require("smart-splits").move_cursor_right)
+-- Smart Splits (lazy-loaded, wrap in pcall)
+local ok, smart_splits = pcall(require, 'smart-splits')
+if ok then
+  vim.keymap.set("n", "<A-h>", smart_splits.resize_left)
+  vim.keymap.set("n", "<A-j>", smart_splits.resize_down)
+  vim.keymap.set("n", "<A-k>", smart_splits.resize_up)
+  vim.keymap.set("n", "<A-l>", smart_splits.resize_right)
+  vim.keymap.set("n", "<C-h>", smart_splits.move_cursor_left)
+  vim.keymap.set("n", "<C-j>", smart_splits.move_cursor_down)
+  vim.keymap.set("n", "<C-k>", smart_splits.move_cursor_up)
+  vim.keymap.set("n", "<C-l>", smart_splits.move_cursor_right)
+end
 
 -- vim: ts=2 sts=2 sw=2 et

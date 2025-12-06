@@ -641,6 +641,8 @@ require('lazy').setup({
         { '<leader>w', group = '[W]orkspace' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>x', group = 'Diagnostics/Trouble' },
+        { '<leader>q', group = 'Session' },
       },
     },
   },
@@ -1118,6 +1120,56 @@ require('lazy').setup({
         taplo = {
           filetypes = { 'toml' },
         },
+
+        -- Go
+        gopls = {
+          settings = {
+            gopls = {
+              analyses = {
+                unusedparams = true,
+                shadow = true,
+              },
+              staticcheck = true,
+              gofumpt = true,
+              usePlaceholders = true,
+              hints = {
+                assignVariableTypes = true,
+                compositeLiteralFields = true,
+                compositeLiteralTypes = true,
+                constantValues = true,
+                functionTypeParameters = true,
+                parameterNames = true,
+                rangeVariableTypes = true,
+              },
+            },
+          },
+        },
+
+        -- Rust
+        rust_analyzer = {
+          settings = {
+            ['rust-analyzer'] = {
+              checkOnSave = {
+                command = 'clippy',
+              },
+              cargo = {
+                allFeatures = true,
+              },
+              procMacro = {
+                enable = true,
+              },
+              inlayHints = {
+                bindingModeHints = { enable = true },
+                chainingHints = { enable = true },
+                closingBraceHints = { enable = true },
+                closureReturnTypeHints = { enable = 'always' },
+                lifetimeElisionHints = { enable = 'always' },
+                parameterHints = { enable = true },
+                typeHints = { enable = true },
+              },
+            },
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -1199,12 +1251,12 @@ require('lazy').setup({
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          {
+            'rafamadriz/friendly-snippets',
+            config = function()
+              require('luasnip.loaders.from_vscode').lazy_load()
+            end,
+          },
         },
       },
       'saadparwaiz1/cmp_luasnip',
@@ -1327,9 +1379,59 @@ require('lazy').setup({
     opts = {},
   },
   ----------------------------------------------------------------------------
-  { -- INFO: Treesitter external playground module
-    'nvim-treesitter/playground',
+  -- NOTE: nvim-treesitter/playground is deprecated - use :InspectTree (built-in since Neovim 0.9)
+  ----------------------------------------------------------------------------
+  { -- INFO: Treesitter textobjects - code-aware text objects
+    'nvim-treesitter/nvim-treesitter-textobjects',
+    dependencies = 'nvim-treesitter/nvim-treesitter',
   },
+  ----------------------------------------------------------------------------
+  { -- INFO: Flash.nvim - modern motion plugin
+    'folke/flash.nvim',
+    event = 'VeryLazy',
+    opts = {},
+    keys = {
+      { 's', mode = { 'n', 'x', 'o' }, function() require('flash').jump() end, desc = 'Flash' },
+      { 'S', mode = { 'n', 'x', 'o' }, function() require('flash').treesitter() end, desc = 'Flash Treesitter' },
+      { 'r', mode = 'o', function() require('flash').remote() end, desc = 'Remote Flash' },
+      { 'R', mode = { 'o', 'x' }, function() require('flash').treesitter_search() end, desc = 'Treesitter Search' },
+    },
+  },
+  ----------------------------------------------------------------------------
+  { -- INFO: Trouble.nvim - better diagnostics list
+    'folke/trouble.nvim',
+    opts = {},
+    cmd = 'Trouble',
+    keys = {
+      { '<leader>xx', '<cmd>Trouble diagnostics toggle<cr>', desc = 'Diagnostics (Trouble)' },
+      { '<leader>xX', '<cmd>Trouble diagnostics toggle filter.buf=0<cr>', desc = 'Buffer Diagnostics (Trouble)' },
+      { '<leader>cs', '<cmd>Trouble symbols toggle focus=false<cr>', desc = 'Symbols (Trouble)' },
+      { '<leader>xL', '<cmd>Trouble loclist toggle<cr>', desc = 'Location List (Trouble)' },
+      { '<leader>xQ', '<cmd>Trouble qflist toggle<cr>', desc = 'Quickfix List (Trouble)' },
+    },
+  },
+  ----------------------------------------------------------------------------
+  { -- INFO: Persistence.nvim - session management
+    'folke/persistence.nvim',
+    event = 'BufReadPre',
+    opts = {},
+    keys = {
+      { '<leader>qs', function() require('persistence').load() end, desc = 'Restore Session' },
+      { '<leader>ql', function() require('persistence').load({ last = true }) end, desc = 'Restore Last Session' },
+      { '<leader>qd', function() require('persistence').stop() end, desc = "Don't Save Current Session" },
+    },
+  },
+  ----------------------------------------------------------------------------
+  { -- INFO: Spectre - project-wide find and replace
+    'nvim-pack/nvim-spectre',
+    dependencies = 'nvim-lua/plenary.nvim',
+    keys = {
+      { '<leader>sr', function() require('spectre').toggle() end, desc = 'Replace in Files (Spectre)' },
+      { '<leader>sw', function() require('spectre').open_visual({ select_word = true }) end, desc = 'Search Current Word (Spectre)' },
+      { '<leader>sp', function() require('spectre').open_file_search({ select_word = true }) end, desc = 'Search in Current File (Spectre)' },
+    },
+  },
+  ----------------------------------------------------------------------------
   { -- INFO: Treesitter - Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
@@ -1457,7 +1559,7 @@ require('lazy').setup({
     -- automatically check for plugin updates
     -- enabled = true,
     notify = true, -- get a notification when new updates are found
-    frequency = 259,200, -- check for updates every 12 hours
+    frequency = 259200, -- check for updates every 3 days
     check_pinned = false, -- check for pinned packages that can't be updated
   },
   install = {

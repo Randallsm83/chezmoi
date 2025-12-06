@@ -35,7 +35,7 @@ vim.opt.inccommand = "split"
 vim.opt.scrolloff = 10
 
 -- Smoother scrolling
-vim.opt.lazyredraw = true
+-- Note: lazyredraw removed - conflicts with smoothscroll and noice.nvim
 vim.opt.smoothscroll = true
 
 -- Window title
