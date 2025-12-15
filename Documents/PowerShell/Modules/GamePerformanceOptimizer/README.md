@@ -28,6 +28,12 @@ This module automates the process of adding security exclusions for games, which
 - Comprehensive AMD shader cache exclusions (DX9, DxCache, DxcCache, OglCache, VkCache)
 - Comprehensive NVIDIA shader cache exclusions (DXCache, GLCache, NV_Cache)
 
+✅ **Process Priority Optimization**
+- Automatic high CPU priority for game processes
+- High I/O priority for faster asset loading
+- Configurable via `Set-GameProcessPriority`
+- Settings persist via Image File Execution Options registry
+
 ✅ **Safety Features**
 - Full `-WhatIf` support for previewing changes
 - Administrator privilege checking
@@ -152,6 +158,7 @@ Adds Windows Defender exclusions and disables CFG for a game.
 3. Adds Windows Defender path exclusion for the game folder
 4. Detects and adds exclusions for shader cache folders
 5. Disables Control Flow Guard (CFG) for the game process
+6. Sets high CPU and I/O priority for the game process
 
 ### `Remove-GameSecurityExclusion`
 
@@ -168,6 +175,7 @@ Removes all security exclusions for a game.
 2. Removes Windows Defender path exclusions
 3. Removes shader cache exclusions
 4. Re-enables Control Flow Guard (CFG)
+5. Removes process priority settings
 
 ### `Get-GameSecurityExclusion`
 
@@ -181,6 +189,7 @@ Lists all current security exclusions.
 - All Windows Defender process exclusions
 - All Windows Defender path exclusions
 - All processes with CFG disabled
+- Process priority settings (CPU, I/O, Page)
 - Summary counts
 
 ### `Add-ShaderCacheExclusion`
@@ -222,6 +231,7 @@ Automatically adds security exclusions for all games found in Steam and Xbox Gam
 3. Adds Windows Defender process and path exclusions for each game
 4. Adds shader cache exclusions for each game
 5. Disables CFG for each game executable
+6. Sets high CPU and I/O priority for each game
 
 ## Examples
 
@@ -246,6 +256,9 @@ Adding Windows Defender exclusions...
 
 Disabling Control Flow Guard (CFG)...
   [✓] CFG disabled for: Cyberpunk2077.exe
+
+Setting process priority (High CPU, High I/O, Normal Page)...
+  [✓] Process priority set for: Cyberpunk2077.exe
 
 === Exclusions added successfully! ===
 Game performance should be improved. Restart the game if it's currently running.
@@ -272,6 +285,10 @@ Total: 2
 
 --- Control Flow Guard (CFG) Disabled ---
   • Cyberpunk2077.exe
+Total: 1
+
+--- Process Priority Settings ---
+  • Cyberpunk2077.exe - CPU: High, I/O: High, Page: 5
 Total: 1
 ```
 
@@ -386,6 +403,29 @@ What if: Performing the operation "Disable CFG" on target "eldenring.exe".
      - `ShaderCache`
      - `Shaders`
 
+### `Set-GameProcessPriority`
+
+Sets process priority for a game via Image File Execution Options registry.
+
+**Parameters:**
+- `GameName` (Required): Game executable name
+- `CpuPriority` (Optional): Idle, BelowNormal, Normal, AboveNormal, High, Realtime (default: High)
+- `IoPriority` (Optional): VeryLow, Low, Normal, High (default: High)
+- `PagePriority` (Optional): 1-5, higher is better (default: 5)
+- `WhatIf`: Preview changes without applying
+
+**What it does:**
+- Configures Windows to automatically set priority when the game starts
+- Settings persist across reboots via registry
+
+### `Remove-GameProcessPriority`
+
+Removes process priority settings for a game.
+
+**Parameters:**
+- `GameName` (Required): Game executable name
+- `WhatIf`: Preview changes without applying
+
 ## Performance Impact
 
 Adding these exclusions can improve game performance by:
@@ -394,6 +434,7 @@ Adding these exclusions can improve game performance by:
 - **Faster game loading** times
 - **Smoother gameplay** during asset streaming
 - **Reduced CPU overhead** from security checks
+- **Higher process priority** ensures games get CPU/I/O resources first
 
 **Note:** These changes only affect the specified game. System security for other applications remains intact.
 
@@ -471,6 +512,14 @@ For issues, questions, or feature requests, please review the code or modify the
 This module is provided as-is for personal use.
 
 ## Version History
+
+### v1.1.0 (2025-12-15)
+- Added `Set-GameProcessPriority` function for manual priority configuration
+- Added `Remove-GameProcessPriority` function to remove priority settings
+- `Add-GameSecurityExclusion` now automatically sets high CPU/I/O priority
+- `Add-BulkGameExclusions` now automatically sets high CPU/I/O priority
+- `Remove-GameSecurityExclusion` now removes process priority settings
+- `Get-GameSecurityExclusion` now displays process priority settings
 
 ### v1.0.0 (2025-01-17)
 - Initial release

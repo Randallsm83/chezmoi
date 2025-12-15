@@ -3,7 +3,7 @@
     RootModule = 'GamePerformanceOptimizer.psm1'
     
     # Version number of this module.
-    ModuleVersion = '1.0.0'
+    ModuleVersion = '1.1.0'
     
     # Supported PSEditions
     CompatiblePSEditions = @('Desktop', 'Core')
@@ -65,7 +65,9 @@
         'Remove-GameSecurityExclusion',
         'Get-GameSecurityExclusion',
         'Add-ShaderCacheExclusion',
-        'Add-BulkGameExclusions'
+        'Add-BulkGameExclusions',
+        'Set-GameProcessPriority',
+        'Remove-GameProcessPriority'
     )
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
@@ -103,6 +105,13 @@
             
             # ReleaseNotes of this module
             ReleaseNotes = @'
+v1.1.0 - Process Priority Support
+- Set-GameProcessPriority: Configure CPU/I/O/Page priority via IFEO registry
+- Remove-GameProcessPriority: Remove process priority settings
+- Add-GameSecurityExclusion now automatically sets high process priority
+- Add-BulkGameExclusions now automatically sets high process priority
+- Get-GameSecurityExclusion now displays process priority settings
+
 v1.0.0 - Initial Release
 - Add-GameSecurityExclusion: Automatically detect and add exclusions for games
 - Remove-GameSecurityExclusion: Remove exclusions and restore default security

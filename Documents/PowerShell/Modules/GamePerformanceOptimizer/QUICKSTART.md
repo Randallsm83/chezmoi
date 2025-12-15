@@ -62,6 +62,19 @@ Get-GameSecurityExclusion
 Add-ShaderCacheExclusion -Verbose
 ```
 
+### Set custom process priority for a game
+
+```powershell
+# Default: High CPU, High I/O (automatically done by Add-GameSecurityExclusion)
+Set-GameProcessPriority -GameName "eldenring"
+
+# Custom priority settings
+Set-GameProcessPriority -GameName "Cyberpunk2077" -CpuPriority AboveNormal -IoPriority Normal
+
+# Remove priority settings
+Remove-GameProcessPriority -GameName "OldGame"
+```
+
 ### Add exclusions for ALL games at once
 
 ```powershell
@@ -162,6 +175,7 @@ For each game, the module excludes:
 2. **Game folder** (e.g., `C:\Games\Cyberpunk 2077\`)
 3. **Shader cache folders** (if found)
 4. **CFG disabled** for the game process
+5. **Process priority** set to High CPU/I/O
 
 Your system security remains active for all other files and applications.
 
@@ -185,6 +199,9 @@ Adding Windows Defender exclusions...
 Disabling Control Flow Guard (CFG)...
   [✓] CFG disabled for: Cyberpunk2077.exe
 
+Setting process priority (High CPU, High I/O, Normal Page)...
+  [✓] Process priority set for: Cyberpunk2077.exe
+
 === Exclusions added successfully! ===
 Game performance should be improved. Restart the game if it's currently running.
 
@@ -204,6 +221,10 @@ Total: 2
 --- Control Flow Guard (CFG) Disabled ---
   • Cyberpunk2077.exe
 Total: 1
+
+--- Process Priority Settings ---
+  • Cyberpunk2077.exe - CPU: High, I/O: High, Page: 5
+Total: 1
 ```
 
 ## Questions?
@@ -216,6 +237,8 @@ Get-Help Remove-GameSecurityExclusion -Examples
 Get-Help Get-GameSecurityExclusion -Detailed
 Get-Help Add-ShaderCacheExclusion -Full
 Get-Help Add-BulkGameExclusions -Full
+Get-Help Set-GameProcessPriority -Full
+Get-Help Remove-GameProcessPriority -Full
 ```
 
 ---
