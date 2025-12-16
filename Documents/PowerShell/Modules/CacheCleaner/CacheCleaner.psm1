@@ -14,8 +14,20 @@ function Clear-Cache {
 
     # Helper function: Check if running with elevated privileges
     function Test-IsElevated {
+        # First try the standard check
         $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-        return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            return $true
+        }
+        # Fallback: test actual write access to a protected directory (works with sudo)
+        try {
+            $testPath = "$env:SystemRoot\Temp\.elevation_test_$PID"
+            [System.IO.File]::Create($testPath).Dispose()
+            Remove-Item $testPath -Force -ErrorAction SilentlyContinue
+            return $true
+        } catch {
+            return $false
+        }
     }
 
     # Helper function: Format file size in human-readable format
