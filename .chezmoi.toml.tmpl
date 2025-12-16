@@ -155,12 +155,16 @@
 {{- /* Chezmoi Tool Configuration                                              */ -}}
 {{- /* ========================================================================== */}}
 
+# Tool configuration - these may not be available on first run
+# Chezmoi will use built-in defaults if commands not found
 [edit]
     command = "nvim"
 
 [diff]
-    command = "delta"
-    args = ["--paging=never"]
+    # Delta provides nice diffs; falls back to built-in diff if not found
+    # Uncomment after first chezmoi apply installs delta via mise
+    # command = "delta"
+    # args = ["--paging=never"]
 
 [merge]
     command = "nvim"

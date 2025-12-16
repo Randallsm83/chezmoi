@@ -135,11 +135,20 @@ fi
 if [ -n "$mise_packages" ]; then
     echo ""
     echo "Installing mise tools/runtimes globally..."
+    
+    # Check if any cargo packages are requested - install rust first
+    if echo "$mise_packages" | grep -q "cargo:"; then
+        if ! mise list rust 2>/dev/null | grep -q "rust"; then
+            echo "  Installing: rust@stable (required for cargo packages)"
+            mise use -g rust@stable
+        fi
+    fi
+    
     for pkg in $mise_packages; do
         tool_name=$(echo "$pkg" | sed 's/@.*$//' | sed 's/cargo://')
         if ! mise list "$tool_name" 2>/dev/null | grep -q "$tool_name"; then
             echo "  Installing: $pkg"
-            mise use -g "$pkg"
+            mise use -g "$pkg" || echo "  Warning: Failed to install $pkg, continuing..."
         else
             echo "  Already installed: $pkg"
         fi
