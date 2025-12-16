@@ -26,6 +26,15 @@ if ! command -v mise >/dev/null 2>&1; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
+# Set up Homebrew PATH (user install location per rules)
+if [ -d "$HOME/.local/share/homebrew" ]; then
+    export HOMEBREW_PREFIX="$HOME/.local/share/homebrew"
+    export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+elif [ -d "/home/linuxbrew/.linuxbrew" ]; then
+    # Fallback to standard linuxbrew location
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || true
+fi
+
 # Collect packages per manager
 mise_packages=""
 brew_packages=""

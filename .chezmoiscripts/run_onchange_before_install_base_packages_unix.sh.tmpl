@@ -222,7 +222,7 @@ log_success "Base packages installed"
 
 # Set zsh as default shell if installed
 if command_exists zsh; then
-    set_zsh_as_default_shell
+    set_zsh_as_default_shell || true
     log_info "Note: You may need to log out and back in for the shell change to take effect"
 fi
 
@@ -234,6 +234,47 @@ mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}"
 mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$HOME/.local/bin"
 log_success "XDG directories created"
+
+# Install Homebrew (Linux/WSL - user install to ~/.local/share/homebrew)
+{{- if and (ne .chezmoi.os "darwin") (index . "package_features" | default dict | index "homebrew" | default true) }}
+install_homebrew() {
+    if command_exists brew; then
+        log_success "Homebrew already installed"
+        return 0
+    fi
+    
+    log_info "Installing Homebrew to ~/.local/share/homebrew..."
+    
+    # Set HOMEBREW_PREFIX for user install (not /home/linuxbrew)
+    export HOMEBREW_PREFIX="$HOME/.local/share/homebrew"
+    export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
+    export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX"
+    export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+    
+    # Create homebrew directory
+    mkdir -p "$HOMEBREW_PREFIX"
+    
+    # Clone homebrew
+    if [ ! -d "$HOMEBREW_PREFIX/.git" ]; then
+        git clone --depth=1 https://github.com/Homebrew/brew "$HOMEBREW_PREFIX" || {
+            log_warning "Failed to clone Homebrew"
+            return 1
+        }
+    fi
+    
+    # Verify brew works
+    if "$HOMEBREW_PREFIX/bin/brew" --version >/dev/null 2>&1; then
+        log_success "Homebrew installed to $HOMEBREW_PREFIX"
+        # Update homebrew
+        "$HOMEBREW_PREFIX/bin/brew" update --force --quiet || true
+    else
+        log_warning "Homebrew installation failed"
+        return 1
+    fi
+}
+
+install_homebrew
+{{- end }}
 
 {{- if (index . "setup_1password" | default true) }}
 # Install 1Password CLI (requires system package manager for setgid permissions)
