@@ -35,7 +35,14 @@ Linux)
             paru -S --noconfirm 1password-cli
             exit 0
         else
-            # Manual AUR build (skip GPG check since key may not be imported)
+            # Manual AUR build requires base-devel (fakeroot, etc.)
+            # Skip if not installed - chezmoi scripts will install base-devel first,
+            # then 1password-cli will be installed by run_onchange_before_install_base_packages
+            if ! type fakeroot >/dev/null 2>&1; then
+                echo "Skipping 1Password CLI install - base-devel not installed yet" >&2
+                echo "Will be installed after base packages are set up" >&2
+                exit 0
+            fi
             tmpdir=$(mktemp -d)
             git clone https://aur.archlinux.org/1password-cli.git "$tmpdir/1password-cli"
             cd "$tmpdir/1password-cli" && makepkg -si --noconfirm --skippgpcheck

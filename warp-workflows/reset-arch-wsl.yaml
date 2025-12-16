@@ -96,15 +96,8 @@ command: |-
   Write-Log "  Duration: ~10-15 minutes`n" 'Gray'
   
   # Install chezmoi to ~/.local/bin (in user's PATH) and run init --apply
-  $chezmoiScript = @"
-  set -e
-  export PATH="\$HOME/.local/bin:\$PATH"
-  mkdir -p "\$HOME/.local/bin"
-  curl -fsSL https://get.chezmoi.io | sh -s -- -b "\$HOME/.local/bin"
-  "\$HOME/.local/bin/chezmoi" init --apply Randallsm83/dotfiles
-  "@
-  
-  wsl -d archlinux bash -c $chezmoiScript
+  # Use single quotes to prevent PowerShell from interpreting $HOME
+  wsl -d archlinux bash -c 'set -e; mkdir -p "$HOME/.local/bin"; curl -fsSL https://get.chezmoi.io | sh -s -- -b "$HOME/.local/bin"; "$HOME/.local/bin/chezmoi" init --apply Randallsm83/dotfiles'
   
   if ($LASTEXITCODE -ne 0) {
       Write-Log "`n⚠ Bootstrap encountered issues" 'Yellow'
