@@ -332,7 +332,7 @@ package_features:
   node: true
   perl: true
   julia: true
-  php: true
+  php: false        # Requires many build deps (openssl, re2c, etc), enable manually if needed
   
   # ============================================================================
   # Development Tools (optional)
