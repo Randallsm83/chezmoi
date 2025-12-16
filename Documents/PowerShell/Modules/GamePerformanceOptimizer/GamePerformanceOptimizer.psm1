@@ -231,6 +231,147 @@ function Get-ShaderCachePath {
     return $cachePaths | Select-Object -Unique
 }
 
+function Set-ProcessPriorityRegistry {
+    <#
+    .SYNOPSIS
+        Sets process priority via Image File Execution Options registry.
+    
+    .PARAMETER ProcessName
+        The name of the process (exe name).
+    
+    .PARAMETER CpuPriorityClass
+        CPU priority class (1=Idle, 2=Normal, 3=High, 4=Realtime). Default: 3 (High)
+    
+    .PARAMETER IoPriority
+        I/O priority (0=VeryLow, 1=Low, 2=Normal, 3=High). Default: 3 (High)
+    
+    .PARAMETER PagePriority
+        Memory page priority (1-5, higher is better). Default: 5
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ProcessName,
+        
+        [Parameter()]
+        [int]$CpuPriorityClass = 3,
+        
+        [Parameter()]
+        [int]$IoPriority = 3,
+        
+        [Parameter()]
+        [int]$PagePriority = 5
+    )
+    
+    $ifeoPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\$ProcessName"
+    $perfOptionsPath = "$ifeoPath\PerfOptions"
+    
+    try {
+        # Create IFEO key if it doesn't exist
+        if (-not (Test-Path $ifeoPath)) {
+            New-Item -Path $ifeoPath -Force | Out-Null
+            Write-Verbose "Created IFEO key for $ProcessName"
+        }
+        
+        # Create PerfOptions subkey if it doesn't exist
+        if (-not (Test-Path $perfOptionsPath)) {
+            New-Item -Path $perfOptionsPath -Force | Out-Null
+            Write-Verbose "Created PerfOptions subkey for $ProcessName"
+        }
+        
+        # Set priority values
+        Set-ItemProperty -Path $perfOptionsPath -Name "CpuPriorityClass" -Value $CpuPriorityClass -Type DWord -Force
+        Set-ItemProperty -Path $perfOptionsPath -Name "IoPriority" -Value $IoPriority -Type DWord -Force
+        Set-ItemProperty -Path $perfOptionsPath -Name "PagePriority" -Value $PagePriority -Type DWord -Force
+        
+        return $true
+    }
+    catch {
+        Write-Verbose "Failed to set priority registry for $ProcessName : $_"
+        return $false
+    }
+}
+
+function Remove-ProcessPriorityRegistry {
+    <#
+    .SYNOPSIS
+        Removes process priority settings from Image File Execution Options registry.
+    
+    .PARAMETER ProcessName
+        The name of the process (exe name).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ProcessName
+    )
+    
+    $ifeoPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\$ProcessName"
+    $perfOptionsPath = "$ifeoPath\PerfOptions"
+    
+    try {
+        if (Test-Path $perfOptionsPath) {
+            Remove-Item -Path $perfOptionsPath -Recurse -Force
+            Write-Verbose "Removed PerfOptions for $ProcessName"
+            
+            # Check if IFEO key is now empty (no other subkeys/values) and remove if so
+            $ifeoKey = Get-Item -Path $ifeoPath -ErrorAction SilentlyContinue
+            if ($ifeoKey) {
+                $subKeys = Get-ChildItem -Path $ifeoPath -ErrorAction SilentlyContinue
+                $values = $ifeoKey.GetValueNames() | Where-Object { $_ -ne "" }
+                
+                if (($null -eq $subKeys -or $subKeys.Count -eq 0) -and ($null -eq $values -or $values.Count -eq 0)) {
+                    Remove-Item -Path $ifeoPath -Force
+                    Write-Verbose "Removed empty IFEO key for $ProcessName"
+                }
+            }
+            
+            return $true
+        }
+        else {
+            Write-Verbose "No PerfOptions found for $ProcessName"
+            return $false
+        }
+    }
+    catch {
+        Write-Verbose "Failed to remove priority registry for $ProcessName : $_"
+        return $false
+    }
+}
+
+function Get-ProcessPriorityRegistry {
+    <#
+    .SYNOPSIS
+        Gets process priority settings from Image File Execution Options registry.
+    
+    .PARAMETER ProcessName
+        The name of the process (exe name).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ProcessName
+    )
+    
+    $perfOptionsPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\$ProcessName\PerfOptions"
+    
+    if (Test-Path $perfOptionsPath) {
+        try {
+            $props = Get-ItemProperty -Path $perfOptionsPath -ErrorAction Stop
+            return [PSCustomObject]@{
+                ProcessName = $ProcessName
+                CpuPriorityClass = $props.CpuPriorityClass
+                IoPriority = $props.IoPriority
+                PagePriority = $props.PagePriority
+            }
+        }
+        catch {
+            return $null
+        }
+    }
+    return $null
+}
+
 #endregion
 
 #region Public Functions
@@ -403,6 +544,24 @@ function Add-GameSecurityExclusion {
         return
     }
     
+    # Set process priority via registry
+    Write-Host "`nSetting process priority (High CPU, High I/O, Normal Page)..." -ForegroundColor Cyan
+    
+    try {
+        if ($PSCmdlet.ShouldProcess($gameExe, "Set process priority via registry")) {
+            $result = Set-ProcessPriorityRegistry -ProcessName $gameExe -CpuPriorityClass 3 -IoPriority 3 -PagePriority 5
+            if ($result) {
+                Write-Host "  [✓] Process priority set for: $gameExe" -ForegroundColor Green
+            }
+            else {
+                Write-Warning "  [!] Could not set process priority for: $gameExe"
+            }
+        }
+    }
+    catch {
+        Write-Warning "Failed to set process priority: $_"
+    }
+    
     Write-Host "`n=== Exclusions added successfully! ===" -ForegroundColor Green
     Write-Host "Game performance should be improved. Restart the game if it's currently running." -ForegroundColor Yellow
 }
@@ -560,6 +719,24 @@ function Remove-GameSecurityExclusion {
         return
     }
     
+    # Remove process priority settings
+    Write-Host "`nRemoving process priority settings..." -ForegroundColor Cyan
+    
+    try {
+        if ($PSCmdlet.ShouldProcess($gameExe, "Remove process priority registry settings")) {
+            $result = Remove-ProcessPriorityRegistry -ProcessName $gameExe
+            if ($result) {
+                Write-Host "  [✓] Process priority settings removed for: $gameExe" -ForegroundColor Green
+            }
+            else {
+                Write-Host "  [✓] No process priority settings found for: $gameExe" -ForegroundColor Gray
+            }
+        }
+    }
+    catch {
+        Write-Warning "Failed to remove process priority settings: $_"
+    }
+    
     Write-Host "`n=== Exclusions removed successfully! ===" -ForegroundColor Green
 }
 
@@ -594,8 +771,9 @@ function Get-GameSecurityExclusion {
         Lists all exclusions with detailed information.
     
     .NOTES
-        Requires: Administrator privileges
         Platform: Windows 10/11
+        Note: Some information (Defender exclusions) requires Administrator privileges.
+              Process priority settings can be viewed without elevation.
     #>
     [CmdletBinding()]
     param(
@@ -606,20 +784,22 @@ function Get-GameSecurityExclusion {
         [switch]$Detailed
     )
     
-    # Check administrator privileges
-    if (-not (Test-Administrator)) {
-        throw "This function requires administrator privileges. Please run PowerShell as Administrator."
-    }
+    $isAdmin = Test-Administrator
     
     Write-Host "`n=== Security Exclusions Report ===" -ForegroundColor Cyan
     
-    # Get Windows Defender preferences
-    try {
-        $prefs = Get-MpPreference -ErrorAction Stop
+    # Get Windows Defender preferences (requires admin)
+    $prefs = $null
+    if ($isAdmin) {
+        try {
+            $prefs = Get-MpPreference -ErrorAction Stop
+        }
+        catch {
+            Write-Warning "Failed to retrieve Windows Defender preferences: $_"
+        }
     }
-    catch {
-        Write-Error "Failed to retrieve Windows Defender preferences: $_"
-        return
+    else {
+        Write-Host "(Run as Administrator to see Defender exclusions)" -ForegroundColor DarkGray
     }
     
     # Filter by game name if specified
@@ -631,63 +811,116 @@ function Get-GameSecurityExclusion {
     }
     
     # Display Process Exclusions
-    Write-Host "`n--- Process Exclusions ---" -ForegroundColor Yellow
-    $processes = $prefs.ExclusionProcess
-    
-    if ($processes -and $processes.Count -gt 0) {
-        $filteredProcesses = $processes | Where-Object { $_ -like $processFilter }
+    if ($prefs) {
+        Write-Host "`n--- Process Exclusions ---" -ForegroundColor Yellow
+        $processes = $prefs.ExclusionProcess
         
-        if ($filteredProcesses) {
-            $filteredProcesses | ForEach-Object {
-                Write-Host "  • $_" -ForegroundColor White
-            }
-            Write-Host "Total: $($filteredProcesses.Count)" -ForegroundColor Gray
-        }
-        else {
-            Write-Host "  No process exclusions found matching '$GameName'" -ForegroundColor Gray
-        }
-    }
-    else {
-        Write-Host "  No process exclusions configured" -ForegroundColor Gray
-    }
-    
-    # Display Path Exclusions
-    Write-Host "`n--- Path Exclusions ---" -ForegroundColor Yellow
-    $paths = $prefs.ExclusionPath
-    
-    if ($paths -and $paths.Count -gt 0) {
-        $filteredPaths = if ($GameName) {
-            $paths | Where-Object { $_ -like "*$($GameName -replace '\.exe$', '')*" }
-        }
-        else {
-            $paths
-        }
-        
-        if ($filteredPaths) {
-            $filteredPaths | ForEach-Object {
-                Write-Host "  • $_" -ForegroundColor White
-            }
-            Write-Host "Total: $($filteredPaths.Count)" -ForegroundColor Gray
-        }
-        else {
-            if ($GameName) {
-                Write-Host "  No path exclusions found matching '$GameName'" -ForegroundColor Gray
+        if ($processes -and $processes.Count -gt 0) {
+            $filteredProcesses = $processes | Where-Object { $_ -like $processFilter }
+            
+            if ($filteredProcesses) {
+                $filteredProcesses | ForEach-Object {
+                    Write-Host "  • $_" -ForegroundColor White
+                }
+                Write-Host "Total: $($filteredProcesses.Count)" -ForegroundColor Gray
             }
             else {
-                Write-Host "  No path exclusions configured" -ForegroundColor Gray
+                Write-Host "  No process exclusions found matching '$GameName'" -ForegroundColor Gray
             }
         }
-    }
-    else {
-        Write-Host "  No path exclusions configured" -ForegroundColor Gray
+        else {
+            Write-Host "  No process exclusions configured" -ForegroundColor Gray
+        }
+        
+        # Display Path Exclusions
+        Write-Host "`n--- Path Exclusions ---" -ForegroundColor Yellow
+        $paths = $prefs.ExclusionPath
+        
+        if ($paths -and $paths.Count -gt 0) {
+            $filteredPaths = if ($GameName) {
+                $paths | Where-Object { $_ -like "*$($GameName -replace '\.exe$', '')*" }
+            }
+            else {
+                $paths
+            }
+            
+            if ($filteredPaths) {
+                $filteredPaths | ForEach-Object {
+                    Write-Host "  • $_" -ForegroundColor White
+                }
+                Write-Host "Total: $($filteredPaths.Count)" -ForegroundColor Gray
+            }
+            else {
+                if ($GameName) {
+                    Write-Host "  No path exclusions found matching '$GameName'" -ForegroundColor Gray
+                }
+                else {
+                    Write-Host "  No path exclusions configured" -ForegroundColor Gray
+                }
+            }
+        }
+        else {
+            Write-Host "  No path exclusions configured" -ForegroundColor Gray
+        }
     }
     
-    # Display CFG-disabled processes
-    Write-Host "`n--- Control Flow Guard (CFG) Disabled ---" -ForegroundColor Yellow
+    # Display CFG-disabled processes (requires admin for Get-ProcessMitigation)
+    if ($isAdmin) {
+        Write-Host "`n--- Control Flow Guard (CFG) Disabled ---" -ForegroundColor Yellow
+        
+        try {
+            $ifeoPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"
+            $cfgDisabled = @()
+            
+            if (Test-Path $ifeoPath) {
+                $processKeys = Get-ChildItem $ifeoPath -ErrorAction SilentlyContinue
+                
+                foreach ($key in $processKeys) {
+                    $processName = $key.PSChildName
+                    
+                    # Filter by game name if specified
+                    if ($GameName -and $processName -notlike $processFilter) {
+                        continue
+                    }
+                    
+                    try {
+                        $mitigation = Get-ProcessMitigation -Name $processName -ErrorAction SilentlyContinue
+                        if ($mitigation -and $mitigation.CFG -and $mitigation.CFG.Enable -eq "OFF") {
+                            $cfgDisabled += $processName
+                        }
+                    }
+                    catch {
+                        Write-Verbose "Could not check CFG status for $processName"
+                    }
+                }
+            }
+            
+            if ($cfgDisabled.Count -gt 0) {
+                $cfgDisabled | ForEach-Object {
+                    Write-Host "  • $_" -ForegroundColor White
+                }
+                Write-Host "Total: $($cfgDisabled.Count)" -ForegroundColor Gray
+            }
+            else {
+                if ($GameName) {
+                    Write-Host "  No processes found with CFG disabled matching '$GameName'" -ForegroundColor Gray
+                }
+                else {
+                    Write-Host "  No processes have CFG explicitly disabled" -ForegroundColor Gray
+                }
+            }
+        }
+        catch {
+            Write-Warning "Failed to retrieve CFG information: $_"
+        }
+    }
+    
+    # Display process priority settings
+    Write-Host "`n--- Process Priority Settings ---" -ForegroundColor Yellow
     
     try {
         $ifeoPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"
-        $cfgDisabled = @()
+        $prioritySettings = @()
         
         if (Test-Path $ifeoPath) {
             $processKeys = Get-ChildItem $ifeoPath -ErrorAction SilentlyContinue
@@ -700,35 +933,35 @@ function Get-GameSecurityExclusion {
                     continue
                 }
                 
-                try {
-                    $mitigation = Get-ProcessMitigation -Name $processName -ErrorAction SilentlyContinue
-                    if ($mitigation -and $mitigation.CFG -and $mitigation.CFG.Enable -eq "OFF") {
-                        $cfgDisabled += $processName
-                    }
-                }
-                catch {
-                    Write-Verbose "Could not check CFG status for $processName"
+                $priority = Get-ProcessPriorityRegistry -ProcessName $processName
+                if ($priority) {
+                    $prioritySettings += $priority
                 }
             }
         }
         
-        if ($cfgDisabled.Count -gt 0) {
-            $cfgDisabled | ForEach-Object {
-                Write-Host "  • $_" -ForegroundColor White
+        if ($prioritySettings.Count -gt 0) {
+            $cpuPriorityNames = @{ 1 = "Idle"; 2 = "Normal"; 3 = "High"; 4 = "Realtime" }
+            $ioPriorityNames = @{ 0 = "VeryLow"; 1 = "Low"; 2 = "Normal"; 3 = "High" }
+            
+            $prioritySettings | ForEach-Object {
+                $cpuName = $cpuPriorityNames[$_.CpuPriorityClass]
+                $ioName = $ioPriorityNames[$_.IoPriority]
+                Write-Host "  • $($_.ProcessName) - CPU: $cpuName, I/O: $ioName, Page: $($_.PagePriority)" -ForegroundColor White
             }
-            Write-Host "Total: $($cfgDisabled.Count)" -ForegroundColor Gray
+            Write-Host "Total: $($prioritySettings.Count)" -ForegroundColor Gray
         }
         else {
             if ($GameName) {
-                Write-Host "  No processes found with CFG disabled matching '$GameName'" -ForegroundColor Gray
+                Write-Host "  No process priority settings found matching '$GameName'" -ForegroundColor Gray
             }
             else {
-                Write-Host "  No processes have CFG explicitly disabled" -ForegroundColor Gray
+                Write-Host "  No process priority settings configured" -ForegroundColor Gray
             }
         }
     }
     catch {
-        Write-Warning "Failed to retrieve CFG information: $_"
+        Write-Warning "Failed to retrieve process priority information: $_"
     }
     
     Write-Host ""
@@ -1095,6 +1328,17 @@ function Add-BulkGameExclusions {
                     Write-Verbose "  CFG disable failed (may not be needed)"
                 }
                 
+                # Set process priority
+                try {
+                    $priorityResult = Set-ProcessPriorityRegistry -ProcessName $gameExe -CpuPriorityClass 3 -IoPriority 3 -PagePriority 5
+                    if ($priorityResult) {
+                        Write-Verbose "  Priority set: $gameExe"
+                    }
+                }
+                catch {
+                    Write-Verbose "  Priority set failed: $gameExe"
+                }
+                
                 Write-Host "  [✓] Exclusions added" -ForegroundColor Green
                 $successCount++
             }
@@ -1119,13 +1363,201 @@ function Add-BulkGameExclusions {
 
 #endregion
 
+function Set-GameProcessPriority {
+    <#
+    .SYNOPSIS
+        Sets process priority for a game via Image File Execution Options registry.
+    
+    .DESCRIPTION
+        This function configures Windows to automatically set CPU priority, I/O priority,
+        and memory page priority for a game process whenever it starts. This is done via
+        the Image File Execution Options\PerfOptions registry keys.
+    
+    .PARAMETER GameName
+        The name of the game executable (with or without .exe extension).
+    
+    .PARAMETER CpuPriority
+        CPU priority class. Valid values: Idle, BelowNormal, Normal, AboveNormal, High, Realtime.
+        Default: High
+    
+    .PARAMETER IoPriority
+        I/O priority. Valid values: VeryLow, Low, Normal, High.
+        Default: High
+    
+    .PARAMETER PagePriority
+        Memory page priority (1-5, higher is better).
+        Default: 5
+    
+    .PARAMETER WhatIf
+        Shows what would happen without actually making changes.
+    
+    .EXAMPLE
+        Set-GameProcessPriority -GameName "eldenring.exe"
+        
+        Sets high CPU and I/O priority for Elden Ring.
+    
+    .EXAMPLE
+        Set-GameProcessPriority -GameName "Cyberpunk2077" -CpuPriority AboveNormal -IoPriority Normal
+        
+        Sets above-normal CPU priority and normal I/O priority for Cyberpunk 2077.
+    
+    .NOTES
+        Requires: Administrator privileges
+        Platform: Windows 10/11
+        
+        CPU Priority Classes:
+        - Idle (1): Lowest priority, runs only when system is idle
+        - BelowNormal: Lower than normal
+        - Normal (2): Default Windows priority
+        - AboveNormal: Higher than normal
+        - High (3): High priority, recommended for games
+        - Realtime (4): Highest priority, use with caution
+        
+        I/O Priority:
+        - VeryLow (0): Background I/O
+        - Low (1): Low priority I/O
+        - Normal (2): Standard I/O priority
+        - High (3): High priority I/O, recommended for games
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$GameName,
+        
+        [Parameter()]
+        [ValidateSet('Idle', 'BelowNormal', 'Normal', 'AboveNormal', 'High', 'Realtime')]
+        [string]$CpuPriority = 'High',
+        
+        [Parameter()]
+        [ValidateSet('VeryLow', 'Low', 'Normal', 'High')]
+        [string]$IoPriority = 'High',
+        
+        [Parameter()]
+        [ValidateRange(1, 5)]
+        [int]$PagePriority = 5
+    )
+    
+    # Check administrator privileges
+    if (-not (Test-Administrator)) {
+        throw "This function requires administrator privileges. Please run PowerShell as Administrator."
+    }
+    
+    # Normalize game name
+    $gameExe = if ($GameName -notmatch '\.exe$') { "$GameName.exe" } else { $GameName }
+    $gameNameOnly = $GameName -replace '\.exe$', ''
+    
+    # Convert string priorities to numeric values
+    $cpuPriorityMap = @{
+        'Idle' = 1
+        'BelowNormal' = 1  # Windows maps this to Idle in IFEO
+        'Normal' = 2
+        'AboveNormal' = 2  # Windows maps this to Normal in IFEO, use High instead
+        'High' = 3
+        'Realtime' = 4
+    }
+    
+    $ioPriorityMap = @{
+        'VeryLow' = 0
+        'Low' = 1
+        'Normal' = 2
+        'High' = 3
+    }
+    
+    $cpuValue = $cpuPriorityMap[$CpuPriority]
+    $ioValue = $ioPriorityMap[$IoPriority]
+    
+    Write-Host "`n=== Setting Process Priority for $gameNameOnly ===" -ForegroundColor Cyan
+    Write-Host "  CPU Priority: $CpuPriority ($cpuValue)" -ForegroundColor White
+    Write-Host "  I/O Priority: $IoPriority ($ioValue)" -ForegroundColor White
+    Write-Host "  Page Priority: $PagePriority" -ForegroundColor White
+    
+    try {
+        if ($PSCmdlet.ShouldProcess($gameExe, "Set process priority via registry")) {
+            $result = Set-ProcessPriorityRegistry -ProcessName $gameExe -CpuPriorityClass $cpuValue -IoPriority $ioValue -PagePriority $PagePriority
+            
+            if ($result) {
+                Write-Host "`n[✓] Process priority configured successfully!" -ForegroundColor Green
+                Write-Host "Priority settings will be applied automatically when $gameExe starts." -ForegroundColor Yellow
+            }
+            else {
+                Write-Error "Failed to set process priority for $gameExe"
+            }
+        }
+    }
+    catch {
+        Write-Error "Failed to set process priority: $_"
+    }
+}
+
+function Remove-GameProcessPriority {
+    <#
+    .SYNOPSIS
+        Removes process priority settings for a game.
+    
+    .DESCRIPTION
+        This function removes the Image File Execution Options\PerfOptions registry keys
+        that were set for a game, returning it to default Windows priority handling.
+    
+    .PARAMETER GameName
+        The name of the game executable (with or without .exe extension).
+    
+    .PARAMETER WhatIf
+        Shows what would happen without actually making changes.
+    
+    .EXAMPLE
+        Remove-GameProcessPriority -GameName "eldenring.exe"
+        
+        Removes priority settings for Elden Ring.
+    
+    .NOTES
+        Requires: Administrator privileges
+        Platform: Windows 10/11
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$GameName
+    )
+    
+    # Check administrator privileges
+    if (-not (Test-Administrator)) {
+        throw "This function requires administrator privileges. Please run PowerShell as Administrator."
+    }
+    
+    # Normalize game name
+    $gameExe = if ($GameName -notmatch '\.exe$') { "$GameName.exe" } else { $GameName }
+    $gameNameOnly = $GameName -replace '\.exe$', ''
+    
+    Write-Host "`n=== Removing Process Priority for $gameNameOnly ===" -ForegroundColor Cyan
+    
+    try {
+        if ($PSCmdlet.ShouldProcess($gameExe, "Remove process priority registry settings")) {
+            $result = Remove-ProcessPriorityRegistry -ProcessName $gameExe
+            
+            if ($result) {
+                Write-Host "[✓] Process priority settings removed for $gameExe" -ForegroundColor Green
+            }
+            else {
+                Write-Host "[✓] No process priority settings found for $gameExe" -ForegroundColor Gray
+            }
+        }
+    }
+    catch {
+        Write-Error "Failed to remove process priority: $_"
+    }
+}
+
+#endregion
+
 # Export module members
 Export-ModuleMember -Function @(
     'Add-GameSecurityExclusion',
     'Remove-GameSecurityExclusion',
     'Get-GameSecurityExclusion',
     'Add-ShaderCacheExclusion',
-    'Add-BulkGameExclusions'
+    'Add-BulkGameExclusions',
+    'Set-GameProcessPriority',
+    'Remove-GameProcessPriority'
 )
 
 # vim: ts=2 sts=2 sw=2 et
