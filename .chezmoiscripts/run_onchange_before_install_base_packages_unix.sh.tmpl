@@ -115,8 +115,14 @@ set_zsh_as_default_shell() {
             log_success "Default shell changed to zsh for user $SUDO_USER"
             return 0
         fi
+    elif command_exists sudo; then
+        # Try with sudo (for WSL and other environments where chsh needs root)
+        if sudo chsh -s "$zsh_path" "$USER" 2>/dev/null; then
+            log_success "Default shell changed to zsh"
+            return 0
+        fi
     else
-        # Running as normal user
+        # Running as normal user without sudo
         if chsh -s "$zsh_path" 2>/dev/null; then
             log_success "Default shell changed to zsh"
             return 0
@@ -160,7 +166,8 @@ if [ "$needs_install" = false ]; then
     log_success "Base packages already installed"
     # Still check and set zsh as default shell if needed
     if command_exists zsh && ! is_zsh_default_shell; then
-        set_zsh_as_default_shell
+        # Don't fail script if shell change fails - it's not critical
+        set_zsh_as_default_shell || true
         log_info "Note: You may need to log out and back in for the shell change to take effect"
     fi
     exit 0
