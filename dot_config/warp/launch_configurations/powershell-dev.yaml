@@ -70,6 +70,9 @@ windows:
                     - exec: fastfetch
                 - cwd: C:\Users\Randall
                   commands:
+                    - exec: Invoke-RestMethod https://wttr.in?format=v2
+                - cwd: C:\Users\Randall
+                  commands:
                     - exec: Invoke-RestMethod https://wttr.in
             - cwd: C:\Users\Randall
               commands:

@@ -69,7 +69,7 @@ windows:
                 - exec: btop
             - cwd: ~
               commands:
-                - exec: curl -s https://wttr.in
+                - exec: curl -s https://wttr.in?format=v2
         color: magenta
 
 # vim: ts=2 sts=2 sw=2 et
