@@ -6,7 +6,12 @@
 
 echo "Checking package installation..."
 
-# Detect system package manager (Linux only, for bootstrap packages)
+# Ensure Arch perl scripts are in PATH (for pod2man used by Homebrew builds)
+if [ -d /usr/bin/core_perl ]; then
+    export PATH="/usr/bin/core_perl:/usr/bin/vendor_perl:/usr/bin/site_perl:$PATH"
+fi
+
+# Detect system package manager
 detect_pkg_manager() {
     if command -v apt-get >/dev/null 2>&1; then
         echo "apt"

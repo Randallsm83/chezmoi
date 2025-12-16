@@ -7,6 +7,12 @@
 
 set -eo pipefail
 
+# Ensure Arch perl scripts are in PATH (for pod2man used by Homebrew)
+# This is normally set by /etc/profile.d/perlbin.sh but we may not be in a login shell
+if [ -d /usr/bin/core_perl ]; then
+    export PATH="/usr/bin/core_perl:/usr/bin/vendor_perl:/usr/bin/site_perl:$PATH"
+fi
+
 # Colors
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
@@ -178,7 +184,7 @@ log_info "Installing base system packages..."
 # Detect package manager and install
 if command_exists pacman; then
     log_info "Using pacman (Arch Linux)"
-    packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi zsh perl-doc"
+    packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi zsh"
     if [ "$EUID" -eq 0 ]; then
         pacman -Syu --noconfirm $packages
     elif command_exists sudo; then
