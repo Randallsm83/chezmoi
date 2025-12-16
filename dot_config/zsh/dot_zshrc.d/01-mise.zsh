@@ -10,6 +10,11 @@
 #!/usr/bin/env zsh
 
 # Initialize mise (formerly rtx)
+# Set mise directories to prevent reading Windows config via WSL interop
+export MISE_DATA_DIR="$HOME/.local/share/mise"
+export MISE_CACHE_DIR="$HOME/.cache/mise"
+export MISE_CONFIG_DIR="$HOME/.config/mise"
+
 # Check direct path first since PATH may not include ~/.local/bin yet
 if [[ -x "$HOME/.local/bin/mise" ]]; then
   eval "$("$HOME/.local/bin/mise" activate zsh)"
