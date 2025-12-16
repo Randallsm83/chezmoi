@@ -75,10 +75,6 @@ packages/
 .gitignore
 .gitattributes
 
-# Chezmoi scripts directory (scripts are executed, not deployed)
-.chezmoiscripts
-.chezmoiscripts/**
-
 # Editor artifacts
 .vscode/
 .idea/
@@ -102,10 +98,8 @@ packages/
 .profile
 .p10k.zsh
 
-# Unix-specific scripts
+# Unix-specific scripts (standalone .sh files in home, not chezmoi scripts)
 *.sh
-.chezmoiscripts/**/run_*.sh.tmpl
-.chezmoiscripts/**/run_*.sh
 
 # Unix config directories
 .config/systemd/
