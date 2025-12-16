@@ -158,16 +158,21 @@ if [ -n "$mise_packages" ]; then
     export PATH="$HOME/.local/share/mise/shims:$PATH"
 fi
 
+# Helper to check if a command exists AND works (not a broken Windows interop path)
+command_works() {
+    command -v "$1" >/dev/null 2>&1 && "$1" --version >/dev/null 2>&1
+}
+
 {{- if and .package_features.nvim .package_features.python }}
 # pip pynvim package (for Python provider)
 echo ""
 echo "Installing Neovim Python provider..."
-if command -v pip >/dev/null 2>&1 || command -v pip3 >/dev/null 2>&1; then
+if command_works pip || command_works pip3; then
     pip_cmd="pip"
-    command -v pip >/dev/null 2>&1 || pip_cmd="pip3"
+    command_works pip || pip_cmd="pip3"
     if ! $pip_cmd show pynvim >/dev/null 2>&1; then
         echo "  Installing: pynvim (Python provider)"
-        $pip_cmd install --user pynvim
+        $pip_cmd install --user pynvim || echo "  Warning: Failed to install pynvim"
     else
         echo "  Already installed: pynvim"
     fi
@@ -180,10 +185,10 @@ fi
 # npm neovim package (for Node.js provider)
 echo ""
 echo "Installing Neovim Node.js provider..."
-if command -v npm >/dev/null 2>&1; then
+if command_works npm; then
     if ! npm list -g neovim >/dev/null 2>&1; then
         echo "  Installing: npm neovim (Node.js provider)"
-        npm install -g neovim
+        npm install -g neovim || echo "  Warning: Failed to install neovim npm package"
     else
         echo "  Already installed: npm neovim"
     fi
@@ -196,15 +201,15 @@ fi
 # gem neovim package (for Ruby provider)
 echo ""
 echo "Installing Neovim Ruby provider..."
-if command -v gem >/dev/null 2>&1; then
-    if ! gem list neovim | grep -q "^neovim "; then
+if command_works ruby && command_works gem; then
+    if ! gem list neovim 2>/dev/null | grep -q "^neovim "; then
         echo "  Installing: neovim gem (Ruby provider)"
-        gem install neovim
+        gem install neovim || echo "  Warning: Failed to install neovim gem"
     else
         echo "  Already installed: neovim gem"
     fi
 else
-    echo "  gem not available, skipping Ruby provider"
+    echo "  ruby/gem not available, skipping Ruby provider"
 fi
 {{- end }}
 
@@ -212,13 +217,14 @@ fi
 # cpan Neovim::Ext module (for Perl provider)
 echo ""
 echo "Installing Neovim Perl provider..."
-if command -v perl >/dev/null 2>&1; then
+# Only use Linux perl, not Windows Strawberry Perl via WSL interop
+if [ -x /usr/bin/perl ] || command_works perl; then
     if ! perl -MNeovim::Ext -e 1 >/dev/null 2>&1; then
         echo "  Installing: Neovim::Ext (Perl provider)"
-        if command -v cpanm >/dev/null 2>&1; then
-            cpanm -n Neovim::Ext
+        if command_works cpanm; then
+            cpanm -n Neovim::Ext || echo "  Warning: Failed to install Neovim::Ext"
         elif command -v cpan >/dev/null 2>&1; then
-            cpan -T Neovim::Ext
+            cpan -T Neovim::Ext || echo "  Warning: Failed to install Neovim::Ext"
         else
             echo "  Neither cpanm nor cpan available, skipping Perl provider"
         fi
