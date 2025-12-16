@@ -241,10 +241,20 @@ mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$HOME/.local/bin"
 log_success "XDG directories created"
 
-# Symlink Arch perl scripts to ~/.local/bin (needed for Homebrew builds)
-# Homebrew spawns child processes that don't inherit our PATH, so symlinks are more reliable
+# Symlink Arch perl scripts to /usr/local/bin (needed for Homebrew builds)
+# Homebrew spawns child processes in sanitized environment, so symlinks must be in standard PATH
 if [ -d /usr/bin/core_perl ] && [ -x /usr/bin/core_perl/pod2man ]; then
     log_info "Creating perl script symlinks for Homebrew compatibility..."
+    # Try /usr/local/bin first (always in PATH), fall back to ~/.local/bin
+    target_dir="/usr/local/bin"
+    if [ ! -w "$target_dir" ] && command_exists sudo; then
+        for script in pod2man pod2html pod2text podchecker; do
+            if [ -x "/usr/bin/core_perl/$script" ] && [ ! -e "$target_dir/$script" ]; then
+                sudo ln -s "/usr/bin/core_perl/$script" "$target_dir/$script" 2>/dev/null || true
+            fi
+        done
+    fi
+    # Also create in ~/.local/bin as backup
     for script in pod2man pod2html pod2text podchecker; do
         if [ -x "/usr/bin/core_perl/$script" ] && [ ! -e "$HOME/.local/bin/$script" ]; then
             ln -s "/usr/bin/core_perl/$script" "$HOME/.local/bin/$script"

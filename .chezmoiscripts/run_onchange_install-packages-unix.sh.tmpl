@@ -114,6 +114,8 @@ if [ -n "$brew_packages" ]; then
     if command -v brew >/dev/null 2>&1; then
         echo ""
         echo "Installing brew packages (tools not available via mise)..."
+        # Ensure ~/.local/bin is in PATH for brew builds (pod2man symlinks, etc.)
+        export PATH="$HOME/.local/bin:$PATH"
         for pkg in $brew_packages; do
             if ! brew list "$pkg" >/dev/null 2>&1; then
                 echo "  Installing: $pkg"
