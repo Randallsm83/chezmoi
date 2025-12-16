@@ -236,7 +236,7 @@ mkdir -p "$HOME/.local/bin"
 log_success "XDG directories created"
 
 # Install Homebrew (Linux/WSL - user install to ~/.local/share/homebrew)
-{{- if and (ne .chezmoi.os "darwin") (index . "package_features" | default dict | index "homebrew" | default true) }}
+{{- if and (ne .chezmoi.os "darwin") (not .is_remote) }}
 install_homebrew() {
     if command_exists brew; then
         log_success "Homebrew already installed"
