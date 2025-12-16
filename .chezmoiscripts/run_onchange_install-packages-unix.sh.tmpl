@@ -61,77 +61,14 @@ pacman_packages="$pacman_packages {{ . }}"
 {{- end }}
 {{- end }}
 
-# Install bootstrap packages via system package manager (Linux only)
-{{- if eq .chezmoi.os "linux" }}
-pkg_manager=$(detect_pkg_manager)
-if [ -n "$pkg_manager" ]; then
-    case "$pkg_manager" in
-        apt)
-            if [ -n "$apt_packages" ]; then
-                echo ""
-                echo "Installing bootstrap packages via apt..."
-                sudo apt-get update -qq
-                for pkg in $apt_packages; do
-                    if ! dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
-                        echo "  Installing: $pkg"
-                        sudo apt-get install -y -qq "$pkg"
-                    else
-                        echo "  Already installed: $pkg"
-                    fi
-                done
-            fi
-            ;;
-        dnf)
-            if [ -n "$dnf_packages" ]; then
-                echo ""
-                echo "Installing bootstrap packages via dnf..."
-                for pkg in $dnf_packages; do
-                    if ! rpm -q "$pkg" >/dev/null 2>&1; then
-                        echo "  Installing: $pkg"
-                        sudo dnf install -y -q "$pkg"
-                    else
-                        echo "  Already installed: $pkg"
-                    fi
-                done
-            fi
-            ;;
-        pacman)
-            if [ -n "$pacman_packages" ]; then
-                echo ""
-                echo "Installing bootstrap packages via pacman..."
-                for pkg in $pacman_packages; do
-                    if ! pacman -Q "$pkg" >/dev/null 2>&1; then
-                        echo "  Installing: $pkg"
-                        sudo pacman -S --noconfirm "$pkg"
-                    else
-                        echo "  Already installed: $pkg"
-                    fi
-                done
-            fi
-            ;;
-    esac
-fi
-{{- end }}
+# ============================================================================
+# Package Installation Order (per user rules):
+#   1. mise - primary package manager for CLI tools and runtimes
+#   2. brew - fallback for tools not available in mise
+#   3. system pkg manager - ONLY for bootstrap/build dependencies
+# ============================================================================
 
-# Install brew packages
-if [ -n "$brew_packages" ]; then
-    if command -v brew >/dev/null 2>&1; then
-        echo ""
-        echo "Installing brew packages..."
-        for pkg in $brew_packages; do
-            if ! brew list "$pkg" >/dev/null 2>&1; then
-                echo "  Installing: $pkg"
-                brew install "$pkg"
-            else
-                echo "  Already installed: $pkg"
-            fi
-        done
-    else
-        echo "brew not found, skipping brew packages"
-    fi
-fi
-
-# Install mise packages globally
+# 1. Install mise packages globally (PRIMARY)
 if [ -n "$mise_packages" ]; then
     echo ""
     echo "Installing mise tools/runtimes globally..."
@@ -157,6 +94,78 @@ if [ -n "$mise_packages" ]; then
     # Ensure shims are in PATH for subsequent operations
     export PATH="$HOME/.local/share/mise/shims:$PATH"
 fi
+
+# 2. Install brew packages (FALLBACK for tools not in mise)
+if [ -n "$brew_packages" ]; then
+    if command -v brew >/dev/null 2>&1; then
+        echo ""
+        echo "Installing brew packages (tools not available via mise)..."
+        for pkg in $brew_packages; do
+            if ! brew list "$pkg" >/dev/null 2>&1; then
+                echo "  Installing: $pkg"
+                brew install "$pkg"
+            else
+                echo "  Already installed: $pkg"
+            fi
+        done
+    else
+        echo ""
+        echo "Note: brew not found, skipping brew-only packages"
+        echo "      (These are optional tools not available via mise)"
+    fi
+fi
+
+# 3. Install system packages (ONLY for bootstrap/build dependencies)
+{{- if eq .chezmoi.os "linux" }}
+pkg_manager=$(detect_pkg_manager)
+if [ -n "$pkg_manager" ]; then
+    case "$pkg_manager" in
+        apt)
+            if [ -n "$apt_packages" ]; then
+                echo ""
+                echo "Installing build dependencies via apt..."
+                sudo apt-get update -qq
+                for pkg in $apt_packages; do
+                    if ! dpkg -l "$pkg" 2>/dev/null | grep -q "^ii"; then
+                        echo "  Installing: $pkg"
+                        sudo apt-get install -y -qq "$pkg"
+                    else
+                        echo "  Already installed: $pkg"
+                    fi
+                done
+            fi
+            ;;
+        dnf)
+            if [ -n "$dnf_packages" ]; then
+                echo ""
+                echo "Installing build dependencies via dnf..."
+                for pkg in $dnf_packages; do
+                    if ! rpm -q "$pkg" >/dev/null 2>&1; then
+                        echo "  Installing: $pkg"
+                        sudo dnf install -y -q "$pkg"
+                    else
+                        echo "  Already installed: $pkg"
+                    fi
+                done
+            fi
+            ;;
+        pacman)
+            if [ -n "$pacman_packages" ]; then
+                echo ""
+                echo "Installing build dependencies via pacman..."
+                for pkg in $pacman_packages; do
+                    if ! pacman -Q "$pkg" >/dev/null 2>&1; then
+                        echo "  Installing: $pkg"
+                        sudo pacman -S --noconfirm "$pkg"
+                    else
+                        echo "  Already installed: $pkg"
+                    fi
+                done
+            fi
+            ;;
+    esac
+fi
+{{- end }}
 
 # Helper to check if a command exists AND works (not a broken Windows interop path)
 command_works() {

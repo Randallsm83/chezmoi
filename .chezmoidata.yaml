@@ -697,11 +697,11 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: []
-      mise: [cargo:git-delta]
+      brew: [git-delta]  # Use brew instead of cargo - onig_sys compile issues
+      mise: []
     darwin:
-      brew: []
-      mise: [cargo:git-delta]
+      brew: [git-delta]
+      mise: []
   
   vivid:
     windows:
