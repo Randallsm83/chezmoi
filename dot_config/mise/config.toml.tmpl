@@ -144,8 +144,11 @@ status = { missing_tools = "if_other_versions_installed", show_env = false, show
 {{- if eq .chezmoi.os "windows" }}
 # Disable tools that don't work well via mise on Windows
 disable_tools = ["lua", "luajit"]
+ignored_config_paths = []
 {{- else }}
 disable_tools = []
+# Ignore Windows config path mounted via WSL interop
+ignored_config_paths = ["/mnt/c", "/mnt/d"]
 {{- end }}
 
 # cargo
