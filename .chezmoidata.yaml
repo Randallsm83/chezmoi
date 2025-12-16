@@ -416,7 +416,7 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [1password-cli, 1password]
+      brew: [1password-cli]  # 1password GUI is cask (macOS only) - handled by install script on Linux
       mise: []
     darwin:
       brew: [1password-cli, 1password]
@@ -432,7 +432,7 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [mise]
+      brew: []  # mise installed via curl in bootstrap, not brew
       mise: []
     darwin:
       brew: [mise]
@@ -468,7 +468,7 @@ package_mapping:
       brew: []
       mise: []
   
-  # Terminal Emulators
+  # Terminal Emulators (GUI apps - casks are macOS only)
   wezterm:
     windows:
       scoop: []
@@ -478,7 +478,7 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [wezterm]
+      brew: []  # wezterm is a cask (macOS only)
       mise: []
     darwin:
       brew: [wezterm]
@@ -493,7 +493,7 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [warp]
+      brew: []  # warp is a cask (macOS only)
       mise: []
     darwin:
       brew: [warp]
@@ -545,7 +545,7 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [visual-studio-code]
+      brew: []  # visual-studio-code is a cask (macOS only)
       mise: []
     darwin:
       brew: [visual-studio-code]
@@ -879,10 +879,10 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [lua@5.1, luarocks, luajit]
+      brew: [lua, luarocks, luajit]  # lua@5.1 doesn't exist on Linux homebrew
       mise: []
     darwin:
-      brew: [lua@5.1, luarocks, luajit]
+      brew: [lua, luarocks, luajit]
       mise: []
   
   node:
