@@ -9,6 +9,10 @@
 
 #!/usr/bin/env zsh
 
+# Prevent glob pattern errors from Windows paths in WSL (e.g. "Program Files (x86)")
+# This must be set early before any PATH manipulation
+setopt NO_NOMATCH
+
 if [[ -n "$ZSH_DEBUG" ]]; then
   zmodload zsh/zprof
 fi
