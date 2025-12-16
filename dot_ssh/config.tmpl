@@ -22,11 +22,11 @@ Host *
   HashKnownHosts yes
   PreferredAuthentications publickey
   GSSAPIAuthentication no
-  
+
   # Connection reliability
   ServerAliveInterval 60
   ServerAliveCountMax 3
-  
+
   # Note: IdentityFile is NOT set here
   # 1Password agent automatically selects the correct key based on "Allowed hosts"
   # configured in each SSH Key item in 1Password
@@ -45,7 +45,6 @@ Host git.dreamhost.com
   PubkeyAuthentication yes
 
 # DreamHost yakko shell server
-# Agent forwarding enabled ONLY for this host
 Host yakko
   HostName ***REMOVED***
   User rmiller
@@ -54,10 +53,17 @@ Host yakko
   IdentitiesOnly no
 
 # DreamHost porky shell server
-# Agent forwarding enabled ONLY for this host
 Host porky
   HostName ***REMOVED***
   User rmiller
   ForwardAgent yes
   PubkeyAuthentication yes
+
+# DreamHost ***REMOVED*** shell server
+Host ***REMOVED***
+  HostName ***REMOVED***
+  User ***REMOVED***
+  ForwardAgent yes
+  PubkeyAuthentication yes
+  IdentitiesOnly no
 
