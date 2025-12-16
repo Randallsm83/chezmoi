@@ -30,7 +30,16 @@ command_exists() {
 }
 
 # Setup locale (required for many tools to work correctly)
+# This MUST run first, before any package installations to avoid UTF-8 warnings
 setup_locale() {
+    log_info "Checking locale configuration..."
+    
+    # Set locale environment variables for current session immediately
+    # This prevents warnings even if locale isn't fully generated yet
+    export LANG="en_US.UTF-8"
+    export LC_ALL="en_US.UTF-8"
+    export LANGUAGE="en_US.UTF-8"
+    
     # Check if en_US.UTF-8 locale is available
     if locale -a 2>/dev/null | grep -qi "en_US.utf8\|en_US.UTF-8"; then
         log_success "en_US.UTF-8 locale already available"
@@ -39,41 +48,36 @@ setup_locale() {
     
     log_info "Generating en_US.UTF-8 locale..."
     
-    if command_exists pacman; then
-        # Arch Linux - uncomment locale in locale.gen and generate
-        if [ -f /etc/locale.gen ]; then
-            if [ "$EUID" -eq 0 ]; then
-                sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
-                locale-gen
-            elif command_exists sudo; then
-                sudo sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
-                sudo locale-gen
-            else
-                log_warning "Cannot generate locale without root/sudo"
-                return 1
-            fi
+    # Detect package manager by checking for locale.gen or distro-specific files
+    if [ -f /etc/locale.gen ]; then
+        # Arch Linux / Gentoo / etc - uncomment locale in locale.gen and generate
+        if [ "$EUID" -eq 0 ]; then
+            sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+            locale-gen 2>/dev/null || true
+        elif command_exists sudo; then
+            sudo sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+            sudo locale-gen 2>/dev/null || true
+        else
+            log_warning "Cannot generate locale without root/sudo"
+            return 1
         fi
-    elif command_exists apt-get; then
+    elif [ -f /etc/debian_version ]; then
         # Debian/Ubuntu
         if command_exists locale-gen; then
             if [ "$EUID" -eq 0 ]; then
-                locale-gen en_US.UTF-8
+                locale-gen en_US.UTF-8 2>/dev/null || true
             elif command_exists sudo; then
-                sudo locale-gen en_US.UTF-8
+                sudo locale-gen en_US.UTF-8 2>/dev/null || true
             fi
         fi
-    elif command_exists dnf; then
+    elif [ -f /etc/fedora-release ] || [ -f /etc/redhat-release ]; then
         # Fedora/RHEL - install glibc-langpack
         if [ "$EUID" -eq 0 ]; then
-            dnf install -y glibc-langpack-en
+            dnf install -y glibc-langpack-en 2>/dev/null || true
         elif command_exists sudo; then
-            sudo dnf install -y glibc-langpack-en
+            sudo dnf install -y glibc-langpack-en 2>/dev/null || true
         fi
     fi
-    
-    # Set locale environment variables for current session
-    export LANG="en_US.UTF-8"
-    export LC_ALL="en_US.UTF-8"
     
     log_success "Locale configured"
 }

@@ -1,25 +1,19 @@
 ---
 name: "Reset Arch Linux WSL"
 command: |-
-  # Prevent script from exiting on errors
+  # Minimal WSL bootstrap - chezmoi handles everything else
   $ErrorActionPreference = 'Continue'
-  
-  # Enable verbose logging
-  $VerbosePreference = 'Continue'
   $logFile = Join-Path $env:TEMP "wsl-reset-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+  
   function Write-Log {
       param($Message, $Color = 'White')
       $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-      $logMessage = "[$timestamp] $Message"
-      Add-Content -Path $logFile -Value $logMessage
+      Add-Content -Path $logFile -Value "[$timestamp] $Message"
       Write-Host $Message -ForegroundColor $Color
   }
   
   Write-Log "Log file: $logFile" 'Gray'
-  Write-Log "PowerShell version: $($PSVersionTable.PSVersion)" 'Gray'
-  Write-Log "Working directory: $PWD" 'Gray'
   
-  # Terminate existing Arch Linux WSL instance
   Write-Log "`n╔═══════════════════════════════════════════╗" 'Cyan'
   Write-Log "║  Resetting Arch Linux WSL Instance       ║" 'Cyan'
   Write-Log "╚═══════════════════════════════════════════╝`n" 'Cyan'
@@ -31,108 +25,91 @@ command: |-
       Write-Log "`n✗ Operation cancelled" 'Red'
       return
   }
-  Write-Log "User confirmed operation" 'Gray'
   
-  Write-Log "`n▶ Step 1/6: Unregistering existing archlinux WSL..." 'Cyan'
-  Write-Log "Running: wsl --unregister archlinux" 'Gray'
-  $unregOutput = wsl --unregister archlinux 2>&1 | Out-String
-  Write-Log "Exit code: $LASTEXITCODE" 'Gray'
-  Write-Log "Output: $unregOutput" 'Gray'
-  if ($LASTEXITCODE -ne 0) {
-      Write-Log "  (No existing instance found, continuing...)" 'Gray'
-  } else {
+  # Step 1: Unregister existing instance
+  Write-Log "`n▶ Step 1/5: Unregistering existing archlinux WSL..." 'Cyan'
+  wsl --unregister archlinux 2>&1 | Out-Null
+  if ($LASTEXITCODE -eq 0) {
       Write-Log "✓ WSL instance unregistered" 'Green'
+  } else {
+      Write-Log "  (No existing instance found)" 'Gray'
   }
   
-  Write-Log "`n▶ Step 2/6: Installing fresh Arch Linux..." 'Cyan'
-  Write-Log "  (This may take a few minutes)" 'Gray'
-  Write-Log "Running: wsl --install archlinux --no-launch" 'Gray'
-  $installOutput = wsl --install archlinux --no-launch 2>&1 | Out-String
-  Write-Log "Exit code: $LASTEXITCODE" 'Gray'
-  Write-Log "Output: $installOutput" 'Gray'
-  if ($LASTEXITCODE -ne 0) {
-      Write-Log "⚠ Warning: Install command returned non-zero exit code" 'Yellow'
-  }
+  # Step 2: Install fresh Arch Linux
+  Write-Log "`n▶ Step 2/5: Installing fresh Arch Linux..." 'Cyan'
+  wsl --install archlinux --no-launch 2>&1 | Out-String | Write-Log -Color 'Gray'
   Write-Log "✓ Arch Linux installed" 'Green'
   
-  Write-Log "`n▶ Step 3/6: Waiting for WSL to be ready..." 'Cyan'
-  Write-Log "Initial 5 second wait..." 'Gray'
+  # Step 3: Wait for WSL to be ready
+  Write-Log "`n▶ Step 3/5: Waiting for WSL to be ready..." 'Cyan'
   Start-Sleep -Seconds 5
-  
-  # Test if WSL is ready
-  Write-Log "Testing WSL readiness (up to 10 attempts)..." 'Gray'
   $ready = $false
-  $attempts = 0
-  while (-not $ready -and $attempts -lt 10) {
-      $attempts++
-      Write-Log "  Attempt $attempts/10: Testing WSL connection..." 'Gray'
-      try {
-          $result = wsl -d archlinux echo "ready" 2>&1 | Out-String
-          Write-Log "  Result: $result" 'Gray'
-          if ($result -match "ready") {
-              $ready = $true
-              Write-Log "  WSL responded successfully!" 'Gray'
-          } else {
-              Write-Log "  WSL not ready yet, waiting 2 seconds..." 'Gray'
-              Start-Sleep -Seconds 2
-          }
-      } catch {
-          Write-Log "  Exception: $($_.Exception.Message)" 'Yellow'
-          Start-Sleep -Seconds 2
+  for ($i = 1; $i -le 10; $i++) {
+      $result = wsl -d archlinux echo "ready" 2>&1 | Out-String
+      if ($result -match "ready") {
+          $ready = $true
+          break
       }
+      Start-Sleep -Seconds 2
   }
-  if ($ready) {
-      Write-Log "✓ WSL instance ready" 'Green'
-  } else {
-      Write-Log "✗ WSL instance did not become ready after 10 attempts" 'Red'
-      Write-Log "Check log file for details: $logFile" 'Yellow'
+  if (-not $ready) {
+      Write-Log "✗ WSL instance did not become ready" 'Red'
       return
   }
+  Write-Log "✓ WSL instance ready" 'Green'
   
-  Write-Log "`n▶ Step 4/6: Creating user account..." 'Cyan'
+  # Step 4: Create user with sudo (minimal - no packages)
+  Write-Log "`n▶ Step 4/5: Creating user account..." 'Cyan'
   $username = $env:USERNAME.ToLower()
-  Write-Log "  Using Windows username: $username" 'Gray'
-$userScript = "set -e; useradd -m -G wheel -s /bin/zsh $username; passwd -d $username; mkdir -p /etc/sudoers.d; echo '$username ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$username; chmod 440 /etc/sudoers.d/$username"
-  $createUserOutput = wsl -d archlinux -u root bash -c $userScript 2>&1 | Out-String
-  Write-Log "User output: $createUserOutput" 'Gray'
+  
+  # Install only sudo (required for chezmoi scripts) and curl (required to fetch chezmoi)
+  $bootstrapScript = @"
+  set -e
+  # Install minimal bootstrap packages
+  pacman -Sy --noconfirm sudo curl git
+  # Create user with sudo access
+  useradd -m -G wheel -s /bin/bash $username
+  passwd -d $username
+  mkdir -p /etc/sudoers.d
+  echo '$username ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/$username
+  chmod 440 /etc/sudoers.d/$username
+  # Set default user in wsl.conf
+  echo -e '[user]\ndefault=$username' > /etc/wsl.conf
+  "@
+  
+  wsl -d archlinux -u root bash -c $bootstrapScript 2>&1 | Out-String | ForEach-Object { Write-Log $_ 'Gray' }
   if ($LASTEXITCODE -ne 0) {
       Write-Log "✗ Failed to create user" 'Red'
-      Write-Log "Full output logged to: $logFile" 'Yellow'
       return
   }
-  Write-Log "✓ User '$username' created" 'Green'
+  Write-Log "✓ User '$username' created with sudo access" 'Green'
   
-  Write-Log "`n▶ Step 5/6: Setting default user..." 'Cyan'
-  $configUserOutput = wsl -d archlinux -u root bash -c "echo -e '[user]\ndefault=$username' > /etc/wsl.conf" 2>&1 | Out-String
-  Write-Log "Config output: $configUserOutput" 'Gray'
-  if ($LASTEXITCODE -ne 0) {
-      Write-Log "✗ Failed to set default user" 'Red'
-      return
-  }
-  Write-Log "✓ Default user set to '$username'" 'Green'
-  
+  # Restart WSL to apply user settings
   Write-Log "`n  Restarting WSL to apply user settings..." 'Gray'
   wsl --terminate archlinux
   Start-Sleep -Seconds 3
-  Write-Log "✓ WSL restarted" 'Green'
   
-  Write-Log "`n▶ Step 6/6: Bootstrapping with chezmoi dotfiles..." 'Cyan'
+  # Step 5: Bootstrap with chezmoi (chezmoi handles EVERYTHING else)
+  Write-Log "`n▶ Step 5/5: Bootstrapping with chezmoi..." 'Cyan'
   Write-Log "  Repository: Randallsm83/dotfiles" 'Gray'
-  Write-Log "  Duration: ~10-15 minutes (installing packages and runtimes)" 'Gray'
-  Write-Log "  You can monitor progress below`n" 'Gray'
+  Write-Log "  Chezmoi will install: base packages, locale, zsh, mise, tools, runtimes" 'Gray'
+  Write-Log "  Duration: ~10-15 minutes`n" 'Gray'
   
-  # Use official chezmoi one-line installer as the newly created user
-  Write-Log "Running official chezmoi installer as user '$username'..." 'Gray'
-  $bootstrapOutput = wsl -d archlinux bash -c "curl -fsSL https://get.chezmoi.io | sh -s -- init --apply Randallsm83/dotfiles" 2>&1 | Out-String
-  Write-Log "Exit code: $LASTEXITCODE" 'Gray'
-  Write-Log "Bootstrap output:`n$bootstrapOutput" 'Gray'
+  # Install chezmoi to ~/.local/bin (in user's PATH) and run init --apply
+  $chezmoiScript = @"
+  set -e
+  export PATH="\$HOME/.local/bin:\$PATH"
+  mkdir -p "\$HOME/.local/bin"
+  curl -fsSL https://get.chezmoi.io | sh -s -- -b "\$HOME/.local/bin"
+  "\$HOME/.local/bin/chezmoi" init --apply Randallsm83/dotfiles
+  "@
+  
+  wsl -d archlinux bash -c $chezmoiScript
   
   if ($LASTEXITCODE -ne 0) {
-      Write-Log "`n⚠ Bootstrap encountered issues (exit code: $LASTEXITCODE)" 'Yellow'
-      Write-Log "Full output logged to: $logFile" 'Yellow'
-      Write-Log "You can retry manually from within WSL:" 'Yellow'
-      Write-Log "  wsl -d archlinux" 'White'
-      Write-Log "  sh -c '$$(curl -fsLS get.chezmoi.io)' -- init --apply Randallsm83/dotfiles`n" 'White'
+      Write-Log "`n⚠ Bootstrap encountered issues" 'Yellow'
+      Write-Log "Retry manually: wsl -d archlinux" 'White'
+      Write-Log "  chezmoi init --apply Randallsm83/dotfiles" 'White'
       return
   }
   
@@ -140,11 +117,10 @@ $userScript = "set -e; useradd -m -G wheel -s /bin/zsh $username; passwd -d $use
   Write-Log "║          Setup Complete! 🎉              ║" 'Green'
   Write-Log "╚═══════════════════════════════════════════╝`n" 'Green'
   
-  Write-Log "Log file saved to: $logFile" 'Gray'
   Write-Log "Next steps:" 'White'
-  Write-Log "  1. Launch WSL:     wsl -d archlinux" 'White'
-  Write-Log "  2. Restart shell:  exec zsh" 'White'
-  Write-Log "  3. Verify setup:   starship --version && mise --version`n" 'White'
+  Write-Log "  1. Launch: wsl -d archlinux" 'White'
+  Write-Log "  2. Shell should auto-switch to zsh with starship prompt" 'White'
+  Write-Log "  3. Verify: mise --version && chezmoi --version`n" 'White'
 tags:
   - wsl
   - arch
@@ -152,27 +128,25 @@ tags:
   - chezmoi
   - setup
 description: |-
-  Complete reset and bootstrap of Arch Linux WSL instance with chezmoi dotfiles.
+  Minimal reset and bootstrap of Arch Linux WSL instance.
   
-  This workflow will:
-  1. Unregister (delete) the existing 'archlinux' WSL distribution
-  2. Install a fresh Arch Linux instance from WSL repository
-  3. Bootstrap with chezmoi dotfiles from GitHub
-  4. Install all tools, runtimes, and configurations automatically
+  This workflow does the MINIMUM required to bootstrap:
+  1. Unregister existing 'archlinux' WSL distribution
+  2. Install fresh Arch Linux from WSL repository  
+  3. Create user with sudo access
+  4. Install chezmoi to ~/.local/bin and run init --apply
   
-  What gets installed:
-  - mise (package & runtime manager)
-  - CLI tools: ripgrep, fd, bat, eza, delta, starship, zoxide, fzf
-  - Language runtimes: Node.js, Python, Ruby, Go, Rust, Lua, Bun, Deno
-  - Neovim with LazyVim config
-  - Zsh with starship prompt (onedark theme)
-  - 1Password SSH agent integration
-  - All dotfiles and configurations
+  Chezmoi handles EVERYTHING else:
+  - Base packages (build tools, zsh, etc.)
+  - Locale generation (en_US.UTF-8)
+  - mise and all CLI tools
+  - Language runtimes
+  - Shell configuration
+  - 1Password integration
   
-  Duration: 10-15 minutes total
+  Duration: 10-15 minutes
   Prerequisites: WSL2 enabled, internet connection
   
-  ⚠️ WARNING: This is a DESTRUCTIVE operation. All data in the current
-  archlinux WSL instance will be deleted. You will be prompted to confirm.
+  ⚠️ WARNING: DESTRUCTIVE - deletes all data in archlinux WSL instance.
 
 # vim: ts=2 sts=2 sw=2 et
