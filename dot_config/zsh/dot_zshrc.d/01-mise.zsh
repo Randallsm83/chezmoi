@@ -15,6 +15,9 @@ export MISE_DATA_DIR="$HOME/.local/share/mise"
 export MISE_CACHE_DIR="$HOME/.cache/mise"
 export MISE_CONFIG_DIR="$HOME/.config/mise"
 export MISE_GLOBAL_CONFIG_FILE="$HOME/.config/mise/config.toml"
+# CRITICAL: Ignore Windows config paths mounted via WSL - must be env var, not config file setting
+# because mise reads Windows config before it reads the setting that tells it to ignore it
+export MISE_IGNORED_CONFIG_PATHS="/mnt/c:/mnt/d"
 
 # Check direct path first since PATH may not include ~/.local/bin yet
 if [[ -x "$HOME/.local/bin/mise" ]]; then

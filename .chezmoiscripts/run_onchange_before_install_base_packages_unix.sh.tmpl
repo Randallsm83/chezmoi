@@ -241,23 +241,24 @@ mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$HOME/.local/bin"
 log_success "XDG directories created"
 
-# Symlink Arch perl scripts to /usr/local/bin (needed for Homebrew builds)
-# Homebrew spawns child processes in sanitized environment, so symlinks must be in standard PATH
+# Symlink Arch perl scripts to /usr/bin (needed for Homebrew builds)
+# Homebrew spawns child processes via /bin/sh which only has /usr/bin in PATH
 if [ -d /usr/bin/core_perl ] && [ -x /usr/bin/core_perl/pod2man ]; then
     log_info "Creating perl script symlinks for Homebrew compatibility..."
-    # Try /usr/local/bin first (always in PATH), fall back to ~/.local/bin
-    target_dir="/usr/local/bin"
-    if [ ! -w "$target_dir" ] && command_exists sudo; then
+    if command_exists sudo; then
         for script in pod2man pod2html pod2text podchecker; do
-            if [ -x "/usr/bin/core_perl/$script" ] && [ ! -e "$target_dir/$script" ]; then
-                sudo ln -s "/usr/bin/core_perl/$script" "$target_dir/$script" 2>/dev/null || true
+            if [ -x "/usr/bin/core_perl/$script" ]; then
+                # Primary: /usr/bin - the ONLY path /bin/sh sees during brew builds
+                [ ! -e "/usr/bin/$script" ] && sudo ln -sf "/usr/bin/core_perl/$script" "/usr/bin/$script" 2>/dev/null || true
+                # Also /usr/local/bin for interactive use
+                [ ! -e "/usr/local/bin/$script" ] && sudo ln -sf "/usr/bin/core_perl/$script" "/usr/local/bin/$script" 2>/dev/null || true
             fi
         done
     fi
-    # Also create in ~/.local/bin as backup
+    # Also create in ~/.local/bin as backup for non-sudo environments
     for script in pod2man pod2html pod2text podchecker; do
         if [ -x "/usr/bin/core_perl/$script" ] && [ ! -e "$HOME/.local/bin/$script" ]; then
-            ln -s "/usr/bin/core_perl/$script" "$HOME/.local/bin/$script"
+            ln -sf "/usr/bin/core_perl/$script" "$HOME/.local/bin/$script"
         fi
     done
     log_success "Perl script symlinks created"
