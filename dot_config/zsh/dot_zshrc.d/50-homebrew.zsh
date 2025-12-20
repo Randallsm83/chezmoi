@@ -60,158 +60,178 @@ export HOMEBREW_MAKE_JOBS="${MACHINE_CORES:-4}"
 export HOMEBREW_DISPLAY_INSTALL_TIMES=1
 export HOMEBREW_BAT=1
 
-# Custom paths
+# =================================================================================================
+# Homebrew build environment
+# =================================================================================================
 HOMEBREW_OPT="${HOMEBREW_PREFIX}/opt"
 
-export PATH="${HOMEBREW_OPT}/bison/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/coreutils/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/curl/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/ed/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/findutils/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/file-formula/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/flex/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/gawk/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/grep/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/gnu-indent/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/gnu-getopt/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/gnu-sed/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/gnu-tar/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/gnu-which/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/icu4c/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/icu4c/sbin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/jpeg/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/krb5/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/krb5/sbin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/libiconv/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/libpq/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/libressl/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/libxml2/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/m4/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/make/libexec/gnubin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/ncurses/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/util-linux/bin${PATH+:$PATH}"
-export PATH="${HOMEBREW_OPT}/unzip/bin${PATH+:$PATH}"
+# Helper function to add path directory
+_add_path() {
+  local path_dir="$1"
+  [[ ! -d "$path_dir" ]] && return
+  export PATH="$path_dir${PATH+:$PATH}"
+}
 
-COMMON_LIB_PATHS=(
-  "${HOMEBREW_OPT}/bison/lib"
-  "${HOMEBREW_OPT}/flex/lib"
-  "${HOMEBREW_OPT}/icu4c/lib"
-  "${HOMEBREW_OPT}/jpeg/lib"
-  "${HOMEBREW_OPT}/libiconv/lib"
-  "${HOMEBREW_OPT}/libpq/lib"
-  "${HOMEBREW_OPT}/libressl/lib"
-  "${HOMEBREW_OPT}/libxml2/lib"
-  "${HOMEBREW_OPT}/curl/lib"
-  "${HOMEBREW_OPT}/util-linux/lib"
-  # "${HOMEBREW_OPT}/krb5/lib"
-  # "${HOMEBREW_OPT}/libedit/lib"
-  # "${HOMEBREW_OPT}/openssl/lib"
-  # "${HOMEBREW_OPT}/ncurses/lib"
-  # "${HOMEBREW_OPT}/readline/lib"
-  # "${HOMEBREW_OPT}/zlib/lib"
-  "${HOMEBREW_PREFIX}/lib"
-)
-for lib_path in "${COMMON_LIB_PATHS[@]}"; do
-  export LDFLAGS="-L$lib_path ${LDFLAGS:-}"
-  export LIBRARY_PATH="$lib_path${LIBRARY_PATH+:$LIBRARY_PATH}"
-  export LD_LIBRARY_PATH="$lib_path${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
-  export CMAKE_LIBRARY_PATH="$lib_path${CMAKE_LIBRARY_PATH+:$CMAKE_LIBRARY_PATH}"
-done
+# Helper function to add library paths
+_add_lib_paths() {
+  local lib_dir="$1"
+  [[ ! -d "$lib_dir" ]] && return
+  export LDFLAGS="-L$lib_dir ${LDFLAGS:-}"
+  export LIBRARY_PATH="$lib_dir${LIBRARY_PATH+:$LIBRARY_PATH}"
+  export LD_LIBRARY_PATH="$lib_dir${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
+  export CMAKE_LIBRARY_PATH="$lib_dir${CMAKE_LIBRARY_PATH+:$CMAKE_LIBRARY_PATH}"
+}
 
-COMMON_INCLUDE_PATHS=(
-  "${HOMEBREW_OPT}/flex/include"
-  "${HOMEBREW_OPT}/icu4c/include"
-  "${HOMEBREW_OPT}/jpeg/include"
-  "${HOMEBREW_OPT}/libiconv/include"
-  "${HOMEBREW_OPT}/libpq/include"
-  "${HOMEBREW_OPT}/libressl/include"
-  "${HOMEBREW_OPT}/libxml2/include"
-  "${HOMEBREW_OPT}/curl/include"
-  "${HOMEBREW_OPT}/util-linux/include"
-  # "${HOMEBREW_OPT}/krb5/include"
-  # "${HOMEBREW_OPT}/libedit/include"
-  # "${HOMEBREW_OPT}/openssl/include"
-  # "${HOMEBREW_OPT}/ncurses/include"
-  # "${HOMEBREW_OPT}/readline/include"
-  # "${HOMEBREW_OPT}/zlib/include"
-  "${HOMEBREW_PREFIX}/include"
-)
-for include_path in "${COMMON_INCLUDE_PATHS[@]}"; do
-  export CFLAGS="-I$include_path ${CFLAGS:-}"
-  export CPPFLAGS="-I$include_path ${CPPFLAGS:-}"
-  export CXXFLAGS="-I$include_path ${CXXFLAGS:-}"
-  export C_PATH="$include_path${C_PATH+:$C_PATH}"
-  export C_INCLUDE_PATH="$include_path${C_INCLUDE_PATH+:$C_INCLUDE_PATH}"
-  export CPLUS_INCLUDE_PATH="$include_path${CPLUS_INCLUDE_PATH+:$CPLUS_INCLUDE_PATH}"
-  export CMAKE_INCLUDE_PATH="$include_path${CMAKE_INCLUDE_PATH+:$CMAKE_INCLUDE_PATH}"
-done
+# Helper function to add include paths
+_add_include_paths() {
+  local inc_dir="$1"
+  [[ ! -d "$inc_dir" ]] && return
+  export CFLAGS="-I$inc_dir ${CFLAGS:-}"
+  export CPPFLAGS="-I$inc_dir ${CPPFLAGS:-}"
+  export CXXFLAGS="-I$inc_dir ${CXXFLAGS:-}"
+  export C_PATH="$inc_dir${C_PATH+:$C_PATH}"
+  export C_INCLUDE_PATH="$inc_dir${C_INCLUDE_PATH+:$C_INCLUDE_PATH}"
+  export CPLUS_INCLUDE_PATH="$inc_dir${CPLUS_INCLUDE_PATH+:$CPLUS_INCLUDE_PATH}"
+  export CMAKE_INCLUDE_PATH="$inc_dir${CMAKE_INCLUDE_PATH+:$CMAKE_INCLUDE_PATH}"
+}
 
+# Helper function to add pkg-config paths
+_add_pkgconfig_path() {
+  local pkg_dir="$1"
+  [[ ! -d "$pkg_dir" ]] && return
+  export PKG_CONFIG_PATH="$pkg_dir${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+}
+
+# Add bin/sbin directories to PATH
+_add_path "${HOMEBREW_OPT}/bison/bin"
+_add_path "${HOMEBREW_OPT}/coreutils/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/curl/bin"
+_add_path "${HOMEBREW_OPT}/ed/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/findutils/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/file-formula/bin"
+_add_path "${HOMEBREW_OPT}/flex/bin"
+_add_path "${HOMEBREW_OPT}/gawk/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/grep/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/gnu-indent/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/gnu-getopt/bin"
+_add_path "${HOMEBREW_OPT}/gnu-sed/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/gnu-tar/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/gnu-which/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/icu4c/bin"
+_add_path "${HOMEBREW_OPT}/icu4c/sbin"
+_add_path "${HOMEBREW_OPT}/jpeg/bin"
+_add_path "${HOMEBREW_OPT}/krb5/bin"
+_add_path "${HOMEBREW_OPT}/krb5/sbin"
+_add_path "${HOMEBREW_OPT}/libiconv/bin"
+_add_path "${HOMEBREW_OPT}/libpq/bin"
+_add_path "${HOMEBREW_OPT}/libressl/bin"
+_add_path "${HOMEBREW_OPT}/libxml2/bin"
+_add_path "${HOMEBREW_OPT}/m4/bin"
+_add_path "${HOMEBREW_OPT}/make/libexec/gnubin"
+_add_path "${HOMEBREW_OPT}/ncurses/bin"
+_add_path "${HOMEBREW_OPT}/util-linux/bin"
+_add_path "${HOMEBREW_OPT}/unzip/bin"
+
+# Add library directories
+_add_lib_paths "${HOMEBREW_OPT}/bison/lib"
+_add_lib_paths "${HOMEBREW_OPT}/flex/lib"
+_add_lib_paths "${HOMEBREW_OPT}/icu4c/lib"
+_add_lib_paths "${HOMEBREW_OPT}/jpeg/lib"
+_add_lib_paths "${HOMEBREW_OPT}/libiconv/lib"
+_add_lib_paths "${HOMEBREW_OPT}/libpq/lib"
+_add_lib_paths "${HOMEBREW_OPT}/libressl/lib"
+_add_lib_paths "${HOMEBREW_OPT}/libxml2/lib"
+_add_lib_paths "${HOMEBREW_OPT}/curl/lib"
+_add_lib_paths "${HOMEBREW_OPT}/util-linux/lib"
+_add_lib_paths "${HOMEBREW_PREFIX}/lib"
+# Uncomment if needed:
+# _add_lib_paths "${HOMEBREW_OPT}/krb5/lib"
+# _add_lib_paths "${HOMEBREW_OPT}/libedit/lib"
+# _add_lib_paths "${HOMEBREW_OPT}/openssl/lib"
+# _add_lib_paths "${HOMEBREW_OPT}/ncurses/lib"
+# _add_lib_paths "${HOMEBREW_OPT}/readline/lib"
+# _add_lib_paths "${HOMEBREW_OPT}/zlib/lib"
+
+# Add include directories
+_add_include_paths "${HOMEBREW_OPT}/flex/include"
+_add_include_paths "${HOMEBREW_OPT}/icu4c/include"
+_add_include_paths "${HOMEBREW_OPT}/jpeg/include"
+_add_include_paths "${HOMEBREW_OPT}/libiconv/include"
+_add_include_paths "${HOMEBREW_OPT}/libpq/include"
+_add_include_paths "${HOMEBREW_OPT}/libressl/include"
+_add_include_paths "${HOMEBREW_OPT}/libxml2/include"
+_add_include_paths "${HOMEBREW_OPT}/curl/include"
+_add_include_paths "${HOMEBREW_OPT}/util-linux/include"
+_add_include_paths "${HOMEBREW_PREFIX}/include"
+# Uncomment if needed:
+# _add_include_paths "${HOMEBREW_OPT}/krb5/include"
+# _add_include_paths "${HOMEBREW_OPT}/libedit/include"
+# _add_include_paths "${HOMEBREW_OPT}/openssl/include"
+# _add_include_paths "${HOMEBREW_OPT}/ncurses/include"
+# _add_include_paths "${HOMEBREW_OPT}/readline/include"
+# _add_include_paths "${HOMEBREW_OPT}/zlib/include"
+
+# CMake configuration
 export CMAKE_PREFIX_PATH="${HOMEBREW_PREFIX}${CMAKE_PREFIX_PATH+:$CMAKE_PREFIX_PATH}"
 export CMAKE_INSTALL_PREFIX="${XDG_DATA_HOME:-$HOME/.local/share}"
 export CMAKE_C_COMPILER_LAUNCHER="${HOMEBREW_PREFIX}/bin/gcc-14"
 export CMAKE_CXX_COMPILER_LAUNCHER="${HOMEBREW_PREFIX}/bin/g++-14"
 
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/cunit/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/curl/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/icu4c/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/jpeg/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/krb5/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/libatomic_ops/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/libedit/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/libpq/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/libressl/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/libxml2/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/openssl/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/ncurses/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/readline/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/zlib/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_OPT}/util-linux/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/lib/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
-export PKG_CONFIG_PATH="${HOMEBREW_PREFIX}/share/pkgconfig${PKG_CONFIG_PATH+:$PKG_CONFIG_PATH}"
+# Add pkg-config paths
+_add_pkgconfig_path "${HOMEBREW_OPT}/cunit/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/curl/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/icu4c/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/jpeg/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/krb5/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/libatomic_ops/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/libedit/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/libpq/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/libressl/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/libxml2/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/openssl/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/ncurses/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/readline/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/zlib/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_OPT}/util-linux/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_PREFIX}/lib/pkgconfig"
+_add_pkgconfig_path "${HOMEBREW_PREFIX}/share/pkgconfig"
 
-COMMON_PKG_CONFIG_PATHS=(
-  "openssl"
-  "ncurses"
-  "readline"
-  "zlib"
-  "krb5"
-  "libedit"
-)
-for item in "${COMMON_PKG_CONFIG_PATHS[@]}"; do
-  export LDFLAGS="$(pkg-config --libs-only-L $item) ${LDFLAGS:-}"
-  export CFLAGS="$(pkg-config --cflags $item) ${CFLAGS:-}"
-  export CPPFLAGS="$(pkg-config --cflags $item) ${CPPFLAGS:-}"
-  export CXXFLAGS="$(pkg-config --cflags $item) ${CXXFLAGS:-}"
-done
+# Use pkg-config to get flags for common libraries (if pkg-config is available)
+if (( $+commands[pkg-config] )); then
+  for pkg in openssl ncurses readline zlib krb5 libedit; do
+    if pkg-config --exists $pkg 2>/dev/null; then
+      export LDFLAGS="$(pkg-config --libs-only-L $pkg) ${LDFLAGS:-}"
+      export CFLAGS="$(pkg-config --cflags $pkg) ${CFLAGS:-}"
+      export CPPFLAGS="$(pkg-config --cflags $pkg) ${CPPFLAGS:-}"
+      export CXXFLAGS="$(pkg-config --cflags $pkg) ${CXXFLAGS:-}"
+    fi
+  done
+fi
 
+# Host-specific configuration
 if [[ -n "$SHORT_HOST" && "$SHORT_HOST" == 'yakko' ]]; then
   export PKG_CONFIG_PATH="${PKG_CONFIG_PATH:+$PKG_CONFIG_PATH:}/usr/lib/x86_64-linux-gnu/pkgconfig"
 fi
 
 export PKG_CONFIG_LIBDIR="${PKG_CONFIG_PATH}${PKG_CONFIG_LIBDIR+:$PKG_CONFIG_LIBDIR}"
 
+# Platform-specific settings
 if [[ $OSTYPE != 'Darwin' ]]; then
-  # Linux only
-  # export PATH="$HOMEBREW_OPT/glibc/bin${PATH+:$PATH}"
-  # export PATH="$HOMEBREW_OPT/glibc/sbin${PATH+:$PATH}"
-  # export LDFLAGS="-L$HOMEBREW_OPT/glibc/lib ${LDFLAGS:-}"
-  # export CFLAGS="-I$HOMEBREW_OPT/glibc/include ${CFLAGS:-}"
-  # export CPPFLAGS="-I$HOMEBREW_OPT/glibc/include ${CPPFLAGS:-}"
-  # export CXXFLAGS="-I$HOMEBREW_OPT/glibc/include ${CXXFLAGS:-}"
-  # export LIBRARY_PATH="$HOMEBREW_OPT/glibc/lib${LIBRARY_PATH+:$LIBRARY_PATH}"
-  # export LD_LIBRARY_PATH="$HOMEBREW_OPT/glibc/lib${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
-  # export C_PATH="$HOMEBREW_OPT/glibc/include${C_PATH+:$C_PATH}"
-  # export C_INCLUDE_PATH="$HOMEBREW_OPT/glibc/include${C_INCLUDE_PATH+:$C_INCLUDE_PATH}"
-  # export CPLUS_INCLUDE_PATH="$HOMEBREW_OPT/glibc/include${CPLUS_INCLUDE_PATH+:$CPLUS_INCLUDE_PATH}"
-elif [[ $OSTYPE == 'Darwin' ]]; then
+  # Linux only - uncomment if needed
+  # _add_path "${HOMEBREW_OPT}/glibc/bin"
+  # _add_path "${HOMEBREW_OPT}/glibc/sbin"
+  # _add_lib_paths "${HOMEBREW_OPT}/glibc/lib"
+  # _add_include_paths "${HOMEBREW_OPT}/glibc/include"
+  :
+# elif [[ $OSTYPE == 'Darwin' ]]; then
+  # macOS only
   # export CLANG_CONFIG_FILE_SYSTEM_DIR="$HOMEBREW_PREFIX/etc/clang"
   # export CLANG_CONFIG_FILE_USER_DIR="$XDG_CONFIG_HOME/clang"
 fi
 
+# Cleanup
 unset HOMEBREW_OPT
-unset COMMON_LIB_PATHS
-unset COMMON_INCLUDE_PATHS
-unset COMMON_PKG_CONFIG_PATHS
+unset -f _add_path _add_lib_paths _add_include_paths _add_pkgconfig_path
 
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-

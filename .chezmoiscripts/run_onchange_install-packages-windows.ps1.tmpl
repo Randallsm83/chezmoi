@@ -34,11 +34,15 @@ $wingetPackages += "{{ . }}"
 {{- range $win.mise }}
 $misePackages += "{{ . }}"
 {{- end }}
+{{- if index $win "pip" }}
 {{- range $win.pip }}
 $pipPackages += "{{ . }}"
 {{- end }}
+{{- end }}
+{{- if index $win "pwsh_modules" }}
 {{- range $win.pwsh_modules }}
 $pwshModules += "{{ . }}"
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

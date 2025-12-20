@@ -53,7 +53,7 @@ require('lazy').setup({
           relnum_in_visual_mode = true,
         },
         -- Whether to disable showing non-error feedback
-        silent = false,
+        silent = true,
       }
       ----------------------------------------------------------------------------
       -- Better Around/Inside textobjects
@@ -595,6 +595,8 @@ require('lazy').setup({
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
     opts = {
+      preset = "classic",
+      delay = 200,
       icons = {
         -- set icon mappings to true if you have a Nerd Font
         mappings = vim.g.have_nerd_font,
@@ -643,8 +645,17 @@ require('lazy').setup({
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
         { '<leader>x', group = 'Diagnostics/Trouble' },
         { '<leader>q', group = 'Session' },
+        { ',', group = 'Toggle Options' },
       },
     },
+    config = function(_, opts)
+      local wk = require('which-key')
+      wk.setup(opts)
+      -- Create a keymap that shows which-key for comma
+      vim.keymap.set('n', ',', function()
+        wk.show({ keys = ',', mode = 'n' })
+      end, { desc = 'Toggle Options', noremap = true })
+    end,
   },
   ----------------------------------------------------------------------------
   { -- INFO: Fuzzy Finder (files, lsp, etc)
