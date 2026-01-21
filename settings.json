@@ -76,7 +76,7 @@
   "editor.selectionHighlight": false,
   // Suggestions & Hover
   "editor.hover.delay": 300,
-  "editor.hover.enabled": true,
+  "editor.hover.enabled": "on",
   "editor.suggest.preview": true,
   "editor.screenReaderAnnounceInlineSuggestion": false,
   // Minimap
@@ -440,6 +440,10 @@
     "statusBar.debuggingBackground": "#686f9a",
     "statusBar.foreground": "#0f111a",
     "statusBar.debuggingForeground": "#0f111a"
+  },
+  "claude-dev-experimental.api.currentModel": {
+    "uiId": "gpt-5.2-medium",
+    "mode": "responsive"
   }
   // ============================================================================
   // PERFORMANCE
