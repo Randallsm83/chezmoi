@@ -9,6 +9,9 @@
 
 #!/usr/bin/env zsh
 
+# Only load on NDN servers (where /dh/bin exists)
+[[ ! -d /dh/bin ]] && return 0
+
 # NDN Aliases
 # alias dbc='sudo /dh/bin/dbc'
 alias dbc='/usr/bin/perl /dh/bin/dbc'
