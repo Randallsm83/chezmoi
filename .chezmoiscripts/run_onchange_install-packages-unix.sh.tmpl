@@ -112,24 +112,29 @@ fi
 # 2. Install brew packages (FALLBACK for tools not in mise)
 # Only use user-owned brew (~/.local/share/homebrew), skip shared /home/linuxbrew
 if [ -n "$brew_packages" ]; then
-    if [ -d "$HOME/.local/share/homebrew" ] && command -v brew >/dev/null 2>&1; then
+    # Prefer user-owned homebrew
+    if [ -d "$HOME/.local/share/homebrew" ]; then
+        export HOMEBREW_PREFIX="$HOME/.local/share/homebrew"
+        export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+    fi
+    
+    if [ -d "$HOME/.local/share/homebrew" ] && "$HOME/.local/share/homebrew/bin/brew" --version >/dev/null 2>&1; then
         echo ""
         echo "Installing brew packages (tools not available via mise)..."
-        export PATH="$HOME/.local/bin:$PATH"
         for pkg in $brew_packages; do
-            if ! brew list "$pkg" >/dev/null 2>&1; then
+            if ! "$HOMEBREW_PREFIX/bin/brew" list "$pkg" >/dev/null 2>&1; then
                 echo "  Installing: $pkg"
-                brew install "$pkg"
+                "$HOMEBREW_PREFIX/bin/brew" install "$pkg"
             else
                 echo "  Already installed: $pkg"
             fi
         done
     elif [ -d "/home/linuxbrew/.linuxbrew" ]; then
         echo ""
-        echo "Note: Skipping shared linuxbrew, install packages manually or use mise"
+        echo "Note: Skipping shared /home/linuxbrew, use ~/.local/share/homebrew instead"
     else
         echo ""
-        echo "Note: brew not found, skipping brew-only packages"
+        echo "Note: User homebrew not found at ~/.local/share/homebrew"
     fi
 fi
 

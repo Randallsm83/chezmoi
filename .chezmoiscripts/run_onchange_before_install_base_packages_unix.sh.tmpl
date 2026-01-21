@@ -275,7 +275,7 @@ if [ -d /usr/bin/core_perl ] && [ -x /usr/bin/core_perl/pod2man ]; then
 fi
 
 # Install Homebrew (Linux/WSL - user install to ~/.local/share/homebrew)
-{{- if and (ne .chezmoi.os "darwin") (not .is_remote) }}
+{{- if ne .chezmoi.os "darwin" }}
 install_homebrew() {
     if command_exists brew; then
         log_success "Homebrew already installed"
