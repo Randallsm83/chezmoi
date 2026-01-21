@@ -9,7 +9,10 @@
 
 "$schema" = 'https://starship.rs/config-schema.json'
 
-# Transient prompt (replaces prompt after command execution)
+# Increase timeout for slow commands (Ruby on Windows)
+command_timeout = 2000
+
+# Transient prompt
 # format = ''
 # disabled = true
 
