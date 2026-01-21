@@ -26,8 +26,7 @@
 {{- $hostname := .chezmoi.hostname | lower -}}
 
 {{- /* Check for remote indicators */ -}}
-{{- $is_remote := or (env "SSH_CONNECTION") (env "SSH_CLIENT") (env "SSH_TTY") | not | not -}}
-{{- $is_remote = or $is_remote (eq (env "TERM_PROGRAM") "vscode") -}}
+{{- $is_remote := or (ne (env "SSH_CONNECTION") "") (ne (env "SSH_CLIENT") "") (ne (env "SSH_TTY") "") (eq (env "TERM_PROGRAM") "vscode") -}}
 
 {{- /* Check for container */ -}}
 {{- $is_container := false -}}
