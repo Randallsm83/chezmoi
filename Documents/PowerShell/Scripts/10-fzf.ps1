@@ -55,8 +55,10 @@ if (Get-Module -ListAvailable -Name PSFzf) {
             }
         }
         
-        # Enable tab completion
-        Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
+        # Enable tab completion only if PSCompletions isn't handling it
+        if (-not (Get-Module PSCompletions)) {
+            Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
+        }
     }
 }
 

@@ -1,6 +1,9 @@
 # Enhanced Cache Cleaning Function for PowerShell Profile
 # Version 2.0 - Self-contained with colorized output and improved error handling
 function Clear-Cache {
+    [CmdletBinding()]
+    param()
+
     # Statistics tracking
     $Stats = @{
         TotalDirectories = 0
@@ -14,20 +17,8 @@ function Clear-Cache {
 
     # Helper function: Check if running with elevated privileges
     function Test-IsElevated {
-        # First try the standard check
         $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-        if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-            return $true
-        }
-        # Fallback: test actual write access to a protected directory (works with sudo)
-        try {
-            $testPath = "$env:SystemRoot\Temp\.elevation_test_$PID"
-            [System.IO.File]::Create($testPath).Dispose()
-            Remove-Item $testPath -Force -ErrorAction SilentlyContinue
-            return $true
-        } catch {
-            return $false
-        }
+        return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     }
 
     # Helper function: Format file size in human-readable format
@@ -227,13 +218,16 @@ function Clear-Cache {
                 $Stats.ErrorDirectories++
             }
 
-            # Show detailed errors if any (but limit to avoid spam)
-            if ($errors.Count -gt 0 -and $errors.Count -le 5) {
-                foreach ($error in $errors) {
-                    Write-Host "      $error" -ForegroundColor DarkRed
+            # Show detailed errors if any (but limit to avoid spam unless -Verbose)
+            if ($errors.Count -gt 0) {
+                $showAll = $VerbosePreference -eq 'Continue' -or $errors.Count -le 5
+                $errorsToShow = if ($showAll) { $errors } else { $errors | Select-Object -First 5 }
+                foreach ($err in $errorsToShow) {
+                    Write-Host "      $err" -ForegroundColor DarkRed
                 }
-            } elseif ($errors.Count -gt 5) {
-                Write-Host "      ... and $($errors.Count - 5) more errors (use -Verbose for details)" -ForegroundColor DarkRed
+                if (-not $showAll) {
+                    Write-Host "      ... and $($errors.Count - 5) more errors (use -Verbose to show all)" -ForegroundColor DarkRed
+                }
             }
 
         } catch {
@@ -267,11 +261,29 @@ function Clear-Cache {
 
     # Graphics Driver Cache
     Write-Section "GRAPHICS DRIVER CACHE"
+
+    # DirectX
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\D3DSCache" -Description "DirectX Shader Cache" -Category "Graphics"
+
+    # NVIDIA
     Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache" -Description "NVIDIA PerDriverVersion DXCache" -Category "Graphics"
     Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\LocalLow\NVIDIA\DXCache" -Description "NVIDIA LocalLow DXCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\Local\NVIDIA\DXCache" -Description "NVIDIA Local DXCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\Local\AMD\DxCache" -Description "AMD DxCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\Local\AMD\DxcCache" -Description "AMD DxcCache" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\NVIDIA\DXCache" -Description "NVIDIA Local DXCache" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\NVIDIA\GLCache" -Description "NVIDIA GLCache" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\NVIDIA Corporation\NV_Cache" -Description "NVIDIA NV_Cache" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\NVIDIA Corporation\NvTmRep" -Description "NVIDIA NvTmRep" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:ProgramData\NVIDIA Corporation\NV_Cache" -Description "NVIDIA NV_Cache (System)" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:ProgramData\NVIDIA Corporation\NvTelemetry" -Description "NVIDIA NvTelemetry" -Category "Graphics"
+
+    # AMD
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\GLCache" -Description "AMD GLCache" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\DxCache" -Description "AMD DxCache" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\DxcCache" -Description "AMD DxcCache" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\Dx9Cache" -Description "AMD Dx9Cache" -Category "Graphics"
+    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\VkCache" -Description "AMD VkCache" -Category "Graphics"
+
+    # Intel
+    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\LocalLow\Intel\ShaderCache" -Description "Intel ShaderCache" -Category "Graphics"
 
     # Browser Cache
     Write-Section "BROWSER CACHE"

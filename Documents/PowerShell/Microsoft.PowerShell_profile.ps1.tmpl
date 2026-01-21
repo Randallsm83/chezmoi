@@ -60,6 +60,8 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
 # as it overrides Tab with its own custom menu
 if (Get-Module -ListAvailable -Name PSCompletions) {
     Import-Module PSCompletions
+    $PSCompletions.init_data()
+    $PSCompletions.handle_completion()
 }
 
 # Initialize Zoxide (smart cd)
