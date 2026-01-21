@@ -54,6 +54,7 @@ setup_locale() {
     
     log_info "Generating en_US.UTF-8 locale..."
     
+{{- if not .is_remote }}
     # Detect package manager by checking for locale.gen or distro-specific files
     if [ -f /etc/locale.gen ]; then
         # Arch Linux / Gentoo / etc - uncomment locale in locale.gen and generate
@@ -84,8 +85,10 @@ setup_locale() {
             sudo dnf install -y glibc-langpack-en 2>/dev/null || true
         fi
     fi
-    
     log_success "Locale configured"
+{{- else }}
+    log_info "Remote machine - skipping locale generation (requires sudo)"
+{{- end }}
 }
 
 is_zsh_default_shell() {
@@ -113,7 +116,6 @@ set_zsh_as_default_shell() {
     zsh_path=$(command -v zsh)
     
     log_info "Setting zsh as default shell..."
-    log_warning "You may be prompted for your password"
     
     if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
         # Running as root, change shell for the actual user
@@ -121,24 +123,28 @@ set_zsh_as_default_shell() {
             log_success "Default shell changed to zsh for user $SUDO_USER"
             return 0
         fi
-    elif command_exists sudo; then
-        # Try with sudo (for WSL and other environments where chsh needs root)
+    fi
+    
+    # Try without sudo first (works on most systems for your own user)
+    if chsh -s "$zsh_path" 2>/dev/null; then
+        log_success "Default shell changed to zsh"
+        return 0
+    fi
+    
+{{- if not .is_remote }}
+    # Fall back to sudo (for WSL and other environments where chsh needs root)
+    if command_exists sudo; then
+        log_warning "Trying with sudo..."
         if sudo chsh -s "$zsh_path" "$USER" 2>/dev/null; then
             log_success "Default shell changed to zsh"
             return 0
         fi
-    else
-        # Running as normal user without sudo
-        if chsh -s "$zsh_path" 2>/dev/null; then
-            log_success "Default shell changed to zsh"
-            return 0
-        fi
     fi
+{{- end }}
     
     # chsh failed - provide fallback instructions
     log_warning "Failed to change default shell automatically"
     log_warning "Please run manually: chsh -s $zsh_path"
-    log_warning "Or add this to /etc/passwd if in a container environment"
     return 1
 }
 
@@ -170,14 +176,12 @@ fi
 
 if [ "$needs_install" = false ]; then
     log_success "Base packages already installed"
-{{- if not .is_remote }}
     # Still check and set zsh as default shell if needed
     if command_exists zsh && ! is_zsh_default_shell; then
         # Don't fail script if shell change fails - it's not critical
         set_zsh_as_default_shell || true
         log_info "Note: You may need to log out and back in for the shell change to take effect"
     fi
-{{- end }}
     exit 0
 fi
 
