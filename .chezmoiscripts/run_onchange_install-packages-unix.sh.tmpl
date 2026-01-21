@@ -109,12 +109,12 @@ if [ -n "$mise_packages" ]; then
     export PATH="$HOME/.local/share/mise/shims:$PATH"
 fi
 
+{{- if not .is_remote }}
 # 2. Install brew packages (FALLBACK for tools not in mise)
 if [ -n "$brew_packages" ]; then
     if command -v brew >/dev/null 2>&1; then
         echo ""
         echo "Installing brew packages (tools not available via mise)..."
-        # Ensure ~/.local/bin is in PATH for brew builds (pod2man symlinks, etc.)
         export PATH="$HOME/.local/bin:$PATH"
         for pkg in $brew_packages; do
             if ! brew list "$pkg" >/dev/null 2>&1; then
@@ -127,7 +127,6 @@ if [ -n "$brew_packages" ]; then
     else
         echo ""
         echo "Note: brew not found, skipping brew-only packages"
-        echo "      (These are optional tools not available via mise)"
     fi
 fi
 
@@ -181,6 +180,10 @@ if [ -n "$pkg_manager" ]; then
             ;;
     esac
 fi
+{{- end }}
+{{- else }}
+echo ""
+echo "Remote machine detected - skipping brew and system package installs (require sudo/shared paths)"
 {{- end }}
 
 # Helper to check if a command exists AND works (not a broken Windows interop path)

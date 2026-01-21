@@ -170,15 +170,21 @@ fi
 
 if [ "$needs_install" = false ]; then
     log_success "Base packages already installed"
+{{- if not .is_remote }}
     # Still check and set zsh as default shell if needed
     if command_exists zsh && ! is_zsh_default_shell; then
         # Don't fail script if shell change fails - it's not critical
         set_zsh_as_default_shell || true
         log_info "Note: You may need to log out and back in for the shell change to take effect"
     fi
+{{- end }}
     exit 0
 fi
 
+{{- if .is_remote }}
+log_info "Remote machine detected - skipping system package installation (requires sudo)"
+log_info "Install missing packages manually if needed: git, curl, make, unzip"
+{{- else }}
 log_info "Installing base system packages..."
 
 # Detect package manager and install
@@ -231,6 +237,7 @@ if command_exists zsh; then
     set_zsh_as_default_shell || true
     log_info "Note: You may need to log out and back in for the shell change to take effect"
 fi
+{{- end }}
 
 # Create XDG directories
 log_info "Creating XDG directories..."
@@ -241,21 +248,20 @@ mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}"
 mkdir -p "$HOME/.local/bin"
 log_success "XDG directories created"
 
-# Symlink Arch perl scripts to /usr/bin (needed for Homebrew builds)
-# Homebrew spawns child processes via /bin/sh which only has /usr/bin in PATH
+# Symlink Arch perl scripts (needed for Homebrew builds)
 if [ -d /usr/bin/core_perl ] && [ -x /usr/bin/core_perl/pod2man ]; then
     log_info "Creating perl script symlinks for Homebrew compatibility..."
+{{- if not .is_remote }}
     if command_exists sudo; then
         for script in pod2man pod2html pod2text podchecker; do
             if [ -x "/usr/bin/core_perl/$script" ]; then
-                # Primary: /usr/bin - the ONLY path /bin/sh sees during brew builds
                 [ ! -e "/usr/bin/$script" ] && sudo ln -sf "/usr/bin/core_perl/$script" "/usr/bin/$script" 2>/dev/null || true
-                # Also /usr/local/bin for interactive use
                 [ ! -e "/usr/local/bin/$script" ] && sudo ln -sf "/usr/bin/core_perl/$script" "/usr/local/bin/$script" 2>/dev/null || true
             fi
         done
     fi
-    # Also create in ~/.local/bin as backup for non-sudo environments
+{{- end }}
+    # User-space symlinks in ~/.local/bin
     for script in pod2man pod2html pod2text podchecker; do
         if [ -x "/usr/bin/core_perl/$script" ] && [ ! -e "$HOME/.local/bin/$script" ]; then
             ln -sf "/usr/bin/core_perl/$script" "$HOME/.local/bin/$script"
@@ -305,7 +311,7 @@ install_homebrew() {
 install_homebrew
 {{- end }}
 
-{{- if (index . "setup_1password" | default true) }}
+{{- if and .setup_1password (not .is_remote) }}
 # Install 1Password CLI (requires system package manager for setgid permissions)
 install_1password_cli() {
     if command_exists op; then
