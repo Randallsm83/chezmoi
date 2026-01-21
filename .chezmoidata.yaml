@@ -320,6 +320,7 @@ package_features:
   btop: true            # System monitor
   navi: true            # Interactive cheatsheet tool
   fastfetch: true       # System info display
+  tealdeer: true        # Fast tldr client (rust)
   
   # ============================================================================
   # Language Runtimes (optional - enable as needed)
@@ -806,6 +807,21 @@ package_mapping:
       mise: []
     darwin:
       brew: [fastfetch]
+      mise: []
+  
+  tealdeer:
+    windows:
+      scoop: [tealdeer]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [tealdeer]
+      mise: []
+    darwin:
+      brew: [tealdeer]
       mise: []
   
   # Language Runtimes
