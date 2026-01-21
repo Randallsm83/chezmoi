@@ -321,8 +321,20 @@ require('lazy').setup({
   ----------------------------------------------------------------------------
   {
     'ibhagwan/fzf-lua',
-    dependencies = { 'nvim-tree/nvim-web-devicons' },
-    opts = {},
+    dependencies = {
+      { 'nvim-tree/nvim-web-devicons', lazy = true },
+      { 'echasnovski/mini.nvim' },
+    },
+    config = function()
+      require('fzf-lua').setup({
+        file_icon_provider = 'devicons',
+        winopts = {
+          preview = {
+            default = 'bat',
+          },
+        },
+      })
+    end,
   },
   { -- INFO: Gitsigns
     'lewis6991/gitsigns.nvim',
@@ -812,7 +824,14 @@ require('lazy').setup({
 
       -- Useful status updates for LSP.
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-      { 'j-hui/fidget.nvim', opts = {} },
+      {
+        'j-hui/fidget.nvim',
+        opts = {
+          notification = {
+            override_vim_notify = true,
+          },
+        },
+      },
 
       -- Allows extra capabilities provided by nvim-cmp
       'hrsh7th/cmp-nvim-lsp',

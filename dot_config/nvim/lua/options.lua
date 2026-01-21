@@ -1,7 +1,16 @@
 -- [[ Vim Opts ]]
 
--- Node provider (skip yarn detection)
-vim.g.node_host_prog = vim.fn.exepath('neovim-node-host')
+-- Node provider
+if vim.fn.has('win32') == 1 then
+  -- On Windows, point directly to the JS file (wrappers don't work with node subprocess)
+  local host_path = vim.fn.exepath('neovim-node-host')
+  if host_path ~= '' then
+    local base_dir = vim.fn.fnamemodify(host_path, ':h')
+    vim.g.node_host_prog = base_dir .. '/node_modules/neovim/bin/cli.js'
+  end
+else
+  vim.g.node_host_prog = vim.fn.exepath('neovim-node-host')
+end
 
 -- Wildmenu
 vim.opt.wildmode = "longest:full,full"
