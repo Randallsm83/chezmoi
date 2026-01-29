@@ -598,6 +598,81 @@ function has {
     }
 }
 
+# ================================================================================================
+# Safety Aliases
+# ================================================================================================
+# Add confirmation prompts to destructive commands
+
+<#
+.SYNOPSIS
+    Safe remove with confirmation by default.
+#>
+function rm {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $true, Position = 0, ValueFromRemainingArguments = $true)]
+        [string[]]$Path,
+        [switch]$Recurse,
+        [switch]$Force
+    )
+    
+    $params = @{
+        Path = $Path
+        Confirm = $true
+    }
+    
+    if ($Recurse) { $params.Recurse = $true }
+    if ($Force) { $params.Force = $true }
+    
+    Remove-Item @params
+}
+
+<#
+.SYNOPSIS
+    Safe copy with warning on overwrite.
+#>
+function cp {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Source,
+        [Parameter(Mandatory = $true, Position = 1)]
+        [string]$Destination
+    )
+    
+    if ((Test-Path $Destination) -and -not $Force) {
+        $response = Read-Host "Destination exists. Overwrite? (y/N)"
+        if ($response -ne 'y') {
+            Write-Host "Copy cancelled." -ForegroundColor Yellow
+            return
+        }
+    }
+    
+    Copy-Item -Path $Source -Destination $Destination -Confirm:$false
+}
+
+<#
+.SYNOPSIS
+    Safe move with warning on overwrite.
+#>
+function mv {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Source,
+        [Parameter(Mandatory = $true, Position = 1)]
+        [string]$Destination
+    )
+    
+    if ((Test-Path $Destination) -and -not $Force) {
+        $response = Read-Host "Destination exists. Overwrite? (y/N)"
+        if ($response -ne 'y') {
+            Write-Host "Move cancelled." -ForegroundColor Yellow
+            return
+        }
+    }
+    
+    Move-Item -Path $Source -Destination $Destination -Confirm:$false
+}
+
 # -------------------------------------------------------------------------------------------------
 # vim: ft=ps1 sw=4 ts=4 et
 # -------------------------------------------------------------------------------------------------

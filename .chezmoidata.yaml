@@ -134,7 +134,7 @@ theme_mappings:
   # Starship palette names (defined in starship.toml)
   starship:
     spaceduck: "spaceduck"
-    onedark: "onedark_pro4"
+    onedark: "onedark"
     gruvbox-material: "gruvbox_dark_material"
     tokyonight: "tokyonight"
     tokyonight-storm: "tokyonight_storm"

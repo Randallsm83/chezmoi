@@ -64,38 +64,22 @@ if (Get-Module -ListAvailable -Name PSCompletions) {
     $PSCompletions.handle_completion()
 }
 
-# Initialize Zoxide (smart cd)
-Invoke-Expression (& zoxide init powershell | Out-String)
-
 # Initialize Starship prompt
-Invoke-Expression (&starship init powershell)
+if (Get-Command starship -ErrorAction SilentlyContinue) {
+    Invoke-Expression (&starship init powershell)
+}
 
 # Initialize Mise (tool version manager)
-Invoke-Expression (& mise activate pwsh | Out-String)
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& mise activate pwsh | Out-String)
+}
 
 # WSL Tab Completion
 if (Get-Module -ListAvailable -Name WSLTabCompletion) {
     Import-Module WSLTabCompletion
 }
 
-# PSFzf (fzf integration for PowerShell) — optional
-{{- if index .package_features "fzf" }}
-if (Get-Module -ListAvailable -Name PSFzf) {
-    Import-Module PSFzf
-
-    # Key bindings
-    Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r'
-
-    # Use fd for better performance
-    $env:FZF_DEFAULT_COMMAND = 'fd --type f --hidden --follow --exclude .git'
-    $env:FZF_CTRL_T_COMMAND = $env:FZF_DEFAULT_COMMAND
-
-    # UI options (compatible with your theme)
-    $env:FZF_DEFAULT_OPTS = '--height 40% --layout=reverse --border --inline-info'
-}
-{{- end }}
-
-# Import GamePerformanceOptimizer module (for game security exclusions)
+# Import GamePerformanceOptimizer
 if (Get-Module -ListAvailable -Name GamePerformanceOptimizer) {
     Import-Module GamePerformanceOptimizer
 }
@@ -109,16 +93,6 @@ if (Test-Path $scriptsDir) {
     }
 }
 
-# Source aliases and functions
-$aliasesFile = Join-Path (Split-Path $PROFILE) "aliases.ps1"
-$functionsFile = Join-Path (Split-Path $PROFILE) "functions.ps1"
-
-if (Test-Path $aliasesFile) {
-    . $aliasesFile
-}
-if (Test-Path $functionsFile) {
-    . $functionsFile
-}
 
 # VS Code shell integration
 if ($env:TERM_PROGRAM -eq "vscode") {
@@ -127,7 +101,9 @@ if ($env:TERM_PROGRAM -eq "vscode") {
 
 # Set LS_COLORS using Vivid ({{ .theme }} theme)
 {{- if index .package_features "vivid" }}
-$env:LS_COLORS = (vivid generate {{ .theme }})
+if (Get-Command vivid -ErrorAction SilentlyContinue) {
+    $env:LS_COLORS = (vivid generate {{ .theme }})
+}
 {{- end }}
 
 # Bash-style history expansion (!!, !$)

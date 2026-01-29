@@ -9,26 +9,17 @@
 
 "$schema" = 'https://starship.rs/config-schema.json'
 
-# Increase timeout for slow commands (Ruby on Windows)
 command_timeout = 2000
 
-# Transient prompt
-# format = ''
-# disabled = true
-
 format = """
-[ ](bg:color_blue)\
 $os\
 $hostname\
 $username\
 $sudo\
-[](bg:color_purple fg:color_blue)\
 $directory\
-[](fg:color_purple bg:color_green)\
 $git_branch\
 $git_status\
 $git_state\
-[](fg:color_green bg:color_cyan)\
 $nodejs\
 $perl\
 $python\
@@ -44,179 +35,62 @@ $kotlin\
 $haskell\
 $package\
 $vagrant\
-[](fg:color_cyan bg:color_bg2)\
 $conda\
 $docker_context\
 ${custom.vagrant_context}\
-[](fg:color_bg2 bg:color_bg1)\
 $time\
 $cmd_duration\
-[](fg:color_bg1)\
 $line_break$character"""
 
 palette = 'spaceduck'
 
-[palettes.gruvbox_dark_medium]
-color_bg0           = '#282828'
-color_bg1           = '#3c3836'
-color_bg2           = '#504945'
-color_bg3           = '#665c54'
-color_bg4           = '#bdae93'
-color_fg0           = '#d5c4a1'
-color_fg1           = '#ebdbb2'
-color_white         = '#fbf1c7'
-color_red           = '#cc241d'
-color_orange        = '#d65d0e'
-color_yellow        = '#d79921'
-color_green         = '#98971a'
-color_cyan          = '#689d6a'
-color_blue          = '#458588'
-color_purple        = '#b16286'
-color_bright_red    = '#fb4934'
-color_bright_orange = '#fe8019'
-color_bright_yellow = '#fabd2f'
-color_bright_green  = '#b8bb26'
-color_bright_cyan   = '#8ec07c'
-color_bright_blue   = '#83a598'
-color_bright_purple = '#d3869b'
-
 [palettes.gruvbox_dark_material]
-color_fg0    = '#d4be98'
-color_fg1    = "#e2cca9"
-color_bg0    = '#282828'
-color_bg1    = '#3c3836'
-color_bg3    = '#665c54'
-color_red    = '#ea6962'
-color_green  = '#a9b665'
-color_yellow = '#d8a657'
-color_blue   = '#7daea3'
-color_purple = '#d3869b'
-color_cyan   = '#89b482'
-color_orange = '#e37933'
+color_bg0           = '#1d2021'  # Background
+color_bg1           = '#282828'  # Slightly lighter
+color_bg2           = '#3c3836'  # Selection
+color_bg3           = '#665c54'  # Comments
+color_fg0           = '#d4be98'  # Foreground
+color_fg1           = '#e2cca9'  # Bright
+color_white         = '#e2cca9'  # White
+color_red           = '#ea6962'  # Red
+color_orange        = '#e78a4e'  # Orange
+color_yellow        = '#d8a657'  # Yellow
+color_green         = '#a9b665'  # Green
+color_cyan          = '#89b482'  # Cyan
+color_blue          = '#7daea3'  # Blue
+color_purple        = '#d3869b'  # Purple
 
-[palettes.gruvbox_dark_material_mix]
-color_fg0    = "#e2cca9"
-color_bg0    = '#282828'
-color_bg1    = '#32302f'
-color_bg3    = '#32302f'
-color_red    = '#f2594b'
-color_green  = '#b0b846'
-color_yellow = '#e9b143'
-color_blue   = '#80aa9e'
-color_purple = '#d3869b'
-color_cyan   = '#8bba7f'
-color_orange = '#f28534'
-
-[palettes.onedark_pro4]
-color_bg0           = '#1E2127'  # Base background
-color_bg1           = '#282C34'  # Slightly lighter background
-color_bg2           = '#2C313A'  # Selection background
-color_bg3           = '#3F4451'  # Darker black
-color_bg4           = '#4F5666'  # Bright black/comments
-color_fg0           = '#ABB2BF'  # Default foreground
-color_fg1           = '#E6E6E6'  # White foreground
-color_white         = '#FFFFFF'  # Bright white
-color_red           = '#E05561'  # Red
-color_orange        = '#D18F52'  # Orange
-color_yellow        = '#F0A45D'  # Yellow
-color_green         = '#8CC265'  # Green
-color_cyan          = '#42B3C2'  # Cyan
-color_blue          = '#4AA5F0'  # Blue
-color_purple        = '#C162DE'  # Purple/Magenta
-color_bright_red    = '#FF616E'  # Bright red
-color_bright_orange = '#F0A45D'  # Bright orange
-color_bright_yellow = '#F0A45D'  # Bright yellow
-color_bright_green  = '#A5E075'  # Bright green
-color_bright_cyan   = '#4CD1E0'  # Bright cyan
-color_bright_blue   = '#4DC4FF'  # Bright blue
-color_bright_purple = '#DE73FF'  # Bright purple
-
-[palettes.onedark_pro3]
-color_bg0           = '#1E2127'  # Authentic One Dark background
-color_bg1           = '#282C34'  # Slightly lighter
-color_bg2           = '#2C313A'  # Selection background
-color_bg3           = '#3E4451'  # Lighter selection
-color_bg4           = '#5C6370'  # brightBlack/comments
-color_fg0           = '#ABB2BF'  # white - main text
-color_fg1           = '#FFFFFF'  # brightWhite - bright text
-color_white         = '#FFFFFF'  # brightWhite
-color_red           = '#E06C75'  # Authentic terminal red
-color_orange        = '#E2955C'  # Proper orange, distinct from yellow
-color_yellow        = '#E2C08D'  # Authentic terminal yellow
-color_green         = '#98C379'  # Authentic terminal green
-color_cyan          = '#56B6C2'  # Authentic terminal cyan
-color_blue          = '#61AFEF'  # Authentic terminal blue
-color_purple        = '#C678DD'  # Authentic terminal purple
-color_bright_red    = '#E06C75'  # brightRed (same as red)
-color_bright_orange = '#E5A866'  # Brighter orange variant
-color_bright_yellow = '#E5C07B'  # Brighter yellow variant
-color_bright_green  = '#98C379'  # brightGreen (same as green)
-color_bright_cyan   = '#56B6C2'  # brightCyan (same as cyan)
-color_bright_blue   = '#61AFEF'  # brightBlue (same as blue)
-color_bright_purple = '#C678DD'  # brightPurple (same as purple)
-
-[palettes.onedark_pro2]
-color_bg0           = '#272B33'  # Main background
-color_bg1           = '#2c323d'  # Current line
+[palettes.onedark]
+color_bg0           = '#282c34'  # Background
+color_bg1           = '#2c323d'  # Slightly lighter
 color_bg2           = '#3e4451'  # Selection
-color_bg3           = '#4b5263'  # Lighter selection
-color_bg4           = '#5b626f'  # Comments
-color_fg0           = '#abb2c0'  # Main foreground
-color_fg1           = '#c8ccd4'  # Brighter foreground
-color_white         = '#ffffff'  # Pure white
-color_red           = '#DF6B75'  # Red 1 - authentic One Dark Pro
-color_orange        = '#D19965'  # Orange 1 - authentic One Dark Pro
-color_yellow        = '#e2c08d'  # Yellow 1 - authentic One Dark Pro
-color_green         = '#97C279'  # Green 1 - authentic One Dark Pro
-color_cyan          = '#56B5C2'  # Cyan 1 - authentic One Dark Pro
-color_blue          = '#61AFEF'  # Blue 1 - authentic One Dark Pro
-color_purple        = '#C578DD'  # Purple 1 - authentic One Dark Pro
-color_bright_red    = '#BE5046'  # Red 2 - deeper contrast
-color_bright_orange = '#E4BF7A'  # Orange 2 - brighter variant
-color_bright_yellow = '#f2ce97'  # Yellow 2 - brighter variant
-color_bright_green  = '#abdc89'  # Green 2 - brighter variant
-color_bright_cyan   = '#66d7e6'  # Cyan 2 - brighter variant
-color_bright_blue   = '#65b6f8'  # Blue 2 - brighter variant
-color_bright_purple = '#d682f0'  # Purple 2 - brighter variant
-
-[palettes.onedark_pro]
-color_bg0           = '#272B33'  # Main background
-color_bg1           = '#2c323d'  # Current line
-color_bg2           = '#3e4451'  # Selection
-color_bg3           = '#4b5263'  # Lighter selection
-color_bg4           = '#5b626f'  # Comments
-color_fg0           = '#abb2c0'  # Main foreground
-color_fg1           = '#c8ccd4'  # Brighter foreground
-color_white         = '#ffffff'  # Pure white
-color_red           = '#BE5046'  # Red 2 (darker)
-color_orange        = '#D19965'  # Orange 1
-color_yellow        = '#e2c08d'  # Yellow 1
-color_green         = '#97C279'  # Green 1
-color_cyan          = '#56B5C2'  # Cyan 1
-color_blue          = '#61AFEF'  # Blue 1
-color_purple        = '#C578DD'  # Purple 1
-color_bright_red    = '#DF6B75'  # Red 1 (brighter)
-color_bright_orange = '#E4BF7A'  # Orange 2
-color_bright_yellow = '#f2ce97'  # Yellow 2
-color_bright_green  = '#abdc89'  # Green 2
-color_bright_cyan   = '#66d7e6'  # Cyan 2
-color_bright_blue   = '#65b6f8'  # Blue 2
-color_bright_purple = '#d682f0'  # Purple 2
+color_bg3           = '#5c6370'  # Comments
+color_fg0           = '#abb2bf'  # Foreground
+color_fg1           = '#c8ccd4'  # Bright
+color_white         = '#ffffff'  # White
+color_red           = '#e06c75'  # Red
+color_orange        = '#d19965'  # Orange
+color_yellow        = '#e5c07b'  # Yellow
+color_green         = '#98c379'  # Green
+color_cyan          = '#56b6c2'  # Cyan
+color_blue          = '#61afef'  # Blue
+color_purple        = '#c678dd'  # Purple
 
 [palettes.spaceduck]
 color_bg0           = '#0f111b'  # Background
 color_bg1           = '#16192e'  # Slightly lighter
 color_bg2           = '#1e2340'  # Selection
+color_bg3           = '#5c6370'
 color_fg0           = '#ecf0c1'  # Foreground
 color_fg1           = '#f0f1ce'  # Bright white
 color_white         = '#f0f1ce'  # Bright white
 color_red           = '#e33400'  # Red
-color_orange        = '#e33400'  # Orange
-color_yellow        = '#b3a1e6'  # Yellow (their ANSI 3)
+color_orange        = '#e39400'  # Orange
+color_yellow        = '#f2ce00'  # Yellow
 color_green         = '#5ccc96'  # Green
-color_cyan          = '#7a5ccc'  # Cyan (their ANSI 6)
-color_blue          = '#00a3cc'  # Blue
-color_purple        = '#f2ce00'  # Purple (their ANSI 5)
+color_cyan          = '#00a3cc'  # Cyan
+color_blue          = '#7a5ccc'  # Blue
+color_purple        = '#b3a1e6'  # Purple
 
 [palettes.tokyonight]
 color_bg0           = '#1a1b26'  # Background
@@ -284,202 +158,166 @@ color_purple        = '#957fb8'  # oniViolet
 
 [os]
 disabled = false
-style = "bg:color_blue fg:color_fg1"
+style = "fg:color_cyan bold"
 
 [os.symbols]
 Windows = "󰍲"
 Ubuntu = "󰕈"
-SUSE = ""
-Raspbian = "󰐿"
-Mint = "󰣭"
 Macos = "󰀵"
-Manjaro = ""
 Linux = "󰌽"
-Gentoo = "󰣨"
-Fedora = "󰣛"
-Alpine = ""
-Amazon = ""
-Android = ""
 Arch = "󰣇"
-Artix = "󰣇"
-EndeavourOS = ""
-CentOS = ""
 Debian = "󰣚"
-Redhat = "󱄛"
-RedHatEnterprise = "󱄛"
-Pop = ""
+Fedora = "󰣛"
+Manjaro = ""
+Pop = ""
 
 [hostname]
 disabled = false
 ssh_only = false
-style = "bg:color_blue fg:color_fg1"
-format = '[[  on ](fg:color_bg0 bg:color_blue)$hostname]($style)'
+style = "fg:color_blue bold"
+format = '[ on ](fg:color_bg3)[$hostname]($style)'
 
 [username]
 show_always = true
-style_user = "bg:color_blue fg:color_fg1"
-style_root = "bg:color_blue fg:color_bg0"
-format = '[[ as ](fg:color_bg0 bg:color_blue)$user ]($style)'
+style_user = "fg:color_blue bold"
+style_root = "fg:color_red bold"
+format = '[ as ](fg:color_bg3)[$user]($style)'
 
 [sudo]
 disabled = false
-style = "bg:color_blue fg:color_bg0"
-symbol = '  '
+style = "fg:color_red bold"
+symbol = ' '
 format = "[$symbol]($style)"
 
 [directory]
-style = "fg:color_white bg:color_purple"
-format = "[ $path ]($style)"
+style = "fg:color_yellow bold"
+format = "[ $path]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
 [directory.substitutions]
 "Documents" = "󰈙 "
-"Downloads" = " "
+"Downloads" = " "
 "Music" = "󰝚 "
-"Pictures" = " "
+"Pictures" = " "
 "Developer" = "󰲋 "
 
 [git_branch]
-symbol = ""
-style = "bg:color_green"
-format = '[[ $symbol $branch ](fg:color_fg1 bg:color_green)]($style)'
+symbol = ""
+style = "fg:color_green"
+format = '[ $symbol $branch]($style)'
 
 [git_status]
-style = "bg:color_green"
-format = '[[($all_status$ahead_behind )](fg:color_fg1 bg:color_green)]($style)'
+style = "fg:color_green"
+format = '[($all_status$ahead_behind)]($style)'
 
 [git_state]
-style = "fg:color_bg1 bg:color_green"
-format = '[\($state($progress_current of $progress_total)\)]($style)'
+style = "fg:color_green dim"
+format = '[ $state($progress_current/$progress_total)]($style)'
 
 [nodejs]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_green"
+format = '[ $symbol $version]($style)'
 
 [c]
-symbol = " "
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_blue"
+format = '[ $symbol $version]($style)'
 
 [rust]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = "󱘗"
+style = "fg:color_orange"
+format = '[ $symbol $version]($style)'
 
 [perl]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_cyan"
+format = '[ $symbol $version]($style)'
 
 [ruby]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_red"
+format = '[ $symbol $version]($style)'
 
 [lua]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_blue"
+format = '[ $symbol $version]($style)'
 
 [zig]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_orange"
+format = '[ $symbol $version]($style)'
 
 [golang]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_cyan"
+format = '[ $symbol $version]($style)'
 
 [php]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_purple"
+format = '[ $symbol $version]($style)'
 
 [java]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_orange"
+format = '[ $symbol $version]($style)'
 
 [kotlin]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_purple"
+format = '[ $symbol $version]($style)'
 
 [haskell]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_purple"
+format = '[ $symbol $version]($style)'
 
 [python]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = ""
+style = "fg:color_yellow"
+format = '[ $symbol $version]($style)'
 
 [vagrant]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = "⍱"
+style = "fg:color_blue"
+format = '[ $symbol $version]($style)'
 
 [package]
-symbol = ""
-style = "bg:color_cyan"
-format = '[[ $symbol( $version) ](fg:color_fg1 bg:color_cyan)]($style)'
+symbol = "󰏗"
+style = "fg:color_red"
+format = '[ $symbol $version]($style)'
 
 [docker_context]
-symbol = ""
-style = "bg:color_bg2"
-format = '[[ $symbol( $context) ](fg:color_cyan bg:color_bg2)]($style)'
-
-[custom.vagrant_context]
-command = """
-local state
-state=$(vagrant status --machine-readable | awk -F, '$3 == "state-human-short" { print $4 }')
-case "$state" in
-  running)
-    echo -e "Running" # Ensure UTF-8 characters are properly encoded
-    ;;
-  poweroff)
-    echo -e "Powered Off"
-    ;;
-  "not created")
-    echo -e "Not Created"
-    ;;
-  *)
-    echo -e "Unknown"
-    ;;
-esac
-"""
-detect_files = ['Vagrantfile']
-symbol = ""
-style = "bg:color_bg2"
-format = '[[ $symbol( $output) ](fg:color_cyan bg:color_bg2)]($style)'
+symbol = ""
+style = "fg:color_blue"
+format = '[ $symbol $context]($style)'
 
 [conda]
-style = "bg:color_bg2"
-format = '[[ $symbol( $environment) ](fg:color_cyan bg:color_bg2)]($style)'
+style = "fg:color_green"
+format = '[ $symbol $environment]($style)'
 
 [time]
 disabled = true
 time_format = "%R"
-style = "bg:color_bg1"
-format = '[[  $time ](fg:color_purple bg:color_bg1)]($style)'
+style = "fg:color_bg3"
+format = '[  $time]($style)'
 
 [cmd_duration]
 min_time = 500
-style = "bg:color_bg1"
-format = '[ 󰔟 $duration ](fg:color_purple bg:color_bg1)($style)'
+style = "fg:color_yellow"
+format = '[ 󰔟 $duration]($style)'
 
 [line_break]
 disabled = false
 
 [character]
 disabled = false
-success_symbol = '[](bold fg:color_green)'
-error_symbol = '[](bold fg:color_red)'
-vimcmd_symbol = '[](bold fg:color_green)'
-vimcmd_replace_one_symbol = '[](bold fg:color_purple)'
-vimcmd_replace_symbol = '[](bold fg:color_purple)'
-vimcmd_visual_symbol = '[](bold fg:color_yellow)'
+success_symbol = '[](bold fg:color_green)'
+error_symbol = '[](bold fg:color_red)'
+vimcmd_symbol = '[](bold fg:color_green)'
+vimcmd_replace_one_symbol = '[](bold fg:color_purple)'
+vimcmd_replace_symbol = '[](bold fg:color_purple)'
+vimcmd_visual_symbol = '[](bold fg:color_yellow)'
