@@ -9,7 +9,18 @@ export ZDOTDIR="$HOME/.config/zsh"
   return 1
 }
 
-# This is needed by Wezterm Multiplexer, otherwise the path isn't set in time for it find Wezterm to start
+# In WSL, set mise dirs to Linux paths EARLY before any mise activation
+# This prevents mise from picking up Windows config/data via /mnt/c
+if [[ -n "$WSL_DISTRO_NAME" ]] || grep -qiE "(microsoft|wsl)" /proc/version 2>/dev/null; then
+  export MISE_DATA_DIR="$HOME/.local/share/mise"
+  export MISE_CONFIG_DIR="$HOME/.config/mise"
+  export MISE_CACHE_DIR="$HOME/.cache/mise"
+  export MISE_STATE_DIR="$HOME/.local/state/mise"
+  # Ignore Windows config paths - must be env var since mise reads configs before reading ignore settings
+  export MISE_IGNORED_CONFIG_PATHS="/mnt/c:/mnt/d"
+fi
+
+# This is needed by Wezterm Multiplexer
 export PATH="$HOME/.local/bin:$PATH"
 
 # -------------------------------------------------------------------------------------------------
