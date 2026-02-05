@@ -51,7 +51,7 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
         "--layout=reverse"
         "--border"
         "--info=inline"
-        "--preview='if (Test-Path {2..}) { eza --color=always --icons --group-directories-first {2..} } else { Write-Host \"Directory not found\" }'"
+        "--preview='if (Test-Path {2..}) { eza --color=always --icons --group-directories-first {2..} } else { Write-Host `"Directory not found`" }'"
         "--preview-window=right:50%:wrap"
     ) -join " "
 
