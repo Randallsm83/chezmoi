@@ -431,7 +431,10 @@ install_1password_desktop() {
 }
 
 install_1password_cli
+{{- if not .is_wsl }}
+# Desktop app only needed on native Linux (WSL uses Windows 1Password SSH agent)
 install_1password_desktop
+{{- end }}
 {{- end }}
 
 {{- end -}}
