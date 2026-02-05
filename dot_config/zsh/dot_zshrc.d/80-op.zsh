@@ -16,9 +16,6 @@
 eval "$(op completion zsh)"
 compdef _op op
 
-# Automatically sign in to 1Password
-eval "$(op signin)"
-
 # Source 1Password plugins (e.g., GitHub CLI integration)
 if [[ -f "$HOME/.config/op/plugins.sh" ]]; then
   source "$HOME/.config/op/plugins.sh"

@@ -1,5 +1,5 @@
 ---
-workspace_dir: "~/projects"
+workspace_dir: "~/projects/dh"
 auto_env: true
 projects:
   ndn:
@@ -11,7 +11,7 @@ projects:
       - DB_SOURCE: "/ndnsecure/etc/db"
       - AUTH_SOURCE: "/ndnsecure/etc/auth"
       - NDN_ENVIRONMENT: production
-      - NDN_SECURE_PATH: "~/projects/ndnsecure"
+      - NDN_SECURE_PATH: "~/projects/dh/ndnsecure"
   # If left commented, a ready-to-use staging version of each React app will be used. If uncommented, a respective React app will run locally in development mode. Uncomment only if you intend to make changes to React apps. When you uncomment, also enable the respective service in the section below by changing `enable` from `false` to `true. If you want to enable development mode for all, you can uncomment NDN_DEV_ALL instead.
   #
   # - NDN_DEV_DOMAINS: 'true'
