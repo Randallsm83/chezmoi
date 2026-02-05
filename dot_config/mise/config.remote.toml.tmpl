@@ -29,13 +29,11 @@ direnv = "latest"
 
 # === Minimal CLI Tools ===
 fzf = "latest"
-"cargo:bat" = "latest"
-"cargo:fd-find" = "latest"
-"cargo:ripgrep" = "latest"
+bat = "latest"
+fd = "latest"
+ripgrep = "latest"
 neovim = "latest"
-
-# Git diff viewer (lightweight)
-"cargo:git-delta" = "latest"
+delta = "latest"
 
 [settings]
 idiomatic_version_file = true
@@ -57,9 +55,6 @@ disable_default_shorthands = false
 experimental = true
 status = { missing_tools = "if_other_versions_installed", show_env = false, show_tools = false }
 disable_tools = ["lua", "luajit", "deno", "bun"]  # Skip non-essential runtimes
-
-# cargo - always use binstall for speed
-cargo = { binstall = true }
 
 # node
 node = {}
