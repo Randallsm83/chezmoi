@@ -76,28 +76,28 @@ vim = "latest"
 starship = "latest"
 {{- end }}
 {{- if .package_features.bat }}
-"cargo:bat" = "latest"
+"ubi:sharkdp/bat" = "latest"
 {{- end }}
 {{- if .package_features.eza }}
-"cargo:eza" = "latest"
+"ubi:eza-community/eza" = "latest"
 {{- end }}
 {{- if .package_features.ripgrep }}
-"cargo:ripgrep" = "latest"
+"ubi:BurntSushi/ripgrep[exe=rg]" = "latest"
 {{- end }}
 {{- if .package_features.fd }}
-"cargo:fd-find" = "latest"
+"ubi:sharkdp/fd" = "latest"
 {{- end }}
 {{- if .package_features.fzf }}
 fzf = "latest"
 {{- end }}
 {{- if .package_features.zoxide }}
-"cargo:zoxide" = "latest"
+"ubi:ajeetdsouza/zoxide" = "latest"
 {{- end }}
 {{- if .package_features.delta }}
-"cargo:git-delta" = "latest"
+"ubi:dandavison/delta" = "latest"
 {{- end }}
 {{- if .package_features.vivid }}
-"cargo:vivid" = "latest"
+"ubi:sharkdp/vivid" = "latest"
 {{- end }}
 {{- if .package_features.glow }}
 glow = "latest"
@@ -106,7 +106,7 @@ glow = "latest"
 bat-extras = "latest"
 {{- end }}
 {{- if .package_features.btop }}
-btop = "latest"
+"ubi:aristocratos/btop" = "latest"
 {{- end }}
 {{- if .package_features.sqlite3 }}
 sqlite = "latest"
