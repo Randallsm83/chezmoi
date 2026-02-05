@@ -20,7 +20,7 @@
 
 theme:
   name: "spaceduck"  # Active theme
-  
+
   # Spaceduck - Official palette from pineapplegiant/spaceduck
   spaceduck:
     background: "#0f111b"
@@ -32,7 +32,7 @@ theme:
     blue: "#00a3cc"        # ANSI blue
     cyan: "#7a5ccc"        # ANSI cyan in their palette
     yellow: "#b3a1e6"      # ANSI yellow in their palette
-  
+
   # OneDark - navarasu/onedark.nvim
   onedark:
     background: "#282c34"
@@ -44,7 +44,7 @@ theme:
     blue: "#61afef"
     cyan: "#56b6c2"
     yellow: "#e5c07b"
-  
+
   # Gruvbox Material - sainnhe/gruvbox-material
   gruvbox-material:
     background: "#1d2021"
@@ -56,7 +56,7 @@ theme:
     blue: "#7daea3"
     cyan: "#89b482"
     yellow: "#d8a657"
-  
+
   # Tokyo Night - folke/tokyonight.nvim (night variant)
   tokyonight:
     background: "#1a1b26"
@@ -68,7 +68,7 @@ theme:
     blue: "#7aa2f7"
     cyan: "#7dcfff"
     yellow: "#e0af68"
-  
+
   # Tokyo Night Storm - folke/tokyonight.nvim (storm variant)
   tokyonight-storm:
     background: "#24283b"
@@ -80,7 +80,7 @@ theme:
     blue: "#7aa2f7"
     cyan: "#7dcfff"
     yellow: "#e0af68"
-  
+
   # Dracula - Official spec from draculatheme.com/spec
   dracula:
     background: "#282a36"
@@ -92,7 +92,7 @@ theme:
     blue: "#8be9fd"       # cyan in official spec
     cyan: "#8be9fd"
     yellow: "#f1fa8c"
-  
+
   # Kanagawa - rebelot/kanagawa.nvim (wave variant)
   kanagawa:
     background: "#1f1f28"  # sumiInk3
@@ -120,7 +120,7 @@ theme_mappings:
     tokyonight-storm: "tokyonight-storm"     # folke/tokyonight.nvim
     dracula: "dracula"                       # dracula/vim
     kanagawa: "kanagawa"                     # rebelot/kanagawa.nvim
-  
+
   # WezTerm builtin colorscheme names
   wezterm:
     spaceduck: "Spaceduck (Gogh)"
@@ -130,7 +130,7 @@ theme_mappings:
     tokyonight-storm: "Tokyo Night Storm"
     dracula: "Dracula (Official)"
     kanagawa: "Kanagawa (Gogh)"
-  
+
   # Starship palette names (defined in starship.toml)
   starship:
     spaceduck: "spaceduck"
@@ -140,7 +140,7 @@ theme_mappings:
     tokyonight-storm: "tokyonight_storm"
     dracula: "dracula"
     kanagawa: "kanagawa"
-  
+
   # Vivid theme names (for LS_COLORS generation)
   vivid:
     spaceduck: "spaceduck"
@@ -150,7 +150,7 @@ theme_mappings:
     tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
     kanagawa: "molokai"  # fallback - vivid doesn't have kanagawa
-  
+
   # Eza theme filenames (in ~/.config/eza/themes/)
   eza:
     spaceduck: "spaceduck"
@@ -160,7 +160,7 @@ theme_mappings:
     tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
     kanagawa: "kanagawa"  # TODO: create eza kanagawa theme
-  
+
   # Bat (cat with syntax highlighting) and Delta (git diff)
   # Use custom .tmTheme files generated from our color palettes
   bat:
@@ -171,7 +171,7 @@ theme_mappings:
     tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
     kanagawa: "kanagawa"
-  
+
   # Delta uses same theme names as bat
   delta:
     spaceduck: "spaceduck"
@@ -181,7 +181,7 @@ theme_mappings:
     tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
     kanagawa: "kanagawa"
-  
+
   # Vim colorscheme names (vim-plug plugin names)
   vim:
     spaceduck: "spaceduck"           # pineapplegiant/spaceduck
@@ -191,7 +191,7 @@ theme_mappings:
     tokyonight-storm: "tokyonight"   # ghifarit53/tokyonight-vim
     dracula: "dracula"               # dracula/vim
     kanagawa: "kanagawa"             # rebelot/kanagawa.nvim (works in vim)
-  
+
   # Vim airline theme names
   vim_airline:
     spaceduck: "spaceduck"           # comes with spaceduck plugin
@@ -218,10 +218,10 @@ fonts:
     - "CascadiaCode Nerd Font"
   emoji: "Noto Color Emoji"
   symbols: "Symbols Nerd Font Mono"
-  
+
   # Fira Code ligature settings (OpenType features)
   fira_code_stylistic_sets:
-    - ss02  # >= <= != == === !== 
+    - ss02  # >= <= != == === !==
     - ss03  # ->
     - ss04  # >=
     - ss05  # @
@@ -271,35 +271,35 @@ package_features:
   languages: true       # All language runtimes (node, python, ruby, go, rust, lua)
   editors: true         # nvim, vscode
   terminals: true       # wezterm, warp, windows_terminal
-  
+
   # ============================================================================
   # Version Control & Authentication (sane defaults)
   # ============================================================================
   git: true
   ssh: true
   1password: true
-  
+
   # ============================================================================
   # Package & Tool Version Management (sane defaults)
   # ============================================================================
   mise: true            # Version manager (replaces asdf/nvm)
   direnv: true          # Per-directory environments
   homebrew: true        # Package manager (Linux/macOS)
-  
+
   # ============================================================================
   # Terminal Emulators (recommended)
   # ============================================================================
   wezterm: true
   warp: true
   windows_terminal: true
-  
+
   # ============================================================================
   # Text Editors (recommended)
   # ============================================================================
   nvim: true
   vim: true
   vscode: true
-  
+
   # ============================================================================
   # Shell Tools (recommended)
   # ============================================================================
@@ -321,7 +321,7 @@ package_features:
   navi: true            # Interactive cheatsheet tool
   fastfetch: true       # System info display
   tealdeer: true        # Fast tldr client (rust)
-  
+
   # ============================================================================
   # Language Runtimes (optional - enable as needed)
   # ============================================================================
@@ -334,14 +334,14 @@ package_features:
   perl: true
   julia: true
   php: false        # Requires many build deps (openssl, re2c, etc), enable manually if needed
-  
+
   # ============================================================================
   # Development Tools (optional)
   # ============================================================================
   sqlite3: true
   arduino: false
   vagrant: false        # Virtualization
-  
+
   # ============================================================================
   # Legacy/Deprecated (disabled)
   # ============================================================================
@@ -392,7 +392,7 @@ package_mapping:
     darwin:
       brew: [git, gh, lazygit]
       mise: []
-  
+
   ssh:
     windows:
       scoop: []
@@ -407,7 +407,7 @@ package_mapping:
     darwin:
       brew: []
       mise: []
-  
+
   1password:
     windows:
       scoop: [1password-cli]
@@ -422,7 +422,7 @@ package_mapping:
     darwin:
       brew: [1password-cli, 1password]
       mise: []
-  
+
   # Package & Tool Version Management
   mise:
     windows:
@@ -438,7 +438,7 @@ package_mapping:
     darwin:
       brew: [mise]
       mise: []
-  
+
   direnv:
     windows:
       scoop: []
@@ -453,7 +453,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [direnv]
-  
+
   homebrew:
     windows:
       scoop: []
@@ -468,7 +468,7 @@ package_mapping:
     darwin:
       brew: []
       mise: []
-  
+
   # Terminal Emulators (GUI apps - casks are macOS only)
   wezterm:
     windows:
@@ -484,7 +484,7 @@ package_mapping:
     darwin:
       brew: [wezterm]
       mise: []
-  
+
   warp:
     windows:
       scoop: []
@@ -499,7 +499,7 @@ package_mapping:
     darwin:
       brew: [warp]
       mise: []
-  
+
   windows_terminal:
     windows:
       scoop: []
@@ -514,7 +514,7 @@ package_mapping:
     darwin:
       brew: []
       mise: []
-  
+
   # Text Editors
   nvim:
     windows:
@@ -530,13 +530,13 @@ package_mapping:
     darwin:
       brew: []
       mise: [neovim]
-  
+
   vim:
     scoop: [vim]
     winget: []
     brew: [vim]
     mise: [vim]
-  
+
   vscode:
     windows:
       scoop: []
@@ -551,7 +551,7 @@ package_mapping:
     darwin:
       brew: [visual-studio-code]
       mise: []
-  
+
   # Shell Tools
   starship:
     windows:
@@ -567,7 +567,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:starship]
-  
+
   zsh:
     windows:
       scoop: []
@@ -582,7 +582,7 @@ package_mapping:
     darwin:
       brew: [zsh]
       mise: []
-  
+
   powershell:
     windows:
       scoop: []
@@ -598,7 +598,7 @@ package_mapping:
     darwin:
       brew: [powershell]
       mise: []
-  
+
   bat:
     windows:
       scoop: [bat]
@@ -613,7 +613,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:bat]
-  
+
   eza:
     windows:
       scoop: [eza]
@@ -628,7 +628,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:eza]
-  
+
   ripgrep:
     windows:
       scoop: [ripgrep]
@@ -643,7 +643,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:ripgrep]
-  
+
   fd:
     windows:
       scoop: [fd]
@@ -658,7 +658,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:fd-find]
-  
+
   fzf:
     windows:
       scoop: [fzf]
@@ -673,7 +673,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [fzf]
-  
+
   zoxide:
     windows:
       scoop: [zoxide]
@@ -688,7 +688,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:zoxide]
-  
+
   delta:
     windows:
       scoop: [delta]
@@ -703,7 +703,7 @@ package_mapping:
     darwin:
       brew: [git-delta]
       mise: []
-  
+
   vivid:
     windows:
       scoop: [vivid]
@@ -718,7 +718,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:vivid]
-  
+
   wget:
     windows:
       scoop: [wget, curl]
@@ -733,7 +733,7 @@ package_mapping:
     darwin:
       brew: [wget]
       mise: []
-  
+
   glow:
     windows:
       scoop: [glow]
@@ -748,7 +748,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [glow]
-  
+
   thefuck:
     windows:
       scoop: []
@@ -763,7 +763,7 @@ package_mapping:
     darwin:
       brew: [thefuck]
       mise: []
-  
+
   btop:
     windows:
       scoop: [btop]
@@ -778,7 +778,7 @@ package_mapping:
     darwin:
       brew: [btop]
       mise: []
-  
+
   navi:
     windows:
       scoop: [navi]
@@ -793,7 +793,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [cargo:navi]
-  
+
   fastfetch:
     windows:
       scoop: [fastfetch]
@@ -808,7 +808,7 @@ package_mapping:
     darwin:
       brew: [fastfetch]
       mise: []
-  
+
   tealdeer:
     windows:
       scoop: [tealdeer]
@@ -823,7 +823,7 @@ package_mapping:
     darwin:
       brew: [tealdeer]
       mise: []
-  
+
   # Language Runtimes
   rust:
     windows:
@@ -839,7 +839,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [rust@stable]
-  
+
   golang:
     windows:
       scoop: []
@@ -854,7 +854,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [go@latest]
-  
+
   python:
     windows:
       scoop: []
@@ -870,7 +870,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [python@latest, uv, pipx]
-  
+
   ruby:
     windows:
       scoop: []
@@ -885,7 +885,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [ruby@latest]
-  
+
   lua:
     windows:
       scoop: [lua51, luarocks, luajit]  # lua51 from versions bucket
@@ -900,7 +900,7 @@ package_mapping:
     darwin:
       brew: [lua, luarocks, luajit]
       mise: []
-  
+
   node:
     windows:
       scoop: []
@@ -915,7 +915,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [node@lts, yarn, bun@latest, deno@latest]
-  
+
   perl:
     windows:
       scoop: []
@@ -930,7 +930,7 @@ package_mapping:
     darwin:
       brew: []
       mise: [perl@latest]
-  
+
   julia:
     windows:
       scoop: [juliaup]
@@ -945,22 +945,22 @@ package_mapping:
     darwin:
       brew: [juliaup]
       mise: []
-  
+
   php:
     windows:
       scoop: []
       winget: []
       mise: [php@latest]
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [php@latest]
+      apt: [php]
+      dnf: [php]
+      pacman: [php]
+      brew: [php]
+      mise: []
     darwin:
-      brew: []
-      mise: [php@latest]
-  
+      brew: [php]
+      mise: []
+
   # Development Tools
   sqlite3:
     windows:
@@ -976,7 +976,7 @@ package_mapping:
     darwin:
       brew: [sqlite]
       mise: []
-  
+
   arduino:
     windows:
       scoop: []
@@ -991,7 +991,7 @@ package_mapping:
     darwin:
       brew: [arduino-ide]
       mise: []
-  
+
   vagrant:
     windows:
       scoop: []
@@ -1017,13 +1017,19 @@ always_install:
     - 7zip
     - unzip
     - gzip
-  
+
   winget: []
-  
+
   brew:
     - jq
     - yq
-  
+
+  pacman:
+    - re2c
+
+  apt: []
+  dnf: []
+
   mise:
     - usage
 
@@ -1044,7 +1050,7 @@ remote_packages:
       - bat      # Cat with syntax highlighting
       - delta    # Git diff viewer
       - neovim   # Text editor
-  
+
   # Full set for remote workstations (with sudo)
   full:
     runtimes:

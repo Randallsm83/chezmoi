@@ -9,7 +9,7 @@
 # PLATFORM-SPECIFIC FILE STRATEGY:
 # ================================
 # For platform-specific files that should only be applied on certain OS:
-# 
+#
 # 1. Files with platform in name (e.g., config.linux.toml, config.windows.toml):
 #    - Use .chezmoiignore with OS conditionals to exclude on wrong platforms
 #    - Example: Exclude config.linux.toml on Windows, config.windows.toml on Linux

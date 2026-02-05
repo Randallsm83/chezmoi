@@ -47,6 +47,25 @@ apt_packages=""
 dnf_packages=""
 pacman_packages=""
 
+# Add always_install packages
+{{- range .always_install.mise }}
+mise_packages="$mise_packages {{ . }}"
+{{- end }}
+{{- range .always_install.brew }}
+brew_packages="$brew_packages {{ . }}"
+{{- end }}
+{{- if eq .chezmoi.os "linux" }}
+{{- range .always_install.pacman }}
+pacman_packages="$pacman_packages {{ . }}"
+{{- end }}
+{{- range .always_install.apt }}
+apt_packages="$apt_packages {{ . }}"
+{{- end }}
+{{- range .always_install.dnf }}
+dnf_packages="$dnf_packages {{ . }}"
+{{- end }}
+{{- end }}
+
 {{- range $feature, $enabled := .package_features }}
 {{- if $enabled }}
 {{- $mapping := index $.package_mapping $feature }}
