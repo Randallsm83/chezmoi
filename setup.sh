@@ -378,7 +378,8 @@ install_and_apply_dotfiles() {
     
     # Use chezmoi's one-line install that does everything
     # This installs chezmoi AND applies the dotfiles in one step
-    if sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply "$REPO" --branch "$BRANCH"; then
+    # --ssh forces SSH URL instead of HTTPS for the git remote
+    if sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --ssh "$REPO" --branch "$BRANCH"; then
         log_success "Dotfiles applied successfully"
         return 0
     else

@@ -132,7 +132,7 @@ Write-Log "  You can monitor progress below`n" 'Gray'
 
 # Use official chezmoi one-line installer as the newly created user
 Write-Log "Running official chezmoi installer as user '$username'..." 'Gray'
-$bootstrapOutput = wsl -d archlinux bash -c "curl -fsSL https://get.chezmoi.io | sh -s -- init --apply Randallsm83/dotfiles" 2>&1 | Out-String
+$bootstrapOutput = wsl -d archlinux bash -c "curl -fsSL https://get.chezmoi.io | sh -s -- init --apply --ssh Randallsm83/dotfiles" 2>&1 | Out-String
 Write-Log "Exit code: $LASTEXITCODE" 'Gray'
 Write-Log "Bootstrap output:`n$bootstrapOutput" 'Gray'
 
@@ -141,7 +141,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Log "Full output logged to: $logFile" 'Yellow'
     Write-Log "You can retry manually from within WSL:" 'Yellow'
     Write-Log "  wsl -d archlinux" 'White'
-    Write-Log "  sh -c '`$(curl -fsLS get.chezmoi.io)' -- init --apply Randallsm83/dotfiles`n" 'White'
+    Write-Log "  sh -c '`$(curl -fsLS get.chezmoi.io)' -- init --apply --ssh Randallsm83/dotfiles`n" 'White'
     exit 1
 }
 

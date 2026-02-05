@@ -97,12 +97,13 @@ command: |-
   
   # Install chezmoi to ~/.local/bin (in user's PATH) and run init --apply
   # Use single quotes to prevent PowerShell from interpreting $HOME
-  wsl -d archlinux bash -c 'set -e; mkdir -p "$HOME/.local/bin"; curl -fsSL https://get.chezmoi.io | sh -s -- -b "$HOME/.local/bin"; "$HOME/.local/bin/chezmoi" init --apply Randallsm83/dotfiles'
+  # --ssh flag ensures SSH remote URL for 1Password SSH agent auth
+  wsl -d archlinux bash -c 'set -e; mkdir -p "$HOME/.local/bin"; curl -fsSL https://get.chezmoi.io | sh -s -- -b "$HOME/.local/bin"; "$HOME/.local/bin/chezmoi" init --apply --ssh Randallsm83/dotfiles'
   
   if ($LASTEXITCODE -ne 0) {
       Write-Log "`n⚠ Bootstrap encountered issues" 'Yellow'
       Write-Log "Retry manually: wsl -d archlinux" 'White'
-      Write-Log "  chezmoi init --apply Randallsm83/dotfiles" 'White'
+      Write-Log "  chezmoi init --apply --ssh Randallsm83/dotfiles" 'White'
       return
   }
   

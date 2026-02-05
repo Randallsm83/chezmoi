@@ -421,9 +421,9 @@ function Initialize-Chezmoi {
     
     Write-Status "Initializing chezmoi from $Repo..." -Type Info
     
-    # Convert shorthand to full GitHub URL if needed
-    $repoUrl = if ($Repo -notmatch '^https?://') {
-        "https://github.com/$Repo.git"
+    # Convert shorthand to full GitHub SSH URL if needed
+    $repoUrl = if ($Repo -notmatch '^(https?://|git@)') {
+        "git@github.com:$Repo.git"
     } else {
         $Repo
     }
@@ -435,6 +435,7 @@ function Initialize-Chezmoi {
         # 2. Run any run_once_before scripts
         # 3. Apply all dotfiles
         # 4. Run any run_once scripts (package installation)
+        # Using SSH URL for proper auth with 1Password SSH agent
         chezmoi init --apply --branch $Branch $repoUrl
         
         $Script:Stats.ConfigsApplied = $true
