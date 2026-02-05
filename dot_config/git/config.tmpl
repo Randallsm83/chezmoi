@@ -123,6 +123,9 @@
 
 # 1Password SSH Agent
 {{- if .setup_1password }}
+# Use SSH for GitHub when 1Password agent is available
+[url "git@github.com:"]
+	insteadOf = https://github.com/
 {{- if eq .chezmoi.os "windows" }}
 [core]
 	# Windows: Use native OpenSSH which reads ~/.ssh/config for 1Password agent
