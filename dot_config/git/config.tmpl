@@ -133,7 +133,7 @@
 {{- else if .chezmoi.kernel.osrelease | lower | contains "microsoft" }}
 [core]
 	# WSL: Use Windows SSH to access 1Password agent on Windows host
-	sshCommand = ssh.exe
+	sshCommand = /mnt/c/Windows/System32/OpenSSH/ssh.exe
 {{- else }}
 [core]
 	# Native Linux/macOS: 1Password SSH agent via socket
