@@ -496,7 +496,7 @@ projects:
       - DEBUG: "*"
       - LINK_LOCAL_PACKAGES: "false"
   google-workspace-service:
-    enable: false
+    enable: true
     repo: git@git.dreamhost.com:dreamhost/microservices/google-workspace-service.git
     path: "google-workspace-service"
     env_vars:
@@ -508,7 +508,7 @@ projects:
       - DEBUG: "*"
       - LINK_LOCAL_PACKAGES: "false"
   inspirations-service:
-    enable: false
+    enable: true
     repo: git@git.dreamhost.com:dreamhost/microservices/inspirations-service.git
     path: "inspirations-service"
     env_vars:
@@ -520,7 +520,7 @@ projects:
       - DEBUG: "*"
       - LINK_LOCAL_PACKAGES: "false"
   klaviyo-service:
-    enable: false
+    enable: true
     repo: git@git.dreamhost.com:dreamhost/microservices/klaviyo-service.git
     path: "klaviyo-service"
     env_vars:
@@ -532,7 +532,7 @@ projects:
       - DEBUG: "*"
       - LINK_LOCAL_PACKAGES: "false"
   mailchannels-service:
-    enable: false
+    enable: true
     repo: git@git.dreamhost.com:dreamhost/microservices/mailchannels-service.git
     path: "mailchannels-service"
     env_vars:
@@ -544,7 +544,7 @@ projects:
       - DEBUG: "*"
       - LINK_LOCAL_PACKAGES: "false"
   marketgoo-seo-service:
-    enable: false
+    enable: true
     repo: git@git.dreamhost.com:dreamhost/microservices/marketgoo-seo-service.git
     path: "marketgoo-seo-service"
     env_vars:
@@ -556,7 +556,7 @@ projects:
       - DEBUG: "*"
       - LINK_LOCAL_PACKAGES: "false"
   notification-service:
-    enable: false
+    enable: true
     repo: git@git.dreamhost.com:dreamhost/microservices/notification-service.git
     path: "notification-service"
     env_vars:
@@ -595,6 +595,306 @@ projects:
     enable: true
     repo: git@git.dreamhost.com:dreamhost/microservices/search-service.git
     path: "search-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  adac-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/adac-service.git
+    path: "adac-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  ai-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/ai-service.git
+    path: "ai-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  business-plan-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/business-plan-service.git
+    path: "business-plan-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  cdn-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/cdn-service.git
+    path: "cdn-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  clamav-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/clamav-service.git
+    path: "clamav-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  clickup-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/clickup-service.git
+    path: "clickup-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  content-builder-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/content-builder-service.git
+    path: "content-builder-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  domreg-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/domreg-service.git
+    path: "domreg-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  lighthouse-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/lighthouse-service.git
+    path: "lighthouse-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  mailer-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/mailer-service.git
+    path: "mailer-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  metric-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/metric-service.git
+    path: "metric-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  proservices-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/proservices-service.git
+    path: "proservices-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  py-email-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/py-email-service.git
+    path: "py-email-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  release-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/release-service.git
+    path: "release-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  roadmap-ng-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/roadmap-ng-service.git
+    path: "roadmap-ng-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  roadmap-nodejs-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/roadmap-nodejs-service.git
+    path: "roadmap-nodejs-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  roadmap-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/roadmap-service.git
+    path: "roadmap-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  screenshot-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/screenshot-service.git
+    path: "screenshot-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  servicectl-api:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/servicectl-api.git
+    path: "servicectl-api"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  signup-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/signup-service.git
+    path: "signup-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  support-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/support-service.git
+    path: "support-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  translation-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/translation-service.git
+    path: "translation-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  website-builder-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/website-builder-service.git
+    path: "website-builder-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  website-image-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/website-image-service.git
+    path: "website-image-service"
+    env_vars:
+      - ENABLE_DEBUGGER: "false"
+      - PROD_DATABASES: "true"
+      - EXECUTE_TYPESCRIPT: "false"
+      - DEBUG_COMMAND_SYSTEM: "false"
+      - DEBUG_DB_SQL: "false"
+      - DEBUG: "*"
+      - LINK_LOCAL_PACKAGES: "false"
+  wordpress-service:
+    enable: true
+    repo: git@git.dreamhost.com:dreamhost/microservices/wordpress-service.git
+    path: "wordpress-service"
     env_vars:
       - ENABLE_DEBUGGER: "false"
       - PROD_DATABASES: "true"
