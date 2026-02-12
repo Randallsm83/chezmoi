@@ -10,8 +10,6 @@
 # =================================================================================================
 # Mise Configuration
 # =================================================================================================
-# Note: Mise activation is already done in the main profile (line 72)
-# This script adds compiler/linker environment variables for native extensions
 
 # Mise directories (XDG compliant)
 $env:MISE_DATA_DIR = "$env:XDG_DATA_HOME\mise"
@@ -211,6 +209,14 @@ if (Test-Path $phpRoot) {
 # CMake configuration
 if ($env:CMAKE_LIBRARY_PATH) {
     $env:CMAKE_PREFIX_PATH = $env:CMAKE_LIBRARY_PATH
+}
+
+# =================================================================================================
+# Initialization
+# =================================================================================================
+
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& mise activate pwsh | Out-String)
 }
 
 # vim: ts=2 sts=2 sw=2 et

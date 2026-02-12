@@ -64,14 +64,14 @@ if (Get-Module -ListAvailable -Name PSCompletions) {
     $PSCompletions.handle_completion()
 }
 
-# Initialize Starship prompt
-if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Invoke-Expression (&starship init powershell)
-}
-
-# Initialize Mise (tool version manager)
-if (Get-Command mise -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& mise activate pwsh | Out-String)
+# Source all modular scripts from Scripts directory
+# (includes starship, zoxide, fzf, completions, aliases, etc.)
+$scriptsDir = Join-Path (Split-Path $PROFILE) "Scripts"
+if (Test-Path $scriptsDir) {
+    Get-ChildItem "$scriptsDir\*.ps1" -ErrorAction SilentlyContinue | ForEach-Object {
+        Write-Verbose "Sourcing: $($_.Name)"
+        . $_.FullName
+    }
 }
 
 # WSL Tab Completion
@@ -82,15 +82,6 @@ if (Get-Module -ListAvailable -Name WSLTabCompletion) {
 # Import GamePerformanceOptimizer
 if (Get-Module -ListAvailable -Name GamePerformanceOptimizer) {
     Import-Module GamePerformanceOptimizer
-}
-
-# Source all modular scripts from Scripts directory
-$scriptsDir = Join-Path (Split-Path $PROFILE) "Scripts"
-if (Test-Path $scriptsDir) {
-    Get-ChildItem "$scriptsDir\*.ps1" -ErrorAction SilentlyContinue | ForEach-Object {
-        Write-Verbose "Sourcing: $($_.Name)"
-        . $_.FullName
-    }
 }
 
 
