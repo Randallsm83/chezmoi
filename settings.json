@@ -394,7 +394,10 @@
     "git show",
     "alias",
     "cat",
-    "echo"
+    "echo",
+    "npm test",
+    "npm install",
+    "tsc"
   ],
   "kilo-code.deniedCommands": [],
   // MCP Discovery
@@ -444,7 +447,9 @@
   "claude-dev-experimental.api.currentModel": {
     "uiId": "gpt-5.2-medium",
     "mode": "responsive"
-  }
+  },
+  "kilo-code.debug": false,
+  "roo-cline.debug": false
   // ============================================================================
   // PERFORMANCE
   // ============================================================================

@@ -131,6 +131,9 @@ if (Test-Path $goRoot) {
 }
 
 # Rust - CARGO_HOME and RUSTUP_HOME already set above
+# Cargo bin (mise installs rust via rustup, binaries live in $CARGO_HOME/bin)
+Add-ToPath "$env:CARGO_HOME\bin"
+
 $rustRoot = Join-Path $miseInstalls "rust"
 if (Test-Path $rustRoot) {
     Get-ChildItem $rustRoot -Directory | ForEach-Object {
