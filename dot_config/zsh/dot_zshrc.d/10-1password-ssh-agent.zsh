@@ -18,9 +18,11 @@ elif is-wsl; then
   # WSL: Use Windows SSH client (ssh.exe) to access 1Password agent
   # This leverages WSL interoperability - the Windows SSH client automatically
   # connects to the 1Password SSH agent on Windows. Much simpler than named pipes!
-  export GIT_SSH_COMMAND="ssh.exe"
-  alias ssh="ssh.exe"
-  alias ssh-add="ssh-add.exe"
+  local win_ssh="/mnt/c/Windows/System32/OpenSSH/ssh.exe"
+  local win_ssh_add="/mnt/c/Windows/System32/OpenSSH/ssh-add.exe"
+  export GIT_SSH_COMMAND="$win_ssh"
+  alias ssh="$win_ssh"
+  alias ssh-add="$win_ssh_add"
   # Unset SSH_AUTH_SOCK since we're using Windows SSH
   unset SSH_AUTH_SOCK
 else
