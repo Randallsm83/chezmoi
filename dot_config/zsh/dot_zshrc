@@ -22,6 +22,10 @@ if [[ -n "$WSL_DISTRO_NAME" ]] || grep -qiE "(microsoft|wsl)" /proc/version 2>/d
   export MISE_CONFIG_DIR="$HOME/.config/mise"
   export MISE_CACHE_DIR="$HOME/.cache/mise"
   export MISE_STATE_DIR="$HOME/.local/state/mise"
+  # CRITICAL: early-init settings must be env vars, NOT mise.toml
+  export MISE_IGNORED_CONFIG_PATHS="/mnt/c:/mnt/d"
+  export MISE_CEILING_PATHS="/mnt"
+  [[ "$PWD" == /mnt/* ]] && cd "$HOME"
 fi
 
 # Initialize mise EARLY before plugins
