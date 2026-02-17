@@ -13,8 +13,8 @@
 [[ ! -d /dh/bin ]] && return 0
 
 # NDN Aliases
-# alias dbc='sudo /dh/bin/dbc'
-alias dbc='/usr/bin/perl /dh/bin/dbc'
+alias dbc='sudo /dh/bin/dbc'
+# alias dbc='/usr/bin/perl /dh/bin/dbc'
 alias dhdb='sudo /dh/bin/dh-db'
 alias dhd='sudo /dh/bin/dh-domain'
 alias dhc='sudo /dh/bin/dhcat'
@@ -28,6 +28,7 @@ alias dhtail='sudo /dh/bin/dhtail'
 alias dh-domain='sudo /dh/bin/dh-domain'
 alias dh-ip='sudo /dh/bin/dh-ip'
 alias dh-machine='sudo /dh/bin/dh-machine'
+alias dhqs="dhqsearch --f='squid,home,service,command,executed_by_home,scheduled,finished,result' -X 'exec_delay,runtime'"
 alias dhqsearch='sudo /dh/bin/dhqsearch'
 alias dhsh.pl='sudo /dh/bin/dhsh.pl'
 alias dh-cluster='sudo /dh/bin/dh-cluster'
