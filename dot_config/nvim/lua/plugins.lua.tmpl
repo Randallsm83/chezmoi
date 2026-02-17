@@ -1208,6 +1208,11 @@ require('lazy').setup({
       --    :Mason
       --
       --  You can press `g?` for help in this menu.
+
+      -- Clear GOBIN set by mise so Mason's `go install` places binaries
+      -- in its own package directory instead of mise's Go bin dir.
+      vim.env.GOBIN = nil
+
       require('mason').setup()
 
       -- You can add other tools here that you want Mason to install
