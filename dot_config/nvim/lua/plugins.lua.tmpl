@@ -1212,6 +1212,9 @@ require('lazy').setup({
       -- Clear GOBIN set by mise so Mason's `go install` places binaries
       -- in its own package directory instead of mise's Go bin dir.
       vim.env.GOBIN = nil
+      -- Prevent mise from auto-installing missing tools (and triggering
+      -- concurrent shim rebuilds that fail with "Access is denied" on Windows).
+      vim.env.MISE_INSTALL_MISSING = 'false'
 
       require('mason').setup()
 
