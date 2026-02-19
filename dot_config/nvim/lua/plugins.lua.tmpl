@@ -1216,6 +1216,17 @@ require('lazy').setup({
       -- concurrent shim rebuilds that fail with "Access is denied" on Windows).
       vim.env.MISE_INSTALL_MISSING = 'false'
 
+      -- Windows: strip mise shims from PATH so Mason spawns direct binaries.
+      -- Shims invoke `mise exec` which can override GOBIN and trigger broken
+      -- junction-detection logic. Not needed on Unix where shims work fine.
+      if vim.fn.has('win32') == 1 then
+        local shims_dir = (vim.env.MISE_DATA_DIR or (vim.env.HOME .. '/.local/share/mise')) .. '/shims'
+        local filtered = vim.tbl_filter(function(p)
+          return p ~= shims_dir and p ~= shims_dir:gsub('/', '\\')
+        end, vim.split(vim.env.PATH, ';', { plain = true }))
+        vim.env.PATH = table.concat(filtered, ';')
+      end
+
       require('mason').setup()
 
       -- You can add other tools here that you want Mason to install

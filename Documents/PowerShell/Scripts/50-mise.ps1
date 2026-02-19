@@ -215,8 +215,16 @@ if ($env:CMAKE_LIBRARY_PATH) {
 # Initialization
 # =================================================================================================
 
+# Prevent mise from auto-installing missing tools during shell activation
+# (works around Windows junction detection bugs and speeds up shell startup)
+$env:MISE_INSTALL_MISSING = 'false'
+
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     Invoke-Expression (& mise activate pwsh | Out-String)
 }
+
+# Ensure ~/.local/bin takes precedence over WindowsApps stubs
+# (mise activate prepends tool dirs, pushing user PATH entries behind system ones)
+Add-ToPath "$HOME\.local\bin"
 
 # vim: ts=2 sts=2 sw=2 et

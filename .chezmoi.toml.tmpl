@@ -191,6 +191,9 @@
 
 [onepassword]
     prompt = false
+{{- if $is_windows }}
+    command = {{ joinPath .chezmoi.homeDir ".local" "bin" "op.exe" | quote }}
+{{- end }}
 
 {{- /* ========================================================================== */ -}}
 {{- /* Git Repository Settings                                                 */ -}}

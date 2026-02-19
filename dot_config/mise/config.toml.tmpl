@@ -143,7 +143,9 @@ status = { missing_tools = "if_other_versions_installed", show_env = false, show
 
 {{- if eq .chezmoi.os "windows" }}
 # Disable tools that don't work well via mise on Windows
-disable_tools = ["lua", "luajit"]
+# rust: mise can't detect its own junction on Windows (ln -sf fails with os error 183)
+#       rustup + cargo/bin in PATH (via 50-mise.ps1) works fine without mise
+disable_tools = ["lua", "luajit", "rust"]
 {{- else }}
 disable_tools = []
 {{- end }}

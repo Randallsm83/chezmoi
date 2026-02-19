@@ -138,6 +138,11 @@ $global:ErrorActionPreference = 'Continue'
 $env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"
 {{- end }}
 
+# Warp API Key (from 1Password)
+{{- if .setup_1password }}
+$env:WARP_API_KEY = "{{ onepasswordRead "op://Personal/Warp API Key/credential" }}"
+{{- end }}
+
 # Welcome message (optional - comment out if you prefer clean startup)
 # Write-Host "PowerShell $($PSVersionTable.PSVersion) - Welcome, {{ .name }}!" -ForegroundColor Cyan
 {{- end -}}
