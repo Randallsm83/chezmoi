@@ -115,10 +115,13 @@ sqlite = "latest"
 # Build tools
 cargo-binstall = "latest"
 chezmoi = "latest"
-{{- if .package_features.thefuck }}
-# thefuck requires git install due to setuptools issues in Python 3.12+
-"pipx:git+https://github.com/nvbn/thefuck.git" = "master"
-{{- end }}
+# NOTE: thefuck cannot be installed via pipx/uv - setuptools 82 removed
+# pkg_resources which thefuck's setup.py still imports. Install via system
+# package manager instead (pacman, apt, brew). Tracking:
+# https://github.com/pypa/setuptools/issues/5174
+# {{- if .package_features.thefuck }}
+# "pipx:git+https://github.com/nvbn/thefuck.git" = "master"
+# {{- end }}
 {{- end }}
 
 [settings]
