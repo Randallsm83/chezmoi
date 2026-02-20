@@ -14,6 +14,7 @@ typeset -gU path fpath
 path=(
   $HOME/{,s}bin(N)
   $HOME/.local/{,s}bin(N)
+  $HOME/.cargo/bin(N)
   /opt/{homebrew,local}/{,s}bin(N)
   $HOME/.local/share/homebrew/{,s}bin(N)
   ${DHSPACE:-$HOME/projects}/ndn/dh/bin(N)
