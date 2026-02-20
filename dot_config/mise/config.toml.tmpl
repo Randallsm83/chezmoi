@@ -15,113 +15,54 @@
 
 [tools]
 # === Language Runtimes ===
-{{- if .package_features.node }}
-node = "lts"
+{{- range $feature := list "node" "python" "ruby" "golang" "rust" "perl" "php" }}
+{{- if index $.package_features $feature }}
+{{- $mapping := index $.package_mapping $feature }}
+{{- if hasKey $mapping $.chezmoi.os }}
+{{- $platform := index $mapping $.chezmoi.os }}
+{{- range $platform.mise }}
+{{- template "mise-tool-entry" . }}
 {{- end }}
-{{- if .package_features.python }}
-python = "latest"
 {{- end }}
-{{- if .package_features.ruby }}
-ruby = "latest"
 {{- end }}
-{{- if .package_features.golang }}
-go = "latest"
-{{- end }}
-{{- if .package_features.rust }}
-rust = "stable"
 {{- end }}
 {{- if and .package_features.lua (ne .chezmoi.os "windows") }}
-lua = "latest"
-luajit = "latest"
+{{- $luaMapping := index .package_mapping "lua" }}
+{{- if hasKey $luaMapping .chezmoi.os }}
+{{- $platform := index $luaMapping .chezmoi.os }}
+{{- range $platform.mise }}
+{{- template "mise-tool-entry" . }}
 {{- end }}
-zig = "latest"
-{{- if and .package_features.perl (ne .chezmoi.os "windows") }}
-perl = "latest"
 {{- end }}
-{{- if .package_features.php }}
-php = "latest"
 {{- end }}
 
-# === Universal Tools ===
-{{- if .package_features.direnv }}
-direnv = "latest"
-{{- end }}
+# === Always-Installed Tools ===
 {{- range .always_install.mise }}
-{{ . }} = "latest"
+{{- template "mise-tool-entry" . }}
 {{- end }}
-{{- if .package_features.node }}
-bun = "latest"
-deno = "latest"
-yarn = "latest"
+
+# === Feature-Gated Tools ===
+{{- range $feature := list "direnv" "git" "nvim" "vim" "starship" "bat" "eza" "ripgrep" "fd" "fzf" "zoxide" "delta" "vivid" "glow" "btop" "navi" "sqlite3" "tealdeer" "fastfetch" }}
+{{- if and (hasKey $.package_features $feature) (index $.package_features $feature) }}
+{{- $mapping := index $.package_mapping $feature }}
+{{- if hasKey $mapping $.chezmoi.os }}
+{{- $platform := index $mapping $.chezmoi.os }}
+{{- range $platform.mise }}
+{{- template "mise-tool-entry" . }}
 {{- end }}
-{{- if .package_features.python }}
-uv = "latest"
-{{- if ne .chezmoi.os "windows" }}
-pipx = "latest"
+{{- end }}
 {{- end }}
 {{- end }}
 
 {{- if ne .chezmoi.os "windows" }}
-# === CLI Tools (Linux/WSL/macOS) ===
-{{- if .package_features.git }}
-github-cli = "latest"  # gh
+# === Build Tools (Unix) ===
+{{- range .always_install.mise_unix }}
+{{- template "mise-tool-entry" . }}
 {{- end }}
-{{- if .package_features.nvim }}
-neovim = "latest"
-{{- end }}
-{{- if .package_features.vim }}
-vim = "latest"
-{{- end }}
-{{- if .package_features.starship }}
-starship = "latest"
-{{- end }}
-{{- if .package_features.bat }}
-"github:sharkdp/bat" = "latest"
-{{- end }}
-{{- if .package_features.eza }}
-"github:eza-community/eza" = "latest"
-{{- end }}
-{{- if .package_features.ripgrep }}
-"github:BurntSushi/ripgrep" = "latest"
-{{- end }}
-{{- if .package_features.fd }}
-"github:sharkdp/fd" = "latest"
-{{- end }}
-{{- if .package_features.fzf }}
-fzf = "latest"
-{{- end }}
-{{- if .package_features.zoxide }}
-"github:ajeetdsouza/zoxide" = "latest"
-{{- end }}
-{{- if .package_features.delta }}
-"github:dandavison/delta" = "latest"
-{{- end }}
-{{- if .package_features.vivid }}
-"github:sharkdp/vivid" = "latest"
-{{- end }}
-{{- if .package_features.glow }}
-glow = "latest"
-{{- end }}
-{{- if .package_features.bat }}
-bat-extras = "latest"
-{{- end }}
-{{- if .package_features.btop }}
-"github:aristocratos/btop" = "latest"
-{{- end }}
-{{- if .package_features.sqlite3 }}
-sqlite = "latest"
-{{- end }}
-
-# Build tools
-cargo-binstall = "latest"
-chezmoi = "latest"
 # NOTE: thefuck cannot be installed via pipx/uv - setuptools 82 removed
 # pkg_resources which thefuck's setup.py still imports. Install via system
 # package manager instead (pacman, apt, brew). Tracking:
 # https://github.com/pypa/setuptools/issues/5174
-# {{- if .package_features.thefuck }}
-# "pipx:git+https://github.com/nvbn/thefuck.git" = "master"
-# {{- end }}
 {{- end }}
 
 [settings]

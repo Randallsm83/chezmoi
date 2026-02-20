@@ -76,10 +76,6 @@ alias zbench='$XDG_DATA_HOME/zsh-bench/zsh-bench'
 # LDE
 alias ldelog='lde logs -ftall '
 
-# Stow
-alias stowdir='stow --no-folding --dotfiles --verbose=1 -R -t ~ '
-alias unstowdir='stow --verbose=1 -D '
-
 # Nvim
 vi() { ${=EDITOR} "$@" }
 vim() { ${=EDITOR} "$@" }

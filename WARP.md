@@ -484,7 +484,7 @@ Per the environment rules:
 
 **Linux/WSL/macOS:**
 - `mise` - Everything (CLI tools via cargo + language runtimes)
-- `homebrew` - Bootstrap only (stow installation), then unused
+- `homebrew` - Build dependencies for mise runtimes and platform-specific formulae
 - `apt/dnf/pacman` - System bootstrap only when sudo available
 
 **Configuration Files (to be added):**

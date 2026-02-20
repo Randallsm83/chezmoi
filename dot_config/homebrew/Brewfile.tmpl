@@ -1,0 +1,145 @@
+# ██╗  ██╗ ██████╗ ███╗   ███╗███████╗██████╗ ██████╗ ███████╗██╗    ██╗
+# ██║  ██║██╔═══██╗████╗ ████║██╔════╝██╔══██╗██╔══██╗██╔════╝██║    ██║
+# ███████║██║   ██║██╔████╔██║█████╗  ██████╔╝██████╔╝█████╗  ██║ █╗ ██║
+# ██╔══██║██║   ██║██║╚██╔╝██║██╔══╝  ██╔══██╗██╔══██╗██╔══╝  ██║███╗██║
+# ██║  ██║╚██████╔╝██║ ╚═╝ ██║███████╗██████╔╝██║  ██║███████╗╚███╔███╔╝
+# ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═════╝ ╚═╝  ╚═╝╚══════╝ ╚══╝╚══╝
+# The Missing Package Manager for macOS (or Linux).
+# Generated from .chezmoidata.yaml + static infrastructure.
+#
+
+# Taps (cross-platform)
+tap "homebrew/bundle"
+{{- if eq .chezmoi.os "darwin" }}
+tap "buo/cask-upgrade"
+tap "dreamhost/homebrew", "git@git.dreamhost.com:dreamhost/homebrew-repo.git"
+{{- end }}
+
+brew "curl"
+
+# Build deps for mise runtimes (both platforms)
+brew "openssl"
+brew "readline"
+brew "zlib"
+brew "libyaml"
+brew "ncurses"
+brew "xz"
+brew "libxml2"
+brew "ca-certificates"
+brew "utf8proc", args: ["HEAD"]
+
+{{- if .package_features.php }}
+# PHP build deps
+brew "re2c"
+brew "gd"
+brew "libzip"
+brew "krb5"
+{{- end }}
+
+# Build toolchain (both platforms)
+brew "automake"
+brew "autogen"
+brew "autoconf"
+brew "cmake"
+brew "libtool"
+brew "pkgconf"
+brew "glib"
+{{- if eq .chezmoi.os "darwin" }}
+brew "gcc"
+brew "libiconv"
+{{- end }}
+{{- if eq .chezmoi.os "linux" }}
+brew "util-linux"
+{{- end }}
+
+# Standalone tools (both platforms)
+brew "gnupg"
+brew "universal-ctags"
+brew "perltidy"
+brew "repomix"
+brew "tree"
+brew "xdg-ninja"
+
+{{- if eq .chezmoi.os "darwin" }}
+# GNU replacements for BSD tools (macOS only — Linux has these natively)
+brew "coreutils"
+brew "findutils"
+brew "diffutils"
+brew "binutils"
+brew "bash"
+brew "bison"
+brew "flex"
+brew "gawk"
+brew "gpatch"
+brew "grep"
+brew "gzip"
+brew "gnu-getopt"
+brew "gnu-indent"
+brew "gnu-sed"
+brew "gnu-tar"
+brew "gnu-which"
+brew "m4"
+brew "make"
+brew "file-formula"
+brew "openssh"
+brew "rsync"
+brew "unzip"
+brew "watch"
+{{- end }}
+
+# =============================================================================
+# Data-driven packages from .chezmoidata.yaml
+# =============================================================================
+
+# Always-installed brew packages
+{{- range .always_install.brew }}
+brew "{{ . }}"
+{{- end }}
+
+# Feature-gated packages
+{{- range $feature, $enabled := .package_features }}
+{{- if $enabled }}
+{{- if hasKey $.package_mapping $feature }}
+{{- $mapping := index $.package_mapping $feature }}
+{{- if hasKey $mapping $.chezmoi.os }}
+{{- $platform := index $mapping $.chezmoi.os }}
+{{- if and (hasKey $platform "brew") $platform.brew }}
+{{- range $platform.brew }}
+brew "{{ . }}"
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if eq .chezmoi.os "darwin" }}
+# =============================================================================
+# macOS-specific
+# =============================================================================
+brew "mas"
+brew "fontconfig"
+
+brew "dreamhost/homebrew/lde", args: ["HEAD"]
+
+cask "font-fira-code"
+cask "font-hack"
+cask "font-new-york"
+cask "font-sf-mono"
+cask "font-sf-pro"
+cask "font-symbols-only-nerd-font"
+
+cask "dropbox"
+cask "flycut"
+cask "homerow"
+cask "firefox@developer-edition"
+cask "openvpn-connect"
+cask "orbstack"
+cask "postman"
+cask "rectangle"
+cask "slack"
+cask "spotify"
+cask "wezterm"
+
+mas "1Password", id: 1569813296
+{{- end }}

@@ -1,0 +1,25 @@
+{{- /*
+Template: mise-tool-entry
+Description: Converts a mise package string into a TOML [tools] entry.
+Handles version specifiers (@) and TOML quoting for special characters.
+
+Input: A string like "node@lts", "github:sharkdp/bat", "fzf", "rust@stable"
+Output: A TOML line like: node = "lts", "github:sharkdp/bat" = "latest", fzf = "latest"
+
+Usage:
+  {{- range $packages }}
+  {{- template "mise-tool-entry" . }}
+  {{- end }}
+*/ -}}
+{{- $tool := . -}}
+{{- $version := "latest" -}}
+{{- if contains "@" . -}}
+{{-   $parts := mustRegexSplit "@" . 2 -}}
+{{-   $tool = index $parts 0 -}}
+{{-   $version = index $parts 1 -}}
+{{- end -}}
+{{- if or (contains ":" $tool) (contains "/" $tool) }}
+"{{ $tool }}" = "{{ $version }}"
+{{- else }}
+{{ $tool }} = "{{ $version }}"
+{{- end -}}

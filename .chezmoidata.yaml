@@ -339,7 +339,7 @@ package_features:
   # Development Tools (optional)
   # ============================================================================
   sqlite3: true
-  arduino: false
+  arduino: true
   vagrant: false        # Virtualization
 
   # ============================================================================
@@ -387,11 +387,11 @@ package_mapping:
       apt: [git]
       dnf: [git]
       pacman: [git]
-      brew: [gh, lazygit]
-      mise: []
+      brew: [lazygit]
+      mise: [github-cli]
     darwin:
-      brew: [git, gh, lazygit]
-      mise: []
+      brew: [git, lazygit]
+      mise: [github-cli]
 
   ssh:
     windows:
@@ -532,10 +532,19 @@ package_mapping:
       mise: [neovim]
 
   vim:
-    scoop: [vim]
-    winget: []
-    brew: [vim]
-    mise: [vim]
+    windows:
+      scoop: [vim]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [vim]
+    darwin:
+      brew: []
+      mise: [vim]
 
   vscode:
     windows:
@@ -563,10 +572,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: [cargo:starship]
+      mise: [starship]
     darwin:
       brew: []
-      mise: [cargo:starship]
+      mise: [starship]
 
   zsh:
     windows:
@@ -609,10 +618,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: [cargo:bat]
+      mise: [github:sharkdp/bat, bat-extras]
     darwin:
       brew: []
-      mise: [cargo:bat]
+      mise: [github:sharkdp/bat, bat-extras]
 
   eza:
     windows:
@@ -624,10 +633,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: [cargo:eza]
+      mise: [github:eza-community/eza]
     darwin:
       brew: []
-      mise: [cargo:eza]
+      mise: [github:eza-community/eza]
 
   ripgrep:
     windows:
@@ -639,10 +648,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: [cargo:ripgrep]
+      mise: [github:BurntSushi/ripgrep]
     darwin:
       brew: []
-      mise: [cargo:ripgrep]
+      mise: [github:BurntSushi/ripgrep]
 
   fd:
     windows:
@@ -654,10 +663,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: [cargo:fd-find]
+      mise: [github:sharkdp/fd]
     darwin:
       brew: []
-      mise: [cargo:fd-find]
+      mise: [github:sharkdp/fd]
 
   fzf:
     windows:
@@ -684,10 +693,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: [cargo:zoxide]
+      mise: [github:ajeetdsouza/zoxide]
     darwin:
       brew: []
-      mise: [cargo:zoxide]
+      mise: [github:ajeetdsouza/zoxide]
 
   delta:
     windows:
@@ -698,11 +707,11 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [git-delta]  # Use brew instead of cargo - onig_sys compile issues
-      mise: []
+      brew: []
+      mise: [github:dandavison/delta]  # github backend = binary download, no compile issues
     darwin:
-      brew: [git-delta]
-      mise: []
+      brew: []
+      mise: [github:dandavison/delta]
 
   vivid:
     windows:
@@ -714,10 +723,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: [cargo:vivid]
+      mise: [github:sharkdp/vivid]
     darwin:
       brew: []
-      mise: [cargo:vivid]
+      mise: [github:sharkdp/vivid]
 
   wget:
     windows:
@@ -773,11 +782,11 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [btop]
-      mise: []
+      brew: []
+      mise: [github:aristocratos/btop]
     darwin:
-      brew: [btop]
-      mise: []
+      brew: []
+      mise: [github:aristocratos/btop]
 
   navi:
     windows:
@@ -789,10 +798,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: [cargo:navi]
+      mise: [github:denisidoro/navi]
     darwin:
       brew: []
-      mise: [cargo:navi]
+      mise: [github:denisidoro/navi]
 
   fastfetch:
     windows:
@@ -895,11 +904,11 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [lua, luarocks, luajit]  # lua@5.1 doesn't exist on Linux homebrew
-      mise: []
+      brew: [luarocks]  # luarocks not available via mise
+      mise: [lua, luajit]
     darwin:
-      brew: [lua, luarocks, luajit]
-      mise: []
+      brew: [luarocks]
+      mise: [lua, luajit]
 
   node:
     windows:
@@ -971,25 +980,25 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [sqlite]
-      mise: []
+      brew: []
+      mise: [sqlite]
     darwin:
-      brew: [sqlite]
-      mise: []
+      brew: []
+      mise: [sqlite]
 
   arduino:
     windows:
-      scoop: []
+      scoop: [arduino-cli]
       winget: []
       mise: []
     linux:
       apt: []
       dnf: []
       pacman: []
-      brew: [arduino-ide]
+      brew: [arduino-cli]
       mise: []
     darwin:
-      brew: [arduino-ide]
+      brew: [arduino-cli]
       mise: []
 
   vagrant:
@@ -1033,6 +1042,11 @@ always_install:
 
   mise:
     - usage
+    - zig
+
+  mise_unix:
+    - cargo-binstall
+    - chezmoi
 
 # Remote machine package sets
 # When is_remote=true and remote_minimal=true, only install essential tools

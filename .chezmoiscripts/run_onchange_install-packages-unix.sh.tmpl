@@ -40,21 +40,13 @@ elif [ -d "/home/linuxbrew/.linuxbrew" ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || true
 fi
 
-# Collect packages per manager
-mise_packages=""
-brew_packages=""
+# Collect system packages per manager (brew + mise are declarative via config files)
+{{- if eq .chezmoi.os "linux" }}
 apt_packages=""
 dnf_packages=""
 pacman_packages=""
 
-# Add always_install packages
-{{- range .always_install.mise }}
-mise_packages="$mise_packages {{ . }}"
-{{- end }}
-{{- range .always_install.brew }}
-brew_packages="$brew_packages {{ . }}"
-{{- end }}
-{{- if eq .chezmoi.os "linux" }}
+# Add always_install system packages
 {{- range .always_install.pacman }}
 pacman_packages="$pacman_packages {{ . }}"
 {{- end }}
@@ -64,29 +56,28 @@ apt_packages="$apt_packages {{ . }}"
 {{- range .always_install.dnf }}
 dnf_packages="$dnf_packages {{ . }}"
 {{- end }}
-{{- end }}
 
+# Add feature-gated system packages
 {{- range $feature, $enabled := .package_features }}
 {{- if $enabled }}
+{{- if hasKey $.package_mapping $feature }}
 {{- $mapping := index $.package_mapping $feature }}
-{{- if $mapping }}
-{{- $platform := index $mapping $.chezmoi.os }}
-{{- if $platform }}
-{{- range $platform.mise }}
-mise_packages="$mise_packages {{ . }}"
-{{- end }}
-{{- range $platform.brew }}
-brew_packages="$brew_packages {{ . }}"
-{{- end }}
-{{- if eq $.chezmoi.os "linux" }}
+{{- if hasKey $mapping "linux" }}
+{{- $platform := index $mapping "linux" }}
+{{- if and (hasKey $platform "apt") $platform.apt }}
 {{- range $platform.apt }}
 apt_packages="$apt_packages {{ . }}"
 {{- end }}
+{{- end }}
+{{- if and (hasKey $platform "dnf") $platform.dnf }}
 {{- range $platform.dnf }}
 dnf_packages="$dnf_packages {{ . }}"
 {{- end }}
+{{- end }}
+{{- if and (hasKey $platform "pacman") $platform.pacman }}
 {{- range $platform.pacman }}
 pacman_packages="$pacman_packages {{ . }}"
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -97,63 +88,38 @@ pacman_packages="$pacman_packages {{ . }}"
 # ============================================================================
 # Package Installation Order (per user rules):
 #   1. mise - primary package manager for CLI tools and runtimes
-#   2. brew - fallback for tools not available in mise
+#   2. brew bundle - fallback for tools not available in mise
 #   3. system pkg manager - ONLY for bootstrap/build dependencies
 # ============================================================================
 
-# 1. Install mise packages globally (PRIMARY)
-if [ -n "$mise_packages" ]; then
-    echo ""
-    echo "Installing mise tools/runtimes globally..."
-    
-    # Check if any cargo packages are requested - install rust first
-    if echo "$mise_packages" | grep -q "cargo:"; then
-        if ! mise list rust 2>/dev/null | grep -q "rust"; then
-            echo "  Installing: rust@stable (required for cargo packages)"
-            mise use -g rust@stable
-        fi
-    fi
-    
-    for pkg in $mise_packages; do
-        tool_name=$(echo "$pkg" | sed 's/@.*$//' | sed 's/cargo://')
-        if ! mise list "$tool_name" 2>/dev/null | grep -q "$tool_name"; then
-            echo "  Installing: $pkg"
-            mise use -g "$pkg" || echo "  Warning: Failed to install $pkg, continuing..."
-        else
-            echo "  Already installed: $pkg"
-        fi
-    done
-    
-    # Ensure shims are in PATH for subsequent operations
-    export PATH="$HOME/.local/share/mise/shims:$PATH"
-fi
+# 1. Install mise tools declared in config (PRIMARY)
+# Tools are declared in ~/.config/mise/config.toml (managed by chezmoi template)
+echo ""
+echo "Installing mise tools/runtimes from config..."
+mise install --yes 2>&1 || echo "Warning: Some mise tools failed to install"
 
-# 2. Install brew packages (FALLBACK for tools not in mise)
-# Only use user-owned brew (~/.local/share/homebrew), skip shared /home/linuxbrew
-if [ -n "$brew_packages" ]; then
-    # Prefer user-owned homebrew
+# Ensure shims are in PATH for subsequent operations
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+
+# 2. Install brew packages via Brewfile (FALLBACK for tools not in mise)
+# Brewfile is at ~/.config/homebrew/Brewfile (managed by chezmoi template)
+BREWFILE="$HOME/.config/homebrew/Brewfile"
+if [ -f "$BREWFILE" ]; then
     if [ -d "$HOME/.local/share/homebrew" ]; then
         export HOMEBREW_PREFIX="$HOME/.local/share/homebrew"
         export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
     fi
-    
-    if [ -d "$HOME/.local/share/homebrew" ] && "$HOME/.local/share/homebrew/bin/brew" --version >/dev/null 2>&1; then
+
+    if command -v brew >/dev/null 2>&1; then
         echo ""
-        echo "Installing brew packages (tools not available via mise)..."
-        for pkg in $brew_packages; do
-            if ! "$HOMEBREW_PREFIX/bin/brew" list "$pkg" >/dev/null 2>&1; then
-                echo "  Installing: $pkg"
-                "$HOMEBREW_PREFIX/bin/brew" install "$pkg"
-            else
-                echo "  Already installed: $pkg"
-            fi
-        done
+        echo "Installing brew packages from Brewfile..."
+        brew bundle --file="$BREWFILE" --no-lock || echo "Warning: Some brew packages failed to install"
     elif [ -d "/home/linuxbrew/.linuxbrew" ]; then
         echo ""
         echo "Note: Skipping shared /home/linuxbrew, use ~/.local/share/homebrew instead"
     else
         echo ""
-        echo "Note: User homebrew not found at ~/.local/share/homebrew"
+        echo "Note: Homebrew not found, skipping Brewfile"
     fi
 fi
 
