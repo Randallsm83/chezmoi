@@ -10,18 +10,13 @@
 # fzf configuration for bash/zsh
 # https://github.com/junegunn/fzf
 
-# Default options
+# Default options - spaceduck theme
 export FZF_DEFAULT_OPTS="
-  --height=40%
-  --layout=reverse
-  --info=inline
-  --border
-  --margin=1
-  --padding=1
-  --color=fg:#abb2bf,bg:#282c34,hl:#61afef
-  --color=fg+:#ffffff,bg+:#3e4451,hl+:#61afef
-  --color=info:#98c379,prompt:#61afef,pointer:#e06c75
-  --color=marker:#e5c07b,spinner:#61afef,header:#61afef
+  --color=bg+:#1b1c36,bg:#0f111b,spinner:#00a3cc,hl:#b3a1e6
+  --color=fg:#f0f1ce,header:#00a3cc,info:#5ccc96,pointer:#e33400
+  --color=marker:#f2ce00,fg+:#f0f1ce,prompt:#00a3cc,hl+:#b3a1e6
+  --border --height=40% --layout=reverse --info=inline
+  --margin=1 --padding=1
 "
 
 # Use fd for file listing (faster, respects .gitignore)

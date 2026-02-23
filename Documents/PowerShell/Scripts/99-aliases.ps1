@@ -392,9 +392,10 @@ function dud {
 
 <#
 .SYNOPSIS
-    Find files by name pattern.
+    Find files by name pattern (non-interactive).
+    For interactive fzf file finding, use ff instead.
 #>
-function ff {
+function ffind {
     param(
         [Parameter(Mandatory = $true, Position = 0)]
         [string]$Pattern
