@@ -65,7 +65,7 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
 
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     # Initialize with 'z' and 'zi' commands
-    Invoke-Expression (& zoxide init powershell | Out-String)
+    Invoke-Expression (& zoxide init powershell --cmd cd | Out-String)
 }
 
 # =============================================================================

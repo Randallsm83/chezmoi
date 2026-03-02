@@ -317,11 +317,6 @@ if (Test-CommandExists 'bat.exe') {
     function cat { bat @args }
 }
 
-# Mise update
-if (Test-CommandExists 'mise') {
-    function miseupdate { & mise up }
-}
-
 # Arduino CLI shortcuts
 if (Test-CommandExists 'arduino-cli') {
     Set-Alias -Name ard -Value arduino-cli
@@ -520,7 +515,20 @@ if (Test-CommandExists 'choco') {
     function chocoup {
         Write-Host "Upgrading all Chocolatey packages..." -ForegroundColor Cyan
         choco upgrade all -y
+        Write-Host "Cleaning up..." -ForegroundColor Cyan
+        choco cache remove -y
         Write-Host "Chocolatey update complete!" -ForegroundColor Green
+    }
+}
+
+# Mise update
+if (Test-CommandExists 'mise') {
+    function miseup {
+        Write-Host "Upgrading mise tools..." -ForegroundColor Cyan
+        mise up
+        Write-Host "Cleaning up..." -ForegroundColor Cyan
+        mise prune --yes
+        Write-Host "Mise update complete!" -ForegroundColor Green
     }
 }
 
@@ -561,7 +569,7 @@ function updateall {
     }
     
     if (Test-CommandExists 'mise') {
-        miseupdate
+        miseup
         Write-Host ""
     }
     

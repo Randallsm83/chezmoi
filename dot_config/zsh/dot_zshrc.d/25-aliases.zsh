@@ -53,20 +53,20 @@ alias zpro='${=EDITOR} ${ZDOTDIR:-$HOME}/.zprofile'
 alias aliasrc='${=EDITOR} $ZDOTDIR/.zshrc.d/aliases.zsh'
 
 # Mac
-alias macupdate='sudo softwareupdate -i -a'
+alias macup='sudo softwareupdate -i -a'
 
 # Brew
-alias brewupdate='brew update && brew upgrade && brew cleanup'
+alias brewup='brew update && brew upgrade && brew cleanup'
 
 # Mise
-alias miseupdate='mise up'
+alias miseup='mise up && mise prune --yes'
 
 # ASDF
 alias asdfplugadd='cut -d" " -f1 $ASDF_DEFAULT_TOOL_VERSIONS_FILENAME|xargs -i asdf plugin add  {}'
-alias asdfupdate='asdf update --head && asdf plugin update --all'
+alias asdfup='asdf update --head && asdf plugin update --all'
 
 # Zplug
-alias zplugupdate='zplug update && zplug install && zplug clean && zplug clear'
+alias zplugup='zplug update && zplug install && zplug clean && zplug clear'
 
 # ZSH
 alias ztrace="zsh -ixc : 2>&1"
