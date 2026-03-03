@@ -42,7 +42,7 @@
 {{- end }}
 
 # === Feature-Gated Tools ===
-{{- range $feature := list "direnv" "git" "nvim" "vim" "starship" "bat" "eza" "ripgrep" "fd" "fzf" "zoxide" "delta" "vivid" "glow" "btop" "navi" "sqlite3" "tealdeer" "fastfetch" }}
+{{- range $feature := list "direnv" "git" "nvim" "vim" "starship" "fzf" "glow" "btop" "sqlite3" "fastfetch" "rust_alternatives" }}
 {{- if and (hasKey $.package_features $feature) (index $.package_features $feature) }}
 {{- $mapping := index $.package_mapping $feature }}
 {{- if hasKey $mapping $.chezmoi.os }}
