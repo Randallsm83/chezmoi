@@ -71,26 +71,9 @@ if ($strawberryPerl) {
         Add-IncludePaths $perlCInclude
     }
     
-    # Set compiler environment variables
-    $gccPath = Join-Path $perlCBin "gcc.exe"
-    $gxxPath = Join-Path $perlCBin "g++.exe"
-    
-    if ((Test-Path $gccPath) -and (Test-Path $gxxPath)) {
-        # Set CC/CXX for tools that respect these variables (if not already set by Zig)
-        if (-not $env:CC) {
-            $env:CC = $gccPath
-        }
-        if (-not $env:CXX) {
-            $env:CXX = $gxxPath
-        }
-        
-        # CMake configuration for MinGW (if not already set by Zig)
-        if (-not $env:CMAKE_C_COMPILER) {
-            $env:CMAKE_C_COMPILER = $gccPath
-            $env:CMAKE_CXX_COMPILER = $gxxPath
-            $env:CMAKE_GENERATOR = "Ninja"  # Use Ninja instead of Unix Makefiles
-        }
-    }
+    # Note: Strawberry's gcc/g++ are on PATH via $perlCBin above.
+    # CC/CXX are left unset globally so MSVC-target builds (e.g. Rust cc-rs)
+    # can locate cl.exe automatically. Set CC/CXX per-project if MinGW is needed.
 }
 
 # =================================================================================================

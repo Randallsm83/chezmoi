@@ -306,21 +306,15 @@ package_features:
   starship: true        # Cross-platform prompt
   zsh: true             # Unix shells only
   powershell: true      # Windows shell
-  bat: true             # Better cat
-  eza: true             # Better ls
-  ripgrep: true         # Fast grep
-  fd: true              # Fast find
-  fzf: true             # Fuzzy finder
-  zoxide: true          # Smart cd
-  delta: true           # Git diff viewer
-  vivid: true           # LS_COLORS generator
+  fzf: true             # Fuzzy finder (Go, not Rust)
   wget: true            # Downloader
-  glow: true            # Markdown renderer
-  thefuck: true         # Command correction
-  btop: true            # System monitor
-  navi: true            # Interactive cheatsheet tool
-  fastfetch: true       # System info display
-  tealdeer: true        # Fast tldr client (rust)
+  glow: true            # Markdown renderer (Go)
+  thefuck: true         # Command correction (Python)
+  btop: true            # System monitor (C++)
+  fastfetch: true       # System info display (C++)
+  rust_alternatives: true # All Rust CLI tools: bat, rg, fd, eza, delta, zoxide, vivid,
+                          # uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine,
+                          # just, tokei, ouch, xh
 
   # ============================================================================
   # Language Runtimes (optional - enable as needed)
@@ -608,66 +602,6 @@ package_mapping:
       brew: [powershell]
       mise: []
 
-  bat:
-    windows:
-      scoop: [bat]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:sharkdp/bat, bat-extras]
-    darwin:
-      brew: []
-      mise: [github:sharkdp/bat, bat-extras]
-
-  eza:
-    windows:
-      scoop: [eza]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:eza-community/eza]
-    darwin:
-      brew: []
-      mise: [github:eza-community/eza]
-
-  ripgrep:
-    windows:
-      scoop: [ripgrep]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:BurntSushi/ripgrep]
-    darwin:
-      brew: []
-      mise: [github:BurntSushi/ripgrep]
-
-  fd:
-    windows:
-      scoop: [fd]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:sharkdp/fd]
-    darwin:
-      brew: []
-      mise: [github:sharkdp/fd]
-
   fzf:
     windows:
       scoop: [fzf]
@@ -682,51 +616,6 @@ package_mapping:
     darwin:
       brew: []
       mise: [fzf]
-
-  zoxide:
-    windows:
-      scoop: [zoxide]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:ajeetdsouza/zoxide]
-    darwin:
-      brew: []
-      mise: [github:ajeetdsouza/zoxide]
-
-  delta:
-    windows:
-      scoop: [delta]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:dandavison/delta]  # github backend = binary download, no compile issues
-    darwin:
-      brew: []
-      mise: [github:dandavison/delta]
-
-  vivid:
-    windows:
-      scoop: [vivid]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:sharkdp/vivid]
-    darwin:
-      brew: []
-      mise: [github:sharkdp/vivid]
 
   wget:
     windows:
@@ -788,21 +677,6 @@ package_mapping:
       brew: []
       mise: [github:aristocratos/btop]
 
-  navi:
-    windows:
-      scoop: [navi]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:denisidoro/navi]
-    darwin:
-      brew: []
-      mise: [github:denisidoro/navi]
-
   fastfetch:
     windows:
       scoop: [fastfetch]
@@ -816,21 +690,6 @@ package_mapping:
       mise: []
     darwin:
       brew: [fastfetch]
-      mise: []
-
-  tealdeer:
-    windows:
-      scoop: [tealdeer]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [tealdeer]
-      mise: []
-    darwin:
-      brew: [tealdeer]
       mise: []
 
   # Language Runtimes
@@ -969,6 +828,24 @@ package_mapping:
     darwin:
       brew: [php]
       mise: []
+
+  # Rust CLI Alternatives
+  # Rust CLI Alternatives (all Rust tool replacements, except starship)
+  # Also controls config deployment for: vivid, coreutils (05-coreutils.ps1), bat themes, etc.
+  rust_alternatives:
+    windows:
+      scoop: [bat, ripgrep, fd, eza, delta, zoxide, vivid, uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine, just, tokei, ouch, xh]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [tealdeer, coreutils]
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, github:XAMPPRocky/tokei, github:ouch-org/ouch, github:ducaale/xh]
+    darwin:
+      brew: [tealdeer, coreutils]
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, github:XAMPPRocky/tokei, github:ouch-org/ouch, github:ducaale/xh]
 
   # Development Tools
   sqlite3:

@@ -265,8 +265,8 @@ Library/**
 .vimrc
 {{- end }}
 
-{{- if not .package_features.vivid }}
-# Vivid package files
+{{- if not .package_features.rust_alternatives }}
+# Vivid package files (part of rust_alternatives)
 .config/vivid/**
 {{- end }}
 

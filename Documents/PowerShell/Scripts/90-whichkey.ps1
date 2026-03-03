@@ -452,41 +452,50 @@ function script:Show-WhichKeyCategories {
 
     $header = "Which-Key  ·  Select a category or type to search"
 
-    $selected = $catLines | fzf --ansi --no-sort --header $header --prompt 'wk> ' `
-        --preview-window=right:40%:wrap `
-        --bind 'ctrl-j:down,ctrl-k:up,ctrl-n:down,ctrl-p:up'
+    # Loop so Esc at level 2 returns to category list instead of exiting
+    while ($true) {
+        $selected = $catLines | fzf --ansi --no-sort --header $header --prompt 'wk> ' `
+            --preview-window=right:40%:wrap `
+            --expect='enter' `
+            --bind 'ctrl-j:down,ctrl-k:up,ctrl-n:down,ctrl-p:up'
 
-    if (-not $selected) { return }
+        # Esc at level 1 → exit completely
+        if (-not $selected) { return }
 
-    # Parse selection — extract the category key (the green prefix text)
-    $lines = $selected -split "`n" | Where-Object { $_.Trim() }
-    $key = if ($lines.Count -ge 2) { $lines[1] } else { $lines[0] }
+        # Parse selection — extract the category key (the green prefix text)
+        $lines = $selected -split "`n" | Where-Object { $_.Trim() }
+        $key = if ($lines.Count -ge 2) { $lines[1] } else { $lines[0] }
 
-    # Strip ANSI and extract prefix
-    $clean = $key -replace '\e\[[0-9;]*m', ''
-    $parts = ($clean -split '\t', 2)
-    $catPrefix = ($parts[0].Trim() -split '\s+' | Select-Object -Last 1).Trim()
+        # Strip ANSI and extract prefix
+        $clean = $key -replace '\e\[[0-9;]*m', ''
+        $parts = ($clean -split '\t', 2)
+        $catPrefix = ($parts[0].Trim() -split '\s+' | Select-Object -Last 1).Trim()
 
-    if (-not $catPrefix) { return }
+        if (-not $catPrefix) { continue }
 
-    # Drill into that category
-    $catEntries = $Entries | Where-Object {
-        $_.Category -eq $catPrefix -or
-        ($global:_WhichKeyCategories.Contains($catPrefix) -and $_.Category -eq $catPrefix) -or
-        ($catPrefix -eq 'misc' -and $_.Category -eq 'misc')
+        # Drill into that category
+        $catEntries = $Entries | Where-Object {
+            $_.Category -eq $catPrefix -or
+            ($global:_WhichKeyCategories.Contains($catPrefix) -and $_.Category -eq $catPrefix) -or
+            ($catPrefix -eq 'misc' -and $_.Category -eq 'misc')
+        }
+
+        # If we didn't match a category key, try matching as a prefix filter
+        if ($catEntries.Count -eq 0) {
+            $catEntries = $Entries | Where-Object { $_.Name -like "$catPrefix*" }
+        }
+
+        $catInfo = $global:_WhichKeyCategories[$catPrefix]
+        $catHeader = if ($catInfo) { "$($catInfo.Icon) $($catInfo.Label)  ← Esc to go back" } else { "Commands: $catPrefix  ← Esc to go back" }
+        $prompt = if ($catInfo) { $catInfo.Prompt } else { "$catPrefix> " }
+
+        $cmdSelected = Show-WhichKeyFzf -Entries $catEntries -Header $catHeader -Prompt $prompt
+        if ($cmdSelected) {
+            Invoke-WhichKeySelection $cmdSelected $Entries
+            return
+        }
+        # Esc at level 2 → loop back to category list
     }
-
-    # If we didn't match a category key, try matching as a prefix filter
-    if ($catEntries.Count -eq 0) {
-        $catEntries = $Entries | Where-Object { $_.Name -like "$catPrefix*" }
-    }
-
-    $catInfo = $global:_WhichKeyCategories[$catPrefix]
-    $header = if ($catInfo) { "$($catInfo.Icon) $($catInfo.Label)" } else { "Commands: $catPrefix" }
-    $prompt = if ($catInfo) { $catInfo.Prompt } else { "$catPrefix> " }
-
-    $cmdSelected = Show-WhichKeyFzf -Entries $catEntries -Header $header -Prompt $prompt
-    if ($cmdSelected) { Invoke-WhichKeySelection $cmdSelected $Entries }
 }
 
 # =============================================================================

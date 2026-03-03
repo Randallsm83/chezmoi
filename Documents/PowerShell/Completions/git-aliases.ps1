@@ -328,7 +328,7 @@ $global:__GitAliasCompletionMap['gwtrm'] = @('worktree', 'remove')
 
 # Register the completer for all mapped functions
 $global:__GitAliasCompletionMap.Keys | ForEach-Object {
-    Register-ArgumentCompleter -CommandName $_ -ScriptBlock $gitCompleter
+    Register-ArgumentCompleter -Native -CommandName $_ -ScriptBlock $gitCompleter
 }
 
 # vim: ft=ps1 sw=4 ts=4 et

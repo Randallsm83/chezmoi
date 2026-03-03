@@ -195,9 +195,88 @@ function strc {
 # Unix-like Command Aliases
 # ================================================================================================
 
-Set-Alias -Name grep -Value Select-String -ErrorAction SilentlyContinue
-Set-Alias -Name which -Value Get-Command -ErrorAction SilentlyContinue
-Set-Alias -Name ps -Value Get-Process -ErrorAction SilentlyContinue
+# grep → ripgrep if available, otherwise Select-String
+if (Test-CommandExists 'rg') {
+    Remove-Item -Path "Alias:grep" -Force -ErrorAction SilentlyContinue
+    function grep { & rg @args }
+} else {
+    Set-Alias -Name grep -Value Select-String -ErrorAction SilentlyContinue
+}
+
+# which - show command details with source file locations
+Remove-Item -Path "Alias:which" -Force -ErrorAction SilentlyContinue
+function which {
+    param([Parameter(ValueFromRemainingArguments)][string[]]$Names)
+    foreach ($name in $Names) {
+        $cmd = Get-Command $name -ErrorAction SilentlyContinue -All |
+            Where-Object { $_.Name -ceq $name -or
+                ($_.CommandType -eq 'Application' -and
+                 [System.IO.Path]::GetFileNameWithoutExtension($_.Name) -ceq $name) }
+        if (-not $cmd) {
+            Write-Error "$name not found"
+            continue
+        }
+        $filtered = @($cmd)
+        $first = $true
+        foreach ($c in $filtered) {
+            if ($first) {
+                Write-Host '▶ ' -ForegroundColor Green -NoNewline
+                Write-Host $c.Name -ForegroundColor Cyan -NoNewline
+                Write-Host " [$($c.CommandType)]" -ForegroundColor DarkGray -NoNewline
+                Write-Host ' ← active' -ForegroundColor Green
+            } else {
+                Write-Host '  ' -NoNewline
+                Write-Host $c.Name -ForegroundColor DarkGray -NoNewline
+                Write-Host " [$($c.CommandType)]" -ForegroundColor DarkGray -NoNewline
+                Write-Host ' (shadowed)' -ForegroundColor DarkYellow
+            }
+            $first = $false
+            switch ($c.CommandType) {
+                'Application' {
+                    Write-Host "  Path: $($c.Source)" -ForegroundColor Green
+                    if ($c.Version) { Write-Host "  Version: $($c.Version)" -ForegroundColor DarkGray }
+                }
+                'Alias' {
+                    Write-Host "  Resolves to: $($c.ResolvedCommandName)" -ForegroundColor Green
+                    $resolved = Get-Command $c.ResolvedCommandName -ErrorAction SilentlyContinue
+                    if ($resolved) {
+                        Write-Host "  Target: $($resolved.Source ?? $resolved.Definition)" -ForegroundColor DarkGray
+                    }
+                }
+                'Function' {
+                    $file = $c.ScriptBlock.File
+                    $line = $c.ScriptBlock.StartPosition.StartLine
+                    if ($file) {
+                        Write-Host "  Defined in: ${file}:${line}" -ForegroundColor Green
+                    } else {
+                        Write-Host "  Defined in: <session>" -ForegroundColor Yellow
+                    }
+                    Write-Host "  Definition:" -ForegroundColor DarkGray
+                    $c.Definition -split "`n" | ForEach-Object {
+                        Write-Host "    $_" -ForegroundColor Gray
+                    }
+                }
+                'Cmdlet' {
+                    Write-Host "  Module: $($c.Source)" -ForegroundColor Green
+                    Write-Host "  DLL: $($c.DLL)" -ForegroundColor DarkGray
+                }
+                default {
+                    if ($c.Source) { Write-Host "  Source: $($c.Source)" -ForegroundColor Green }
+                }
+            }
+            Write-Host
+        }
+    }
+}
+
+# ps → procs if available, otherwise Get-Process
+if (Test-CommandExists 'procs') {
+    Remove-Item -Path "Alias:ps" -Force -ErrorAction SilentlyContinue
+    function ps { & procs @args }
+} else {
+    Set-Alias -Name ps -Value Get-Process -ErrorAction SilentlyContinue
+}
+
 Set-Alias -Name kill -Value Stop-Process -ErrorAction SilentlyContinue
 
 # Replace built-in scoop search (if scoop-search is available)
@@ -261,12 +340,15 @@ Set-Alias -Name ep -Value Edit-Profile
 # File System Utilities
 # ================================================================================================
 
-function touch {
-    param([string]$file)
-    if (Test-Path $file) {
-        (Get-Item $file).LastWriteTime = Get-Date
-    } else {
-        New-Item -ItemType File -Path $file | Out-Null
+# touch - skip if uutils-coreutils provides touch.exe
+if (-not $env:__UUTILS_COREUTILS) {
+    function touch {
+        param([string]$file)
+        if (Test-Path $file) {
+            (Get-Item $file).LastWriteTime = Get-Date
+        } else {
+            New-Item -ItemType File -Path $file | Out-Null
+        }
     }
 }
 
@@ -314,7 +396,7 @@ if (Test-CommandExists 'bat.exe') {
         & (Get-Command bat.exe) @expandedPaths
     }
     
-    function cat { bat @args }
+    Set-Alias -Name cat -Value bat -Scope Global -Force
 }
 
 # Arduino CLI shortcuts
@@ -581,6 +663,101 @@ function updateall {
 }
 
 # ================================================================================================
+# Rust CLI Alternatives
+# ================================================================================================
+# Modern Rust-based replacements for traditional Unix tools
+# These shadow the legacy command names so muscle memory works
+# Use the .exe name directly to bypass (e.g. find.exe, sed.exe)
+
+# sed → sd
+if (Test-CommandExists 'sd') {
+    function sed { & sd @args }
+}
+
+# du → dust
+if (Test-CommandExists 'dust') {
+    Remove-Item -Path "Alias:du" -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "Function:du" -Force -ErrorAction SilentlyContinue
+    function du { & dust @args }
+}
+
+# find → fd
+if (Test-CommandExists 'fd') {
+    function find { & fd @args }
+}
+
+# diff → delta
+if (Test-CommandExists 'delta') {
+    function diff { & delta @args }
+}
+
+# cloc/sloccount → tokei
+if (Test-CommandExists 'tokei') {
+    function cloc { & tokei @args }
+}
+
+# time/bench → hyperfine
+if (Test-CommandExists 'hyperfine') {
+    function time { & hyperfine @args }
+    function bench { & hyperfine @args }
+}
+
+# http → xh (httpie-like HTTP client)
+if (Test-CommandExists 'xh') {
+    function http { & xh @args }
+    function https { & xh --https @args }
+}
+
+# compress/decompress → ouch
+if (Test-CommandExists 'ouch') {
+    function compress { & ouch compress @args }
+    function decompress { & ouch decompress @args }
+}
+
+# tldr → tealdeer (binary is already named tldr, just ensure alias)
+if (Test-CommandExists 'tldr') {
+    function help { & tldr @args }
+}
+
+<#
+.SYNOPSIS
+    List all installed Rust CLI alternatives and what they replace.
+#>
+function rust-tools {
+    $tools = @(
+        @{ Rust = 'bat';                Replaces = 'cat';              Binary = 'bat' }
+        @{ Rust = 'ripgrep';            Replaces = 'grep';             Binary = 'rg' }
+        @{ Rust = 'fd';                 Replaces = 'find';             Binary = 'fd' }
+        @{ Rust = 'eza';                Replaces = 'ls';               Binary = 'eza' }
+        @{ Rust = 'delta';              Replaces = 'diff';             Binary = 'delta' }
+        @{ Rust = 'zoxide';             Replaces = 'cd';               Binary = 'zoxide' }
+        @{ Rust = 'vivid';              Replaces = 'dircolors';        Binary = 'vivid' }
+        @{ Rust = 'uutils-coreutils';   Replaces = 'coreutils';        Binary = 'coreutils' }
+        @{ Rust = 'tealdeer';           Replaces = 'tldr/man';         Binary = 'tldr' }
+        @{ Rust = 'navi';               Replaces = 'cheatsheets';      Binary = 'navi' }
+        @{ Rust = 'sd';                 Replaces = 'sed';              Binary = 'sd' }
+        @{ Rust = 'dust';               Replaces = 'du';               Binary = 'dust' }
+        @{ Rust = 'procs';              Replaces = 'ps/tasklist';      Binary = 'procs' }
+        @{ Rust = 'hyperfine';          Replaces = 'time/benchmark';   Binary = 'hyperfine' }
+        @{ Rust = 'just';               Replaces = 'make (tasks)';     Binary = 'just' }
+        @{ Rust = 'tokei';              Replaces = 'cloc/sloccount';   Binary = 'tokei' }
+        @{ Rust = 'ouch';               Replaces = 'tar/zip/compress'; Binary = 'ouch' }
+        @{ Rust = 'xh';                 Replaces = 'curl (HTTP)';      Binary = 'xh' }
+    )
+
+    $tools | ForEach-Object {
+        $installed = [bool](Get-Command $_.Binary -ErrorAction SilentlyContinue)
+        $status = if ($installed) { '✓' } else { '✗' }
+        $color = if ($installed) { 'Green' } else { 'Red' }
+        $line = "{0} {1,-22} → {2,-22} ({3})" -f $status, $_.Rust, $_.Replaces, $_.Binary
+        Write-Host $line -ForegroundColor $color
+    }
+
+    $installedCount = ($tools | Where-Object { Get-Command $_.Binary -ErrorAction SilentlyContinue }).Count
+    Write-Host "`n$installedCount/$($tools.Count) Rust alternatives installed" -ForegroundColor Cyan
+}
+
+# ================================================================================================
 # Additional Utility Functions
 # ================================================================================================
 
@@ -611,6 +788,9 @@ function has {
 # Safety Aliases
 # ================================================================================================
 # Add confirmation prompts to destructive commands
+# Skip when uutils-coreutils is active — 05-coreutils.ps1 already exposes the real binaries
+
+if (-not $env:__UUTILS_COREUTILS) {
 
 <#
 .SYNOPSIS
@@ -681,6 +861,8 @@ function mv {
     
     Move-Item -Path $Source -Destination $Destination -Confirm:$false
 }
+
+} # end: skip when uutils-coreutils is active
 
 # -------------------------------------------------------------------------------------------------
 # vim: ft=ps1 sw=4 ts=4 et

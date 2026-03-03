@@ -117,7 +117,7 @@ function Clear-Cache {
                 return
             }
 
-            Write-Status "Cleaning $Description..." "Info"
+            Write-Status "Cleaning $Description..." "Info" "→ $Path"
 
             # Get directory size before cleanup
             $sizeBefore = 0
@@ -250,85 +250,89 @@ function Clear-Cache {
     Write-Host "`nStarting cache cleanup process..." -ForegroundColor Cyan
     $startTime = Get-Date
 
-    # System Temp Directories
-    Write-Section "SYSTEM TEMPORARY DIRECTORIES"
-    Clear-DirectoryContents -Path "C:\Temp" -Description "System Temp (C:\Temp)" -Category "System"
-    Clear-DirectoryContents -Path "$env:SystemRoot\Temp" -Description "Windows Temp" -Category "System"
+    # Define all cache targets for progress tracking
+    $CacheTargets = @(
+        # System Temp Directories
+        @{ Section = "SYSTEM TEMPORARY DIRECTORIES"; Path = "C:\Temp"; Description = "System Temp (C:\Temp)"; Category = "System" }
+        @{ Path = "$env:SystemRoot\Temp"; Description = "Windows Temp"; Category = "System" }
+        # User Temp Directories
+        @{ Section = "USER TEMPORARY DIRECTORIES"; Path = "$env:TEMP"; Description = "User Temp"; Category = "User" }
+        # Graphics Driver Cache - DirectX
+        @{ Section = "GRAPHICS DRIVER CACHE"; Path = "$env:LOCALAPPDATA\D3DSCache"; Description = "DirectX Shader Cache"; Category = "Graphics" }
+        # NVIDIA
+        @{ Path = "$env:USERPROFILE\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache"; Description = "NVIDIA PerDriverVersion DXCache"; Category = "Graphics" }
+        @{ Path = "$env:USERPROFILE\AppData\LocalLow\NVIDIA\DXCache"; Description = "NVIDIA LocalLow DXCache"; Category = "Graphics" }
+        @{ Path = "$env:LOCALAPPDATA\NVIDIA\DXCache"; Description = "NVIDIA Local DXCache"; Category = "Graphics" }
+        @{ Path = "$env:LOCALAPPDATA\NVIDIA\GLCache"; Description = "NVIDIA GLCache"; Category = "Graphics" }
+        @{ Path = "$env:LOCALAPPDATA\NVIDIA Corporation\NV_Cache"; Description = "NVIDIA NV_Cache"; Category = "Graphics" }
+        @{ Path = "$env:LOCALAPPDATA\NVIDIA Corporation\NvTmRep"; Description = "NVIDIA NvTmRep"; Category = "Graphics" }
+        @{ Path = "$env:ProgramData\NVIDIA Corporation\NV_Cache"; Description = "NVIDIA NV_Cache (System)"; Category = "Graphics" }
+        @{ Path = "$env:ProgramData\NVIDIA Corporation\NvTelemetry"; Description = "NVIDIA NvTelemetry"; Category = "Graphics" }
+        # AMD
+        @{ Path = "$env:LOCALAPPDATA\AMD\GLCache"; Description = "AMD GLCache"; Category = "Graphics" }
+        @{ Path = "$env:LOCALAPPDATA\AMD\DxCache"; Description = "AMD DxCache"; Category = "Graphics" }
+        @{ Path = "$env:LOCALAPPDATA\AMD\DxcCache"; Description = "AMD DxcCache"; Category = "Graphics" }
+        @{ Path = "$env:LOCALAPPDATA\AMD\Dx9Cache"; Description = "AMD Dx9Cache"; Category = "Graphics" }
+        @{ Path = "$env:LOCALAPPDATA\AMD\VkCache"; Description = "AMD VkCache"; Category = "Graphics" }
+        # Intel
+        @{ Path = "$env:USERPROFILE\AppData\LocalLow\Intel\ShaderCache"; Description = "Intel ShaderCache"; Category = "Graphics" }
+        # Browser Cache
+        @{ Section = "BROWSER CACHE"; Path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache"; Description = "Google Chrome Cache"; Category = "Browser" }
+        @{ Path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Code Cache"; Description = "Google Chrome Code Cache"; Category = "Browser" }
+        @{ Path = "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles\*\cache2"; Description = "Firefox Cache"; Category = "Browser" }
+        @{ Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache"; Description = "Microsoft Edge Cache"; Category = "Browser" }
+        @{ Path = "$env:LOCALAPPDATA\Microsoft\Windows\INetCache"; Description = "Internet Explorer Cache"; Category = "Browser" }
+        @{ Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\Cache"; Description = "Brave Cache"; Category = "Browser" }
+        @{ Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\Code Cache"; Description = "Brave Code Cache"; Category = "Browser" }
+        # Game Launcher & Client Cache
+        @{ Section = "GAME LAUNCHER CACHE"; Path = "$env:USERPROFILE\AppData\Local\Steam\htmlcache"; Description = "Steam HTML Cache"; Category = "Games" }
+        @{ Path = "$env:LOCALAPPDATA\EpicGamesLauncher\Saved\webcache"; Description = "Epic Games Launcher Cache"; Category = "Games" }
+        @{ Path = "$env:USERPROFILE\AppData\Roaming\Origin"; Description = "Origin Cache"; Category = "Games" }
+        @{ Path = "$env:LOCALAPPDATA\Battle.net"; Description = "Battle.net Cache"; Category = "Games" }
+        @{ Path = "$env:APPDATA\discord\Cache"; Description = "Discord Cache"; Category = "Communication" }
+        @{ Path = "$env:APPDATA\discord\Code Cache"; Description = "Discord Code Cache"; Category = "Communication" }
+        # Game-Specific Cache
+        @{ Section = "GAME-SPECIFIC CACHE"; Path = "$env:USERPROFILE\AppData\Local\Larian Studios\Baldur's Gate 3\LevelCache"; Description = "Baldur's Gate 3 LevelCache"; Category = "Games" }
+        @{ Path = "$env:USERPROFILE\Documents\My Games\Rocket League\TAGame\Cache"; Description = "Rocket League Cache"; Category = "Games" }
+        # Development Tools Cache
+        @{ Section = "DEVELOPMENT TOOLS CACHE"; Path = "$env:LOCALAPPDATA\Microsoft\VisualStudio\*\ComponentModelCache"; Description = "Visual Studio Component Cache"; Category = "Development" }
+        @{ Path = "$env:APPDATA\Code\User\workspaceStorage"; Description = "VS Code Workspace Storage"; Category = "Development" }
+        @{ Path = "$env:APPDATA\Code\logs"; Description = "VS Code Logs"; Category = "Development" }
+        @{ Path = "$env:APPDATA\npm-cache"; Description = "NPM Cache"; Category = "Development" }
+        @{ Path = "$env:LOCALAPPDATA\Yarn\Cache"; Description = "Yarn Cache"; Category = "Development" }
+        @{ Path = "$env:LOCALAPPDATA\pip\Cache"; Description = "Python PIP Cache"; Category = "Development" }
+        # Application Cache
+        @{ Section = "APPLICATION CACHE"; Path = "$env:APPDATA\Spotify\Storage"; Description = "Spotify Cache"; Category = "Media" }
+        @{ Path = "$env:LOCALAPPDATA\Spotify\Storage"; Description = "Spotify Local Storage"; Category = "Media" }
+        # System Cache
+        @{ Section = "SYSTEM CACHE"; Path = "$env:SystemRoot\Prefetch"; Description = "Windows Prefetch"; Category = "System" }
+        @{ Path = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\thumbcache_*.db"; Description = "Windows Thumbnail Cache"; Category = "System" }
+        @{ Path = "$env:SystemRoot\SoftwareDistribution\Download"; Description = "Windows Update Cache"; Category = "System" }
+        @{ Path = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsStore_8wekyb3d8bbwe\LocalCache"; Description = "Microsoft Store Cache"; Category = "System" }
+    )
 
-    # User Temp Directories
-    Write-Section "USER TEMPORARY DIRECTORIES"
-    Clear-DirectoryContents -Path "$env:TEMP" -Description "User Temp" -Category "User"
+    $totalTargets = $CacheTargets.Count
+    $currentTarget = 0
 
-    # Graphics Driver Cache
-    Write-Section "GRAPHICS DRIVER CACHE"
+    foreach ($target in $CacheTargets) {
+        $currentTarget++
 
-    # DirectX
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\D3DSCache" -Description "DirectX Shader Cache" -Category "Graphics"
+        # Print section header when entering a new section
+        if ($target.Section) {
+            Write-Section $target.Section
+        }
 
-    # NVIDIA
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\LocalLow\NVIDIA\PerDriverVersion\DXCache" -Description "NVIDIA PerDriverVersion DXCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\LocalLow\NVIDIA\DXCache" -Description "NVIDIA LocalLow DXCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\NVIDIA\DXCache" -Description "NVIDIA Local DXCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\NVIDIA\GLCache" -Description "NVIDIA GLCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\NVIDIA Corporation\NV_Cache" -Description "NVIDIA NV_Cache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\NVIDIA Corporation\NvTmRep" -Description "NVIDIA NvTmRep" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:ProgramData\NVIDIA Corporation\NV_Cache" -Description "NVIDIA NV_Cache (System)" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:ProgramData\NVIDIA Corporation\NvTelemetry" -Description "NVIDIA NvTelemetry" -Category "Graphics"
+        # Update PowerShell progress bar
+        $pct = [math]::Round(($currentTarget / $totalTargets) * 100)
+        Write-Progress -Activity "Cache Cleanup" `
+            -Status "[$currentTarget/$totalTargets] $($target.Description)" `
+            -PercentComplete $pct `
+            -CurrentOperation $target.Path
 
-    # AMD
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\GLCache" -Description "AMD GLCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\DxCache" -Description "AMD DxCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\DxcCache" -Description "AMD DxcCache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\Dx9Cache" -Description "AMD Dx9Cache" -Category "Graphics"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\AMD\VkCache" -Description "AMD VkCache" -Category "Graphics"
+        Clear-DirectoryContents -Path $target.Path -Description "[$currentTarget/$totalTargets] $($target.Description)" -Category $target.Category
+    }
 
-    # Intel
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\LocalLow\Intel\ShaderCache" -Description "Intel ShaderCache" -Category "Graphics"
-
-    # Browser Cache
-    Write-Section "BROWSER CACHE"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache" -Description "Google Chrome Cache" -Category "Browser"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Code Cache" -Description "Google Chrome Code Cache" -Category "Browser"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles\*\cache2" -Description "Firefox Cache" -Category "Browser"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache" -Description "Microsoft Edge Cache" -Category "Browser"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Microsoft\Windows\INetCache" -Description "Internet Explorer Cache" -Category "Browser"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\Cache" -Description "Brave Cache" -Category "Browser"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\Code Cache" -Description "Brave Code Cache" -Category "Browser"
-
-    # Game Launcher & Client Cache
-    Write-Section "GAME LAUNCHER CACHE"
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\Local\Steam\htmlcache" -Description "Steam HTML Cache" -Category "Games"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\EpicGamesLauncher\Saved\webcache" -Description "Epic Games Launcher Cache" -Category "Games"
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\Roaming\Origin" -Description "Origin Cache" -Category "Games"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Battle.net" -Description "Battle.net Cache" -Category "Games"
-    Clear-DirectoryContents -Path "$env:APPDATA\discord\Cache" -Description "Discord Cache" -Category "Communication"
-    Clear-DirectoryContents -Path "$env:APPDATA\discord\Code Cache" -Description "Discord Code Cache" -Category "Communication"
-
-    # Game-Specific Cache
-    Write-Section "GAME-SPECIFIC CACHE"
-    Clear-DirectoryContents -Path "$env:USERPROFILE\AppData\Local\Larian Studios\Baldur's Gate 3\LevelCache" -Description "Baldur's Gate 3 LevelCache" -Category "Games"
-    Clear-DirectoryContents -Path "$env:USERPROFILE\Documents\My Games\Rocket League\TAGame\Cache" -Description "Rocket League Cache" -Category "Games"
-
-    # Development Tools Cache
-    Write-Section "DEVELOPMENT TOOLS CACHE"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Microsoft\VisualStudio\*\ComponentModelCache" -Description "Visual Studio Component Cache" -Category "Development"
-    Clear-DirectoryContents -Path "$env:APPDATA\Code\User\workspaceStorage" -Description "VS Code Workspace Storage" -Category "Development"
-    Clear-DirectoryContents -Path "$env:APPDATA\Code\logs" -Description "VS Code Logs" -Category "Development"
-    Clear-DirectoryContents -Path "$env:APPDATA\npm-cache" -Description "NPM Cache" -Category "Development"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Yarn\Cache" -Description "Yarn Cache" -Category "Development"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\pip\Cache" -Description "Python PIP Cache" -Category "Development"
-
-    # Application Cache
-    Write-Section "APPLICATION CACHE"
-    Clear-DirectoryContents -Path "$env:APPDATA\Spotify\Storage" -Description "Spotify Cache" -Category "Media"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Spotify\Storage" -Description "Spotify Local Storage" -Category "Media"
-
-    # System Cache
-    Write-Section "SYSTEM CACHE"
-    Clear-DirectoryContents -Path "$env:SystemRoot\Prefetch" -Description "Windows Prefetch" -Category "System"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\thumbcache_*.db" -Description "Windows Thumbnail Cache" -Category "System"
-    Clear-DirectoryContents -Path "$env:SystemRoot\SoftwareDistribution\Download" -Description "Windows Update Cache" -Category "System"
-    Clear-DirectoryContents -Path "$env:LOCALAPPDATA\Packages\Microsoft.WindowsStore_8wekyb3d8bbwe\LocalCache" -Description "Microsoft Store Cache" -Category "System"
+    Write-Progress -Activity "Cache Cleanup" -Completed
 
     # Final Summary
     $endTime = Get-Date

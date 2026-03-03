@@ -91,7 +91,7 @@ if ($env:TERM_PROGRAM -eq "vscode") {
 }
 
 # Set LS_COLORS using Vivid ({{ .theme }} theme)
-{{- if index .package_features "vivid" }}
+{{- if index .package_features "rust_alternatives" }}
 if (Get-Command vivid -ErrorAction SilentlyContinue) {
     $env:LS_COLORS = (vivid generate {{ .theme }})
 }
@@ -141,6 +141,11 @@ $env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"
 # Warp API Key (from 1Password)
 {{- if .setup_1password }}
 $env:WARP_API_KEY = "{{ onepasswordRead "op://Personal/Warp API Key/credential" }}"
+{{- end }}
+
+# Anthropic API Key (from 1Password)
+{{- if .setup_1password }}
+$env:ANTHROPIC_API_KEY = "{{ onepasswordRead "op://Personal/DH Anthropic/credential" }}"
 {{- end }}
 
 # Welcome message (optional - comment out if you prefer clean startup)

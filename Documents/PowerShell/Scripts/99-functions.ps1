@@ -36,12 +36,15 @@ Set-Alias -Name ep -Value Edit-Profile
 .SYNOPSIS
     Touch command - create file or update timestamp.
 #>
-function touch {
-    param([string]$file)
-    if (Test-Path $file) {
-        (Get-Item $file).LastWriteTime = Get-Date
-    } else {
-        New-Item -ItemType File -Path $file | Out-Null
+# touch - skip if uutils-coreutils provides touch.exe
+if (-not $env:__UUTILS_COREUTILS) {
+    function touch {
+        param([string]$file)
+        if (Test-Path $file) {
+            (Get-Item $file).LastWriteTime = Get-Date
+        } else {
+            New-Item -ItemType File -Path $file | Out-Null
+        }
     }
 }
 
@@ -73,11 +76,7 @@ if (Get-Command nvim -ErrorAction SilentlyContinue) {
     function vi { & nvim $args }
 }
 
-# bat (better cat)
-if (Get-Command bat -ErrorAction SilentlyContinue) {
-    Remove-Alias -Name cat -Force -ErrorAction SilentlyContinue
-    function cat { & bat $args }
-}
+# bat (better cat) — handled in 99-aliases.ps1
 
 # pip (Python package installer)
 # On Windows with mise, pip is not shimmed, so use python -m pip
@@ -110,7 +109,7 @@ New-Alias -Name 'Set-PoshContext' -Value 'Set-EnvVar' -Scope Global -Force
 # ================================================================================================
 
 Set-Alias -Name grep -Value Select-String -ErrorAction SilentlyContinue
-Set-Alias -Name which -Value Get-Command -ErrorAction SilentlyContinue
+# which is defined as a function in 99-aliases.ps1
 Set-Alias -Name ps -Value Get-Process -ErrorAction SilentlyContinue
 Set-Alias -Name kill -Value Stop-Process -ErrorAction SilentlyContinue
 

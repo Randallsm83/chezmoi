@@ -1,0 +1,27 @@
+{{- if and (eq .chezmoi.os "windows") (index .package_features "rust_alternatives") -}}
+# uutils-coreutils integration
+# Removes PowerShell built-in aliases so uutils .exe shims resolve instead
+#
+# Overridden aliases: rm, mv, cp, dir, echo, sleep, sort, tee, pwd, rmdir
+# Overridden functions: mkdir
+# NOT overridden (handled elsewhere):
+#   ls    → handled by EzaProfile (eza)
+#   cat   → handled by bat alias in 99-aliases.ps1
+#
+# To bypass uutils and use PowerShell cmdlets directly:
+#   Remove-Item, Move-Item, Copy-Item, New-Item, Get-ChildItem,
+#   Write-Output, Start-Sleep, Sort-Object, Tee-Object, Get-Location
+
+if (Get-Command coreutils.exe -ErrorAction SilentlyContinue) {
+    # Remove built-in aliases that shadow uutils shims
+    @('rm', 'mv', 'cp', 'dir', 'echo', 'sleep', 'sort', 'tee', 'pwd', 'rmdir') | ForEach-Object {
+        Remove-Item -Path "Alias:$_" -Force -ErrorAction SilentlyContinue
+    }
+
+    # Override mkdir to use uutils (PS built-in mkdir is a function, not an alias)
+    Remove-Item -Path "Function:mkdir" -Force -ErrorAction SilentlyContinue
+
+    # Override touch (defined later in 99-aliases/99-functions) — mark for skip
+    $env:__UUTILS_COREUTILS = '1'
+}
+{{- end }}

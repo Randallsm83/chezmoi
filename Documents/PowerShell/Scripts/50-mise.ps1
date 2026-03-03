@@ -180,23 +180,9 @@ if (Test-Path $denoRoot) {
     }
 }
 
-# Zig - set as C/C++ compiler
-$zigRoot = Join-Path $miseInstalls "zig"
-if (Test-Path $zigRoot) {
-    $latestZig = Get-ChildItem $zigRoot -Directory | Select-Object -First 1
-    if ($latestZig) {
-        $zigExe = Join-Path $latestZig.FullName "zig.exe"
-        if (Test-Path $zigExe) {
-            # Set CC/CXX for tools that respect these variables
-            $env:CC = "$zigExe cc"
-            $env:CXX = "$zigExe c++"
-            
-            # CMake configuration for Zig
-            $env:CMAKE_C_COMPILER = $zigExe
-            $env:CMAKE_CXX_COMPILER = $zigExe
-        }
-    }
-}
+# Zig - available via PATH (set CC/CXX per-project via .mise.toml or direnv)
+# Note: "zig cc" can't be used as a global CC value because most build systems
+# (e.g. cc-rs) expect CC to be a single executable, not a command with arguments.
 
 # PHP
 $phpRoot = Join-Path $miseInstalls "php"
@@ -218,6 +204,11 @@ if ($env:CMAKE_LIBRARY_PATH) {
 # Prevent mise from auto-installing missing tools during shell activation
 # (works around Windows junction detection bugs and speeds up shell startup)
 $env:MISE_INSTALL_MISSING = 'false'
+
+# Ensure scoop shims take precedence over system directories (system32, OpenSSH, etc.)
+# Placed before mise activation so mise tool paths still win over scoop shims.
+# Final order: ~/.local/bin > mise > scoop/shims > system32
+Add-ToPath "$HOME\scoop\shims"
 
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     Invoke-Expression (& mise activate pwsh | Out-String)
