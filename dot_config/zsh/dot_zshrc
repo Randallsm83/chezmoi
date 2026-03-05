@@ -41,7 +41,7 @@ if [[ -n "$ENV_DIRS" ]]; then
 fi
 
 # ZSH Syntax Theme
-[[ -r "$ZDOTDIR/colors/gruvbox.zsh-syntax-theme" ]] && source "$ZDOTDIR/colors/gruvbox.zsh-syntax-theme"
+[[ -r "$ZDOTDIR/colors/spaceduck.zsh-syntax-theme" ]] && source "$ZDOTDIR/colors/spaceduck.zsh-syntax-theme"
 
 # Lazy-load (autoload) Zsh function files from a directory.
 export ZFUNCDIR="$ZDOTDIR/.zfunctions"
@@ -73,11 +73,14 @@ antidote load
 
 # ========================= Visual Settings ====================================
 
-# Set dircolors and completion colors
-if command -v dircolors >/dev/null 2>&1; then
-  eval "$(dircolors --sh $ZDOTDIR/colors/onedarkpro.dircolors)"
-elif command -v gdircolors >/dev/null 2>&1; then
-  eval "$(gdircolors --sh $ZDOTDIR/colors/onedarkpro.dircolors)"
+# LS_COLORS is set by vivid in 80-eza.zsh using the active theme from chezmoi
+# Legacy dircolors fallback only if vivid is not installed
+if ! command -v vivid >/dev/null 2>&1; then
+  if command -v dircolors >/dev/null 2>&1; then
+    eval "$(dircolors --sh)"
+  elif command -v gdircolors >/dev/null 2>&1; then
+    eval "$(gdircolors --sh)"
+  fi
 fi
 
 if [[ -n "$ZSH_DEBUG" ]]; then

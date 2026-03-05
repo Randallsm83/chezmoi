@@ -1,0 +1,92 @@
+# Spaceduck zsh-syntax-highlighting theme
+# https://github.com/zsh-users/zsh-syntax-highlighting/blob/master/docs/highlighters/main.md
+# Palette: https://github.com/pineapplegiant/spaceduck
+
+ZSH_HIGHLIGHT_HIGHLIGHTERS+=(main brackets pattern regexp cursor root line)
+typeset -gA ZSH_HIGHLIGHT_STYLES
+
+## General
+### Diffs
+ZSH_HIGHLIGHT_STYLES[diff-add]='fg=#5ccc96'
+ZSH_HIGHLIGHT_STYLES[diff-delete]='fg=#e33400'
+ZSH_HIGHLIGHT_STYLES[diff-change]='fg=#f2ce00'
+ZSH_HIGHLIGHT_STYLES[diff-text]='fg=#00a3cc,bold'
+
+### Markup
+ZSH_HIGHLIGHT_STYLES[markup-tag]='fg=#ce6f8f'
+ZSH_HIGHLIGHT_STYLES[markup-attribute]='fg=#7a5ccc'
+ZSH_HIGHLIGHT_STYLES[markup-value]='fg=#5ccc96'
+ZSH_HIGHLIGHT_STYLES[markup-entity]='fg=#f2ce00'
+
+## Classes
+ZSH_HIGHLIGHT_STYLES[class]='fg=#f2ce00,bold'
+ZSH_HIGHLIGHT_STYLES[class-name]='fg=#b3a1e6,bold'
+
+## Constants
+ZSH_HIGHLIGHT_STYLES[constant]='fg=#e39400'
+ZSH_HIGHLIGHT_STYLES[constant-variable]='fg=#f2ce00'
+ZSH_HIGHLIGHT_STYLES[constant-character]='fg=#5ccc96'
+
+## Entities
+ZSH_HIGHLIGHT_STYLES[entity]='fg=#b3a1e6'
+ZSH_HIGHLIGHT_STYLES[entity-function]='fg=#7a5ccc,bold'
+ZSH_HIGHLIGHT_STYLES[entity-class]='fg=#f2ce00'
+
+## Serializable / Configuration Languages
+ZSH_HIGHLIGHT_STYLES[config-key]='fg=#00a3cc'
+ZSH_HIGHLIGHT_STYLES[config-value]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[config-comment]='fg=#686f9a'
+
+## Storage
+ZSH_HIGHLIGHT_STYLES[storage-type]='fg=#b3a1e6'
+ZSH_HIGHLIGHT_STYLES[storage-modifier]='fg=#ce6f8f'
+ZSH_HIGHLIGHT_STYLES[storage-access]='fg=#e33400'
+
+## Comments
+ZSH_HIGHLIGHT_STYLES[comment]='fg=#686f9a'
+
+## Functions/methods
+ZSH_HIGHLIGHT_STYLES[alias]='fg=#5ccc96'
+ZSH_HIGHLIGHT_STYLES[suffix-alias]='fg=#5ccc96'
+ZSH_HIGHLIGHT_STYLES[global-alias]='fg=#5ccc96'
+ZSH_HIGHLIGHT_STYLES[function]='fg=#5ccc96'
+ZSH_HIGHLIGHT_STYLES[command]='fg=#5ccc96'
+ZSH_HIGHLIGHT_STYLES[precommand]='fg=#5ccc96,italic'
+
+## Variables
+ZSH_HIGHLIGHT_STYLES[variable]='fg=#7a5ccc'
+ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument-unclosed]='fg=#e33400'
+ZSH_HIGHLIGHT_STYLES[dollar-double-quoted-argument]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[assign]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[named-fd]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[numeric-fd]='fg=#ecf0c1'
+
+## Strings
+ZSH_HIGHLIGHT_STYLES[command-substitution-quoted]='fg=#f2ce00'
+ZSH_HIGHLIGHT_STYLES[command-substitution-delimiter-quoted]='fg=#f2ce00'
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#f2ce00'
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument-unclosed]='fg=#e33400'
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#f2ce00'
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument-unclosed]='fg=#e33400'
+ZSH_HIGHLIGHT_STYLES[rc-quote]='fg=#f2ce00'
+
+## Keywords
+ZSH_HIGHLIGHT_STYLES[keyword]='fg=#00a3cc'
+ZSH_HIGHLIGHT_STYLES[builtin]='fg=#00a3cc'
+
+## Misc
+ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#e33400'
+ZSH_HIGHLIGHT_STYLES[default]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[cursor]='standout'
+
+## Paths
+ZSH_HIGHLIGHT_STYLES[path]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[path_pathseparator]='fg=#ce6f8f'
+ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[path_prefix_pathseparator]='fg=#ce6f8f'
+
+## Globbing
+ZSH_HIGHLIGHT_STYLES[globbing]='fg=#ecf0c1'
+ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=#b3a1e6'
+
