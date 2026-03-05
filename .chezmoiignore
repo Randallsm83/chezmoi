@@ -286,8 +286,6 @@ Library/**
 .cache/zsh/completions/_vagrant
 .config/zsh/.zshrc.d/60-vagrant.zsh
 {{- end }}
-extensions.json
-keybindings.json
-mcp.json
-settings.json
-tasks.json
+# VS Code shared configs (source of truth, symlinked by AppData profile templates)
+# Lives in vscode/ subfolder to keep repo root clean - not deployed directly
+vscode/**
