@@ -1,0 +1,111 @@
+# ============================================================================
+# Chezmoi Remove Patterns
+# ============================================================================
+# https://www.chezmoi.io/reference/special-files-and-directories/chezmoiremove/
+#
+# Files listed here will be DELETED from the destination on `chezmoi apply`
+# when the corresponding feature flag is disabled.
+#
+# IMPORTANT: These patterns mirror .chezmoiignore feature flag sections.
+# When a feature is disabled, .chezmoiignore stops managing the files and
+# .chezmoiremove actively removes them from the destination.
+#
+# Validation: Run `chezmoi execute-template < .chezmoiremove` to test syntax
+# ============================================================================
+
+{{- if not .package_features.rust }}
+.config/zsh/.zshrc.d/70-rust.zsh
+.cache/zsh/completions/_rustc
+{{- end }}
+
+{{- if not .package_features.golang }}
+.config/zsh/.zshrc.d/70-golang.zsh
+{{- end }}
+
+{{- if not .package_features.python }}
+.config/zsh/.zshrc.d/70-python.zsh
+{{- end }}
+
+{{- if not .package_features.ruby }}
+.config/zsh/.zshrc.d/70-ruby.zsh
+{{- end }}
+
+{{- if not .package_features.lua }}
+.config/zsh/.zshrc.d/70-lua.zsh
+{{- end }}
+
+{{- if not .package_features.node }}
+.config/zsh/.zshrc.d/70-node.zsh
+{{- end }}
+
+{{- if not .package_features.perl }}
+.config/perl/**
+.perltidyrc
+.cache/zsh/completions/_cpanm
+.config/zsh/.zshrc.d/70-perl.zsh
+{{- end }}
+
+{{- if not .package_features.php }}
+.config/php/**
+.config/zsh/.zshrc.d/70-php.zsh
+{{- end }}
+
+{{- if not .package_features.asdf }}
+.config/asdf/**
+.asdfrc
+.tool-versions
+.config/zsh/.zshrc.d/50-asdf.zsh
+{{- end }}
+
+{{- if not .package_features.nvm }}
+.config/nvm/**
+.config/zsh/.zshrc.d/70-nvm.zsh
+{{- end }}
+
+{{- if not .package_features.arduino }}
+.local/share/arduino/**
+.config/zsh/.zshrc.d/70-arduino.zsh
+{{- end }}
+
+{{- if not .package_features.glow }}
+.config/glow/**
+.config/zsh/.zshrc.d/90-glow.zsh
+{{- end }}
+
+{{- if not .package_features.tinted_theming }}
+.config/tinted-theming/**
+.local/share/tinted-theming/**
+.config/zsh/.zshrc.d/80-tinty.zsh
+{{- end }}
+
+{{- if not .package_features.thefuck }}
+.config/thefuck/**
+.config/zsh/.zshrc.d/90-thefuck.zsh
+{{- end }}
+
+{{- if not .package_features.sqlite3 }}
+.config/sqlite3/**
+{{- end }}
+
+{{- if not .package_features.vim }}
+.config/vim/**
+.vimrc
+{{- end }}
+
+{{- if not .package_features.rust_alternatives }}
+.config/vivid/**
+{{- end }}
+
+{{- if not .package_features.warp }}
+.config/warp/**
+{{- end }}
+
+{{- if not .package_features.homebrew }}
+.config/homebrew/**
+.config/zsh/.zshrc.d/50-homebrew.zsh
+{{- end }}
+
+{{- if not .package_features.vagrant }}
+.cache/zsh/completions/_vagrant
+.config/zsh/.zshrc.d/60-vagrant.zsh
+{{- end }}
