@@ -299,7 +299,7 @@ function dhgitall {
     Get-ChildItem -Path $env:PROJECTS -Directory | ForEach-Object {
         $projectPath = $_.FullName
         $projectName = $_.Name
-        
+
         if (Test-Path (Join-Path $projectPath '.git')) {
             Write-Host "`n=== $projectName ===" -ForegroundColor Cyan
             Push-Location $projectPath
@@ -316,6 +316,100 @@ function dhgitall {
     }
 }
 
+# ================================================================================================
+# Backfilled from zsh 85-git.zsh
+# ================================================================================================
+
+function g { git $args }
+
+function grename {
+    param([string]$OldBranch, [string]$NewBranch)
+    if (-not $OldBranch -or -not $NewBranch) {
+        Write-Host "Usage: grename old_branch new_branch"; return
+    }
+    git branch -m $OldBranch $NewBranch
+    if (git push origin ":$OldBranch" 2>$null) {
+        git push --set-upstream origin $NewBranch
+    }
+}
+function gbds {
+    $defaultBranch = Get-GitMainBranch
+    git for-each-ref refs/heads/ "--format=%(refname:short)" | ForEach-Object {
+        $branch = $_
+        $mergeBase = git merge-base $defaultBranch $branch
+        $cherry = git cherry $defaultBranch (git commit-tree (git rev-parse "$branch^{tree}") -p $mergeBase -m "_")
+        if ($cherry -match '^-') { git branch -D $branch }
+    }
+}
+
+function gbg { git branch -vv | Select-String ': gone]' }
+function gbgd { git branch --no-color -vv | Select-String ': gone]' | ForEach-Object { ($_ -split '\s+')[1] } | ForEach-Object { git branch -d $_ } }
+function gbgD { git branch --no-color -vv | Select-String ': gone]' | ForEach-Object { ($_ -split '\s+')[1] } | ForEach-Object { git branch -D $_ } }
+function gignored { git ls-files -v | Select-String '^[a-z]' }
+function gdnolock { git diff $args ':(exclude)package-lock.json' ':(exclude)*.lock' }
+function gbl { git blame -w $args }
+function ggl {
+    $b = if ($args.Count -eq 0) { Get-GitCurrentBranch } else { $args[0] }
+    git pull origin $b
+}
+
+function ggp {
+    $b = if ($args.Count -eq 0) { Get-GitCurrentBranch } else { $args[0] }
+    git push origin $b
+}
+
+function ggf {
+    $b = if ($args.Count -eq 0) { Get-GitCurrentBranch } else { $args[0] }
+    git push --force origin $b
+}
+
+function ggfl {
+    $b = if ($args.Count -eq 0) { Get-GitCurrentBranch } else { $args[0] }
+    git push --force-with-lease origin $b
+}
+
+function ggpnp {
+    if ($args.Count -eq 0) { ggl; ggp } else { ggl @args; ggp @args }
+}
+
+function ggu {
+    $b = if ($args.Count -ne 1) { Get-GitCurrentBranch } else { $args[0] }
+    git pull --rebase origin $b
+}
+
+function gpsupf { git push --set-upstream origin (Get-GitCurrentBranch) --force-with-lease $args }
+function gam { git am $args }
+function gama { git am --abort $args }
+function gamc { git am --continue $args }
+function gamscp { git am --show-current-patch $args }
+function gams { git am --skip $args }
+function gap { git apply $args }
+function gapt { git apply --3way $args }
+function gbs { git bisect $args }
+function gbsb { git bisect bad $args }
+function gbsg { git bisect good $args }
+function gbsn { git bisect new $args }
+function gbso { git bisect old $args }
+function gbsr { git bisect reset $args }
+function gbss { git bisect start $args }
+
+function gtl {
+    param([string]$Pattern = '')
+    git tag --sort=-v:refname -n --list "$Pattern*"
+}
+
+function work_in_progress {
+    $msg = git -c log.showSignature=false log -n 1 --format='%s' 2>$null
+    if ($msg -match '--wip--') { Write-Host 'WIP!!' }
+}
+
+function gunwipall {
+    $commit = git log --grep='--wip--' --invert-grep --max-count=1 --format=format:%H
+    if ($commit -ne (git rev-parse HEAD)) { git reset $commit }
+}
+
+
+
+
 # -------------------------------------------------------------------------------------------------
 # vim: ft=ps1 sw=4 ts=4 et
-# -------------------------------------------------------------------------------------------------

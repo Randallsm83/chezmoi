@@ -112,6 +112,38 @@ check_repos() {
   done
 }
 
+# Make directory and cd into it
+mkcd() { mkdir -p "$1" && cd "$1" }
+
+# Combined update function - runs all available package manager updates
+updateall() {
+  echo "\n======================================"
+  echo "Updating all package managers..."
+  echo "======================================\n"
+
+  if (( $+commands[brew] )); then
+    echo ">>> Homebrew"
+    brew update && brew upgrade && brew cleanup
+    echo ""
+  fi
+
+  if (( $+commands[mise] )); then
+    echo ">>> Mise"
+    mise up && mise prune --yes
+    echo ""
+  fi
+
+  if (( $+commands[tldr] )); then
+    echo ">>> Tealdeer cache"
+    tldr --update
+    echo ""
+  fi
+
+  echo "======================================"
+  echo "All updates complete!"
+  echo "======================================\n"
+}
+
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
 # vim: ft=zsh sw=2 ts=2 et

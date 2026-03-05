@@ -120,6 +120,42 @@ if (Get-Command scoop-search -ErrorAction SilentlyContinue) {
     } catch {}
 }
 
+# ================================================================================================
+# Backfilled from zsh 25-functions.zsh
+# ================================================================================================
+
+function up {
+    param([int]$Count = 1)
+    $path = '../' * $Count
+    Set-Location $path
+}
+
+function sshkeygen {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$Comment
+    )
+    ssh-keygen -t ed25519 -f "$HOME/.ssh/$Name" -C $Comment
+}
+
+function Show-AnsiColors16 {
+    for ($i = 0; $i -lt 16; $i++) {
+        Write-Host -NoNewline "$([char]27)[48;5;${i}m  $([char]27)[0m"
+        Write-Host -NoNewline "$([char]27)[38;5;${i}m$('{0,4}' -f $i)$([char]27)[0m "
+        if (($i + 1) % 8 -eq 0) { Write-Host }
+    }
+}
+Set-Alias -Name 16colors -Value Show-AnsiColors16
+
+function Show-AnsiColors256 {
+    for ($i = 0; $i -lt 256; $i++) {
+        Write-Host -NoNewline "$([char]27)[48;5;${i}m  $([char]27)[0m"
+        Write-Host -NoNewline "$([char]27)[38;5;${i}m$('{0,4}' -f $i)$([char]27)[0m "
+        if (($i + 1) % 8 -eq 0) { Write-Host }
+    }
+}
+Set-Alias -Name 256colors -Value Show-AnsiColors256
+
 # -------------------------------------------------------------------------------------------------
 # vim: ft=ps1 sw=4 ts=4 et
 # -------------------------------------------------------------------------------------------------

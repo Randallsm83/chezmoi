@@ -10,6 +10,14 @@
 # 1Password SSH Agent Configuration
 # Configures SSH_AUTH_SOCK to use the 1Password SSH agent
 # Works across macOS, WSL, and native Linux
+#
+# On remote machines (SSH sessions), agent forwarding provides SSH_AUTH_SOCK.
+# We must not override it or the forwarded agent becomes unreachable.
+
+if [[ -n "$SSH_CONNECTION" && -S "$SSH_AUTH_SOCK" ]]; then
+  # Agent forwarding is active — preserve the forwarded socket
+  return 0
+fi
 
 if is-macos; then
   # macOS: 1Password agent socket location
@@ -23,7 +31,7 @@ elif is-wsl; then
   export GIT_SSH_COMMAND="$win_ssh"
   alias ssh="$win_ssh"
   alias ssh-add="$win_ssh_add"
-  # Unset SSH_AUTH_SOCK since we're using Windows SSH
+  # Unset SSH_AUTH_SOCK since we are using Windows SSH
   unset SSH_AUTH_SOCK
 else
   # Native Linux with 1Password agent
@@ -34,3 +42,4 @@ fi
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
 # vim: ft=zsh sw=2 ts=2 et
 # -------------------------------------------------------------------------------------------------
+ENDOFFILE

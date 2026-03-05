@@ -61,6 +61,9 @@ alias-finder() {
 }
 
 preexec_alias-finder() {
+  # Skip Warp's bootstrap — alias-finder output breaks Warpify
+  [[ "$1" == *"WARP_BOOTSTRAPPED"* ]] && return
+
   # Check zstyle for autoload or fallback to the variable
   if zstyle -t ':alias-finder' autoload || [[ $ZSH_ALIAS_FINDER_AUTOMATIC == true ]]; then
     alias-finder "$1"
