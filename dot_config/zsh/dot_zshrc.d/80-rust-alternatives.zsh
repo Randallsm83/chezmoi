@@ -11,16 +11,16 @@
 # Each alias only activates if the Rust tool is installed
 
 # sed -> sd
-(( $+commands[sd] )) && alias sed=sd
+# (( $+commands[sd] )) && alias sed=sd  # sd is NOT drop-in for sed (different syntax)
 
 # du -> dust
-(( $+commands[dust] )) && alias du=dust
+# (( $+commands[dust] )) && alias du=dust  # dust is NOT drop-in for du (different flags)
 
 # find -> fd
-(( $+commands[fd] )) && alias find=fd
+# (( $+commands[fd] )) && alias find=fd  # fd is NOT drop-in for find (different syntax)
 
 # diff -> delta
-(( $+commands[delta] )) && alias diff=delta
+# (( $+commands[delta] )) && alias diff=delta  # delta is NOT drop-in for diff
 
 # cloc/sloccount -> tokei
 (( $+commands[tokei] )) && alias cloc=tokei
@@ -46,7 +46,7 @@ fi
 (( $+commands[tldr] )) && alias help=tldr
 
 # ps -> procs
-(( $+commands[procs] )) && alias ps=procs
+# (( $+commands[procs] )) && alias ps=procs  # procs is NOT drop-in for ps
 
 # =============================================================================
 # Inventory Function
