@@ -55,6 +55,7 @@ REMOTE.md
 ARCHITECTURE.md
 CONTRIBUTING.md
 CHEZMOI-GUIDE.md
+REINSTALL.md
 
 # Bootstrap scripts
 bootstrap.ps1
