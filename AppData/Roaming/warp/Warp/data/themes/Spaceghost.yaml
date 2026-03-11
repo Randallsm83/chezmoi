@@ -1,0 +1,26 @@
+---
+name: Spaceghost
+accent: '#00e5e5'
+cursor: '#ffffff'
+background: '#13111b'
+foreground: '#f8f8f2'
+details: darker
+terminal_colors:
+  normal:
+    black: '#13111b'
+    red: '#ff5f5f'
+    green: '#5fff87'
+    yellow: '#ffff87'
+    blue: '#5fafff'
+    magenta: '#af87ff'
+    cyan: '#5fffff'
+    white: '#f8f8f2'
+  bright:
+    black: '#6272a4'
+    red: '#ff9696'
+    green: '#96ffc0'
+    yellow: '#ffffb8'
+    blue: '#96d4ff'
+    magenta: '#d7b8ff'
+    cyan: '#96ffff'
+    white: '#ffffff'

@@ -82,6 +82,17 @@ if ($scoopPackages.Count -gt 0) {
     }
 }
 
+# Run vcredist-aio to install all Visual C++ Redistributables
+{{- if .package_features.windows_utilities }}
+if (scoop list vcredist-aio 2>$null) {
+    $vcredistExe = Join-Path $env:USERPROFILE 'scoop\apps\vcredist-aio\current\vcredist-aio.exe'
+    if (Test-Path $vcredistExe) {
+        Write-Host "`nInstalling Visual C++ Redistributables via vcredist-aio..." -ForegroundColor Cyan
+        gsudo $vcredistExe /ai
+    }
+}
+{{- end }}
+
 # Configure abgox scoop-install URL replacement (proxy for faster downloads)
 if (Get-Command scoop-install -ErrorAction SilentlyContinue) {
     Write-Host "`nConfiguring abgox scoop-install URL replacement..." -ForegroundColor Cyan

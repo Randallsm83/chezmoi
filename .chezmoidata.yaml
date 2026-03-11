@@ -1005,7 +1005,7 @@ package_mapping:
   # Hardware & Drivers (Windows-only)
   hardware_tools:
     windows:
-      scoop: [nvidia-profile-inspector, nvcleanstall, ddu, cpu-z, gpu-z, smartmontools]
+      scoop: [nvidia-profile-inspector, nvcleanstall, ddu, cpu-z, gpu-z, smartmontools, fancontrol]
       winget: []
       mise: []
     linux:
@@ -1021,7 +1021,7 @@ package_mapping:
   # Windows System Utilities
   windows_utilities:
     windows:
-      scoop: [everything, flow-launcher, bulk-crap-uninstaller, ventoy, vcredist-aio]
+      scoop: [everything, flow-launcher, bulk-crap-uninstaller, ventoy, vcredist-aio, islc]
       winget: []
       mise: []
     linux:
@@ -1108,9 +1108,11 @@ scoop_bucket_overrides:
     - cpu-z
     - ddu
     - everything
+    - fancontrol
     - flow-launcher
     - gpu-z
     - ilspy
+    - islc
     - lazygit
     - ludusavi
     - msiafterburner

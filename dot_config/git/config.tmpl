@@ -18,8 +18,8 @@
 	editor = nvim
 	pager = delta
 {{- if eq .chezmoi.os "windows" }}
-	# Windows: Normalize line endings (LF in repo, CRLF on checkout)
-	autocrlf = true
+	# Windows: Normalize line endings (LF in repo, no CRLF conversion on checkout)
+	autocrlf = input
 	# Windows: Disable file mode tracking (no chmod)
 	filemode = false
 	# Windows: Enable long path support (>260 characters)

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-16"?>
+
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+
+  <RegistrationInfo>
+
+    <Date>2025-10-19T14:03:46.3860435</Date>
+
+    <Author>***REMOVED***\Randall</Author>
+
+    <URI>\UtilCacheCleaner</URI>
+
+  </RegistrationInfo>
+
+  <Principals>
+
+    <Principal id="Author">
+
+      <GroupId>S-1-5-32-544</GroupId>
+
+      <RunLevel>HighestAvailable</RunLevel>
+
+    </Principal>
+
+  </Principals>
+
+  <Settings>
+
+    <DisallowStartIfOnBatteries>true</DisallowStartIfOnBatteries>
+
+    <StopIfGoingOnBatteries>true</StopIfGoingOnBatteries>
+
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+
+    <IdleSettings>
+
+      <StopOnIdleEnd>true</StopOnIdleEnd>
+
+      <RestartOnIdle>false</RestartOnIdle>
+
+    </IdleSettings>
+
+    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
+
+  </Settings>
+
+  <Triggers>
+
+    <LogonTrigger>
+
+      <UserId>***REMOVED***\Randall</UserId>
+
+    </LogonTrigger>
+
+  </Triggers>
+
+  <Actions Context="Author">
+
+    <Exec>
+
+      <Command>C:\Windows\System32\conhost.exe</Command>
+
+      <Arguments>--headless pwsh.exe -WindowStyle Hidden -NoProfile -NonInteractive -File "C:\Users\Randall\.local\utilities\UtilCacheCleaner.ps1"</Arguments>
+
+      <WorkingDirectory>C:\Users\Randall\.local\utilities\</WorkingDirectory>
+
+    </Exec>
+
+  </Actions>
+
+</Task>
