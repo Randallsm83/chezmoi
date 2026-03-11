@@ -7,9 +7,12 @@
   {{- if $enabled }}
     {{- if hasKey $.package_mapping $feature }}
       {{- $mapping := index $.package_mapping $feature }}
-      {{- if hasKey $mapping "scoop" }}
-        {{- range index $mapping "scoop" }}
+      {{- if hasKey $mapping "windows" }}
+        {{- $win := index $mapping "windows" }}
+        {{- if hasKey $win "scoop" }}
+          {{- range index $win "scoop" }}
     "{{ . }}",
+          {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}

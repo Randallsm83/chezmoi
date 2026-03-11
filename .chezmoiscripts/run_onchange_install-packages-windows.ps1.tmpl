@@ -49,6 +49,25 @@ $pwshModules += "{{ . }}"
 {{- end }}
 {{- end }}
 
+# Always-install packages (not controlled by feature flags)
+{{- range .always_install.scoop }}
+$scoopPackages += "{{ . }}"
+{{- end }}
+
+# Ensure required scoop buckets
+$requiredBuckets = @(
+{{- range $name, $url := .scoop_buckets }}
+    @{ Name = '{{ $name }}'; Url = '{{ $url }}' }
+{{- end }}
+)
+foreach ($bucket in $requiredBuckets) {
+    $existing = scoop bucket list 2>$null | Where-Object { $_.Name -eq $bucket.Name }
+    if (!$existing) {
+        Write-Host "  Adding scoop bucket: $($bucket.Name)" -ForegroundColor Green
+        scoop bucket add $($bucket.Name) $($bucket.Url)
+    }
+}
+
 # Install scoop packages
 if ($scoopPackages.Count -gt 0) {
     $scoopPackages = $scoopPackages | Select-Object -Unique
@@ -61,6 +80,13 @@ if ($scoopPackages.Count -gt 0) {
             Write-Host "  Already installed: $pkg" -ForegroundColor Gray
         }
     }
+}
+
+# Configure abgox scoop-install URL replacement (proxy for faster downloads)
+if (Get-Command scoop-install -ErrorAction SilentlyContinue) {
+    Write-Host "`nConfiguring abgox scoop-install URL replacement..." -ForegroundColor Cyan
+    scoop config abgox-scoop-install-url-replace-from "^https://github.com|^https://raw.githubusercontent.com"
+    scoop config abgox-scoop-install-url-replace-to "https://gh-proxy.com/github.com|https://gh-proxy.com/raw.githubusercontent.com"
 }
 
 # Install winget packages

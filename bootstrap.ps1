@@ -35,13 +35,18 @@
 .EXAMPLE
     # Custom repository or branch
     .\bootstrap.ps1 -Repository "youruser/dotfiles" -Branch "develop"
+    
+.EXAMPLE
+    # Restore from a scoop export (installs scoop, imports packages, then chezmoi)
+    .\bootstrap.ps1 -ScoopExport .\scoop-export.json
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$Repository = "Randallsm83/dotfiles",
     [string]$Branch = "main",
-    [switch]$SkipPackages
+    [switch]$SkipPackages,
+    [string]$ScoopExport
 )
 
 $ErrorActionPreference = 'Stop'
@@ -312,6 +317,52 @@ function Invoke-PreflightChecks {
 }
 
 # ============================================================================
+# Scoop Import (from export file)
+# ============================================================================
+
+function Import-ScoopExport {
+    <#
+    .SYNOPSIS
+        Bulk-install packages from a scoop export JSON file
+    .DESCRIPTION
+        Uses 'scoop import' to restore all buckets and apps from an export.
+        Requires scoop to already be installed.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$ExportFile
+    )
+    
+    if (-not (Test-Path $ExportFile)) {
+        Write-Status "Scoop export file not found: $ExportFile" -Type Error
+        return $false
+    }
+    
+    if (-not (Test-CommandExists scoop)) {
+        Write-Status "Scoop not installed yet - cannot import" -Type Error
+        return $false
+    }
+    
+    Write-Status "Importing packages from scoop export..." -Type Info
+    
+    try {
+        $export = Get-Content $ExportFile -Raw | ConvertFrom-Json
+        $appCount = ($export.apps | Measure-Object).Count
+        $bucketCount = ($export.buckets | Measure-Object).Count
+        Write-Status "Found $appCount apps across $bucketCount buckets" -Type Info
+        
+        scoop import $ExportFile
+        
+        Write-Status "Scoop import complete ($appCount apps)" -Type Success
+        return $true
+    } catch {
+        Write-Status "Scoop import failed: $_" -Type Error
+        Write-Status "Chezmoi will install remaining packages via feature flags" -Type Warning
+        return $false
+    }
+}
+
+# ============================================================================
 # Chezmoi Installation
 # ============================================================================
 
@@ -508,20 +559,26 @@ function Main {
     Write-Progress -Step 1 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Setting up XDG environment"
     Set-EnvironmentVariables
     
-    # Step 2: Install chezmoi
-    Write-Progress -Step 2 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Installing chezmoi"
-    if (-not (Install-Chezmoi)) {
-        Write-Status "Bootstrap failed: Could not install chezmoi" -Type Error
-        Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
-        exit 1
-    }
-    
-    # Step 3: Install scoop (if needed for packages)
-    Write-Progress -Step 3 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Setting up package manager"
+    # Step 2: Install scoop (needed for chezmoi and packages)
+    Write-Progress -Step 2 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Setting up package manager"
     if (-not $SkipPackages) {
         Install-Scoop | Out-Null
     } else {
         Write-Status "Skipping package manager setup (--SkipPackages specified)" -Type Info
+    }
+    
+    # Step 2b: Import from scoop export if provided
+    if ($ScoopExport) {
+        Write-Progress -Step 2 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Importing scoop packages"
+        Import-ScoopExport -ExportFile $ScoopExport
+    }
+    
+    # Step 3: Install chezmoi (via scoop if available, winget fallback)
+    Write-Progress -Step 3 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Installing chezmoi"
+    if (-not (Install-Chezmoi)) {
+        Write-Status "Bootstrap failed: Could not install chezmoi" -Type Error
+        Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
+        exit 1
     }
     
     # Step 4: Initialize chezmoi and apply dotfiles

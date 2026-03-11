@@ -8,44 +8,61 @@
 #
 
 {
-  "comment": "Scoop package list - alternative/complement to winget",
+  "comment": "Scoop package reference - authoritative list is in .chezmoidata.yaml",
   "buckets": [
     "main",
     "extras",
+    "versions",
     "nerd-fonts",
-    "versions"
+    "sysinternals",
+    "nonportable",
+    "games",
+    "abyss"
   ],
-  "apps": [
-    "git",
-    "neovim",
-    "pwsh",
-    "starship",
-    "mise",
-    "ripgrep",
-    "bat",
-    "fd",
-    "fzf",
-    "zoxide",
-    "7zip",
-    "gsudo",
-    "eza",
-    "vivid",
-    "delta",
-    "btop",
-    "gh",
-    "lazygit",
-    "1password-cli",
-    "make",
-    "zig",
+  "always_install": [
+    "chezmoi",
     "jq",
     "yq",
-    "curl",
-    "wget"
+    "make",
+    "7zip",
+    "unzip",
+    "gzip",
+    "gsudo",
+    "aria2",
+    "cacert",
+    "innounp",
+    "dark",
+    "scoop-search",
+    "sudo",
+    "abgox.scoop-install",
+    "abgox.scoop-update"
   ],
-  "fonts": [
-    "FiraCode-NF",
-    "Hack-NF",
-    "JetBrainsMono-NF",
-    "CascadiaCode-NF"
-  ]
+  "feature_apps": {
+    "git": ["git", "gh", "lazygit"],
+    "1password": ["1password-cli"],
+    "mise": ["mise"],
+    "nvim": ["neovim"],
+    "vim": ["vim"],
+    "starship": ["starship"],
+    "powershell": ["kelleyma49.PSFzf", "abgox.PSCompletions", "PowerShell.PSReadLine"],
+    "fzf": ["fzf"],
+    "wget": ["wget", "curl"],
+    "glow": ["glow"],
+    "btop": ["btop"],
+    "fastfetch": ["fastfetch"],
+    "rust_alternatives": ["bat", "ripgrep", "fd", "eza", "delta", "zoxide", "vivid", "uutils-coreutils", "tealdeer", "navi", "sd", "dust", "procs", "hyperfine", "just", "tokei", "ouch", "xh"],
+    "lua": ["lua", "lua51", "luarocks", "luajit"],
+    "julia": ["juliaup"],
+    "sqlite3": ["sqlite"],
+    "arduino": ["arduino", "arduino-cli"],
+    "nerd_fonts": ["CascadiaCode-NF", "FiraCode-NF", "Hack-NF", "JetBrainsMono-NF"],
+    "ai_tools": ["ollama", "claude-code", "opencode"],
+    "gaming": ["steam", "ludusavi", "rtss", "msiafterburner"],
+    "docker": ["docker-compose"],
+    "hardware_tools": ["nvidia-profile-inspector", "nvcleanstall", "ddu", "cpu-z", "gpu-z", "smartmontools"],
+    "windows_utilities": ["everything", "flow-launcher", "bulk-crap-uninstaller", "ventoy", "vcredist-aio"],
+    "sysinternals": ["sysinternals-suite", "ctrl2cap", "whois"],
+    "network_tools": ["bind", "rclone"],
+    "dev_extras": ["postman", "ilspy", "pandoc", "wkhtmltopdf", "cygwin", "dd", "wp-cli"]
+  }
 }

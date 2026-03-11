@@ -21,17 +21,21 @@
 theme:
   name: "spaceduck"  # Active theme
 
-  # Spaceduck - Official palette from pineapplegiant/spaceduck
+  # Spaceduck - Visual colors from pineapplegiant/spaceduck extended palette
+  # NOTE: The official spaceduck ANSI slots are non-standard (magenta=#f2ce00,
+  # cyan=#7a5ccc, yellow=#b3a1e6). We use VISUAL color names here to match
+  # every other theme, since the bat/delta generator maps semantically:
+  #   purple → keywords, yellow → classes, cyan → comments (with alpha)
   spaceduck:
     background: "#0f111b"
     foreground: "#ecf0c1"
-    purple: "#f2ce00"      # ANSI magenta in their palette
-    pink: "#ce6f8f"
-    green: "#5ccc96"
-    orange: "#e33400"      # ANSI red
-    blue: "#00a3cc"        # ANSI blue
-    cyan: "#7a5ccc"        # ANSI cyan in their palette
-    yellow: "#b3a1e6"      # ANSI yellow in their palette
+    purple: "#e39400"       # Keywords — warm orange (avoids harsh #f2ce00 yellow)
+    pink: "#ce6f8f"         # Constants — spaceduck pink/rose
+    green: "#5ccc96"        # Strings — spaceduck green
+    orange: "#e33400"       # Numbers — spaceduck red
+    blue: "#00a3cc"         # Functions — spaceduck blue
+    cyan: "#42b3c2"         # Comments (50% alpha) — spaceduck teal
+    yellow: "#42b3c2"       # Classes/types — spaceduck teal
 
   # OneDark - navarasu/onedark.nvim
   onedark:
@@ -337,6 +341,47 @@ package_features:
   vagrant: false        # Virtualization
 
   # ============================================================================
+  # Fonts
+  # ============================================================================
+  nerd_fonts: true       # Nerd Font families (scoop nerd-fonts bucket)
+
+  # ============================================================================
+  # AI & ML Tools
+  # ============================================================================
+  ai_tools: true         # LLM inference and AI coding assistants (ollama, claude-code, opencode)
+
+  # ============================================================================
+  # Gaming
+  # ============================================================================
+  gaming: true           # Gaming platforms, save backup, OSD/monitoring
+
+  # ============================================================================
+  # Container Tools
+  # ============================================================================
+  docker: true           # Container orchestration
+
+  # ============================================================================
+  # Hardware & Drivers (Windows-only)
+  # ============================================================================
+  hardware_tools: true   # Hardware diagnostics, GPU tools, driver management
+
+  # ============================================================================
+  # Windows System Utilities
+  # ============================================================================
+  windows_utilities: true  # Search, launcher, cleanup, bootable USB
+  sysinternals: true       # Microsoft Sysinternals suite
+
+  # ============================================================================
+  # Networking
+  # ============================================================================
+  network_tools: true    # DNS, cloud storage sync, network diagnostics
+
+  # ============================================================================
+  # Miscellaneous Development
+  # ============================================================================
+  dev_extras: true       # Document conversion, .NET tools, API testing, WordPress
+
+  # ============================================================================
   # Legacy/Deprecated (disabled)
   # ============================================================================
   asdf: false           # DEPRECATED: Replaced by mise
@@ -588,10 +633,10 @@ package_mapping:
 
   powershell:
     windows:
-      scoop: []
+      scoop: [kelleyma49.PSFzf, abgox.PSCompletions, PowerShell.PSReadLine]
       winget: [Microsoft.PowerShell]
       mise: []
-      pwsh_modules: [PSFzf, PSCompletions, Terminal-Icons, WSLTabCompletion]
+      pwsh_modules: [Terminal-Icons, WSLTabCompletion]
     linux:
       apt: []
       dnf: []
@@ -756,7 +801,7 @@ package_mapping:
 
   lua:
     windows:
-      scoop: [lua51, luarocks, luajit]  # lua51 from versions bucket
+      scoop: [lua, lua51, luarocks, luajit]  # lua51 from versions bucket
       winget: []
       mise: []
     linux:
@@ -865,7 +910,7 @@ package_mapping:
 
   arduino:
     windows:
-      scoop: [arduino-cli]
+      scoop: [arduino, arduino-cli]
       winget: []
       mise: []
     linux:
@@ -893,6 +938,207 @@ package_mapping:
       brew: [vagrant]
       mise: []
 
+  # Fonts (Nerd Font families)
+  nerd_fonts:
+    windows:
+      scoop: [CascadiaCode-NF, FiraCode-NF, Hack-NF, JetBrainsMono-NF]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: []
+    darwin:
+      brew: [font-fira-code-nerd-font, font-hack-nerd-font, font-jetbrains-mono-nerd-font, font-caskaydia-cove-nerd-font]
+      mise: []
+
+  # AI & ML Tools
+  ai_tools:
+    windows:
+      scoop: [ollama, claude-code, opencode]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [ollama]
+      mise: []
+    darwin:
+      brew: [ollama]
+      mise: []
+
+  # Gaming
+  gaming:
+    windows:
+      scoop: [steam, ludusavi, rtss, msiafterburner]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [ludusavi]
+      mise: []
+    darwin:
+      brew: [ludusavi]
+      mise: []
+
+  # Container Tools
+  docker:
+    windows:
+      scoop: [docker-compose]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [docker-compose]
+      mise: []
+    darwin:
+      brew: [docker-compose]
+      mise: []
+
+  # Hardware & Drivers (Windows-only)
+  hardware_tools:
+    windows:
+      scoop: [nvidia-profile-inspector, nvcleanstall, ddu, cpu-z, gpu-z, smartmontools]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [smartmontools]
+      mise: []
+    darwin:
+      brew: [smartmontools]
+      mise: []
+
+  # Windows System Utilities
+  windows_utilities:
+    windows:
+      scoop: [everything, flow-launcher, bulk-crap-uninstaller, ventoy, vcredist-aio]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: []
+    darwin:
+      brew: []
+      mise: []
+
+  # Sysinternals
+  sysinternals:
+    windows:
+      scoop: [sysinternals-suite, ctrl2cap, whois]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: []
+    darwin:
+      brew: []
+      mise: []
+
+  # Networking
+  network_tools:
+    windows:
+      scoop: [bind, rclone]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [rclone]
+      mise: []
+    darwin:
+      brew: [rclone]
+      mise: []
+
+  # Miscellaneous Development
+  dev_extras:
+    windows:
+      scoop: [postman, ilspy, pandoc, wkhtmltopdf, cygwin, dd, wp-cli]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [pandoc]
+      mise: []
+    darwin:
+      brew: [pandoc]
+      mise: []
+
+# ============================================================================
+# Scoop Buckets
+# ============================================================================
+# Bucket name → repository URL mapping
+# Used by: install script (bucket setup), scoop export template
+# Default bucket (main) is always available and not listed here
+
+scoop_buckets:
+  extras: "https://github.com/ScoopInstaller/Extras"
+  versions: "https://github.com/ScoopInstaller/Versions"
+  nerd-fonts: "https://github.com/matthewjberger/scoop-nerd-fonts"
+  sysinternals: "https://github.com/niheaven/scoop-sysinternals"
+  nonportable: "https://github.com/ScoopInstaller/Nonportable"
+  games: "https://github.com/Calinou/scoop-games"
+  abyss: "https://github.com/abgox/abyss"
+
+# Apps that live outside the 'main' bucket.
+# Only non-main apps need to be listed here; everything else defaults to main.
+# Used by scoop-export.json.tmpl to generate a valid scoop import file.
+scoop_bucket_overrides:
+  extras:
+    - arduino
+    - bulk-crap-uninstaller
+    - cpu-z
+    - ddu
+    - everything
+    - flow-launcher
+    - gpu-z
+    - ilspy
+    - lazygit
+    - ludusavi
+    - msiafterburner
+    - nvcleanstall
+    - nvidia-profile-inspector
+    - postman
+    - rtss
+    - vcredist-aio
+    - ventoy
+  versions:
+    - lua51
+    - steam
+  nerd-fonts:
+    - CascadiaCode-NF
+    - FiraCode-NF
+    - Hack-NF
+    - JetBrainsMono-NF
+  sysinternals:
+    - sysinternals-suite
+    - ctrl2cap
+    - whois
+  abyss:
+    - abgox.PSCompletions
+    - abgox.scoop-install
+    - abgox.scoop-update
+    - kelleyma49.PSFzf
+    - PowerShell.PSReadLine
+
 # Always-installed packages (not controlled by feature flags)
 always_install:
   scoop:
@@ -903,6 +1149,15 @@ always_install:
     - 7zip
     - unzip
     - gzip
+    - gsudo
+    - aria2
+    - cacert
+    - innounp
+    - dark
+    - scoop-search
+    - sudo
+    - abgox.scoop-install
+    - abgox.scoop-update
 
   winget: []
 

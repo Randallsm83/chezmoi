@@ -13,6 +13,27 @@ Modern, cross-platform dotfile management using [chezmoi](https://www.chezmoi.io
 iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 | iex
 ```
 
+### Windows — Restore from Scoop Export (fastest)
+If you have a scoop export from a previous machine:
+```powershell
+# 1. Install scoop
+irm get.scoop.sh | iex
+
+# 2. Import all packages (buckets + apps in one shot)
+scoop import .\scoop-export.json
+
+# 3. Apply configs
+chezmoi init --apply Randallsm83/dotfiles
+```
+
+Or use the bootstrap script with `-ScoopExport`:
+```powershell
+iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 -OutFile bootstrap.ps1
+.\bootstrap.ps1 -ScoopExport .\scoop-export.json
+```
+
+> **Tip**: After setup, chezmoi keeps `~/.config/scoop/scoop-export.json` in sync with your feature flags — always ready for next time.
+
 ### Unix/Linux/WSL (bash/zsh)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
