@@ -39,6 +39,10 @@
 .EXAMPLE
     # Restore from a scoop export (installs scoop, imports packages, then chezmoi)
     .\bootstrap.ps1 -ScoopExport .\scoop-export.json
+    
+.EXAMPLE
+    # Restore from both exports
+    .\bootstrap.ps1 -ScoopExport .\scoop-export.json -WingetExport .\winget-export.json
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -46,7 +50,8 @@ param(
     [string]$Repository = "Randallsm83/dotfiles",
     [string]$Branch = "main",
     [switch]$SkipPackages,
-    [string]$ScoopExport
+    [string]$ScoopExport,
+    [string]$WingetExport
 )
 
 $ErrorActionPreference = 'Stop'
@@ -362,6 +367,40 @@ function Import-ScoopExport {
     }
 }
 
+function Import-WingetExport {
+    <#
+    .SYNOPSIS
+        Bulk-install packages from a winget export JSON file
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$ExportFile
+    )
+    
+    if (-not (Test-Path $ExportFile)) {
+        Write-Status "Winget export file not found: $ExportFile" -Type Error
+        return $false
+    }
+    
+    if (-not (Test-CommandExists winget)) {
+        Write-Status "Winget not available - cannot import" -Type Error
+        return $false
+    }
+    
+    Write-Status "Importing packages from winget export..." -Type Info
+    
+    try {
+        winget import --import-file $ExportFile --accept-package-agreements --accept-source-agreements --ignore-unavailable
+        
+        Write-Status "Winget import complete" -Type Success
+        return $true
+    } catch {
+        Write-Status "Winget import failed: $_" -Type Error
+        Write-Status "Chezmoi will install remaining packages via feature flags" -Type Warning
+        return $false
+    }
+}
+
 # ============================================================================
 # Chezmoi Installation
 # ============================================================================
@@ -567,10 +606,14 @@ function Main {
         Write-Status "Skipping package manager setup (--SkipPackages specified)" -Type Info
     }
     
-    # Step 2b: Import from scoop export if provided
+    # Step 2b: Import from exports if provided
     if ($ScoopExport) {
         Write-Progress -Step 2 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Importing scoop packages"
         Import-ScoopExport -ExportFile $ScoopExport
+    }
+    if ($WingetExport) {
+        Write-Progress -Step 2 -TotalSteps $totalSteps -Activity "Bootstrap" -Status "Importing winget packages"
+        Import-WingetExport -ExportFile $WingetExport
     }
     
     # Step 3: Install chezmoi (via scoop if available, winget fallback)
