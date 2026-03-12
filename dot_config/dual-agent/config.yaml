@@ -1,0 +1,8 @@
+fast:
+  model: claude-4-6-opus-high
+deep:
+  model: claude-4-6-opus-max
+  skill: Randallsm83/dual-agent:deep-research
+environment_id: TLyZnxcSyWE2aoDEmD4qnZ
+poll_interval: 5.0
+open_on_spawn: true

@@ -1,0 +1,6 @@
+{
+	"auths": {
+		"git.dreamhost.com:5001": {}
+	},
+	"credsStore": "wincred"
+}

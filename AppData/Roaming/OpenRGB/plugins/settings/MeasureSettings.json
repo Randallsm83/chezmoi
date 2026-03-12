@@ -1,0 +1,110 @@
+[
+    {
+        "auto_start": true,
+        "brightness": 75,
+        "devices": [
+            {
+                "brightness": 100,
+                "description": "ASUS Aura USB Mainboard Device",
+                "is_percentage_fill": false,
+                "is_segment": false,
+                "location": "HID: \\\\?\\HID#VID_0B05&PID_19AF&MI_02#a&d29d7f0&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+                "name": "ASUS TUF GAMING B650-PLUS WIFI",
+                "reverse": false,
+                "segment_idx": -1,
+                "serial": "9876543210",
+                "vendor": "ASUS",
+                "version": "AULA3-AR32-0309",
+                "zone_idx": 1
+            }
+        ],
+        "fps": 60,
+        "hardware": 0,
+        "hardware_feature": 50,
+        "hardware_identifier": "/amdcpu/0/temperature/2",
+        "measure_color": {
+            "color_stops": [
+                [
+                    45.0,
+                    4915215
+                ],
+                [
+                    65.0,
+                    7864364
+                ],
+                [
+                    80.0,
+                    11468887
+                ],
+                [
+                    87.0,
+                    16384121
+                ]
+            ]
+        },
+        "name": "CPU",
+        "refresh_interval": 5000,
+        "running": true
+    },
+    {
+        "auto_start": true,
+        "brightness": 86,
+        "devices": [
+            {
+                "brightness": 100,
+                "description": "Corsair RAM RGB Device",
+                "is_percentage_fill": true,
+                "is_segment": false,
+                "location": "I2C: PIIX4, address 0x19",
+                "name": "Corsair Dominator Platinum",
+                "reverse": true,
+                "segment_idx": -1,
+                "serial": "",
+                "vendor": "Corsair",
+                "version": "",
+                "zone_idx": 0
+            },
+            {
+                "brightness": 100,
+                "description": "Corsair RAM RGB Device",
+                "is_percentage_fill": true,
+                "is_segment": false,
+                "location": "I2C: PIIX4, address 0x1B",
+                "name": "Corsair Dominator Platinum",
+                "reverse": true,
+                "segment_idx": -1,
+                "serial": "",
+                "vendor": "Corsair",
+                "version": "",
+                "zone_idx": 0
+            }
+        ],
+        "fps": 60,
+        "hardware": 4,
+        "hardware_feature": 0,
+        "hardware_identifier": "/gpu-nvidia/0/temperature/0",
+        "measure_color": {
+            "color_stops": [
+                [
+                    30.0,
+                    4915215
+                ],
+                [
+                    50.0,
+                    6225960
+                ],
+                [
+                    75.0,
+                    10813517
+                ],
+                [
+                    85.0,
+                    15728753
+                ]
+            ]
+        },
+        "name": "RTX 5080",
+        "refresh_interval": 5000,
+        "running": true
+    }
+]

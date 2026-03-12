@@ -636,7 +636,8 @@ package_mapping:
       scoop: [kelleyma49.PSFzf, abgox.PSCompletions, PowerShell.PSReadLine]
       winget: [Microsoft.PowerShell]
       mise: []
-      pwsh_modules: [Terminal-Icons, WSLTabCompletion]
+      pwsh_modules: [Terminal-Icons, WSLTabCompletion, AudioDeviceCmdlets, Profiler, PSProfiler, Microsoft.WinGet.Client, Microsoft.WinGet.CommandNotFound]
+      psc_completions: [7z, arch, bun, cargo, dirname, docker, env, gh, git, head, mise, node, npm, pip, powershell, psc, pwsh, python, scoop, scoop-install, scoop-update, uv, winget, wsl, yarn, zoxide, df, scoop-checkver]
     linux:
       apt: []
       dnf: []

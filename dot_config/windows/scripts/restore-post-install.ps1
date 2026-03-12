@@ -11,6 +11,10 @@
       4. Windows Features (WSL, VirtualMachinePlatform, NetFx3)
       5. Scheduled tasks (FanControl, MSIAfterburner, OpenRGB, Rdock, UtilCacheCleaner, uwd2)
       6. uwd2 download (Universal Watermark Disabler 2)
+      7. Ethernet NIC advanced settings (Realtek 2.5GbE)
+      8. Gaming/performance tweaks (MMCSS, HAGS, power throttling, WSearch disable)
+      9. TCP/Network stack optimization
+     10. NVIDIA DRS profile import
 
     Run elevated (as administrator) after chezmoi bootstrap completes.
     Safe to re-run — idempotent where possible.
@@ -36,8 +40,10 @@ $Config = @{
     OpenRGBExe        = "$env:USERPROFILE\.local\bin\OpenRGB\OpenRGB.exe"
     OpenRGBArgs       = '--startminimized --profile "Space"'
     RdockExe          = "$env:USERPROFILE\projects\rdock\target\release\rdock.exe"
-    UtilCacheScript   = "$env:USERPROFILE\.local\utilities\UtilCacheCleaner.ps1"
+    UtilCacheCleanerCmd = "Import-Module CacheCleaner; Clear-Cache"
     Uwd2Exe           = "$env:USERPROFILE\.local\bin\uwd2.exe"
+    FlowLauncherExe   = "$env:USERPROFILE\scoop\apps\flow-launcher\current\Flow.Launcher.exe"
+    ISLCExe           = "$env:USERPROFILE\scoop\apps\islc\current\Intelligent standby list cleaner ISLC.exe"
 
     # uwd2 download (GitHub releases)
     Uwd2Repo          = "machineonamission/uwd2"
@@ -269,24 +275,25 @@ New-LogonTask -Name "OpenRGB" -Exe $Config.OpenRGBExe -Arguments $Config.OpenRGB
 # Rdock — project build output
 New-LogonTask -Name "Rdock" -Exe $Config.RdockExe
 
-# UtilCacheCleaner — admin group, conhost wrapper for headless pwsh
-if (Test-Path $Config.UtilCacheScript) {
-    Unregister-ScheduledTask -TaskName "UtilCacheCleaner" -Confirm:$false -ErrorAction SilentlyContinue
-    try {
-        $action = New-ScheduledTaskAction `
-            -Execute "$env:SystemRoot\System32\conhost.exe" `
-            -Argument "--headless pwsh.exe -WindowStyle Hidden -NoProfile -NonInteractive -File `"$($Config.UtilCacheScript)`"" `
-            -WorkingDirectory (Split-Path $Config.UtilCacheScript)
-        $trigger = New-ScheduledTaskTrigger -AtLogOn
-        $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan) -MultipleInstances IgnoreNew
-        $principal = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Administrators" -RunLevel Highest
-        Register-ScheduledTask -TaskName "UtilCacheCleaner" -Action $action -Trigger $trigger `
-            -Settings $settings -Principal $principal | Out-Null
-        Write-Done "UtilCacheCleaner"
-    } catch { Write-Fail "UtilCacheCleaner: $_" }
-} else {
-    Write-Skip "UtilCacheCleaner — script not found: $($Config.UtilCacheScript)"
-}
+# Flow Launcher — scoop-installed, logon trigger
+New-LogonTask -Name "FlowLauncher" -Exe $Config.FlowLauncherExe
+
+# ISLC — scoop-installed, logon trigger (timer resolution / standby list cleaner)
+New-LogonTask -Name "ISLC" -Exe $Config.ISLCExe
+
+# UtilCacheCleaner — admin group, uses CacheCleaner PS module
+Unregister-ScheduledTask -TaskName "UtilCacheCleaner" -Confirm:$false -ErrorAction SilentlyContinue
+try {
+    $action = New-ScheduledTaskAction `
+        -Execute "$env:SystemRoot\System32\conhost.exe" `
+        -Argument "--headless pwsh.exe -WindowStyle Hidden -NoProfile -NonInteractive -Command `"$($Config.UtilCacheCleanerCmd)`""
+    $trigger = New-ScheduledTaskTrigger -AtLogOn
+    $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan) -MultipleInstances IgnoreNew
+    $principal = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Administrators" -RunLevel Highest
+    Register-ScheduledTask -TaskName "UtilCacheCleaner" -Action $action -Trigger $trigger `
+        -Settings $settings -Principal $principal | Out-Null
+    Write-Done "UtilCacheCleaner (CacheCleaner module)"
+} catch { Write-Fail "UtilCacheCleaner: $_" }
 
 # ============================================================================
 # 6. Download uwd2 (Universal Watermark Disabler 2) + startup task
@@ -361,7 +368,66 @@ try {
 } catch { Write-Fail "Ethernet NIC: $_" }
 
 # ============================================================================
-# 8. TCP / Network Stack Optimization
+# 8. Gaming / Performance Tweaks
+# ============================================================================
+Write-Section "Gaming / Performance Tweaks"
+
+try {
+    # MMCSS: disable network throttling, reserve 10% CPU for non-multimedia
+    $mmcssKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
+    if (-not (Test-Path $mmcssKey)) { New-Item -Path $mmcssKey -Force | Out-Null }
+    Set-ItemProperty -Path $mmcssKey -Name 'NetworkThrottlingIndex' -Value 0xFFFFFFFF -Type DWord -Force
+    Set-ItemProperty -Path $mmcssKey -Name 'SystemResponsiveness' -Value 10 -Type DWord -Force
+    Write-Done "MMCSS: NetworkThrottling OFF, SystemResponsiveness=10"
+} catch { Write-Fail "MMCSS: $_" }
+
+try {
+    # HAGS (Hardware-Accelerated GPU Scheduling)
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" -Name 'HwSchMode' -Value 2 -Type DWord -Force
+    Write-Done "HAGS: enabled (HwSchMode=2)"
+} catch { Write-Fail "HAGS: $_" }
+
+try {
+    # Game MMCSS task priorities
+    $gamesKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games"
+    if (-not (Test-Path $gamesKey)) { New-Item -Path $gamesKey -Force | Out-Null }
+    Set-ItemProperty -Path $gamesKey -Name 'Affinity' -Value 0 -Type DWord -Force
+    Set-ItemProperty -Path $gamesKey -Name 'Background Only' -Value 'False' -Force
+    Set-ItemProperty -Path $gamesKey -Name 'GPU Priority' -Value 8 -Type DWord -Force
+    Set-ItemProperty -Path $gamesKey -Name 'Priority' -Value 6 -Type DWord -Force
+    Set-ItemProperty -Path $gamesKey -Name 'Scheduling Category' -Value 'High' -Force
+    Set-ItemProperty -Path $gamesKey -Name 'SFIO Priority' -Value 'High' -Force
+    Write-Done "Game MMCSS: GPU Priority=8, Scheduling=High, SFIO=High"
+} catch { Write-Fail "Game MMCSS: $_" }
+
+try {
+    # Disable power throttling
+    $ptKey = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
+    if (-not (Test-Path $ptKey)) { New-Item -Path $ptKey -Force | Out-Null }
+    Set-ItemProperty -Path $ptKey -Name 'PowerThrottlingOff' -Value 1 -Type DWord -Force
+    Write-Done "Power throttling: OFF"
+} catch { Write-Fail "Power throttling: $_" }
+
+try {
+    # Foreground process priority boost
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name 'Win32PrioritySeparation' -Value 0x28 -Type DWord -Force
+    Write-Done "Win32PrioritySeparation: 0x28 (foreground boost)"
+} catch { Write-Fail "Win32PrioritySeparation: $_" }
+
+try {
+    # Disable Windows Search Indexing service (using Everything via Flow Launcher)
+    $wsearch = Get-Service -Name 'WSearch' -ErrorAction SilentlyContinue
+    if ($wsearch) {
+        Stop-Service -Name 'WSearch' -Force -ErrorAction SilentlyContinue
+        Set-Service -Name 'WSearch' -StartupType Disabled -ErrorAction SilentlyContinue
+        Write-Done "Windows Search (WSearch): service disabled (using Everything)"
+    } else {
+        Write-Skip "WSearch service not found"
+    }
+} catch { Write-Fail "Windows Search: $_" }
+
+# ============================================================================
+# 9. TCP / Network Stack Optimization
 # ============================================================================
 Write-Section "TCP / Network Stack"
 
@@ -395,7 +461,7 @@ try {
 } catch { Write-Fail "TCP/Network: $_" }
 
 # ============================================================================
-# 9. NVIDIA Driver Profile (manual import via NPI)
+# 10. NVIDIA Driver Profile (manual import via NPI)
 # ============================================================================
 Write-Section "NVIDIA DRS Profile"
 
@@ -427,6 +493,7 @@ Write-Host "  REBOOT REQUIRED for:" -ForegroundColor Yellow
 Write-Host "    - USB/NIC power management changes" -ForegroundColor Yellow
 Write-Host "    - Windows Features (WSL, VirtualMachinePlatform)" -ForegroundColor Yellow
 Write-Host "    - TCP/Nagle registry changes" -ForegroundColor Yellow
+Write-Host "    - HAGS, power throttling, Win32PrioritySeparation" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  Manual steps remaining:" -ForegroundColor Cyan
 Write-Host "    - Taskbar: left-align, disable Task View, disable widgets"

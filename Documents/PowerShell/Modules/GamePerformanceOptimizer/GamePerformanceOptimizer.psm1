@@ -1547,6 +1547,212 @@ function Remove-GameProcessPriority {
     }
 }
 
+function Export-GameOptimizations {
+    <#
+    .SYNOPSIS
+        Exports all game-related Defender exclusions, CFG mitigations, and IFEO priorities to a JSON file.
+
+    .DESCRIPTION
+        Captures current state of all game optimizations so they can be restored after a
+        Windows reinstall via Import-GameOptimizations.
+
+    .PARAMETER Path
+        Output JSON file path. Defaults to A:\bak\game-optimizations.json
+
+    .EXAMPLE
+        Export-GameOptimizations
+        Export-GameOptimizations -Path C:\backup\game-opts.json
+
+    .NOTES
+        Requires: Administrator privileges
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]$Path = "A:\bak\game-optimizations.json"
+    )
+
+    if (-not (Test-Administrator)) {
+        throw "This function requires administrator privileges."
+    }
+
+    Write-Host "`n=== Exporting Game Optimizations ===" -ForegroundColor Cyan
+
+    $prefs = Get-MpPreference
+
+    # Defender process exclusions
+    $processExclusions = @($prefs.ExclusionProcess | Where-Object { $_ })
+    Write-Host "  Process exclusions: $($processExclusions.Count)" -ForegroundColor White
+
+    # Defender path exclusions — filter to game-related paths only
+    $gamePathPatterns = @('SteamGames', 'steamapps', 'XboxGames', 'EpicGames', 'GOG Games',
+                          'shadercache', 'ShaderCache', 'Game', 'NVIDIA', 'AMD',
+                          'DxCache', 'DX9Cache', 'DxcCache', 'OglCache', 'VkCache',
+                          'GLCache', 'NV_Cache', 'DXCache', 'Vortex', 'Wabbajack',
+                          'Game Mods', 'GameMods', 'Game Setup', 'Lossless Scaling')
+    $pathExclusions = @($prefs.ExclusionPath | Where-Object {
+        $p = $_
+        $gamePathPatterns | Where-Object { $p -like "*$_*" }
+    })
+    Write-Host "  Game path exclusions: $($pathExclusions.Count)" -ForegroundColor White
+
+    # CFG-disabled processes
+    $cfgDisabled = @()
+    $ifeoBase = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"
+    Get-ChildItem $ifeoBase -ErrorAction SilentlyContinue | ForEach-Object {
+        $name = $_.PSChildName
+        try {
+            $m = Get-ProcessMitigation -Name $name -ErrorAction SilentlyContinue
+            if ($m -and $m.Cfg -and $m.Cfg.Enable -eq "OFF") {
+                $cfgDisabled += $name
+            }
+        } catch {}
+    }
+    Write-Host "  CFG-disabled processes: $($cfgDisabled.Count)" -ForegroundColor White
+
+    # IFEO process priority settings
+    $priorities = @()
+    Get-ChildItem $ifeoBase -ErrorAction SilentlyContinue | ForEach-Object {
+        $perfPath = Join-Path $_.PSPath "PerfOptions"
+        if (Test-Path $perfPath) {
+            $p = Get-ItemProperty $perfPath -ErrorAction SilentlyContinue
+            if ($p) {
+                $priorities += @{
+                    Process          = $_.PSChildName
+                    CpuPriorityClass = $p.CpuPriorityClass
+                    IoPriority       = $p.IoPriority
+                    PagePriority     = $p.PagePriority
+                }
+            }
+        }
+    }
+    Write-Host "  Process priority entries: $($priorities.Count)" -ForegroundColor White
+
+    $export = @{
+        ExportDate         = (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+        ProcessExclusions  = $processExclusions
+        PathExclusions     = $pathExclusions
+        CfgDisabled        = $cfgDisabled
+        ProcessPriorities  = $priorities
+    }
+
+    $dir = Split-Path $Path -Parent
+    if ($dir -and -not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+
+    $export | ConvertTo-Json -Depth 4 | Set-Content -Path $Path -Encoding utf8
+    Write-Host "`n[OK] Exported to: $Path" -ForegroundColor Green
+}
+
+function Import-GameOptimizations {
+    <#
+    .SYNOPSIS
+        Restores game optimizations from a JSON export created by Export-GameOptimizations.
+
+    .DESCRIPTION
+        Re-applies all Defender exclusions, CFG disables, and IFEO process priorities from
+        a previous export. Run after a Windows reinstall to restore all game optimizations.
+
+    .PARAMETER Path
+        Input JSON file path. Defaults to A:\bak\game-optimizations.json
+
+    .PARAMETER WhatIf
+        Preview changes without applying.
+
+    .EXAMPLE
+        Import-GameOptimizations
+        Import-GameOptimizations -Path C:\backup\game-opts.json -WhatIf
+
+    .NOTES
+        Requires: Administrator privileges
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter()]
+        [string]$Path = "A:\bak\game-optimizations.json"
+    )
+
+    if (-not (Test-Administrator)) {
+        throw "This function requires administrator privileges."
+    }
+
+    if (-not (Test-Path $Path)) {
+        throw "Export file not found: $Path"
+    }
+
+    $data = Get-Content -Path $Path -Raw | ConvertFrom-Json
+    Write-Host "`n=== Importing Game Optimizations ===" -ForegroundColor Cyan
+    Write-Host "  Export date: $($data.ExportDate)" -ForegroundColor Gray
+
+    $stats = @{ added = 0; skipped = 0; failed = 0 }
+
+    # Restore Defender process exclusions
+    Write-Host "`n--- Defender Process Exclusions ---" -ForegroundColor Yellow
+    $currentProcesses = @((Get-MpPreference).ExclusionProcess | Where-Object { $_ })
+    foreach ($proc in $data.ProcessExclusions) {
+        if ($proc -in $currentProcesses) {
+            Write-Verbose "  Already excluded: $proc"
+            $stats.skipped++
+            continue
+        }
+        if ($PSCmdlet.ShouldProcess($proc, "Add Defender process exclusion")) {
+            try {
+                Add-MpPreference -ExclusionProcess $proc -ErrorAction Stop
+                $stats.added++
+            } catch { Write-Warning "  Failed: $proc — $_"; $stats.failed++ }
+        }
+    }
+    Write-Host "  Processes: $($data.ProcessExclusions.Count) total, $($stats.added) added" -ForegroundColor White
+
+    # Restore Defender path exclusions
+    Write-Host "`n--- Defender Path Exclusions ---" -ForegroundColor Yellow
+    $currentPaths = @((Get-MpPreference).ExclusionPath | Where-Object { $_ })
+    $pathStats = @{ added = 0; skipped = 0; failed = 0 }
+    foreach ($p in $data.PathExclusions) {
+        if ($p -in $currentPaths) {
+            $pathStats.skipped++
+            continue
+        }
+        if ($PSCmdlet.ShouldProcess($p, "Add Defender path exclusion")) {
+            try {
+                Add-MpPreference -ExclusionPath $p -ErrorAction Stop
+                $pathStats.added++
+            } catch { Write-Warning "  Failed: $p — $_"; $pathStats.failed++ }
+        }
+    }
+    Write-Host "  Paths: $($data.PathExclusions.Count) total, $($pathStats.added) added, $($pathStats.skipped) skipped" -ForegroundColor White
+
+    # Restore CFG disables
+    Write-Host "`n--- CFG Disabled ---" -ForegroundColor Yellow
+    $cfgStats = @{ added = 0; failed = 0 }
+    foreach ($proc in $data.CfgDisabled) {
+        if ($PSCmdlet.ShouldProcess($proc, "Disable CFG")) {
+            try {
+                Set-ProcessMitigation -Name $proc -Disable CFG -ErrorAction Stop
+                $cfgStats.added++
+            } catch { Write-Warning "  Failed CFG disable: $proc — $_"; $cfgStats.failed++ }
+        }
+    }
+    Write-Host "  CFG: $($data.CfgDisabled.Count) total, $($cfgStats.added) applied" -ForegroundColor White
+
+    # Restore IFEO process priorities
+    Write-Host "`n--- Process Priorities ---" -ForegroundColor Yellow
+    $prioStats = @{ added = 0; failed = 0 }
+    foreach ($entry in $data.ProcessPriorities) {
+        if ($PSCmdlet.ShouldProcess($entry.Process, "Set IFEO process priority")) {
+            $result = Set-ProcessPriorityRegistry -ProcessName $entry.Process `
+                -CpuPriorityClass $entry.CpuPriorityClass `
+                -IoPriority $entry.IoPriority `
+                -PagePriority $entry.PagePriority
+            if ($result) { $prioStats.added++ } else { $prioStats.failed++ }
+        }
+    }
+    Write-Host "  Priorities: $($data.ProcessPriorities.Count) total, $($prioStats.added) applied" -ForegroundColor White
+
+    Write-Host "`n=== Import Complete ===" -ForegroundColor Green
+}
+
 #endregion
 
 # Export module members
@@ -1557,7 +1763,9 @@ Export-ModuleMember -Function @(
     'Add-ShaderCacheExclusion',
     'Add-BulkGameExclusions',
     'Set-GameProcessPriority',
-    'Remove-GameProcessPriority'
+    'Remove-GameProcessPriority',
+    'Export-GameOptimizations',
+    'Import-GameOptimizations'
 )
 
 # vim: ts=2 sts=2 sw=2 et
