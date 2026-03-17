@@ -51,7 +51,7 @@
     "btop": ["btop"],
     "fastfetch": ["fastfetch"],
     "rust_alternatives": ["bat", "ripgrep", "fd", "eza", "delta", "zoxide", "vivid", "uutils-coreutils", "tealdeer", "navi", "sd", "dust", "procs", "hyperfine", "just", "tokei", "ouch", "xh"],
-    "lua": ["lua", "lua51", "luarocks", "luajit"],
+    "lua": ["lua", "luarocks", "luajit"],
     "julia": ["juliaup"],
     "sqlite3": ["sqlite"],
     "arduino": ["arduino", "arduino-cli"],

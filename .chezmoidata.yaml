@@ -636,7 +636,7 @@ package_mapping:
       scoop: [kelleyma49.PSFzf, abgox.PSCompletions, PowerShell.PSReadLine]
       winget: [Microsoft.PowerShell]
       mise: []
-      pwsh_modules: [Terminal-Icons, WSLTabCompletion, AudioDeviceCmdlets, Profiler, PSProfiler, Microsoft.WinGet.Client, Microsoft.WinGet.CommandNotFound]
+      pwsh_modules: [Terminal-Icons, AudioDeviceCmdlets, Profiler, PSProfiler, Microsoft.WinGet.Client, Microsoft.WinGet.CommandNotFound]
       psc_completions: [7z, arch, bun, cargo, dirname, docker, env, gh, git, head, mise, node, npm, pip, powershell, psc, pwsh, python, scoop, scoop-install, scoop-update, uv, winget, wsl, yarn, zoxide, df, scoop-checkver]
     linux:
       apt: []
@@ -802,7 +802,7 @@ package_mapping:
 
   lua:
     windows:
-      scoop: [lua, lua51, luarocks, luajit]  # lua51 from versions bucket
+      scoop: [lua, luarocks, luajit]  # lua51 removed: its env_set (LUA_PATH/LUA_CPATH) breaks NVIDIA App OPS Lua runtime
       winget: []
       mise: []
     linux:
@@ -1124,7 +1124,6 @@ scoop_bucket_overrides:
     - vcredist-aio
     - ventoy
   versions:
-    - lua51
     - steam
   nerd-fonts:
     - CascadiaCode-NF

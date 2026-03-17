@@ -78,7 +78,7 @@ Set-ScoopAppEnvironment "sqlite"
 
 # Lua/LuaJIT/LuaRocks
 Set-ScoopAppEnvironment "lua"
-Set-ScoopAppEnvironment "lua51"
+# lua51 removed from scoop: its env_set breaks NVIDIA App OPS Lua runtime
 Set-ScoopAppEnvironment "luajit"
 
 # Curl (if needed for native extensions)
