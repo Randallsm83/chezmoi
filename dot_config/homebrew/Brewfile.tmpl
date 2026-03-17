@@ -59,12 +59,10 @@ brew "util-linux"
 {{- end }}
 {{- end }}
 
-# Standalone tools - all machines
-brew "gnupg"
-brew "tree"
-
 # Standalone tools - local/workstation only
 {{- if not .is_remote }}
+brew "gnupg"
+brew "tree"
 brew "universal-ctags"
 brew "perltidy"
 brew "repomix"
