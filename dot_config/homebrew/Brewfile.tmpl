@@ -9,7 +9,6 @@
 #
 
 # Taps (cross-platform)
-tap "homebrew/bundle"
 {{- if eq .chezmoi.os "darwin" }}
 tap "buo/cask-upgrade"
 tap "dreamhost/homebrew", "git@git.dreamhost.com:dreamhost/homebrew-repo.git"
@@ -22,7 +21,9 @@ brew "curl"
 # Build deps for mise runtimes (both platforms)
 brew "openssl"
 brew "readline"
+{{- if eq .chezmoi.os "linux" }}
 brew "zlib"
+{{- end }}
 brew "libyaml"
 brew "ncurses"
 brew "xz"

@@ -101,6 +101,7 @@ mise install --yes 2>&1 || echo "Warning: Some mise tools failed to install"
 # Ensure shims are in PATH for subsequent operations
 export PATH="$HOME/.local/share/mise/shims:$PATH"
 
+{{- if not .is_remote }}
 # 2. Install brew packages via Brewfile (FALLBACK for tools not in mise)
 # Brewfile is at ~/.config/homebrew/Brewfile (managed by chezmoi template)
 BREWFILE="$HOME/.config/homebrew/Brewfile"
@@ -122,6 +123,7 @@ if [ -f "$BREWFILE" ]; then
         echo "Note: Homebrew not found, skipping Brewfile"
     fi
 fi
+{{- end }}
 
 {{- if not .is_remote }}
 

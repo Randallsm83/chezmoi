@@ -456,7 +456,7 @@ package_mapping:
       apt: []
       dnf: []
       pacman: []
-      brew: [1password-cli]  # 1password GUI is cask (macOS only) - handled by install script on Linux
+      brew: []  # 1password-cli has no brew formula on Linux - use apt/install script
       mise: []
     darwin:
       brew: [1password-cli, 1password]
