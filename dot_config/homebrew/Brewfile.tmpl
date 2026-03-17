@@ -18,7 +18,8 @@ tap "dreamhost/homebrew", "git@git.dreamhost.com:dreamhost/homebrew-repo.git"
 brew "curl"
 {{- end }}
 
-# Build deps for mise runtimes (both platforms)
+# Build deps for mise runtimes (local only - remote Linux uses system packages)
+{{- if not .is_remote }}
 brew "openssl"
 brew "readline"
 {{- if eq .chezmoi.os "linux" }}
@@ -30,6 +31,7 @@ brew "xz"
 brew "libxml2"
 brew "ca-certificates"
 brew "utf8proc", args: ["HEAD"]
+{{- end }}
 
 {{- if .package_features.php }}
 # PHP build deps
@@ -39,7 +41,8 @@ brew "libzip"
 brew "krb5"
 {{- end }}
 
-# Build toolchain (both platforms)
+# Build toolchain (local only)
+{{- if not .is_remote }}
 brew "automake"
 brew "autogen"
 brew "autoconf"
@@ -54,14 +57,19 @@ brew "libiconv"
 {{- if eq .chezmoi.os "linux" }}
 brew "util-linux"
 {{- end }}
+{{- end }}
 
-# Standalone tools (both platforms)
+# Standalone tools - all machines
 brew "gnupg"
+brew "tree"
+
+# Standalone tools - local/workstation only
+{{- if not .is_remote }}
 brew "universal-ctags"
 brew "perltidy"
 brew "repomix"
-brew "tree"
 brew "xdg-ninja"
+{{- end }}
 
 {{- if eq .chezmoi.os "darwin" }}
 # GNU replacements for BSD tools (macOS only — Linux has these natively)
