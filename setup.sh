@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
 #
 # Bootstrap script for Unix systems (Linux/WSL/macOS)
-# 
-# Usage:
+#
+# Usage - Fresh machine (no SSH keys yet):
 #   curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
-#   OR
-#   ./setup.sh
+#
+# Usage - Force SSH (if SSH keys already configured):
+#   USE_SSH=1 curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+#
+# Recovery (after failed/partial chezmoi apply):
+#   brew autoremove                    # clean orphaned brew deps
+#   chezmoi init                       # regenerate config if template changed
+#   chezmoi apply                      # re-apply
+#
+# Env overrides:
+#   CI=true          - skip all interactive prompts (auto-yes)
+#   USE_SSH=1        - force SSH clone URL (requires GitHub SSH access)
+#   REPO=user/repo   - override dotfiles repo (default: Randallsm83/dotfiles)
+#   BRANCH=name      - override branch (default: main)
 
 set -euo pipefail
 
@@ -376,16 +388,29 @@ install_and_apply_dotfiles() {
         return 1
     fi
     
-    # Use chezmoi's one-line install that does everything
-    # This installs chezmoi AND applies the dotfiles in one step
-    # --ssh forces SSH URL instead of HTTPS for the git remote
-    if sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply --ssh "$REPO" --branch "$BRANCH"; then
-        log_success "Dotfiles applied successfully"
-        return 0
-    else
-        log_error "Failed to install chezmoi and apply dotfiles"
-        return 1
+    # Try SSH first (fast, uses 1Password agent), fall back to HTTPS.
+    # SSH will fail on fresh machines without keys — HTTPS always works.
+    local chezmoi_installer
+    chezmoi_installer="$(curl -fsLS get.chezmoi.io)"
+
+    if [ "${USE_SSH:-0}" = "1" ]; then
+        log_info "Cloning via SSH (USE_SSH=1)..."
+        if CI=true sh -c "$chezmoi_installer" -- init --apply --ssh "$REPO" --branch "$BRANCH"; then
+            log_success "Dotfiles applied successfully (SSH)"
+            return 0
+        fi
+        log_warning "SSH clone failed — falling back to HTTPS"
     fi
+
+    log_info "Cloning via HTTPS..."
+    if CI=true sh -c "$chezmoi_installer" -- init --apply "https://github.com/${REPO}.git" --branch "$BRANCH"; then
+        log_success "Dotfiles applied successfully (HTTPS)"
+        log_info "To switch remote to SSH later: chezmoi git remote set-url origin git@github.com:${REPO}.git"
+        return 0
+    fi
+
+    log_error "Failed to install chezmoi and apply dotfiles"
+    return 1
 }
 
 # ============================================================================
