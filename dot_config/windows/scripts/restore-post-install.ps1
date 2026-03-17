@@ -215,30 +215,49 @@ try {
 # ============================================================================
 Write-Section "USB & NIC Power Management"
 
-# Disable "Allow the computer to turn off this device" on USB hubs/controllers
+# Disable "Allow the computer to turn off this device" on ALL USB devices
 try {
     $usbCount = 0
     Get-PnpDevice -Class USB -Status OK |
-        Where-Object { $_.FriendlyName -match 'Hub|Controller|Host' } |
         ForEach-Object {
             $regPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$($_.InstanceId)"
-            Set-ItemProperty -Path $regPath -Name 'PnPCapabilities' -Value 24 -Type DWord
+            Set-ItemProperty -Path $regPath -Name 'PnPCapabilities' -Value 24 -Type DWord -ErrorAction SilentlyContinue
+
+            # Also disable selective suspend / idle power in Device Parameters
+            $dpPath = "$regPath\Device Parameters"
+            if (Test-Path $dpPath) {
+                Set-ItemProperty -Path $dpPath -Name 'EnhancedPowerManagementEnabled' -Value 0 -Type DWord -ErrorAction SilentlyContinue
+                Set-ItemProperty -Path $dpPath -Name 'AllowIdleIrpInD3' -Value 0 -Type DWord -ErrorAction SilentlyContinue
+                Set-ItemProperty -Path $dpPath -Name 'SelectiveSuspendEnabled' -Value 0 -Type DWord -ErrorAction SilentlyContinue
+            }
             $usbCount++
         }
-    Write-Done "USB: PnPCapabilities=24 on $usbCount devices"
+    Write-Done "USB: PnPCapabilities=24 + Device Parameters on $usbCount devices"
+
+    # Disable via CIM (unchecks the Device Manager checkbox immediately)
+    $cimCount = 0
+    Get-CimInstance -Namespace root\wmi -ClassName MSPower_DeviceEnable |
+        Where-Object { $_.InstanceName -match 'USB|PCI\\VEN_1022' } |
+        ForEach-Object {
+            if ($_.Enable) {
+                Set-CimInstance -InputObject $_ -Property @{ Enable = $false }
+                $cimCount++
+            }
+        }
+    Write-Done "USB: CIM power disable on $cimCount devices"
 } catch { Write-Fail "USB power management: $_" }
 
-# Disable on Realtek NIC
+# Disable on ALL physical network adapters
 try {
     $nicCount = 0
     Get-PnpDevice -Class Net -Status OK |
-        Where-Object { $_.FriendlyName -match 'Realtek' } |
+        Where-Object { $_.FriendlyName -notmatch 'WAN Miniport|Kernel Debug|Bluetooth' } |
         ForEach-Object {
             $regPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$($_.InstanceId)"
             Set-ItemProperty -Path $regPath -Name 'PnPCapabilities' -Value 24 -Type DWord
             $nicCount++
         }
-    Write-Done "NIC: PnPCapabilities=24 on $nicCount Realtek adapters"
+    Write-Done "NIC: PnPCapabilities=24 on $nicCount adapters"
 } catch { Write-Fail "NIC power management: $_" }
 
 # ============================================================================
@@ -337,23 +356,26 @@ try {
     } else {
         $n = $nic.Name
 
-        # Power saving features OFF
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*EEE' -RegistryValue 0              # Energy-Efficient Ethernet
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'AdvancedEEE' -RegistryValue 0       # Advanced EEE
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'EnableGreenEthernet' -RegistryValue 0  # Green Ethernet
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'GigaLite' -RegistryValue 0          # Gigabit Lite
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'PowerSavingMode' -RegistryValue 0   # Power Saving Mode
+        # Power saving features OFF (-NoRestart to batch changes, single restart at end)
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*EEE' -RegistryValue 0 -NoRestart              # Energy-Efficient Ethernet
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'AdvancedEEE' -RegistryValue 0 -NoRestart       # Advanced EEE
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'EnableGreenEthernet' -RegistryValue 0 -NoRestart  # Green Ethernet
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'GigaLite' -RegistryValue 0 -NoRestart          # Gigabit Lite
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'PowerSavingMode' -RegistryValue 0 -NoRestart   # Power Saving Mode
 
         # Performance tuning
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*FlowControl' -RegistryValue 0      # Flow Control OFF
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*InterruptModeration' -RegistryValue 0  # Interrupt Moderation OFF
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*ReceiveBuffers' -RegistryValue 2048    # Receive Buffers (default 1024)
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*TransmitBuffers' -RegistryValue 1024   # Transmit Buffers (default 512)
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*FlowControl' -RegistryValue 0 -NoRestart      # Flow Control OFF
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*InterruptModeration' -RegistryValue 0 -NoRestart  # Interrupt Moderation OFF
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*ReceiveBuffers' -RegistryValue 2048 -NoRestart    # Receive Buffers (default 1024)
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*TransmitBuffers' -RegistryValue 1024 -NoRestart   # Transmit Buffers (default 512)
 
         # Wake features OFF
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*WakeOnMagicPacket' -RegistryValue 0
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*WakeOnPattern' -RegistryValue 0
-        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'S5WakeOnLan' -RegistryValue 0       # Shutdown Wake-On-Lan
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*WakeOnMagicPacket' -RegistryValue 0 -NoRestart
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword '*WakeOnPattern' -RegistryValue 0 -NoRestart
+        Set-NetAdapterAdvancedProperty -Name $n -RegistryKeyword 'S5WakeOnLan' -RegistryValue 0 -NoRestart       # Shutdown Wake-On-Lan
+
+        # Apply all NIC changes with a single adapter restart
+        Restart-NetAdapter -Name $n
 
         # Keep defaults: Jumbo Frame disabled, Speed Auto-Negotiation, offloads enabled
 
@@ -407,12 +429,6 @@ try {
     Set-ItemProperty -Path $ptKey -Name 'PowerThrottlingOff' -Value 1 -Type DWord -Force
     Write-Done "Power throttling: OFF"
 } catch { Write-Fail "Power throttling: $_" }
-
-try {
-    # Foreground process priority boost
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name 'Win32PrioritySeparation' -Value 0x28 -Type DWord -Force
-    Write-Done "Win32PrioritySeparation: 0x28 (foreground boost)"
-} catch { Write-Fail "Win32PrioritySeparation: $_" }
 
 try {
     # Disable Windows Search Indexing service (using Everything via Flow Launcher)
@@ -470,10 +486,12 @@ if (Test-Path $nipFile) {
     $npi = Get-Command nvidiaProfileInspector.exe -ErrorAction SilentlyContinue
     if ($npi) {
         try {
-            & $npi.Source /import "$nipFile" 2>&1 | Out-Null
+            # NPI CLI: pass .nip file path directly + -silentImport to suppress dialog
+            # NPI imports the profile and exits without opening the GUI
+            Start-Process -FilePath $npi.Source -ArgumentList "`"$nipFile`" -silentImport" -Wait -ErrorAction Stop
             Write-Done "NVIDIA DRS profile imported from $nipFile"
         } catch {
-            Write-Skip "NPI /import failed — open NPI manually and File > Import: $nipFile"
+            Write-Skip "NPI import failed — open NPI manually and File > Import: $nipFile"
         }
     } else {
         Write-Skip "nvidia-profile-inspector not found — install via scoop, then import: $nipFile"
