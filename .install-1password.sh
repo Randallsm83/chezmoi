@@ -7,11 +7,11 @@ type op >/dev/null 2>&1 && exit 0
 
 # Skip on remote/SSH sessions - 1Password won't work there anyway
 if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
-    echo "Skipping 1Password CLI install on remote machine"
+    echo "Skipping 1Password CLI install on remote machine" >&2
     exit 0
 fi
 
-echo "Installing 1Password CLI..."
+echo "Installing 1Password CLI..." >&2
 
 # Detect OS
 case "$(uname -s)" in
