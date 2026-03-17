@@ -15,7 +15,9 @@ tap "buo/cask-upgrade"
 tap "dreamhost/homebrew", "git@git.dreamhost.com:dreamhost/homebrew-repo.git"
 {{- end }}
 
+{{- if eq .chezmoi.os "darwin" }}
 brew "curl"
+{{- end }}
 
 # Build deps for mise runtimes (both platforms)
 brew "openssl"

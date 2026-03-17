@@ -888,10 +888,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: [tealdeer, coreutils]
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, github:XAMPPRocky/tokei, github:ouch-org/ouch, github:ducaale/xh]
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
     darwin:
       brew: [tealdeer, coreutils]
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, github:XAMPPRocky/tokei, github:ouch-org/ouch, github:ducaale/xh]
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
 
   # Development Tools
   sqlite3:

@@ -113,7 +113,7 @@ if [ -f "$BREWFILE" ]; then
     if command -v brew >/dev/null 2>&1; then
         echo ""
         echo "Installing brew packages from Brewfile..."
-        brew bundle --file="$BREWFILE" --no-lock || echo "Warning: Some brew packages failed to install"
+        brew bundle --file="$BREWFILE" || echo "Warning: Some brew packages failed to install"
     elif [ -d "/home/linuxbrew/.linuxbrew" ]; then
         echo ""
         echo "Note: Skipping shared /home/linuxbrew, use ~/.local/share/homebrew instead"
