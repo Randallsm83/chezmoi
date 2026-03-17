@@ -107,7 +107,8 @@ brew "watch"
 brew "{{ . }}"
 {{- end }}
 
-# Feature-gated packages
+# Feature-gated packages (workstation/local only — skipped when install_packages=false)
+{{- if .install_packages }}
 {{- range $feature, $enabled := .package_features }}
 {{- if $enabled }}
 {{- if hasKey $.package_mapping $feature }}
@@ -117,6 +118,7 @@ brew "{{ . }}"
 {{- if and (hasKey $platform "brew") $platform.brew }}
 {{- range $platform.brew }}
 brew "{{ . }}"
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

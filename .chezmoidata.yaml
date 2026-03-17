@@ -1167,6 +1167,8 @@ always_install:
     - jq
     - less
     - yq
+    - lazygit
+    - wget
 
   pacman:
     - re2c
