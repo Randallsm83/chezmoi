@@ -1169,6 +1169,8 @@ always_install:
     - yq
     - lazygit
     - wget
+    - tealdeer
+    - zsh
 
   pacman:
     - re2c
