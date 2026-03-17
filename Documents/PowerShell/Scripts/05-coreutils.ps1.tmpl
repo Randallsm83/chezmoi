@@ -12,7 +12,7 @@
 #   Remove-Item, Move-Item, Copy-Item, New-Item, Get-ChildItem,
 #   Write-Output, Start-Sleep, Sort-Object, Tee-Object, Get-Location
 
-if (Get-Command coreutils.exe -ErrorAction SilentlyContinue) {
+if (Get-Command uname.exe -ErrorAction SilentlyContinue) {
     # Remove built-in aliases that shadow uutils shims
     @('rm', 'mv', 'cp', 'dir', 'echo', 'sleep', 'sort', 'tee', 'pwd', 'rmdir') | ForEach-Object {
         Remove-Item -Path "Alias:$_" -Force -ErrorAction SilentlyContinue

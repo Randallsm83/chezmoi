@@ -74,11 +74,6 @@ if (Test-Path $scriptsDir) {
     }
 }
 
-# WSL Tab Completion
-if (Get-Module -ListAvailable -Name WSLTabCompletion) {
-    Import-Module WSLTabCompletion
-}
-
 # Import GamePerformanceOptimizer
 if (Get-Module -ListAvailable -Name GamePerformanceOptimizer) {
     Import-Module GamePerformanceOptimizer
@@ -93,7 +88,7 @@ if ($env:TERM_PROGRAM -eq "vscode") {
 # Set LS_COLORS using Vivid ({{ .theme }} theme)
 {{- if index .package_features "rust_alternatives" }}
 if (Get-Command vivid -ErrorAction SilentlyContinue) {
-    $env:LS_COLORS = (vivid generate {{ .theme }})
+    $env:LS_COLORS = (vivid generate "$env:XDG_CONFIG_HOME\vivid\themes\{{ .theme }}.yml")
 }
 {{- end }}
 

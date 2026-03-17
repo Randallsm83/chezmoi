@@ -129,12 +129,14 @@ if (Test-Path $goRoot) {
 }
 
 # Rust - CARGO_HOME and RUSTUP_HOME already set above
-# Cargo bin (mise installs rust via rustup, binaries live in $CARGO_HOME/bin)
+# Cargo bin: try $CARGO_HOME/bin (traditional rustup layout) and mise install dir (flat layout)
 Add-ToPath "$env:CARGO_HOME\bin"
 
 $rustRoot = Join-Path $miseInstalls "rust"
 if (Test-Path $rustRoot) {
     Get-ChildItem $rustRoot -Directory | ForEach-Object {
+        # mise puts binaries directly in the install dir (no bin/ subdir)
+        Add-ToPath $_.FullName
         $rustLib = Join-Path $_.FullName "lib"
         if (Test-Path $rustLib) {
             Add-LibraryPaths $rustLib

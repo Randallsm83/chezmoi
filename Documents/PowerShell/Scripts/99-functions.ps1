@@ -723,7 +723,7 @@ function rust-tools {
         @{ Rust = 'delta';              Replaces = 'diff';             Binary = 'delta' }
         @{ Rust = 'zoxide';             Replaces = 'cd';               Binary = 'zoxide' }
         @{ Rust = 'vivid';              Replaces = 'dircolors';        Binary = 'vivid' }
-        @{ Rust = 'uutils-coreutils';   Replaces = 'coreutils';        Binary = 'coreutils' }
+        @{ Rust = 'uutils-coreutils';   Replaces = 'coreutils';        Binary = 'uname' }
         @{ Rust = 'tealdeer';           Replaces = 'tldr/man';         Binary = 'tldr' }
         @{ Rust = 'navi';               Replaces = 'cheatsheets';      Binary = 'navi' }
         @{ Rust = 'sd';                 Replaces = 'sed';              Binary = 'sd' }

@@ -6,9 +6,13 @@
 
 if (Get-Command mise -ErrorAction SilentlyContinue) {
     if (-not (Get-Command usage -ErrorAction SilentlyContinue)) {
-        $usageBin = Get-ChildItem "$HOME\.local\share\mise\installs\usage" -Recurse -Filter 'usage.exe' -ErrorAction SilentlyContinue |
-            Sort-Object { $_.Directory.Name } -Descending | Select-Object -First 1
-        if ($usageBin) { $env:PATH = "$($usageBin.DirectoryName);$env:PATH" }
+        $usageRoot = "$env:MISE_DATA_DIR\installs\usage"
+        if (Test-Path $usageRoot) {
+            $usageBin = Get-ChildItem $usageRoot -Directory | Sort-Object Name -Descending | Select-Object -First 1
+            if ($usageBin -and (Test-Path "$($usageBin.FullName)\usage.exe")) {
+                $env:PATH = "$($usageBin.FullName);$env:PATH"
+            }
+        }
     }
 }
 
