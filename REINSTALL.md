@@ -69,11 +69,11 @@ Everything below is handled by `~/.config/windows/scripts/restore-post-install.p
 - **Power plan**: Balanced with all non-default tweaks (disk never off, slideshow paused, wireless max perf, sleep 1hr, hibernate never, wake timers off, USB suspend off, PCIe ASPM off, display off 1hr, adaptive brightness off, video playback perf bias)
 - **USB/NIC power management**: PnPCapabilities=24 on all USB hubs/controllers + Realtek NIC
 - **Windows Features**: VirtualMachinePlatform, WSL, NetFx3 (NetFx4-AdvSrvs and SearchEngine-Client-Package are enabled by default)
-- **Scheduled tasks**: FanControl, MSIAfterburner, OpenRGB, Rdock, FlowLauncher, ISLC, UtilCacheCleaner, uwd2 (created programmatically — reference XMLs in `~/.config/windows/scheduled-tasks/`)
+- **Scheduled tasks**: FanControl, MSIAfterburner, OpenRGB, Rdock, FlowLauncher, ISLC, UtilCacheCleaner, uwd2 (created programmatically — reference XMLs for 5 original tasks in `~/.config/windows/scheduled-tasks/`)
 - **uwd2**: Downloaded from GitHub releases to `~/.local/bin/`
 - **Ethernet NIC** (Realtek 2.5GbE): EEE/Green/GigaLite/PowerSaving OFF, Flow Control OFF, Interrupt Moderation OFF, buffers 2048/1024, wake OFF, IPv6 OFF, DNS=Cloudflare (1.1.1.1/1.0.0.1). **Re-run after driver updates!**
-- **Gaming/Performance**: MMCSS (NetworkThrottling OFF, SystemResponsiveness=10), HAGS, Game MMCSS priorities (GPU=8, High), PowerThrottling OFF, Win32PrioritySeparation=0x28, Windows Search disabled
-- **TCP/Network**: Nagle disabled (TcpAckFrequency=1, TCPNoDelay=1), Tcp1323Opts=1, MaxWindow=65535, MaxUserPort=65534, TWDelay=30, RSS on, RSC off, FastOpen on, Timestamps off, ECN off
+- **Gaming/Performance**: MMCSS (NetworkThrottling OFF, SystemResponsiveness=10), HAGS, Game MMCSS priorities (GPU=8, High), PowerThrottling OFF, Windows Search disabled
+- **TCP/Network**: Nagle disabled (TcpAckFrequency=1, TCPNoDelay=1), Tcp1323Opts=1, MaxWindow=65535, MaxUserPort=65534, TWDelay=30, RSS on, RSC off, FastOpen on, Timestamps off, ECN off, AutoTuning normal, Pacing off
 - **NVIDIA DRS profile**: auto-import via NPI from `~/.config/windows/nvidia-drs-base-profile.nip` (Low Latency Ultra, G-SYNC, shader cache 100GB, DLSS overrides, TrueHDR, etc.)
 
 Requires reboot after running for USB PM, Windows Features, and TCP changes to take effect.
@@ -98,7 +98,7 @@ Bootstrap performs:
 4. Imports scoop/winget exports (if provided)
 5. Installs chezmoi via scoop
 6. `chezmoi init --apply` — clones dotfiles, applies all configs, runs install scripts
-7. Install scripts handle: scoop buckets, ~94 scoop packages (by feature flags), winget packages, mise runtimes, PowerShell modules, pip packages, vcredist-aio, pynvim, neovim npm provider
+7. Install scripts handle: scoop buckets, ~96 scoop packages (by feature flags), winget packages, mise runtimes, PowerShell modules, PSCompletions (psc) definitions, pip packages, vcredist-aio, Everything search service, scoop-install URL proxy config, pynvim, neovim npm/gem/cpan providers
 
 ### What chezmoi manages (symlinks/templates)
 
@@ -136,18 +136,21 @@ Copy-Item -Path "A:\bak\.kube\config" -Destination "$HOME\.kube\config"
 Copy-Item -Path "A:\bak\warp-config\ai_api_keys.json" -Destination "$env:APPDATA\warp\Warp\data\ai_api_keys.json" -Force
 
 # Scoop persist data (flow-launcher, rclone, qbittorrent settings)
-Copy-Item -Path "A:\bak\scoop-persist\flow-launcher" -Destination "$HOME\scoop\persist\flow-launcher" -Recurse -Force
-Copy-Item -Path "A:\bak\scoop-persist\rclone" -Destination "$HOME\scoop\persist\rclone" -Recurse -Force
-Copy-Item -Path "A:\bak\scoop-persist\qbittorrent" -Destination "$HOME\scoop\persist\qbittorrent" -Recurse -Force
+Copy-Item -Path "A:\bak\scoop-persist\flow-launcher\*" -Destination "$HOME\scoop\persist\flow-launcher" -Recurse -Force
+Copy-Item -Path "A:\bak\scoop-persist\rclone\*" -Destination "$HOME\scoop\persist\rclone" -Recurse -Force
+Copy-Item -Path "A:\bak\scoop-persist\qbittorrent\*" -Destination "$HOME\scoop\persist\qbittorrent" -Recurse -Force
 
 # Obsidian vault
-Copy-Item -Path "A:\bak\Obsidian" -Destination "$HOME\Documents\Obsidian" -Recurse -Force
+New-Item -ItemType Directory -Path "$HOME\Documents\Obsidian" -Force
+Copy-Item -Path "A:\bak\Obsidian\*" -Destination "$HOME\Documents\Obsidian" -Recurse -Force
 
 # Arduino IDE
-Copy-Item -Path "A:\bak\.arduinoIDE" -Destination "$HOME\.arduinoIDE" -Recurse -Force
+New-Item -ItemType Directory -Path "$HOME\.arduinoIDE" -Force
+Copy-Item -Path "A:\bak\.arduinoIDE\*" -Destination "$HOME\.arduinoIDE" -Recurse -Force
 
 # MCP auth
-Copy-Item -Path "A:\bak\.mcp-auth" -Destination "$HOME\.mcp-auth" -Recurse -Force
+New-Item -ItemType Directory -Path "$HOME\.mcp-auth" -Force
+Copy-Item -Path "A:\bak\.mcp-auth\*" -Destination "$HOME\.mcp-auth" -Recurse -Force
 
 # Configs with secrets (not in chezmoi — public repo)
 New-Item -ItemType Directory -Path "$HOME\.config\clickup-tui" -Force
