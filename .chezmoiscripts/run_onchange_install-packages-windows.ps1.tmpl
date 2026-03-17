@@ -99,7 +99,29 @@ if (scoop list vcredist-aio 2>$null) {
 }
 {{- end }}
 
-# Configure abgox scoop-install URL replacement (proxy for faster downloads)
+# Install and start Everything search service (requires admin)
+{{- if .package_features.windows_utilities }}
+if (scoop list everything 2>$null) {
+    $everythingExe = Join-Path $env:USERPROFILE 'scoop\apps\everything\current\everything.exe'
+    if (Test-Path $everythingExe) {
+        $svc = Get-Service -Name 'Everything' -ErrorAction SilentlyContinue
+        if (!$svc) {
+            Write-Host "`nInstalling Everything search service..." -ForegroundColor Cyan
+            gsudo $everythingExe -install-service
+            gsudo Start-Service 'Everything'
+            Write-Host "  Everything service installed and started" -ForegroundColor Green
+        } elseif ($svc.Status -ne 'Running') {
+            Write-Host "`nStarting Everything search service..." -ForegroundColor Cyan
+            gsudo Start-Service 'Everything'
+            Write-Host "  Everything service started" -ForegroundColor Green
+        } else {
+            Write-Host "  Everything service already running" -ForegroundColor Gray
+        }
+    }
+}
+{{- end }}
+
+# Configure abgox scoop-install URL replacement
 if (Get-Command scoop-install -ErrorAction SilentlyContinue) {
     Write-Host "`nConfiguring abgox scoop-install URL replacement..." -ForegroundColor Cyan
     scoop config abgox-scoop-install-url-replace-from "^https://github.com|^https://raw.githubusercontent.com"
@@ -161,6 +183,10 @@ if ($pwshModules.Count -gt 0) {
 
 # Install PSCompletions (psc) completion definitions
 if ($pscCompletions.Count -gt 0) {
+    # Ensure PSCompletions module is loaded (scoop install doesn't auto-import into current session)
+    if (!(Get-Command psc -ErrorAction SilentlyContinue)) {
+        Import-Module PSCompletions -ErrorAction SilentlyContinue
+    }
     if (Get-Command psc -ErrorAction SilentlyContinue) {
         $pscCompletions = $pscCompletions | Select-Object -Unique
         $installed = @(psc list 2>$null | ForEach-Object { ($_ -split '\s+')[0] } | Where-Object { $_ -and $_ -ne 'Completion' -and $_ -ne '----------' })
