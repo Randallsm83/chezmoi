@@ -17,6 +17,13 @@ export DOCKER_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/docker"
 
 export GNUPGHOME="${XDG_DATA_HOME:-$HOME/.local/share}/gnupg"
 
+export DOTNET_CLI_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/dotnet"
+export DOTNET_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/dotnet"
+
+# XDG-compliant zsh compdump (used by ez-compinit plugin)
+export ZSH_COMPDUMP="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-${ZSH_VERSION}"
+mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+
 export TLDR_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/tldr"
 
 export TERMINFO="${XDG_DATA_HOME:-$HOME/.local/share}/terminfo"
@@ -45,6 +52,7 @@ env_dirs=(
   "$DOCKER_CONFIG"
   "$TLDR_CACHE_DIR"
   "$GNUPGHOME"
+  "$DOTNET_CLI_HOME"
   "$TERMINFO"
   "$VAGRANT_HOME"
   "$(dirname "$LESSHISTFILE")"
