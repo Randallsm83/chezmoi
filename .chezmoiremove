@@ -105,6 +105,9 @@
 .config/zsh/.zshrc.d/50-homebrew.zsh
 {{- end }}
 
+# p10k removed in favour of starship — clean up on any machine
+.p10k.zsh
+
 {{- if not .package_features.vagrant }}
 .cache/zsh/completions/_vagrant
 .config/zsh/.zshrc.d/60-vagrant.zsh
