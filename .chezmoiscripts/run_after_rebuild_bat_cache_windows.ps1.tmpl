@@ -1,0 +1,9 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Ensure bat theme cache is current after every chezmoi apply
+# Handles cases where bat is updated/reinstalled and its cache is wiped
+
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+    bat cache --build 2>&1 | Out-Null
+}
+{{- end }}
