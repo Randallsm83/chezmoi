@@ -1,11 +1,19 @@
 ---
+# ctrl-y: disable default delete_all_left, remap to accept autosuggestion
+"editor_view:delete_all_left": none
+"editor_view:insert_autosuggestion": ctrl-y
 # Move conflicting defaults to ctrl-alt so ctrl-h/j/k/l are free
 "editor_view:backspace": ctrl-alt-h
 "editor_view:insert_newline": ctrl-alt-j
 "editor_view:cut_all_right": ctrl-alt-k
 "input:clear_screen": ctrl-alt-l
-# Vim-style pane navigation
+# Vim-style pane navigation (ctrl-h/j/k/l)
 "pane_group:navigate_left": ctrl-h
 "pane_group:navigate_down": ctrl-j
 "pane_group:navigate_up": ctrl-k
 "pane_group:navigate_right": ctrl-l
+# ctrl-shift-[/] -> tab switching (not panes)
+"pane_group:navigate_prev": none
+"pane_group:navigate_next": none
+"workspace:activate_prev_tab": ctrl-shift-[
+"workspace:activate_next_tab": ctrl-shift-]
