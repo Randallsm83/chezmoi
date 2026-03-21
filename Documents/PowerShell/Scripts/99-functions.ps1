@@ -338,8 +338,15 @@ if (Test-CommandExists 'scoop') {
                     }
                 }
                 'update' {
-                    if (Test-CommandExists 'scoop-update') {
-                        & scoop-update @($args | Select-Object -Skip 1)
+                    if ((Test-CommandExists 'scoop-update') -and -not $env:SCOOP_UPDATE_RUNNING) {
+                        # Guard against re-entry: scoop-update.ps1 calls `scoop update $app`
+                        # internally, which would recurse back here infinitely without this check.
+                        $env:SCOOP_UPDATE_RUNNING = '1'
+                        try {
+                            & scoop-update @($args | Select-Object -Skip 1)
+                        } finally {
+                            Remove-Item Env:SCOOP_UPDATE_RUNNING -ErrorAction SilentlyContinue
+                        }
                         return
                     }
                 }
