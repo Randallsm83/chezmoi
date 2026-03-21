@@ -141,3 +141,8 @@
 	sshCommand = ssh -o IdentityAgent=~/.1password/agent.sock
 {{- end }}
 {{- end }}
+{{- if eq .chezmoi.os "windows" }}
+[safe]
+	directory = D:/dh
+	directory = D:/***REMOVED***-v2
+{{- end }}

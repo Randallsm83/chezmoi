@@ -21,7 +21,7 @@ auto_hide = true                   # Hide dock when not in use (default: true)
 auto_hide_delay_ms = 150           # Delay before hiding in ms (default: 250)
 auto_show_delay_ms = 650           # Delay before showing when cursor hits edge in ms (default: 250)
 magnification = 1.5                # Icon magnification on hover, 1.0 = no zoom (default: 1.5)
-locked = false                     # Prevent drag reordering of icons (default: true)
+locked = true                     # Prevent drag reordering of icons (default: true)
 
 # ─── Windows Integration ─────────────────────────────────────
 hide_windows_taskbar = true        # Hide Windows taskbar when dock is active (default: true)
@@ -30,19 +30,7 @@ hide_in_fullscreen = true          # Hide dock when fullscreen app/game is activ
 # ═══════════════════════════════════════════════════════════
 # Dock Items
 # ═══════════════════════════════════════════════════════════
-# Each [[items]] section defines an application in the dock.
-# Required: name, path (for apps) OR special (for system items)
-# Optional: icon, args (command line arguments)
-#
-# Special items: file_explorer, settings, recycle_bin, show_desktop,
-#                task_view, action_center, control_panel, run_dialog
-#
-# To add a visual separator between icons:
-# [[items]]
-# separator = true
-#
-# Drag items to reorder them (unless locked = true above)
-# ═══════════════════════════════════════════════════════════
+# Each
 
 [[items]]
 name = "Start Menu"
@@ -124,7 +112,7 @@ icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\f
 
 [[items]]
 name = "RTSS"
-path = 'C:\Program Files (x86)\RivaTuner Statistics Server\RTSS.exe'
+path = 'C:\Users\randa\scoop\shims\rtss.exe'
 icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\PNGS\settings.png'
 
 [[items]]
