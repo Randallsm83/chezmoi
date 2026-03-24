@@ -633,7 +633,7 @@ package_mapping:
 
   powershell:
     windows:
-      scoop: [kelleyma49.PSFzf, abgox.PSCompletions, PowerShell.PSReadLine]
+      scoop: [abgox.PSCompletions, PowerShell.PSReadLine]
       winget: [Microsoft.PowerShell]
       mise: []
       pwsh_modules: [Terminal-Icons, AudioDeviceCmdlets, Profiler, PSProfiler, Microsoft.WinGet.Client, Microsoft.WinGet.CommandNotFound]
@@ -650,7 +650,7 @@ package_mapping:
 
   fzf:
     windows:
-      scoop: [fzf]
+      scoop: [fzf, kelleyma49.PSFzf]
       winget: []
       mise: []
     linux:

@@ -28,10 +28,6 @@ if [[ -n "$WSL_DISTRO_NAME" ]] || grep -qiE "(microsoft|wsl)" /proc/version 2>/d
   [[ "$PWD" == /mnt/* ]] && cd "$HOME"
 fi
 
-# Initialize mise EARLY before plugins
-if [[ -x "$HOME/.local/bin/mise" ]]; then
-  eval "$($HOME/.local/bin/mise activate zsh)"
-fi
 
 if [[ -n "$ENV_DIRS" ]]; then
   for dir in ${(s/:/)ENV_DIRS}; do

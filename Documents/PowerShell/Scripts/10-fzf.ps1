@@ -9,6 +9,8 @@
 
 # FZF Configuration for PowerShell
 
+if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) { return }
+
 # Colors matching spaceduck theme
 $env:FZF_DEFAULT_OPTS = @"
 --color=bg+:#1b1c36,bg:#0f111b,spinner:#00a3cc,hl:#b3a1e6

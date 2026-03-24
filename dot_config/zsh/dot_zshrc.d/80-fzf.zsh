@@ -37,7 +37,14 @@ export FZF_ALT_C_OPTS="
   --walker-skip .git,node_modules,target
   --preview 'tree -C {}'"
 
-source <(fzf --zsh)
+# Cache the shell integration to avoid spawning fzf on every startup
+_fzf_cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/fzf-init.zsh"
+if [[ ! -f "$_fzf_cache" || "$(command -v fzf)" -nt "$_fzf_cache" ]]; then
+  mkdir -p "${_fzf_cache:h}"
+  fzf --zsh >| "$_fzf_cache"
+fi
+source "$_fzf_cache"
+unset _fzf_cache
 
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
