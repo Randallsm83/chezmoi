@@ -131,7 +131,7 @@
 [core]
 	# Windows: Use native OpenSSH which reads ~/.ssh/config for 1Password agent
 	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
-{{- else if .chezmoi.kernel.osrelease | lower | contains "microsoft" }}
+{{- else if and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
 [core]
 	# WSL: Use Windows SSH to access 1Password agent on Windows host
 	sshCommand = /mnt/c/Windows/System32/OpenSSH/ssh.exe
