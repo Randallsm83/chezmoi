@@ -236,7 +236,7 @@ Version 2.0 represents a complete architectural rewrite focused on cross-platfor
 2. **Clean existing installation**:
    ```bash
    # Remove old chezmoi state
-   rm -rf ~/.local/share/chezmoi
+   rm -rf ~/.local/share/dotfiles
    rm -rf ~/.config/chezmoi
    ```
 

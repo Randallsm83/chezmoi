@@ -395,7 +395,7 @@ install_and_apply_dotfiles() {
 
     if [ "${USE_SSH:-0}" = "1" ]; then
         log_info "Cloning via SSH (USE_SSH=1)..."
-        if CI=true sh -c "$chezmoi_installer" -- init --apply --ssh "$REPO" --branch "$BRANCH"; then
+        if CI=true sh -c "$chezmoi_installer" -- init --apply --source "$HOME/.local/share/dotfiles" --ssh "$REPO" --branch "$BRANCH"; then
             log_success "Dotfiles applied successfully (SSH)"
             return 0
         fi
@@ -403,7 +403,7 @@ install_and_apply_dotfiles() {
     fi
 
     log_info "Cloning via HTTPS..."
-    if CI=true sh -c "$chezmoi_installer" -- init --apply "https://github.com/${REPO}.git" --branch "$BRANCH"; then
+    if CI=true sh -c "$chezmoi_installer" -- init --apply --source "$HOME/.local/share/dotfiles" "https://github.com/${REPO}.git" --branch "$BRANCH"; then
         log_success "Dotfiles applied successfully (HTTPS)"
         log_info "To switch remote to SSH later: chezmoi git remote set-url origin git@github.com:${REPO}.git"
         return 0

@@ -502,7 +502,7 @@ function Initialize-Chezmoi {
     .SYNOPSIS
         Initialize chezmoi from GitHub repository and apply dotfiles
     .DESCRIPTION
-        Clones the repository to ~/.local/share/chezmoi and applies all configs
+        Clones the repository to ~/.local/share/dotfiles and applies all configs
     #>
     param(
         [string]$Repo,
@@ -521,12 +521,13 @@ function Initialize-Chezmoi {
     try {
         # Initialize chezmoi from repository and apply all configs
         # This will:
-        # 1. Clone repository to ~/.local/share/chezmoi
+        # 1. Clone repository to ~/.local/share/dotfiles
         # 2. Run any run_once_before scripts
         # 3. Apply all dotfiles
         # 4. Run any run_once scripts (package installation)
         # Using SSH URL for proper auth with 1Password SSH agent
-        chezmoi init --apply --branch $Branch $repoUrl
+        $sourcePath = Join-Path $env:USERPROFILE ".local\share\dotfiles"
+        chezmoi init --apply --source $sourcePath --branch $Branch $repoUrl
         
         $Script:Stats.ConfigsApplied = $true
         Write-Status "Dotfiles applied successfully" -Type Success

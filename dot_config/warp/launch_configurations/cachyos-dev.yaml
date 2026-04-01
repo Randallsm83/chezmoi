@@ -27,12 +27,12 @@ windows:
         layout:
           split_direction: vertical
           panes:
-            - cwd: ~/.local/share/chezmoi
+            - cwd: ~/.local/share/dotfiles
               is_focused: true
               commands:
                 - exec: git status
                 - exec: git log --oneline -5
-            - cwd: ~/.local/share/chezmoi
+            - cwd: ~/.local/share/dotfiles
               commands:
                 - exec: eza -la
         color: blue

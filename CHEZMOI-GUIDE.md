@@ -17,7 +17,7 @@ This document serves as a reference for maintaining this dotfiles repository acc
 ## Core Concepts
 
 ### Source vs Target State
-- **Source directory**: `~/.local/share/chezmoi` - git-tracked files with special prefixes
+- **Source directory**: `~/.local/share/dotfiles` - git-tracked files with special prefixes
 - **Target directory**: `~` - actual files in home directory
 - Chezmoi transforms source → target using attributes and templates
 
@@ -122,7 +122,7 @@ esac
 ```toml
 # In .chezmoi.toml.tmpl
 [hooks.read-source-state.pre]
-    command = ".local/share/chezmoi/.install-1password.sh"
+    command = ".local/share/dotfiles/.install-1password.sh"
 
 [onepassword]
     prompt = false  # Don't prompt for sign-in

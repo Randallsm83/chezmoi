@@ -103,7 +103,7 @@ graph TD
 
 1. **Chezmoi Installation**: Tries scoop first (preferred), falls back to winget
 2. **Scoop Installation**: Installs scoop if missing (no admin required)
-3. **Chezmoi Init**: Clones repo to `~/.local/share/chezmoi` and applies configs
+3. **Chezmoi Init**: Clones repo to `~/.local/share/dotfiles` and applies configs
 4. **Scoop Packages**: Installs 20+ CLI tools (git, gh, lazygit, neovim, mise, starship, zoxide, fzf, ripgrep, fd, bat, eza, vivid, delta, jq, yq, 1password-cli, cygwin, make, zig, curl, wget, 7zip, btop)
 5. **Winget Packages**: Installs GUI apps (Git.Git, PowerShell, WindowsTerminal, WezTerm, Warp, VS Code, 7zip)
 6. **Mise Runtimes**: Installs language runtimes (node@lts, python@3.12, ruby@latest, go@latest, rust@stable, lua@latest, bun@latest, deno@latest)
@@ -390,7 +390,7 @@ sequenceDiagram
     Bootstrap->>Chezmoi: chezmoi init --apply
     activate Chezmoi
     
-    Chezmoi->>Chezmoi: Clone repository to<br/>~/.local/share/chezmoi
+    Chezmoi->>Chezmoi: Clone repository to<br/>~/.local/share/dotfiles
     
     Note over Chezmoi,Scripts: Phase 1: Before Scripts
     Chezmoi->>Scripts: run_onchange_before_*<br/>(Linux: install base packages)
@@ -440,7 +440,7 @@ Chezmoi executes scripts in the following order:
    - Used for: Installing packages via scoop/winget/mise
 
 **Script naming conventions**:
-- `run_once_*`: Runs once (tracked in `~/.local/share/chezmoi/chezmoistate.boltdb`)
+- `run_once_*`: Runs once (tracked in `~/.local/share/dotfiles/chezmoistate.boltdb`)
 - `run_onchange_*`: Runs when file or data changes (checksum-based)
 - `run_after_*`: Runs after all other scripts
 - `*.tmpl`: Template files (processed by chezmoi)
@@ -457,7 +457,7 @@ Chezmoi manages files using a combination of symlinks, copies, and templates.
 
 **Directory structure**:
 ```
-~/.local/share/chezmoi/      # Source directory
+~/.local/share/dotfiles/      # Source directory
 ├── dot_config/              → ~/.config/
 │   ├── git/                 → ~/.config/git/
 │   ├── nvim/                → ~/.config/nvim/
@@ -492,7 +492,7 @@ Templates use Go template syntax:
 
 **Directory structure**:
 ```
-~/.local/share/chezmoi/      # Source directory
+~/.local/share/dotfiles/      # Source directory
 ├── dot_config/              → ~/.config/
 │   ├── git/                 → ~/.config/git/
 │   ├── nvim/                → ~/.config/nvim/
@@ -632,7 +632,7 @@ package_features:
 
 ```bash
 # Edit chezmoi source
-chezmoi edit ~/.local/share/chezmoi/.chezmoidata.yaml
+chezmoi edit ~/.local/share/dotfiles/.chezmoidata.yaml
 
 # Apply changes
 chezmoi apply
@@ -1022,7 +1022,7 @@ $env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
 - **Solution**: Remove chezmoi and source directory
   ```bash
   # Unix
-  rm -rf ~/.local/share/chezmoi ~/.config/chezmoi
+  rm -rf ~/.local/share/dotfiles ~/.config/chezmoi
   
   # Windows
   Remove-Item -Recurse -Force "$env:USERPROFILE\.local\share\chezmoi", "$env:USERPROFILE\.config\chezmoi"

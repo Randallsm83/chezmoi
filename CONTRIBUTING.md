@@ -117,7 +117,7 @@ chezmoi init --apply YOUR_USERNAME/dotfiles
 **Linux/macOS**:
 ```bash
 # Clean test
-rm -rf ~/.local/share/chezmoi ~/.config/chezmoi
+rm -rf ~/.local/share/dotfiles ~/.config/chezmoi
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply YOUR_USERNAME/dotfiles
 ```
 

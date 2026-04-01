@@ -174,7 +174,7 @@ Package lists are in `.chezmoidata.yaml` under `packages.scoop`, `winget_package
 ## 📁 Repository Structure
 
 ```
-.local/share/chezmoi/          # Chezmoi source directory
+.local/share/dotfiles/          # Chezmoi source directory
 ├── .chezmoi.toml.tmpl         # Chezmoi configuration
 ├── .chezmoidata.yaml          # Template variables & feature flags
 ├── .chezmoiignore             # Platform & package exclusions

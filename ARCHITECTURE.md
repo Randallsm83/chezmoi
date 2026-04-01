@@ -39,7 +39,7 @@ This document describes the architecture and design decisions for these dotfiles
 ## Directory Structure
 
 ```
-~/.local/share/chezmoi/           # Chezmoi source directory
+~/.local/share/dotfiles/           # Chezmoi source directory
 ├── .chezmoi.toml.tmpl            # Main config (machine detection)
 ├── .chezmoidata.yaml             # Static data (packages, themes)
 ├── .chezmoi.local.toml.example   # Local overrides example
@@ -453,7 +453,7 @@ chezmoi archive > ~/dotfiles-backup-$(date +%Y%m%d).tar.gz
 ls ~/.local/state/chezmoi/backups/
 
 # Rollback
-~/.local/share/chezmoi/scripts/rollback.sh latest
+~/.local/share/dotfiles/scripts/rollback.sh latest
 ```
 
 ---

@@ -280,7 +280,7 @@ chezmoi add --encrypt ~/.ssh/id_ed25519
 
 # Method 2: Manual encryption
 age -r $(age-keygen -y ~/.config/chezmoi/key.txt) \
-    -o ~/.local/share/chezmoi/private_dot_ssh/private_id_ed25519.age \
+    -o ~/.local/share/dotfiles/private_dot_ssh/private_id_ed25519.age \
     ~/.ssh/id_ed25519
 ```
 
@@ -289,7 +289,7 @@ age -r $(age-keygen -y ~/.config/chezmoi/key.txt) \
 # Encrypt GitHub token
 echo -n "ghp_your_token_here" | \
     age -r $(age-keygen -y ~/.config/chezmoi/key.txt) \
-    > ~/.local/share/chezmoi/encrypted_github_token.age
+    > ~/.local/share/dotfiles/encrypted_github_token.age
 ```
 
 ### Usage in Templates
