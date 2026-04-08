@@ -121,12 +121,6 @@ if (scoop list everything 2>$null) {
 }
 {{- end }}
 
-# Configure abgox scoop-install URL replacement
-if (Get-Command scoop-install -ErrorAction SilentlyContinue) {
-    Write-Host "`nConfiguring abgox scoop-install URL replacement..." -ForegroundColor Cyan
-    scoop config abgox-scoop-install-url-replace-from "^https://github.com|^https://raw.githubusercontent.com"
-    scoop config abgox-scoop-install-url-replace-to "https://gh-proxy.com/github.com|https://gh-proxy.com/raw.githubusercontent.com"
-}
 
 # Install winget packages
 if ($wingetPackages.Count -gt 0) {

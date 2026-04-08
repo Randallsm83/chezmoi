@@ -98,7 +98,7 @@ Bootstrap performs:
 4. Imports scoop/winget exports (if provided)
 5. Installs chezmoi via scoop
 6. `chezmoi init --apply` — clones dotfiles, applies all configs, runs install scripts
-7. Install scripts handle: scoop buckets, ~96 scoop packages (by feature flags), winget packages, mise runtimes, PowerShell modules, PSCompletions (psc) definitions, pip packages, vcredist-aio, Everything search service, scoop-install URL proxy config, pynvim, neovim npm/gem/cpan providers
+7. Install scripts handle: scoop buckets, ~96 scoop packages (by feature flags), winget packages, mise runtimes, PowerShell modules, PSCompletions (psc) definitions, pip packages, vcredist-aio, Everything search service, pynvim, neovim npm/gem/cpan providers
 
 ### What chezmoi manages (symlinks/templates)
 
