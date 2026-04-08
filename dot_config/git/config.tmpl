@@ -144,4 +144,8 @@
 {{- if eq .chezmoi.os "windows" }}
 [safe]
 	directory = D:/
+	# Wildcard allows repos on drives with ownership mismatches (e.g. files
+	# originally created under a different Windows user SID). Safe on a
+	# personal developer machine where you control what repos you clone.
+	directory = *
 {{- end }}
