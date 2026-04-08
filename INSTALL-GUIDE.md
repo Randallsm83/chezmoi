@@ -1025,7 +1025,7 @@ $env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
   rm -rf ~/.local/share/dotfiles ~/.config/chezmoi
   
   # Windows
-  Remove-Item -Recurse -Force "$env:USERPROFILE\.local\share\chezmoi", "$env:USERPROFILE\.config\chezmoi"
+  Remove-Item -Recurse -Force "$env:USERPROFILE\.local\share\dotfiles", "$env:USERPROFILE\.config\chezmoi"
   
   # Then re-run bootstrap
   ```

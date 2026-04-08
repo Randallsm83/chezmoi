@@ -13,7 +13,7 @@
 # ================================================================================================
 
 $env:DHSPACE = "D:\DH Dev"
-$env:DOTFILES = "C:\Users\Randall\.config\dotfiles"
+$env:DOTFILES = "$HOME\.local\share\dotfiles"
 $env:PROJECTS = "D:\DH Dev\projects"
 
 # ================================================================================================

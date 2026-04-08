@@ -54,7 +54,7 @@ pwsh .\reset-wsl-arch.ps1 -ChezmoisRepo "yourusername/your-dotfiles"
 
 ### Reset Arch Linux WSL (Full)
 ```powershell
-pwsh C:\Users\Randall\.local\share\chezmoi\scripts\reset-wsl-arch.ps1
+pwsh $HOME\.local\share\dotfiles\scripts\reset-wsl-arch.ps1
 ```
 
 ### Manual Bootstrap in Existing WSL

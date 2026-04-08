@@ -430,7 +430,7 @@ When a feature flag is `false`, its files are listed in `.chezmoiignore` and won
 - Manual platform-specific handling
 
 **Current Setup (Chezmoi - Production):**
-- Location: `C:\Users\Randall\.local\share\chezmoi`
+- Location: `~/.local/share/dotfiles`
 - 170+ managed configurations
 - Template-based with automatic platform detection
 - Feature flag system for optional packages

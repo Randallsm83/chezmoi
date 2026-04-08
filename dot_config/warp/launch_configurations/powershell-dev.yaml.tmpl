@@ -12,8 +12,6 @@
 # 
 # This configuration provides a comprehensive PowerShell development environment
 # with multiple tabs for different workflows and split panes for monitoring.
-#
-# Customize the working directories below to match your project structure.
 
 ---
 name: PowerShell 7 Development
@@ -26,12 +24,12 @@ windows:
         layout:
           split_direction: vertical
           panes:
-            - cwd: C:\Users\Randall\.config\dotfiles
+            - cwd: {{ .chezmoi.homeDir }}\.local\share\dotfiles
               is_focused: true
               commands:
                 - exec: git status
                 - exec: git log --oneline -5
-            - cwd: C:\Users\Randall\.local\share\chezmoi
+            - cwd: {{ .chezmoi.homeDir }}\.local\share\dotfiles
               commands:
                 - exec: ll
         color: blue
@@ -41,10 +39,10 @@ windows:
         layout:
           split_direction: horizontal
           panes:
-            - cwd: C:\Users\Randall\projects
+            - cwd: {{ .chezmoi.homeDir }}\projects
               commands:
                 - exec: Get-ChildItem
-            - cwd: C:\Users\Randall\projects
+            - cwd: {{ .chezmoi.homeDir }}\projects
               commands:
                 - exec: Write-Host "Quick test area - try commands here" -ForegroundColor Green
         color: green
@@ -52,7 +50,7 @@ windows:
       # Tab 3: Scripts - PowerShell script development
       - title: Scripts
         layout:
-          cwd: C:\Users\Randall\Documents\PowerShell\Scripts
+          cwd: {{ .chezmoi.homeDir }}\Documents\PowerShell\Scripts
           commands:
             - exec: Get-ChildItem *.ps1
             - exec: Write-Host "PowerShell Scripts Directory" -ForegroundColor Yellow
@@ -65,16 +63,16 @@ windows:
           panes:
             - split_direction: horizontal
               panes:
-                - cwd: C:\Users\Randall
+                - cwd: {{ .chezmoi.homeDir }}
                   commands:
                     - exec: fastfetch
-                - cwd: C:\Users\Randall
+                - cwd: {{ .chezmoi.homeDir }}
                   commands:
                     - exec: Invoke-RestMethod https://wttr.in?format=v2
-                - cwd: C:\Users\Randall
+                - cwd: {{ .chezmoi.homeDir }}
                   commands:
                     - exec: Invoke-RestMethod https://wttr.in
-            - cwd: C:\Users\Randall
+            - cwd: {{ .chezmoi.homeDir }}
               commands:
                 - exec: btop
         color: magenta
