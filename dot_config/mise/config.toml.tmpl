@@ -81,7 +81,6 @@ not_found_auto_install = false
 task_output = "prefix"
 paranoid = false
 shorthands_file = '~/.config/mise/shorthands.toml'
-disable_default_shorthands = false
 experimental = true
 status = { missing_tools = "if_other_versions_installed", show_env = false, show_tools = false }
 
@@ -90,6 +89,9 @@ status = { missing_tools = "if_other_versions_installed", show_env = false, show
 # rust: mise can't detect its own junction on Windows (ln -sf fails with os error 183)
 #       rustup + cargo/bin in PATH (via 50-mise.ps1) works fine without mise
 disable_tools = ["lua", "luajit", "rust"]
+{{- else if .is_wsl }}
+# WSL/Arch: lua, luajit, neovim use conda/vfox backends causing noise - use pacman instead
+disable_tools = ["lua", "luajit", "neovim", "vim"]
 {{- else }}
 disable_tools = []
 {{- end }}

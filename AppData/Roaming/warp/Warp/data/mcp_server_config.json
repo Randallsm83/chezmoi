@@ -1,6 +1,0 @@
-{
-  "env": {
-    "MISE_INSTALL_MISSING": "false",
-    "PATH": "C:\\Users\\Randall\\.local\\share\\mise\\shims;${PATH}"
-  }
-}

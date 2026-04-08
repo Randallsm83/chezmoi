@@ -3,7 +3,7 @@
 "pane_group:navigate_left": ctrl-h
 "editor_view:insert_newline": ctrl-alt-j
 "editor_view:insert_autosuggestion": ctrl-y
-"workspace:activate_next_tab": "ctrl-shift-]"
+"workspace:activate_next_tab": "ctrl-shift-}"
 "editor_view:delete_all_left": none
 "input:clear_screen": ctrl-alt-l
 "pane_group:navigate_next": none
@@ -12,5 +12,5 @@
 "code_view:close_saved_tabs": none
 "editor_view:backspace": ctrl-alt-h
 "pane_group:navigate_up": ctrl-k
-"workspace:activate_prev_tab": "ctrl-shift-["
+"workspace:activate_prev_tab": "ctrl-shift-{"
 "pane_group:navigate_prev": none

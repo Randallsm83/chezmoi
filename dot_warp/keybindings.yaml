@@ -9,3 +9,11 @@
 "pane_group:navigate_down": ctrl-j
 "pane_group:navigate_up": ctrl-k
 "pane_group:navigate_right": ctrl-l
+# ctrl-shift-[/] -> tab switching (not panes)
+"pane_group:navigate_prev": none
+"pane_group:navigate_next": none
+"workspace:activate_prev_tab": ctrl-shift-{
+"workspace:activate_next_tab": ctrl-shift-}
+# ctrl-y -> accept autosuggestion
+"editor_view:delete_all_left": none
+"editor_view:insert_autosuggestion": ctrl-y

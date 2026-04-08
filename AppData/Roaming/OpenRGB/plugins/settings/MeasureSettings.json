@@ -18,7 +18,7 @@
                 "zone_idx": 1
             }
         ],
-        "fps": 60,
+        "fps": 2,
         "hardware": 0,
         "hardware_feature": 50,
         "hardware_identifier": "/amdcpu/0/temperature/2",
@@ -79,7 +79,7 @@
                 "zone_idx": 0
             }
         ],
-        "fps": 60,
+        "fps": 2,
         "hardware": 4,
         "hardware_feature": 0,
         "hardware_identifier": "/gpu-nvidia/0/temperature/0",

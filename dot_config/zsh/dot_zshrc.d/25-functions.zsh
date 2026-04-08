@@ -115,7 +115,89 @@ check_repos() {
 # Make directory and cd into it
 mkcd() { mkdir -p "$1" && cd "$1" }
 
-# Combined update function - runs all available package manager updates
+# Obsidian / Notes
+# Fuzzy find note by name, open in Obsidian (requires: fd, fzf, bat, obsidian CLI)
+nf() {
+  local file
+  file=$(fd --type f --extension md . ~/notes | sed "s|$HOME/notes/||" \
+    | fzf --preview 'bat --color=always ~/notes/{}')
+  [[ -n "$file" ]] && obsidian open "file=$file"
+}
+
+# Fuzzy search note content, open match in Obsidian (requires: rg, fzf, obsidian CLI)
+nfs() {
+  local file
+  file=$(rg --type md -l "$1" ~/notes | sed "s|$HOME/notes/||" \
+    | fzf --preview "rg --color=always '$1' ~/notes/{}")
+  [[ -n "$file" ]] && obsidian open "file=$file"
+}
+
+# Append a task to today's daily note
+ntask() { obsidian daily:append "content=- [ ] $*"; }
+
+# Quick fleeting note capture to inbox
+nc() {
+  local title="${*:-$(date +%Y%m%d-%H%M%S)}"
+  obsidian create "name=$title" 'folder=00 Inbox'
+}
+
+# Grep notes (raw, no app required)
+ngrep() { rg --type md "$@" ~/notes; }
+
+# List all note/Obsidian aliases and functions with dependency status
+note-tools() {
+  local GREEN=$(tput setaf 2)
+  local RED=$(tput setaf 1)
+  local CYAN=$(tput setaf 6)
+  local GRAY=$(tput setaf 7)
+  local RESET=$(tput sgr0)
+
+  echo "\n${CYAN}Dependencies${RESET}"
+  local -A dep_desc
+  dep_desc=(
+    obsidian        "CLI (required for most commands)"
+    obsidian-export "export vault to standard Markdown"
+    rg              "ngrep, nfs content search"
+    fd              "nf file finder"
+    fzf             "interactive picker (nf, nfs)"
+    bat             "nf preview"
+  )
+  local installed=0 total=0
+  for name in obsidian obsidian-export rg fd fzf bat; do
+    (( total++ ))
+    if command -v "$name" &>/dev/null; then
+      (( installed++ ))
+      printf "  ${GREEN}✓${RESET} %-20s %s\n" "$name" "${dep_desc[$name]}"
+    else
+      printf "  ${RED}✗${RESET} %-20s %s\n" "$name" "${dep_desc[$name]}"
+    fi
+  done
+
+  echo "\n${CYAN}Commands${RESET}"
+  local cmds=(
+    "notes:cd ~/notes"
+    "n [args]:obsidian CLI passthrough"
+    "nd:open today's daily note"
+    "nt:list today's tasks"
+    "ntask <msg>:append task to today's daily note"
+    "nc [title]:quick capture → 00 Inbox"
+    "ntags:all tags with frequency"
+    "norphans:notes with no backlinks"
+    "nunresolved:broken wikilinks"
+    "nhome:open HOME dashboard"
+    "ninbox:open 00 Inbox"
+    "nf:fuzzy find note by name → open"
+    "nfs <query>:fuzzy search note content → open"
+    "ngrep <pat>:grep all notes (no app required)"
+  )
+  for entry in $cmds; do
+    printf "  ${GRAY}%-20s${RESET} %s\n" "${entry%%:*}" "${entry#*:}"
+  done
+
+  echo "\n${CYAN}${installed}/${total} dependencies available${RESET}\n"
+}
+
+# Combined update function
 updateall() {
   echo "\n======================================"
   echo "Updating all package managers..."

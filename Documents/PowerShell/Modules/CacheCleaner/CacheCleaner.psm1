@@ -304,6 +304,10 @@ function Clear-Cache {
         # Application Cache
         @{ Section = "APPLICATION CACHE"; Path = "$env:APPDATA\Spotify\Storage"; Description = "Spotify Cache"; Category = "Media" }
         @{ Path = "$env:LOCALAPPDATA\Spotify\Storage"; Description = "Spotify Local Storage"; Category = "Media" }
+        # Package Manager Cache
+        @{ Section = "PACKAGE MANAGER CACHE"; Path = "$env:USERPROFILE\scoop\cache"; Description = "Scoop Package Cache"; Category = "Development" }
+        @{ Path = "$env:LOCALAPPDATA\go-build"; Description = "Go Build Cache"; Category = "Development" }
+        @{ Path = "$env:LOCALAPPDATA\mise\cache"; Description = "Mise Cache"; Category = "Development" }
         # System Cache
         @{ Section = "SYSTEM CACHE"; Path = "$env:SystemRoot\Prefetch"; Description = "Windows Prefetch"; Category = "System" }
         @{ Path = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\thumbcache_*.db"; Description = "Windows Thumbnail Cache"; Category = "System" }
@@ -333,6 +337,21 @@ function Clear-Cache {
     }
 
     Write-Progress -Activity "Cache Cleanup" -Completed
+
+    # Command-based cache cleanup (tools that manage their own store)
+    Write-Section "COMMAND-BASED CACHE CLEANUP"
+    $startCmdSize = $Stats.SpaceFreed
+
+    if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+        Write-Status "Pruning pnpm store..." "Info"
+        pnpm store prune 2>$null | Out-Null
+        Write-Status "pnpm store pruned" "Success"
+    }
+    if (Get-Command mise -ErrorAction SilentlyContinue) {
+        Write-Status "Clearing mise cache..." "Info"
+        mise cache clear 2>$null | Out-Null
+        Write-Status "mise cache cleared" "Success"
+    }
 
     # Final Summary
     $endTime = Get-Date

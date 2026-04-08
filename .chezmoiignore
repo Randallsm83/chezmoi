@@ -61,6 +61,9 @@ REINSTALL.md
 bootstrap.ps1
 setup.sh
 
+# Binaries managed outside chezmoi
+.local/bin/op
+
 # Warp workflows (repo reference only, import manually into Warp)
 warp-workflows/
 

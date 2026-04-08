@@ -1,0 +1,8 @@
+{
+  "env": {
+    "GITLAB_API_URL": "https://git.dreamhost.com/api/v4",
+    "GITLAB_PERSONAL_ACCESS_TOKEN": "{{ onepasswordRead "op://DH/warp-gitlab-mcp-pat/token" }}",
+    "PATH": "{{ .xdg_data_home | replace "\\" "\\\\" }}\\mise\\shims;${PATH}",
+    "MISE_INSTALL_MISSING": "false"
+  }
+}

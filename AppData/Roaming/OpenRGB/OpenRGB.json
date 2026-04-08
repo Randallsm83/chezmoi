@@ -2209,12 +2209,12 @@
             "set_on_exit": true
         },
         "geometry": {
-            "height": 737,
+            "height": 727,
             "load_geometry": true,
             "save_on_exit": true,
-            "width": 1029,
-            "x": 2395,
-            "y": 486
+            "width": 1006,
+            "x": 9,
+            "y": 32
         },
         "greyscale_tray_icon": true,
         "language": "default",

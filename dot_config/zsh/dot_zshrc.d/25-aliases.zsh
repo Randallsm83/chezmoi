@@ -39,7 +39,7 @@ alias has='curl -sL https://git.io/_has | bash -s '
 # CD Shortcuts
 alias dh='cd $DHSPACE'
 alias dots='cd $DOTFILES'
-alias notes='cd ~/vaults/'
+alias notes='cd ~/notes'
 
 # Edit configs
 alias nrc='${=EDITOR} $XDG_CONFIG_HOME/nvim/init.lua'
@@ -77,6 +77,16 @@ alias zbench='$XDG_DATA_HOME/zsh-bench/zsh-bench'
 # LDE
 alias ldelog='lde logs -ftall '
 
+# Obsidian / Notes (requires obsidian CLI: Settings → General → Command line interface)
+alias n='obsidian'                                 # obsidian CLI
+alias nd='obsidian daily'
+alias nt='obsidian tasks daily'                    # list today's tasks
+alias ntags='obsidian tags counts'                 # all tags with frequency
+alias norphans='obsidian orphans'                  # notes with no backlinks
+alias nunresolved='obsidian unresolved'            # broken wikilinks
+alias nhome='obsidian open file=HOME'              # open home dashboard
+alias ninbox='obsidian open file="00 Inbox"'       # open inbox
+
 # Nvim
 vi() { ${=EDITOR} "$@" }
 vim() { ${=EDITOR} "$@" }
@@ -98,7 +108,7 @@ alias wget='wget --hsts-file=$XDG_CACHE_HOME/wget/wget-hsts'
 # Build (parallel)
 alias make="make -j$(nproc)"
 alias ninja="ninja -j$(nproc)"
-alias n="ninja"
+alias nj="ninja"
 
 # Arch/Pacman
 alias update="sudo pacman -Syu"

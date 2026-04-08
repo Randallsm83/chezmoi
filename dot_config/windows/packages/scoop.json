@@ -33,7 +33,9 @@
     "innounp",
     "dark",
     "scoop-search",
-    "sudo"
+    "sudo",
+    "abgox.scoop-install",
+    "abgox.scoop-update"
   ],
   "feature_apps": {
     "git": ["git", "gh", "lazygit"],

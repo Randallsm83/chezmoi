@@ -20,7 +20,7 @@ indicator_color = "#f38ba8"        # Color for running app indicators (default: 
 auto_hide = true                   # Hide dock when not in use (default: true)
 auto_hide_delay_ms = 150           # Delay before hiding in ms (default: 250)
 auto_show_delay_ms = 650           # Delay before showing when cursor hits edge in ms (default: 250)
-magnification = 1.5                # Icon magnification on hover, 1.0 = no zoom (default: 1.5)
+magnification = 1.3                # Icon magnification on hover, 1.0 = no zoom (default: 1.5)
 locked = true                     # Prevent drag reordering of icons (default: true)
 
 # ─── Windows Integration ─────────────────────────────────────

@@ -43,11 +43,6 @@ name = "---"
 separator = true
 
 [[items]]
-name = "Brave"
-path = 'C:\Users\randa\AppData\Local\BraveSoftware\Brave-Browser\Application\brave.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\brave.ico'
-
-[[items]]
 name = "Firefox"
 path = 'C:\Program Files\Firefox Developer Edition\firefox.exe'
 icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\firefox-nightly.ico'
@@ -57,11 +52,6 @@ name = "Chrome"
 path = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
 icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\PNGS\Apps\google-chrome.png'
 args = ["--disable-windows10-custom-titlebar"]
-
-[[items]]
-name = "Edge"
-path = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\microsoft-edge.ico'
 
 [[items]]
 name = "---"
@@ -108,7 +98,7 @@ icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\f
 
 [[items]]
 name = "RTSS"
-path = 'C:\Program Files (x86)\RivaTuner Statistics Server\RTSS.exe'
+path = 'C:\Users\randa\scoop\shims\rtss.exe'
 icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\PNGS\settings.png'
 
 [[items]]

@@ -99,13 +99,118 @@ if (Test-DirectoryExists $env:DOTFILES) {
     function dots { Set-Location "$env:DOTFILES" }
 }
 
-if (Test-DirectoryExists "$env:USERPROFILE\vaults") {
-    function notes { Set-Location "$env:USERPROFILE\vaults" }
+if (Test-DirectoryExists "$env:USERPROFILE\notes") {
+    function notes { Set-Location "$env:USERPROFILE\notes" }
 }
 
 function .. { Set-Location .. }
 function ... { Set-Location ..\.. }
 function .... { Set-Location ..\..\.. }
+
+# ================================================================================================
+# Obsidian / Notes Functions
+# ================================================================================================
+
+if (Test-CommandExists 'obsidian') {
+    function n          { obsidian @args }
+    function nd         { obsidian daily }
+    function nt         { obsidian tasks daily }
+    function ntags      { obsidian tags counts }
+    function norphans   { obsidian orphans }
+    function nunresolved { obsidian unresolved }
+    function nhome      { obsidian open file=HOME }
+    function ninbox     { obsidian open 'file=00 Inbox' }
+
+    function ntask {
+        param([Parameter(ValueFromRemainingArguments)][string[]]$Task)
+        obsidian daily:append "content=- [ ] $($Task -join ' ')"
+    }
+
+    function nc {
+        param([Parameter(ValueFromRemainingArguments)][string[]]$Title)
+        $name = if ($Title) { $Title -join ' ' } else { Get-Date -Format 'yyyyMMdd-HHmmss' }
+        obsidian create "name=$name" 'folder=00 Inbox'
+    }
+}
+
+# Fuzzy find note by name, open in Obsidian (requires: fd, fzf, bat, obsidian)
+if ((Test-CommandExists 'fd') -and (Test-CommandExists 'fzf') -and (Test-CommandExists 'obsidian')) {
+    function nf {
+        $notesPath = "$env:USERPROFILE\notes"
+        $file = fd --type f --extension md . $notesPath |
+            ForEach-Object { $_ -replace [regex]::Escape("$notesPath\"), '' } |
+            fzf --preview "bat --color=always $notesPath\{}"
+        if ($file) { obsidian open "file=$($file -replace '\\', '/')" }
+    }
+}
+
+# Fuzzy search note content, open match (requires: rg, fzf, obsidian)
+if ((Test-CommandExists 'rg') -and (Test-CommandExists 'fzf') -and (Test-CommandExists 'obsidian')) {
+    function nfs {
+        param([Parameter(Mandatory)][string]$Query)
+        $notesPath = "$env:USERPROFILE\notes"
+        $file = rg --type md -l $Query $notesPath |
+            ForEach-Object { $_ -replace [regex]::Escape("$notesPath\"), '' } |
+            fzf --preview "rg --color=always $Query $notesPath\{}"
+        if ($file) { obsidian open "file=$($file -replace '\\', '/')" }
+    }
+}
+
+# Grep notes (raw, no app required)
+if (Test-CommandExists 'rg') {
+    function ngrep {
+        param([Parameter(ValueFromRemainingArguments)][string[]]$Args)
+        rg --type md @Args "$env:USERPROFILE\notes"
+    }
+}
+
+<#
+.SYNOPSIS
+    List all note/Obsidian shell commands and dependency status.
+#>
+function note-tools {
+    $deps = @(
+        @{ Name = 'obsidian';        Purpose = 'CLI (required for most commands)';  Binary = 'obsidian' }
+        @{ Name = 'obsidian-export'; Purpose = 'export vault to standard Markdown'; Binary = 'obsidian-export' }
+        @{ Name = 'rg';              Purpose = 'ngrep, nfs content search';         Binary = 'rg' }
+        @{ Name = 'fd';              Purpose = 'nf file finder';                    Binary = 'fd' }
+        @{ Name = 'fzf';             Purpose = 'interactive picker (nf, nfs)';      Binary = 'fzf' }
+        @{ Name = 'bat';             Purpose = 'nf preview';                        Binary = 'bat' }
+    )
+
+    Write-Host "`nDependencies" -ForegroundColor Cyan
+    foreach ($dep in $deps) {
+        $ok     = [bool](Get-Command $dep.Binary -ErrorAction SilentlyContinue)
+        $status = if ($ok) { '✓' } else { '✗' }
+        $color  = if ($ok) { 'Green' } else { 'Red' }
+        Write-Host ("{0} {1,-20} {2}" -f $status, $dep.Name, $dep.Purpose) -ForegroundColor $color
+    }
+
+    Write-Host "`nCommands" -ForegroundColor Cyan
+    $cmds = @(
+        @{ Cmd = 'notes';           Does = 'cd ~/notes' }
+        @{ Cmd = 'n [args]';        Does = 'obsidian CLI passthrough' }
+        @{ Cmd = 'nd';              Does = "open today's daily note" }
+        @{ Cmd = 'nt';              Does = "list today's tasks" }
+        @{ Cmd = 'ntask <msg>';     Does = "append task to today's daily note" }
+        @{ Cmd = 'nc [title]';      Does = 'quick capture → 00 Inbox' }
+        @{ Cmd = 'ntags';           Does = 'all tags with frequency' }
+        @{ Cmd = 'norphans';        Does = 'notes with no backlinks' }
+        @{ Cmd = 'nunresolved';     Does = 'broken wikilinks' }
+        @{ Cmd = 'nhome';           Does = 'open HOME dashboard' }
+        @{ Cmd = 'ninbox';          Does = 'open 00 Inbox' }
+        @{ Cmd = 'nf';              Does = 'fuzzy find note by name → open' }
+        @{ Cmd = 'nfs <query>';     Does = 'fuzzy search note content → open' }
+        @{ Cmd = 'ngrep <pattern>'; Does = 'grep all notes (no app required)' }
+    )
+    foreach ($cmd in $cmds) {
+        Write-Host ("  {0,-20} {1}" -f $cmd.Cmd, $cmd.Does) -ForegroundColor Gray
+    }
+    Write-Host ""
+
+    $installedCount = ($deps | Where-Object { Get-Command $_.Binary -ErrorAction SilentlyContinue }).Count
+    Write-Host "$installedCount/$($deps.Count) dependencies available" -ForegroundColor Cyan
+}
 
 # ================================================================================================
 # Editor Configuration Functions
@@ -318,42 +423,12 @@ if (Test-CommandExists 'python') {
     function pip { & python -m pip $args }
 }
 
-# Replace built-in scoop subcommands with abgox enhanced versions
 if (Test-CommandExists 'scoop') {
     # scoop-search hook (replaces built-in search)
     if (Test-CommandExists 'scoop-search') {
         try {
             Invoke-Expression (&scoop-search --hook)
         } catch {}
-    }
-
-    # Wrap scoop install → scoop-install, scoop update → scoop-update
-    if ((Test-CommandExists 'scoop-install') -or (Test-CommandExists 'scoop-update')) {
-        function scoop {
-            switch ($args[0]) {
-                'install' {
-                    if (Test-CommandExists 'scoop-install') {
-                        & scoop-install @($args | Select-Object -Skip 1)
-                        return
-                    }
-                }
-                'update' {
-                    if ((Test-CommandExists 'scoop-update') -and -not $env:SCOOP_UPDATE_RUNNING) {
-                        # Guard against re-entry: scoop-update.ps1 calls `scoop update $app`
-                        # internally, which would recurse back here infinitely without this check.
-                        $env:SCOOP_UPDATE_RUNNING = '1'
-                        try {
-                            & scoop-update @($args | Select-Object -Skip 1)
-                        } finally {
-                            Remove-Item Env:SCOOP_UPDATE_RUNNING -ErrorAction SilentlyContinue
-                        }
-                        return
-                    }
-                }
-            }
-            # Fall through to real scoop for all other subcommands
-            & scoop.ps1 @args
-        }
     }
 }
 
@@ -549,6 +624,10 @@ if (Test-CommandExists 'winget') {
         winget upgrade --all
         Write-Host "Winget update complete!" -ForegroundColor Green
     }
+
+    function wlist {
+        winget list | Where-Object { $_ -notmatch '^[-\s]*$' } | Select-Object -Skip 1 | Sort-Object
+    }
 }
 
 if (Test-CommandExists 'choco') {
@@ -723,24 +802,24 @@ if (Test-CommandExists 'tldr') {
 #>
 function rust-tools {
     $tools = @(
-        @{ Rust = 'bat';                Replaces = 'cat';              Binary = 'bat' }
-        @{ Rust = 'ripgrep';            Replaces = 'grep';             Binary = 'rg' }
-        @{ Rust = 'fd';                 Replaces = 'find';             Binary = 'fd' }
-        @{ Rust = 'eza';                Replaces = 'ls';               Binary = 'eza' }
-        @{ Rust = 'delta';              Replaces = 'diff';             Binary = 'delta' }
-        @{ Rust = 'zoxide';             Replaces = 'cd';               Binary = 'zoxide' }
-        @{ Rust = 'vivid';              Replaces = 'dircolors';        Binary = 'vivid' }
-        @{ Rust = 'uutils-coreutils';   Replaces = 'coreutils';        Binary = 'uname' }
-        @{ Rust = 'tealdeer';           Replaces = 'tldr/man';         Binary = 'tldr' }
-        @{ Rust = 'navi';               Replaces = 'cheatsheets';      Binary = 'navi' }
-        @{ Rust = 'sd';                 Replaces = 'sed';              Binary = 'sd' }
-        @{ Rust = 'dust';               Replaces = 'du';               Binary = 'dust' }
-        @{ Rust = 'procs';              Replaces = 'ps/tasklist';      Binary = 'procs' }
-        @{ Rust = 'hyperfine';          Replaces = 'time/benchmark';   Binary = 'hyperfine' }
-        @{ Rust = 'just';               Replaces = 'make (tasks)';     Binary = 'just' }
-        @{ Rust = 'tokei';              Replaces = 'cloc/sloccount';   Binary = 'tokei' }
-        @{ Rust = 'ouch';               Replaces = 'tar/zip/compress'; Binary = 'ouch' }
-        @{ Rust = 'xh';                 Replaces = 'curl (HTTP)';      Binary = 'xh' }
+        @{ Rust = 'bat';                Replaces = 'cat';              Binary = 'bat';       Invoke = @('cat') }
+        @{ Rust = 'ripgrep';            Replaces = 'grep';             Binary = 'rg';        Invoke = @('grep') }
+        @{ Rust = 'fd';                 Replaces = 'find';             Binary = 'fd';        Invoke = @('find') }
+        @{ Rust = 'eza';                Replaces = 'ls';               Binary = 'eza';       Invoke = @('ls','ll','la','lt') }
+        @{ Rust = 'delta';              Replaces = 'diff';             Binary = 'delta';     Invoke = @('diff') }
+        @{ Rust = 'zoxide';             Replaces = 'cd';               Binary = 'zoxide';    Invoke = @('z') }
+        @{ Rust = 'vivid';              Replaces = 'dircolors';        Binary = 'vivid';     Invoke = @() }
+        @{ Rust = 'uutils-coreutils';   Replaces = 'coreutils';        Binary = 'uname';     Invoke = @() }
+        @{ Rust = 'tealdeer';           Replaces = 'tldr/man';         Binary = 'tldr';      Invoke = @('tldr','help') }
+        @{ Rust = 'navi';               Replaces = 'cheatsheets';      Binary = 'navi';      Invoke = @() }
+        @{ Rust = 'sd';                 Replaces = 'sed';              Binary = 'sd';        Invoke = @('sed') }
+        @{ Rust = 'dust';               Replaces = 'du';               Binary = 'dust';      Invoke = @('du') }
+        @{ Rust = 'procs';              Replaces = 'ps/tasklist';      Binary = 'procs';     Invoke = @('ps') }
+        @{ Rust = 'hyperfine';          Replaces = 'time/benchmark';   Binary = 'hyperfine'; Invoke = @('time','bench') }
+        @{ Rust = 'just';               Replaces = 'make (tasks)';     Binary = 'just';      Invoke = @() }
+        @{ Rust = 'tokei';              Replaces = 'cloc/sloccount';   Binary = 'tokei';     Invoke = @('cloc') }
+        @{ Rust = 'ouch';               Replaces = 'tar/zip/compress'; Binary = 'ouch';      Invoke = @('compress','decompress') }
+        @{ Rust = 'xh';                 Replaces = 'curl (HTTP)';      Binary = 'xh';        Invoke = @('http','https') }
     )
 
     $tools | ForEach-Object {
@@ -748,11 +827,26 @@ function rust-tools {
         $status = if ($installed) { '✓' } else { '✗' }
         $color = if ($installed) { 'Green' } else { 'Red' }
         $line = "{0} {1,-22} → {2,-22} ({3})" -f $status, $_.Rust, $_.Replaces, $_.Binary
-        Write-Host $line -ForegroundColor $color
+        Write-Host $line -ForegroundColor $color -NoNewline
+
+        if ($installed -and $_.Invoke.Count -gt 0) {
+            Write-Host '   ' -NoNewline
+            foreach ($cmd in $_.Invoke) {
+                $active = if ($cmd -eq $_.Binary) {
+                    [bool](Get-Command $cmd -ErrorAction SilentlyContinue)
+                } else {
+                    [bool](Get-Command $cmd -CommandType Alias, Function -ErrorAction SilentlyContinue)
+                }
+                $invokeColor = if ($active) { 'Green' } else { 'Red' }
+                Write-Host "$cmd " -ForegroundColor $invokeColor -NoNewline
+            }
+        }
+        Write-Host ''
     }
 
     $installedCount = ($tools | Where-Object { Get-Command $_.Binary -ErrorAction SilentlyContinue }).Count
     Write-Host "`n$installedCount/$($tools.Count) Rust alternatives installed" -ForegroundColor Cyan
+    Write-Host 'Invoke: green = active alias, red = not configured' -ForegroundColor DarkGray
 }
 
 # ================================================================================================
@@ -889,6 +983,293 @@ function Show-AnsiColors256 {
     }
 }
 Set-Alias -Name 256colors -Value Show-AnsiColors256
+
+# ================================================================================================
+# Windows Housekeeping
+# ================================================================================================
+
+<#
+.SYNOPSIS
+    Remove useless Windows shell junk folders from the home directory.
+    These are legacy junctions and empty folders Windows keeps recreating.
+#>
+function Remove-WinJunk {
+    $junctions = @(
+        'Recent', 'PrintHood', 'SendTo', 'Templates', 'NetHood',
+        'My Documents', 'Cookies', 'Application Data', 'Local Settings', 'Start Menu'
+    )
+    $realDirs = @(
+        'Recorded Calls', 'Links', 'Favorites', 'Searches', '3D Objects'
+    )
+
+    $removed = 0
+    foreach ($name in $junctions) {
+        $path = Join-Path $HOME $name
+        if (Test-Path $path -PathType Container) {
+            $item = Get-Item $path -Force -ErrorAction SilentlyContinue
+            if ($item.LinkType -eq 'Junction') {
+                cmd /c "rmdir `"$path`"" 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "  removed junction: $name" -ForegroundColor DarkGray
+                    $removed++
+                } else {
+                    Write-Warning "  could not remove junction: $name (try running as admin)"
+                }
+            }
+        }
+    }
+    foreach ($name in $realDirs) {
+        $path = Join-Path $HOME $name
+        if (Test-Path $path -PathType Container) {
+            Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Host "  removed dir: $name" -ForegroundColor DarkGray
+            $removed++
+        }
+    }
+
+    if ($removed -eq 0) {
+        Write-Host 'No junk found.' -ForegroundColor Green
+    } else {
+        Write-Host "`n$removed item(s) removed." -ForegroundColor Green
+    }
+}
+Set-Alias -Name winjunk -Value Remove-WinJunk
+
+<#
+.SYNOPSIS
+    Clear developer tool caches (npm, pnpm, yarn, pip, mise, scoop).
+#>
+function Clear-DevCaches {
+    Write-Host "`nClearing dev caches..." -ForegroundColor Cyan
+
+    if (Test-CommandExists 'npm') {
+        Write-Host '  npm...' -NoNewline
+        npm cache clean --force 2>$null
+        Write-Host ' done' -ForegroundColor Green
+    }
+    if (Test-CommandExists 'pnpm') {
+        Write-Host '  pnpm...' -NoNewline
+        pnpm store prune 2>$null
+        Write-Host ' done' -ForegroundColor Green
+    }
+    if (Test-CommandExists 'yarn') {
+        Write-Host '  yarn...' -NoNewline
+        yarn cache clean 2>$null
+        Write-Host ' done' -ForegroundColor Green
+    }
+    if (Test-CommandExists 'pip') {
+        Write-Host '  pip...' -NoNewline
+        pip cache purge 2>$null
+        Write-Host ' done' -ForegroundColor Green
+    }
+    if (Test-CommandExists 'mise') {
+        Write-Host '  mise...' -NoNewline
+        mise cache clear 2>$null
+        Write-Host ' done' -ForegroundColor Green
+    }
+    if (Test-CommandExists 'scoop') {
+        Write-Host '  scoop...' -NoNewline
+        scoop cache rm * 2>$null
+        Write-Host ' done' -ForegroundColor Green
+    }
+    if (Test-CommandExists 'go') {
+        Write-Host '  go...' -NoNewline
+        go clean -cache 2>$null
+        Write-Host ' done' -ForegroundColor Green
+    }
+    Write-Host 'Dev caches cleared.' -ForegroundColor Green
+}
+Set-Alias -Name cleancaches -Value Clear-DevCaches
+
+<#
+.SYNOPSIS
+    Clear Windows temp folders.
+#>
+function Clear-TempFiles {
+    Write-Host "`nClearing temp files..." -ForegroundColor Cyan
+    $dirs = @(
+        $env:TEMP,
+        "$env:LOCALAPPDATA\Temp",
+        'C:\Windows\Temp'
+    ) | Sort-Object -Unique
+
+    foreach ($dir in $dirs) {
+        if (Test-Path $dir) {
+            Write-Host "  $dir..." -NoNewline
+            $before = (Get-ChildItem $dir -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+            Get-ChildItem $dir -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            $after = (Get-ChildItem $dir -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+            $freed = [math]::Round(($before - $after) / 1MB, 1)
+            Write-Host " freed $freed MB" -ForegroundColor Green
+        }
+    }
+}
+Set-Alias -Name cleantemp -Value Clear-TempFiles
+
+<#
+.SYNOPSIS
+    Flush the DNS resolver cache.
+#>
+function Flush-DNS {
+    Write-Host "`nFlushing DNS cache..." -ForegroundColor Cyan
+    ipconfig /flushdns | Out-Null
+    Clear-DnsClientCache -ErrorAction SilentlyContinue
+    Write-Host 'DNS cache flushed.' -ForegroundColor Green
+}
+Set-Alias -Name flushdns -Value Flush-DNS
+
+<#
+.SYNOPSIS
+    Compact WSL2 virtual disk(s) to reclaim disk space.
+    Requires admin. Shuts down WSL first.
+#>
+function Compact-WSL {
+    Write-Host "`nCompacting WSL virtual disks..." -ForegroundColor Cyan
+    Write-Host '  Shutting down WSL...' -NoNewline
+    wsl --shutdown
+    Write-Host ' done' -ForegroundColor Green
+
+    $searchPaths = @(
+        "$env:LOCALAPPDATA\Packages",
+        "$env:LOCALAPPDATA\lxss"
+    )
+    $vhdxFiles = foreach ($p in $searchPaths) {
+        if (Test-Path $p) {
+            Get-ChildItem $p -Filter '*.vhdx' -Recurse -ErrorAction SilentlyContinue
+        }
+    }
+
+    if (-not $vhdxFiles) {
+        Write-Warning 'No WSL vhdx files found.'
+        return
+    }
+
+    foreach ($vhdx in $vhdxFiles) {
+        $sizeBefore = [math]::Round($vhdx.Length / 1GB, 2)
+        Write-Host "  Compacting $($vhdx.Name) ($sizeBefore GB)..." -NoNewline
+        $script = "select vdisk file=`"$($vhdx.FullName)`"`r`nattach vdisk readonly`r`ncompact vdisk`r`ndetach vdisk`r`nexit"
+        $tmp = [System.IO.Path]::GetTempFileName() + '.txt'
+        $script | Set-Content $tmp -Encoding ASCII
+        gsudo diskpart /s $tmp | Out-Null
+        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        $sizeAfter = [math]::Round((Get-Item $vhdx.FullName).Length / 1GB, 2)
+        $freed = [math]::Round($sizeBefore - $sizeAfter, 2)
+        Write-Host " $sizeBefore GB → $sizeAfter GB (freed $freed GB)" -ForegroundColor Green
+    }
+}
+Set-Alias -Name compactwsl -Value Compact-WSL
+
+<#
+.SYNOPSIS
+    Prune stale remote-tracking refs and delete local merged branches.
+    Runs in the current git repository.
+#>
+function Clear-GitBranches {
+    if (-not (Test-CommandExists 'git')) { Write-Warning 'git not found.'; return }
+    if (-not (git rev-parse --is-inside-work-tree 2>$null)) { Write-Warning 'Not inside a git repo.'; return }
+
+    Write-Host "`nCleaning git branches..." -ForegroundColor Cyan
+
+    Write-Host '  Pruning remote refs...' -NoNewline
+    git remote prune origin 2>$null
+    Write-Host ' done' -ForegroundColor Green
+
+    $defaultBranch = git symbolic-ref refs/remotes/origin/HEAD 2>$null
+    if ($defaultBranch) {
+        $defaultBranch = $defaultBranch -replace 'refs/remotes/origin/', ''
+    } else {
+        $defaultBranch = 'main'
+    }
+
+    $merged = git branch --merged $defaultBranch 2>$null |
+        Where-Object { $_ -notmatch "^\*|$defaultBranch|master|main|develop" } |
+        ForEach-Object { $_.Trim() }
+
+    if ($merged) {
+        Write-Host "  Deleting merged branches: $($merged -join ', ')" -ForegroundColor DarkGray
+        $merged | ForEach-Object { git branch -d $_ }
+    } else {
+        Write-Host '  No merged branches to delete.' -ForegroundColor DarkGray
+    }
+    Write-Host 'Git branches cleaned.' -ForegroundColor Green
+}
+Set-Alias -Name gitclean -Value Clear-GitBranches
+
+<#
+.SYNOPSIS
+    Prune Docker containers, images, and volumes.
+#>
+function Clear-Docker {
+    if (-not (Test-CommandExists 'docker')) { Write-Warning 'docker not found.'; return }
+
+    Write-Host "`nPruning Docker..." -ForegroundColor Cyan
+    Write-Host '  Containers...' -NoNewline
+    docker container prune -f 2>$null | Out-Null
+    Write-Host ' done' -ForegroundColor Green
+    Write-Host '  Images...' -NoNewline
+    docker image prune -f 2>$null | Out-Null
+    Write-Host ' done' -ForegroundColor Green
+    Write-Host '  Volumes...' -NoNewline
+    docker volume prune -f 2>$null | Out-Null
+    Write-Host ' done' -ForegroundColor Green
+    Write-Host '  Build cache...' -NoNewline
+    docker builder prune -f 2>$null | Out-Null
+    Write-Host ' done' -ForegroundColor Green
+    Write-Host 'Docker pruned.' -ForegroundColor Green
+}
+Set-Alias -Name cleandocker -Value Clear-Docker
+
+<#
+.SYNOPSIS
+    Rebuild the Windows icon and thumbnail cache.
+    Restarts Explorer.
+#>
+function Rebuild-WinCache {
+    Write-Host "`nRebuilding Windows icon/thumbnail cache..." -ForegroundColor Cyan
+
+    Write-Host '  Stopping Explorer...' -NoNewline
+    Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    Write-Host ' done' -ForegroundColor Green
+
+    # Delete icon cache
+    $iconCache = "$env:LOCALAPPDATA\IconCache.db"
+    Remove-Item $iconCache -Force -ErrorAction SilentlyContinue
+
+    # Delete thumbnail caches
+    $thumbDir = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer"
+    Get-ChildItem $thumbDir -Filter 'thumbcache_*.db' -Force -ErrorAction SilentlyContinue |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+
+    Write-Host '  Restarting Explorer...' -NoNewline
+    Start-Process explorer
+    Write-Host ' done' -ForegroundColor Green
+    Write-Host 'Cache rebuilt.' -ForegroundColor Green
+}
+Set-Alias -Name rebuildiconcache -Value Rebuild-WinCache
+
+<#
+.SYNOPSIS
+    Run all housekeeping tasks.
+#>
+function Invoke-Housekeeping {
+    Write-Host "`n╔══════════════════════════════╗" -ForegroundColor Magenta
+    Write-Host "║      Windows Housekeeping    ║" -ForegroundColor Magenta
+    Write-Host "╚══════════════════════════════╝`n" -ForegroundColor Magenta
+
+    Remove-WinJunk
+    Clear-Cache      # temp, browsers, GPU, npm, yarn, pip, scoop, go, pnpm, mise, etc.
+    Flush-DNS
+    Clear-Docker
+    Compact-WSL
+    Rebuild-WinCache
+
+    Write-Host "`n╔══════════════════════════════╗" -ForegroundColor Magenta
+    Write-Host "║     Housekeeping complete!   ║" -ForegroundColor Magenta
+    Write-Host "╚══════════════════════════════╝`n" -ForegroundColor Magenta
+}
+Set-Alias -Name housekeeping -Value Invoke-Housekeeping
 
 # -------------------------------------------------------------------------------------------------
 # vim: ft=ps1 sw=4 ts=4 et
