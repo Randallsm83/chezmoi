@@ -419,7 +419,7 @@ package_mapping:
   # Version Control & Authentication
   git:
     windows:
-      scoop: [git, gh, lazygit]
+      scoop: [git, gh, glab, lazygit]
       winget: [Git.Git]
       mise: []
     linux:
@@ -637,7 +637,7 @@ package_mapping:
       winget: [Microsoft.PowerShell]
       mise: []
       pwsh_modules: [Terminal-Icons, AudioDeviceCmdlets, Profiler, PSProfiler, Microsoft.WinGet.Client, Microsoft.WinGet.CommandNotFound]
-      psc_completions: [7z, arch, bun, cargo, dirname, docker, env, gh, git, head, mise, node, npm, pip, powershell, psc, pwsh, python, scoop, scoop-install, scoop-update, uv, winget, wsl, yarn, zoxide, df, scoop-checkver]
+      psc_completions: [7z, arch, bun, cargo, dirname, docker, env, gh, git, head, mise, node, npm, pip, powershell, psc, pwsh, python, scoop, uv, winget, wsl, yarn, zoxide, df, scoop-checkver]
     linux:
       apt: []
       dnf: []
@@ -1136,8 +1136,6 @@ scoop_bucket_overrides:
     - whois
   abyss:
     - abgox.PSCompletions
-    - abgox.scoop-install
-    - abgox.scoop-update
     - kelleyma49.PSFzf
     - PowerShell.PSReadLine
 
@@ -1158,8 +1156,6 @@ always_install:
     - dark
     - scoop-search
     - sudo
-    - abgox.scoop-install
-    - abgox.scoop-update
 
   winget: []
 
@@ -1178,7 +1174,7 @@ always_install:
   dnf: []
 
   mise:
-    - usage
+    - aqua:jdx/usage
     - zig
 
   mise_unix:
