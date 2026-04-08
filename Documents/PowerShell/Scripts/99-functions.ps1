@@ -807,7 +807,7 @@ function rust-tools {
         @{ Rust = 'fd';                 Replaces = 'find';             Binary = 'fd';        Invoke = @('find') }
         @{ Rust = 'eza';                Replaces = 'ls';               Binary = 'eza';       Invoke = @('ls','ll','la','lt') }
         @{ Rust = 'delta';              Replaces = 'diff';             Binary = 'delta';     Invoke = @('diff') }
-        @{ Rust = 'zoxide';             Replaces = 'cd';               Binary = 'zoxide';    Invoke = @('z') }
+        @{ Rust = 'zoxide';             Replaces = 'cd';               Binary = 'zoxide';    Invoke = @('cd') }
         @{ Rust = 'vivid';              Replaces = 'dircolors';        Binary = 'vivid';     Invoke = @() }
         @{ Rust = 'uutils-coreutils';   Replaces = 'coreutils';        Binary = 'uname';     Invoke = @() }
         @{ Rust = 'tealdeer';           Replaces = 'tldr/man';         Binary = 'tldr';      Invoke = @('tldr','help') }
