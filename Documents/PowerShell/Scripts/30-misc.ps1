@@ -7,8 +7,18 @@
 # Miscellaneous XDG-compliant tool configurations
 
 # =================================================================================================
-# Docker
+# Unix compatibility — set HOME env var for tools that expect it (Node.js, Yarn, Git, etc.)
+# PowerShell has $HOME but doesn't set $env:HOME; most Unix-origin tools read the env var.
 # =================================================================================================
+if (-not $env:HOME) { $env:HOME = $env:USERPROFILE }
+
+# =================================================================================================
+# Docker — daemon runs inside Arch WSL2 (dockerd via systemd).
+# Connects via Windows portproxy: 127.0.0.1:2375 → WSL2 VM IP:2375.
+# The portproxy is set up once with admin rights (gsudo netsh ...).
+# If the portproxy stops working (WSL IP changed), run: yarn docker:proxy
+# =================================================================================================
+if (-not $env:DOCKER_HOST) { $env:DOCKER_HOST = 'tcp://127.0.0.1:2375' }
 $env:DOCKER_CONFIG = "$env:XDG_CONFIG_HOME\docker"
 
 # =================================================================================================

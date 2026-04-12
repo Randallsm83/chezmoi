@@ -69,17 +69,17 @@ _rust_cmd_active() {
 function rust-tools() {
   local -a tools=(
     'bat:cat:bat:cat'
-    'ripgrep:grep:rg:'
+    'ripgrep:grep:rg:grep'
     'fd:find:fd:'
     'eza:ls:eza:ls,ll,la,lt'
-    'delta:diff:delta:'
+    'delta:diff:delta:diff'
     'zoxide:cd:zoxide:z'
     'vivid:dircolors:vivid:'
     'tealdeer:tldr/man:tldr:tldr,help'
     'navi:cheatsheets:navi:'
-    'sd:sed:sd:'
-    'dust:du:dust:'
-    'procs:ps/top:procs:'
+    'sd:sed:sd:sed'
+    'dust:du:dust:du'
+    'procs:ps/top:procs:ps'
     'hyperfine:time/benchmark:hyperfine:bench'
     'just:make (tasks):just:'
     'tokei:cloc/sloccount:tokei:cloc'
@@ -89,6 +89,12 @@ function rust-tools() {
 
   local installed=0
   local total=${#tools}
+  local div='──────────────────────────────────────────────────────'
+
+  printf '\n  \033[35m🦀 Rust CLI Alternatives\033[0m\n'
+  printf '  \033[90m%s\033[0m\n' "$div"
+  printf '    \033[90m%-24s  %-16s %s\033[0m\n' 'PACKAGE' 'REPLACES' 'ALIASES'
+  printf '  \033[90m%s\033[0m\n' "$div"
 
   for entry in "${tools[@]}"; do
     local name="${entry%%:*}"
@@ -98,12 +104,14 @@ function rust-tools() {
     local binary="${rest2%%:*}"
     local invoke_str="${rest2#*:}"
 
+    local pkg_label="$name"
+    [[ "$binary" != "$name" ]] && pkg_label="$name ($binary)"
+
     if (( $+commands[$binary] )); then
-      printf '\033[32m✓\033[0m %-22s → %-22s \033[90m(%s)\033[0m' "$name" "$replaces" "$binary"
+      printf '  \033[32m✓\033[0m %-24s \033[90m→\033[0m %-16s  ' "$pkg_label" "$replaces"
       (( installed++ ))
       if [[ -n "$invoke_str" ]]; then
         local invoke_cmds=(${(s:,:)invoke_str})
-        printf '  '
         for cmd in "${invoke_cmds[@]}"; do
           if _rust_cmd_active "$cmd" "$binary"; then
             printf '\033[32m%s\033[0m ' "$cmd"
@@ -113,14 +121,13 @@ function rust-tools() {
         done
       fi
     else
-      printf '\033[31m✗\033[0m %-22s → %-22s \033[90m(%s)\033[0m' "$name" "$replaces" "$binary"
+      printf '  \033[31m✗\033[0m %-24s \033[90m→\033[0m %-16s' "$pkg_label" "$replaces"
     fi
     printf '\n'
   done
 
-  echo ""
-  printf '\033[36m%d/%d Rust alternatives installed\033[0m\n' "$installed" "$total"
-  printf '\033[90mInvoke: \033[32mgreen\033[90m = active alias, \033[31mred\033[90m = not configured\033[0m\n'
+  printf '  \033[90m%s\033[0m\n' "$div"
+  printf '  \033[36m%d/%d installed\033[0m  \033[90m│\033[0m  \033[32m● active\033[0m  \033[31m● missing\033[0m\n\n' "$installed" "$total"
 }
 
 # -------------------------------------------------------------------------------------------------

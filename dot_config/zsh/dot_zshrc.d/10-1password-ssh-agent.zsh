@@ -23,16 +23,30 @@ if is-macos; then
   # macOS: 1Password agent socket location
   export SSH_AUTH_SOCK="$HOME/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 elif is-wsl; then
-  # WSL: Use Windows SSH client (ssh.exe) to access 1Password agent
-  # This leverages WSL interoperability - the Windows SSH client automatically
-  # connects to the 1Password SSH agent on Windows. Much simpler than named pipes!
+  # WSL: Bridge the Windows 1Password named pipe to a Unix socket via socat + npiperelay.
+  # This allows both interactive SSH (via alias) and non-interactive tools (git, brew, etc.)
+  # to authenticate using 1Password keys.
+  local _1p_sock="$HOME/.1password/agent.sock"
+  local _npiperelay="/mnt/c/Users/randa/scoop/apps/npiperelay/current/npiperelay.exe"
+
+  # Start the bridge if the socket doesn't exist or agent isn't responding
+  if [[ ! -S "$_1p_sock" ]] || ! SSH_AUTH_SOCK="$_1p_sock" ssh-add -l &>/dev/null 2>&1; then
+    rm -f "$_1p_sock"
+    mkdir -p "${_1p_sock:h}"
+    (setsid socat UNIX-LISTEN:"$_1p_sock",fork \
+      EXEC:"$_npiperelay -ei -s //./pipe/openssh-ssh-agent",nofork \
+      &>/dev/null &)
+    sleep 0.1
+  fi
+
+  export SSH_AUTH_SOCK="$_1p_sock"
+
+  # Alias ssh/ssh-add to Windows binaries for interactive terminal use
+  # (works identically and avoids any WSL interop edge cases)
   local win_ssh="/mnt/c/Windows/System32/OpenSSH/ssh.exe"
   local win_ssh_add="/mnt/c/Windows/System32/OpenSSH/ssh-add.exe"
-  export GIT_SSH_COMMAND="$win_ssh"
   alias ssh="$win_ssh"
   alias ssh-add="$win_ssh_add"
-  # Unset SSH_AUTH_SOCK since we are using Windows SSH
-  unset SSH_AUTH_SOCK
 else
   # Native Linux with 1Password agent
   export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"

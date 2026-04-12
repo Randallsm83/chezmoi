@@ -822,31 +822,50 @@ function rust-tools {
         @{ Rust = 'xh';                 Replaces = 'curl (HTTP)';      Binary = 'xh';        Invoke = @('http','https') }
     )
 
-    $tools | ForEach-Object {
-        $installed = [bool](Get-Command $_.Binary -ErrorAction SilentlyContinue)
-        $status = if ($installed) { '✓' } else { '✗' }
-        $color = if ($installed) { 'Green' } else { 'Red' }
-        $line = "{0} {1,-22} → {2,-22} ({3})" -f $status, $_.Rust, $_.Replaces, $_.Binary
-        Write-Host $line -ForegroundColor $color -NoNewline
+    $div = '─' * 56
 
-        if ($installed -and $_.Invoke.Count -gt 0) {
-            Write-Host '   ' -NoNewline
-            foreach ($cmd in $_.Invoke) {
-                $active = if ($cmd -eq $_.Binary) {
+    Write-Host ''
+    Write-Host '  🦀 Rust CLI Alternatives' -ForegroundColor Magenta
+    Write-Host "  $div" -ForegroundColor DarkGray
+    Write-Host ('    {0,-24}  {1,-16} {2}' -f 'PACKAGE', 'REPLACES', 'ALIASES') -ForegroundColor DarkGray
+    Write-Host "  $div" -ForegroundColor DarkGray
+
+    $installed = 0
+    foreach ($t in $tools) {
+        $found = [bool](Get-Command $t.Binary -ErrorAction SilentlyContinue)
+        if ($found) { $installed++ }
+
+        $icon = if ($found) { '✓' } else { '✗' }
+        $iconColor = if ($found) { 'Green' } else { 'Red' }
+        $pkgLabel = if ($t.Binary -ne $t.Rust) { "$($t.Rust) ($($t.Binary))" } else { $t.Rust }
+
+        Write-Host '  ' -NoNewline
+        Write-Host $icon -ForegroundColor $iconColor -NoNewline
+        Write-Host (' {0,-24}' -f $pkgLabel) -ForegroundColor White -NoNewline
+        Write-Host '→ ' -ForegroundColor DarkGray -NoNewline
+        Write-Host ('{0,-16}' -f $t.Replaces) -ForegroundColor DarkGray -NoNewline
+
+        if ($found -and $t.Invoke.Count -gt 0) {
+            Write-Host '  ' -NoNewline
+            foreach ($cmd in $t.Invoke) {
+                $active = if ($cmd -eq $t.Binary) {
                     [bool](Get-Command $cmd -ErrorAction SilentlyContinue)
                 } else {
                     [bool](Get-Command $cmd -CommandType Alias, Function -ErrorAction SilentlyContinue)
                 }
-                $invokeColor = if ($active) { 'Green' } else { 'Red' }
-                Write-Host "$cmd " -ForegroundColor $invokeColor -NoNewline
+                $c = if ($active) { 'Green' } else { 'Red' }
+                Write-Host "$cmd " -ForegroundColor $c -NoNewline
             }
         }
         Write-Host ''
     }
 
-    $installedCount = ($tools | Where-Object { Get-Command $_.Binary -ErrorAction SilentlyContinue }).Count
-    Write-Host "`n$installedCount/$($tools.Count) Rust alternatives installed" -ForegroundColor Cyan
-    Write-Host 'Invoke: green = active alias, red = not configured' -ForegroundColor DarkGray
+    Write-Host "  $div" -ForegroundColor DarkGray
+    Write-Host ('  {0}/{1} installed' -f $installed, $tools.Count) -ForegroundColor Cyan -NoNewline
+    Write-Host '  │  ' -ForegroundColor DarkGray -NoNewline
+    Write-Host '● active ' -ForegroundColor Green -NoNewline
+    Write-Host '● missing' -ForegroundColor Red
+    Write-Host ''
 }
 
 # ================================================================================================

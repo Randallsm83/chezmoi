@@ -1,88 +1,112 @@
-# SSH Configuration for 1Password Agent
-# Works across Windows, WSL, macOS, and Linux
-# Uses 1Password agent for key management with per-host restrictions
-
-# Platform-specific configuration (WSL, macOS, etc.)
-# Create ~/.ssh/config.d/<platform> files as needed
+# SSH Configuration
+# Works across Windows, WSL, macOS, and Linux via 1Password SSH agent.
+#
+# Key selection strategy:
+#   Mac/Linux — IdentityFile .pub hints tell 1Password which specific key to
+#               offer per host, avoiding the OpenSSH 6-key auth limit.
+#               Private keys never leave 1Password.
+#   Windows   — 1Password authenticates all hosts through the named pipe;
+#               IdentityFile hints are ignored by design.
+#
+# Key rotation: edit the SSH Key item in the 1Password app (generate new key).
+# Run `chezmoi apply` afterward — .pub files update automatically, no template
+# edits needed as long as item names stay stable.
+#
+# Platform-specific overrides (WSL, etc.): ~/.ssh/config.d/<platform>
 Include config.d/*
 
-# GitHub
-Host github.com
+# ── Git Hosting ───────────────────────────────────────────────────────────────
+
+# GitHub  (alias: gh)
+# Use git@gh:user/repo.git or git@github.com:user/repo.git interchangeably.
+Host gh github.com
   HostName github.com
   User git
-  PubkeyAuthentication yes
-  IdentitiesOnly no
+{{- if ne .chezmoi.os "windows" }}
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/github_com.pub
+{{- end }}
 
-# GitLab
-Host gitlab.com
+# GitLab  (alias: gl)
+# Use git@gl:user/repo.git or git@gitlab.com:user/repo.git interchangeably.
+Host gl gitlab.com
   HostName gitlab.com
   User git
-  PubkeyAuthentication yes
+{{- if ne .chezmoi.os "windows" }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/gitlab_com.pub
+{{- end }}
 
-# DreamHost Git
-Host git.dreamhost.com
+# DreamHost Git  (alias: dh-git)
+Host dh-git git.dreamhost.com
   HostName git.dreamhost.com
   User rmiller
-  PubkeyAuthentication yes
+{{- if ne .chezmoi.os "windows" }}
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/dh_git.pub
+{{- end }}
 
-# DreamHost yakko shell server
+# ── DreamHost Servers ─────────────────────────────────────────────────────────
+# ForwardAgent enabled on all — git deployments run from these servers.
+
 Host yakko
   HostName ***REMOVED***
   User rmiller
   ForwardAgent yes
-  PubkeyAuthentication yes
-  IdentitiesOnly no
+{{- if ne .chezmoi.os "windows" }}
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/dh_yakko.pub
+{{- end }}
 
-# DreamHost porky shell server
 Host porky
   HostName ***REMOVED***
   User rmiller
   ForwardAgent yes
-  PubkeyAuthentication yes
+{{- if ne .chezmoi.os "windows" }}
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/dh_porky.pub
+{{- end }}
 
-# DreamHost ***REMOVED*** shell server
+# VPS running ***REMOVED*** app — git deploy access required.
 Host ***REMOVED***
   HostName ***REMOVED***
   User ***REMOVED***
   ForwardAgent yes
-  PubkeyAuthentication yes
-  IdentitiesOnly no
+{{- if ne .chezmoi.os "windows" }}
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/***REMOVED***.pub
+{{- end }}
 
-# DreamHost dreampress server
+# DreamPress WordPress server — git deploy access required.
 Host fp3
   HostName ***REMOVED***
   User ***REMOVED***
   ForwardAgent yes
-  PubkeyAuthentication yes
-  IdentitiesOnly no
+{{- if ne .chezmoi.os "windows" }}
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/fp3.pub
+{{- end }}
 
-# Global defaults - security hardening and reliability
-# IMPORTANT: Host * must be last so per-host overrides (like ForwardAgent) take effect
+# ── Global Defaults ───────────────────────────────────────────────────────────
+# IMPORTANT: Host * must be last so per-host overrides take effect first.
 Host *
 {{- if not .is_remote }}
-  # 1Password SSH agent (platform-specific path)
-  # On remote machines, this is omitted so the forwarded agent ($SSH_AUTH_SOCK) is used
+  # 1Password SSH agent path (platform-specific).
+  # Omitted on remote machines so the forwarded agent ($SSH_AUTH_SOCK) is used.
 {{-   if eq .chezmoi.os "windows" }}
   IdentityAgent "//./pipe/openssh-ssh-agent"
 {{-   else }}
   IdentityAgent ~/.1password/agent.sock
 {{-   end }}
 {{- end }}
-
-  # Security settings
+  # Allow the agent to offer keys not listed in IdentityFile.
+  # Per-host blocks above override this with yes + a specific .pub hint.
   IdentitiesOnly no
   AddKeysToAgent no
   ForwardAgent no
   HashKnownHosts yes
   PreferredAuthentications publickey
   GSSAPIAuthentication no
-
-  # Connection reliability
+  # Keep connections alive across idle periods.
   ServerAliveInterval 60
   ServerAliveCountMax 3
-
-  # Note: IdentityFile is NOT set here
-  # 1Password agent automatically selects the correct key based on "Allowed hosts"
-  # configured in each SSH Key item in 1Password
