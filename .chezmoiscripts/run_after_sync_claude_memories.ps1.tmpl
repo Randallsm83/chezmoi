@@ -1,0 +1,54 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Sync Claude Code project memories from chezmoi-managed canonical locations
+# to the platform-specific encoded paths Claude Code expects.
+#
+# Memories are stored in ~/.claude/project-memories/<name>/ (managed by chezmoi)
+# and symlinked to ~/.claude/projects/<encoded-path>/memory/
+
+$ErrorActionPreference = 'Stop'
+
+$ClaudeDir = "{{ .chezmoi.homeDir }}\.claude"
+$MemoriesDir = "$ClaudeDir\project-memories"
+$ProjectsDir = "$ClaudeDir\projects"
+
+function Get-EncodedPath {
+    param([string]$FullPath)
+    # Claude Code encodes paths: replace : and \ with -
+    $FullPath -replace '[:\\/]', '-'
+}
+
+{{ range $name, $relpath := .claude_memory_projects -}}
+# Project: {{ $name }} -> {{ $relpath }}
+$FullPath = "{{ $.chezmoi.homeDir }}\{{ $relpath | replace "/" "\\" }}"
+$Encoded = Get-EncodedPath $FullPath
+$TargetDir = "$ProjectsDir\$Encoded"
+$MemoryLink = "$TargetDir\memory"
+$SourceDir = "$MemoriesDir\{{ $name }}"
+
+if (Test-Path $SourceDir) {
+    if (-not (Test-Path $TargetDir)) {
+        New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+    }
+
+    if (Test-Path $MemoryLink) {
+        $item = Get-Item $MemoryLink -Force
+        if ($item.LinkType -eq 'SymbolicLink' -or $item.LinkType -eq 'Junction') {
+            $currentTarget = $item.Target
+            if ($currentTarget -ne $SourceDir) {
+                Remove-Item $MemoryLink -Force -Recurse
+                New-Item -ItemType Junction -Path $MemoryLink -Target $SourceDir | Out-Null
+            }
+        } else {
+            # Real directory — back it up and replace
+            $backup = "$MemoryLink.bak.$(Get-Date -Format 'yyyyMMddHHmmss')"
+            Move-Item $MemoryLink $backup
+            New-Item -ItemType Junction -Path $MemoryLink -Target $SourceDir | Out-Null
+        }
+    } else {
+        New-Item -ItemType Junction -Path $MemoryLink -Target $SourceDir | Out-Null
+    }
+}
+
+{{ end -}}
+{{- end }}

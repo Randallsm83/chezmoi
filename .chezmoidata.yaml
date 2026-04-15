@@ -1220,4 +1220,17 @@ remote_packages:
       - neovim
       - sqlite
 
+# ============================================================================
+# Claude Code Memory Projects
+# ============================================================================
+# Maps human-readable project names to relative paths from $HOME.
+# Used by run_after script to create symlinks from Claude Code's
+# platform-encoded project paths to chezmoi-managed memory directories.
+#
+# Claude Code encodes paths like: C:\Users\randa\projects → C--Users-randa-projects
+# The encoding differs per OS, so we compute it at apply time.
+claude_memory_projects:
+  dotfiles: "projects/dotfiles"
+  projects: "projects"
+
 # vim: ts=2 sts=2 sw=2 et

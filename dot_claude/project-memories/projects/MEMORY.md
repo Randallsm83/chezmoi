@@ -1,0 +1,3 @@
+- [User environment & editor preferences](user_environment.md) — Neovim, zsh, Warp terminal, multi-platform (Win/Mac/Linux)
+- [Custom Perl LSP plugin](project_perl_lsp_plugin.md) — perl-navigator-lsp registered at ~/.claude/plugins/, provides Perl intelligence for DH codebase
+- [Never modify app databases without true backup](feedback_warp_db.md) — Always cp before any DB changes; don't chain destructive ops
