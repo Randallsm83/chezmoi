@@ -1,16 +1,13 @@
 {{- if ne .chezmoi.os "windows" -}}
 #!/bin/bash
-# Sync Claude Code project memories from chezmoi-managed canonical locations
-# to the platform-specific encoded paths Claude Code expects.
-#
-# Memories are stored in ~/.claude/project-memories/<name>/ (managed by chezmoi)
-# and symlinked to ~/.claude/projects/<encoded-path>/memory/
+# Sync Claude Code project memories by symlinking platform-encoded
+# project paths directly to chezmoi source. New memories written by
+# Claude Code land in the source repo, visible in git diff immediately.
 
 set -euo pipefail
 
-CLAUDE_DIR="{{ .chezmoi.homeDir }}/.claude"
-MEMORIES_DIR="$CLAUDE_DIR/project-memories"
-PROJECTS_DIR="$CLAUDE_DIR/projects"
+SOURCE_MEMORIES="{{ .chezmoi.sourceDir }}/dot_claude/project-memories"
+PROJECTS_DIR="{{ .chezmoi.homeDir }}/.claude/projects"
 
 # Encode a full path the way Claude Code does: replace / with -
 # and strip the leading dash
@@ -24,11 +21,10 @@ FULL_PATH="{{ $.chezmoi.homeDir }}/{{ $relpath }}"
 ENCODED=$(encode_path "$FULL_PATH")
 TARGET_DIR="$PROJECTS_DIR/$ENCODED"
 MEMORY_LINK="$TARGET_DIR/memory"
-SOURCE_DIR="$MEMORIES_DIR/{{ $name }}"
+SOURCE_DIR="$SOURCE_MEMORIES/{{ $name }}"
 
 if [ -d "$SOURCE_DIR" ]; then
     mkdir -p "$TARGET_DIR"
-    # Remove existing memory dir/link if it's not already correct
     if [ -L "$MEMORY_LINK" ]; then
         CURRENT_TARGET=$(readlink "$MEMORY_LINK")
         if [ "$CURRENT_TARGET" != "$SOURCE_DIR" ]; then
@@ -36,7 +32,6 @@ if [ -d "$SOURCE_DIR" ]; then
             ln -s "$SOURCE_DIR" "$MEMORY_LINK"
         fi
     elif [ -d "$MEMORY_LINK" ]; then
-        # Memory dir exists as a real directory — back it up and replace
         mv "$MEMORY_LINK" "$MEMORY_LINK.bak.$(date +%s)"
         ln -s "$SOURCE_DIR" "$MEMORY_LINK"
     else

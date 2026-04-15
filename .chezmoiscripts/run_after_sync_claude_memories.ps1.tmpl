@@ -1,20 +1,16 @@
 {{- if eq .chezmoi.os "windows" -}}
 #!/usr/bin/env pwsh
-# Sync Claude Code project memories from chezmoi-managed canonical locations
-# to the platform-specific encoded paths Claude Code expects.
-#
-# Memories are stored in ~/.claude/project-memories/<name>/ (managed by chezmoi)
-# and symlinked to ~/.claude/projects/<encoded-path>/memory/
+# Sync Claude Code project memories by junctioning platform-encoded
+# project paths directly to chezmoi source. New memories written by
+# Claude Code land in the source repo, visible in git diff immediately.
 
 $ErrorActionPreference = 'Stop'
 
-$ClaudeDir = "{{ .chezmoi.homeDir }}\.claude"
-$MemoriesDir = "$ClaudeDir\project-memories"
-$ProjectsDir = "$ClaudeDir\projects"
+$SourceMemories = "{{ .chezmoi.sourceDir }}\dot_claude\project-memories"
+$ProjectsDir = "{{ .chezmoi.homeDir }}\.claude\projects"
 
 function Get-EncodedPath {
     param([string]$FullPath)
-    # Claude Code encodes paths: replace : and \ with -
     $FullPath -replace '[:\\/]', '-'
 }
 
@@ -24,7 +20,7 @@ $FullPath = "{{ $.chezmoi.homeDir }}\{{ $relpath | replace "/" "\\" }}"
 $Encoded = Get-EncodedPath $FullPath
 $TargetDir = "$ProjectsDir\$Encoded"
 $MemoryLink = "$TargetDir\memory"
-$SourceDir = "$MemoriesDir\{{ $name }}"
+$SourceDir = "$SourceMemories\{{ $name }}"
 
 if (Test-Path $SourceDir) {
     if (-not (Test-Path $TargetDir)) {

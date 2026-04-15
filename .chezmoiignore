@@ -58,6 +58,10 @@ CHEZMOI-GUIDE.md
 REINSTALL.md
 CLAUDE.md
 
+# Claude Code memories (live in chezmoi source, junctioned at apply time)
+.claude/project-memories
+.claude/project-memories/**
+
 # Bootstrap scripts
 bootstrap.ps1
 setup.sh
