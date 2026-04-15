@@ -645,7 +645,7 @@ package_mapping:
       brew: [powershell]
       mise: []
     darwin:
-      brew: [powershell]
+      brew: []
       mise: []
 
   fzf:
@@ -866,14 +866,14 @@ package_mapping:
       winget: []
       mise: [php@latest]
     linux:
-      apt: [php]
-      dnf: [php]
-      pacman: [php]
-      brew: [php]
-      mise: []
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: [php@latest]
     darwin:
-      brew: [php]
-      mise: []
+      brew: []
+      mise: [php@latest]
 
   # Rust CLI Alternatives
   # Rust CLI Alternatives (all Rust tool replacements, except starship)
@@ -921,7 +921,7 @@ package_mapping:
       brew: [arduino-cli]
       mise: []
     darwin:
-      brew: [arduino-cli]
+      brew: []
       mise: []
 
   vagrant:
@@ -936,7 +936,7 @@ package_mapping:
       brew: [vagrant]
       mise: []
     darwin:
-      brew: [vagrant]
+      brew: []
       mise: []
 
   # Fonts (Nerd Font families)
@@ -984,7 +984,7 @@ package_mapping:
       brew: [ludusavi]
       mise: []
     darwin:
-      brew: [ludusavi]
+      brew: []
       mise: []
 
   # Container Tools
@@ -1016,7 +1016,7 @@ package_mapping:
       brew: [smartmontools]
       mise: []
     darwin:
-      brew: [smartmontools]
+      brew: []
       mise: []
 
   # Windows System Utilities
@@ -1064,7 +1064,7 @@ package_mapping:
       brew: [rclone]
       mise: []
     darwin:
-      brew: [rclone]
+      brew: []
       mise: []
 
   # Miscellaneous Development
@@ -1080,7 +1080,7 @@ package_mapping:
       brew: [pandoc]
       mise: []
     darwin:
-      brew: [pandoc]
+      brew: []
       mise: []
 
 # ============================================================================

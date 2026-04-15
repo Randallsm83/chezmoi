@@ -56,6 +56,7 @@ ARCHITECTURE.md
 CONTRIBUTING.md
 CHEZMOI-GUIDE.md
 REINSTALL.md
+CLAUDE.md
 
 # Bootstrap scripts
 bootstrap.ps1
