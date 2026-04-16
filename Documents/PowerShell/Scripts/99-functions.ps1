@@ -1270,6 +1270,29 @@ Set-Alias -Name rebuildiconcache -Value Rebuild-WinCache
 
 <#
 .SYNOPSIS
+    Repair Scoop 'current' junctions broken by Windows 11 RedirectionGuard.
+.DESCRIPTION
+    Windows 11 (24H2+) marks junctions created by non-elevated processes as
+    untrusted, causing shims to fail. Run this after scoop install/update.
+    Delegates to Repair-ScoopJunctions.ps1 which self-elevates via UAC.
+.PARAMETER App
+    Specific app to fix. Defaults to '*' (all apps).
+#>
+function Repair-ScoopJunctions {
+    param([string]$App = '*')
+    $script = Join-Path $env:USERPROFILE '.local' 'bin' 'Repair-ScoopJunctions.ps1'
+    if (-not (Test-Path $script)) {
+        Write-Warning "Script not found: $script"
+        Write-Warning 'Run: chezmoi apply'
+        return
+    }
+    $argList = if ($App -ne '*') { "-App `"$App`"" } else { '' }
+    & pwsh -NoProfile -ExecutionPolicy Bypass -File $script @($argList -split ' ' | Where-Object { $_ })
+}
+Set-Alias -Name fix-scoop -Value Repair-ScoopJunctions
+
+<#
+.SYNOPSIS
     Run all housekeeping tasks.
 #>
 function Invoke-Housekeeping {
