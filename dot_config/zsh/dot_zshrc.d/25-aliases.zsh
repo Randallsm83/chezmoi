@@ -41,6 +41,14 @@ alias dh='cd $DHSPACE'
 alias dots='cd $DOTFILES'
 alias notes='cd ~/notes'
 
+# Chezmoi
+alias czs='chezmoi status'                          # what's changed
+alias czd='chezmoi diff'                            # preview changes
+alias czdr='chezmoi apply --dry-run --verbose'      # dry run with detail
+alias cza='chezmoi apply'                           # apply changes
+alias cze='chezmoi edit'                            # edit a managed file
+alias czcd='cd $(chezmoi source-path)'              # jump to source dir
+
 # Edit configs
 alias nrc='${=EDITOR} $XDG_CONFIG_HOME/nvim/init.lua'
 alias vrc='${=EDITOR} $XDG_CONFIG_HOME/vim/vimrc'
