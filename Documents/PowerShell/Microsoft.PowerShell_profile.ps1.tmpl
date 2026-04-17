@@ -30,6 +30,16 @@ foreach ($dir in $toolStateDirs) {
     }
 }
 
+# Force UTF-8 for console I/O so Unicode (e.g. box-drawing chars from Node/WSL
+# tooling like ldex) renders correctly instead of as CP850/CP1252 garbage.
+# Must run before any subprocess inherits the encoding.
+[Console]::InputEncoding  = [System.Text.UTF8Encoding]::new()
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding           = [System.Text.UTF8Encoding]::new()
+$PSDefaultParameterValues['Out-File:Encoding']    = 'utf8'
+$PSDefaultParameterValues['Set-Content:Encoding'] = 'utf8'
+$PSDefaultParameterValues['Add-Content:Encoding'] = 'utf8'
+
 # PSReadLine configuration - load BEFORE Starship to avoid GetHistoryItems errors
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
