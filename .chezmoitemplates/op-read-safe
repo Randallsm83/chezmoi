@@ -1,0 +1,16 @@
+{{- /*
+Safely read a 1Password secret reference, returning an empty string on any
+error (op binary missing, not signed in, item not found, network hiccup, …)
+instead of aborting the entire chezmoi apply.
+
+Usage:
+  {{ includeTemplate "op-read-safe" (dict "ref" "op://vault/item/field" "os" .chezmoi.os) }}
+*/ -}}
+{{- $ref := .ref -}}
+{{- if not (lookPath "op") -}}
+{{- /* op CLI not installed → produce empty output */ -}}
+{{- else if eq .os "windows" -}}
+{{- output "pwsh" "-NoProfile" "-NonInteractive" "-Command" (printf "try { op read '%s' 2>$null } catch { '' }" $ref) -}}
+{{- else -}}
+{{- output "sh" "-c" (printf "op read %q 2>/dev/null || true" $ref) -}}
+{{- end -}}

@@ -92,6 +92,60 @@ pacman_packages="$pacman_packages {{ . }}"
 #   3. system pkg manager - ONLY for bootstrap/build dependencies
 # ============================================================================
 
+# ----------------------------------------------------------------------------
+# GitHub API authentication for mise
+# ----------------------------------------------------------------------------
+# mise backends (ubi, aqua, cargo-binstall, github-releases) query the GitHub
+# API to resolve tool versions and download assets. Anonymous requests are
+# throttled to 60/hour per IP which is trivially exhausted on a fresh machine
+# install. Authenticated requests get 5,000/hour.
+#
+# Resolution order:
+#   1. Respect an existing GITHUB_TOKEN / MISE_GITHUB_TOKEN in the environment
+#   2. Pull a PAT from 1Password ("GitHub Token" item) when op is authenticated
+#   3. Fall back to anonymous (script will warn and continue)
+setup_github_token() {
+    # Already provided by the caller / shell env
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        export MISE_GITHUB_TOKEN="${MISE_GITHUB_TOKEN:-$GITHUB_TOKEN}"
+        export GH_TOKEN="${GH_TOKEN:-$GITHUB_TOKEN}"
+        echo "  Using GITHUB_TOKEN from environment"
+        return 0
+    fi
+    if [ -n "${MISE_GITHUB_TOKEN:-}" ]; then
+        export GITHUB_TOKEN="${MISE_GITHUB_TOKEN}"
+        export GH_TOKEN="${GH_TOKEN:-$MISE_GITHUB_TOKEN}"
+        echo "  Using MISE_GITHUB_TOKEN from environment"
+        return 0
+    fi
+
+    # Try 1Password CLI (if installed and signed in)
+    if command -v op >/dev/null 2>&1 && op whoami >/dev/null 2>&1; then
+        local token=""
+        for field in token credential password; do
+            token="$(op item get "GitHub Token" --fields "$field" --reveal 2>/dev/null || true)"
+            # Strip accidental quoting that op sometimes emits around secret refs
+            token="${token%\"}"
+            token="${token#\"}"
+            if [ -n "$token" ]; then
+                export GITHUB_TOKEN="$token"
+                export MISE_GITHUB_TOKEN="$token"
+                export GH_TOKEN="$token"
+                echo "  Loaded GITHUB_TOKEN from 1Password (field: $field)"
+                return 0
+            fi
+        done
+    fi
+
+    echo "  Warning: no GITHUB_TOKEN available - mise installs may hit GitHub's 60 req/hr anonymous rate limit"
+    echo "           Set GITHUB_TOKEN or add a 'GitHub Token' item to 1Password to avoid this."
+    return 1
+}
+
+echo ""
+echo "Configuring GitHub API authentication for mise..."
+setup_github_token || true
+
 # 1. Install mise tools declared in config (PRIMARY)
 # Tools are declared in ~/.config/mise/config.toml (managed by chezmoi template)
 echo ""

@@ -1,1 +1,1 @@
-{{ onepasswordRead "op://Personal/fp3 SSH Key/public key" }}
+{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/fp3 SSH Key/public key" "os" .chezmoi.os) }}

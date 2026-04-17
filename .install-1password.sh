@@ -17,12 +17,32 @@ echo "Installing 1Password CLI..." >&2
 case "$(uname -s)" in
 Darwin)
     # macOS
+    # Ensure Homebrew is on PATH (might be installed but not yet shell-initialised)
+    for brew_bin in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+        if [ -x "$brew_bin" ] && ! type brew >/dev/null 2>&1; then
+            eval "$("$brew_bin" shellenv)"
+            break
+        fi
+    done
+
+    # Install Homebrew if missing (official non-interactive installer)
+    if ! type brew >/dev/null 2>&1; then
+        echo "Homebrew not found - installing non-interactively..." >&2
+        NONINTERACTIVE=1 /bin/bash -c \
+            "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+            || { echo "Warning: Homebrew install failed - continuing without op" >&2; exit 0; }
+        for brew_bin in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+            [ -x "$brew_bin" ] && eval "$("$brew_bin" shellenv)" && break
+        done
+    fi
+
     if type brew >/dev/null 2>&1; then
-        brew install --cask 1password-cli
+        brew install --cask 1password-cli \
+            || { echo "Warning: brew install 1password-cli failed - continuing without op" >&2; exit 0; }
         exit 0
     fi
-    echo "Error: Homebrew not found" >&2
-    exit 1
+    echo "Warning: Homebrew still unavailable - continuing without op" >&2
+    exit 0
     ;;
 Linux)
     # Linux - prefer mise for consistency across platforms

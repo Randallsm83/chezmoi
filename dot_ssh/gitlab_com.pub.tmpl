@@ -1,1 +1,1 @@
-{{ onepasswordRead "op://Personal/GitLab SSH Key/public key" }}
+{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/GitLab SSH Key/public key" "os" .chezmoi.os) }}

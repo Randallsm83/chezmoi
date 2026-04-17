@@ -387,15 +387,29 @@ install_and_apply_dotfiles() {
         log_error "curl is not available. Cannot proceed."
         return 1
     fi
-    
+
+    # The get.chezmoi.io installer defaults to dropping the binary at ./bin/chezmoi,
+    # i.e. relative to the current working directory. On macOS the root volume is
+    # read-only under APFS and many common CWDs (/, /usr, etc.) are locked down by
+    # SIP, which produces "Read-only file system" errors. Pin the bindir to an
+    # always-writable XDG-compliant location the user owns.
+    local bindir="$HOME/.local/bin"
+    mkdir -p "$bindir"
+    case ":$PATH:" in
+        *:"$bindir":*) ;;
+        *) export PATH="$bindir:$PATH" ;;
+    esac
+
     # Try SSH first (fast, uses 1Password agent), fall back to HTTPS.
     # SSH will fail on fresh machines without keys — HTTPS always works.
     local chezmoi_installer
     chezmoi_installer="$(curl -fsLS get.chezmoi.io)"
 
+    # Installer flags (-b BINDIR) go BEFORE the `--` separator; everything
+    # after `--` is forwarded as chezmoi's own args.
     if [ "${USE_SSH:-0}" = "1" ]; then
         log_info "Cloning via SSH (USE_SSH=1)..."
-        if CI=true sh -c "$chezmoi_installer" -- init --apply --source "$HOME/.local/share/dotfiles" --ssh "$REPO" --branch "$BRANCH"; then
+        if CI=true sh -c "$chezmoi_installer" -s -b "$bindir" -- init --apply --source "$HOME/.local/share/dotfiles" --ssh "$REPO" --branch "$BRANCH"; then
             log_success "Dotfiles applied successfully (SSH)"
             return 0
         fi
@@ -403,7 +417,7 @@ install_and_apply_dotfiles() {
     fi
 
     log_info "Cloning via HTTPS..."
-    if CI=true sh -c "$chezmoi_installer" -- init --apply --source "$HOME/.local/share/dotfiles" "https://github.com/${REPO}.git" --branch "$BRANCH"; then
+    if CI=true sh -c "$chezmoi_installer" -s -b "$bindir" -- init --apply --source "$HOME/.local/share/dotfiles" "https://github.com/${REPO}.git" --branch "$BRANCH"; then
         log_success "Dotfiles applied successfully (HTTPS)"
         log_info "To switch remote to SSH later: chezmoi git remote set-url origin git@github.com:${REPO}.git"
         return 0
