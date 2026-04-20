@@ -86,11 +86,10 @@
 {{- end -}}
 
 {{- /* ========================================================================== */ -}}
-{{- /* Chezmoi Core Settings                                                   */ -}}
+{{- /* Chezmoi Core Settings (top-level keys; must precede any [section])      */ -}}
 {{- /* ========================================================================== */}}
 
-[chezmoi]
-    sourceDir = "{{ joinPath .chezmoi.homeDir ".local" "share" "dotfiles" }}"
+sourceDir = "{{ joinPath .chezmoi.homeDir ".local" "share" "dotfiles" }}"
 
 {{- /* ========================================================================== */ -}}
 {{- /* Data Section - Exposed to all templates                                 */ -}}
