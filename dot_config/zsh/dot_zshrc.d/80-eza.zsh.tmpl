@@ -44,10 +44,10 @@ _eza_build_flags() {
 }
 
 if _has eza; then
-  ls() { command eza $(_eza_build_flags) -- "$@"; }
-  ll() { command eza $(_eza_build_flags) -l -- "$@"; }
-  la() { command eza $(_eza_build_flags) -la -- "$@"; }
-  lt() { command eza $(_eza_build_flags) --tree -- "$@"; }
+  ls() { command eza $(_eza_build_flags) "$@"; }
+  ll() { command eza $(_eza_build_flags) -l "$@"; }
+  la() { command eza $(_eza_build_flags) -la "$@"; }
+  lt() { command eza $(_eza_build_flags) --tree "$@"; }
 else
   print "eza not found. Install with mise: mise use -g cargo:eza" >&2
   return 1
