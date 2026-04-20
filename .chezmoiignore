@@ -263,6 +263,11 @@ Library/**
 .config/zsh/.zshrc.d/90-thefuck.zsh
 {{- end }}
 
+{{- if not .package_features.topgrade }}
+# Topgrade package files
+.config/topgrade.toml
+{{- end }}
+
 {{- if not .package_features.sqlite3 }}
 # SQLite3 package files
 .config/sqlite3/**

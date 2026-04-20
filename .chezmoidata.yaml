@@ -316,6 +316,7 @@ package_features:
   thefuck: true         # Command correction (Python)
   btop: true            # System monitor (C++)
   fastfetch: true       # System info display (C++)
+  topgrade: true        # Cross-platform system upgrader (Rust)
   rust_alternatives: true # All Rust CLI tools: bat, rg, fd, eza, delta, zoxide, vivid,
                           # uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine,
                           # just, tokei, ouch, xh
@@ -738,6 +739,21 @@ package_mapping:
       brew: [fastfetch]
       mise: []
 
+  topgrade:
+    windows:
+      scoop: [topgrade]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: ["cargo:topgrade"]
+    darwin:
+      brew: [topgrade]
+      mise: []
+
   # Language Runtimes
   rust:
     windows:
@@ -888,10 +904,14 @@ package_mapping:
       dnf: []
       pacman: []
       brew: [tealdeer, coreutils]
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
+      # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
+      # the completions tarball instead of the binary release for eza.
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
     darwin:
       brew: [tealdeer, coreutils]
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
+      # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
+      # the completions tarball instead of the binary release for eza.
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
 
   # Development Tools
   sqlite3:
