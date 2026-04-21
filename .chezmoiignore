@@ -53,10 +53,13 @@ INSTALL-GUIDE.md
 SECRETS.md
 REMOTE.md
 ARCHITECTURE.md
-CONTRIBUTING.md
 CHEZMOI-GUIDE.md
 REINSTALL.md
 CLAUDE.md
+
+# Local-config example (renamed from .chezmoi.local.toml.example so
+# chezmoi doctor no longer flags it as a suspicious entry).
+chezmoi.local.toml.example
 
 # Claude Code memories (live in chezmoi source, junctioned at apply time)
 .claude/project-memories
