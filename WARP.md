@@ -529,3 +529,30 @@ sed -i 's/\r$//' filename
 ```
 
 **AI Agent Note**: Always check and ensure correct line endings when creating or modifying files for Linux/WSL environments.
+## 1Password Ecosystem Awareness
+This repository already integrates 1Password in two ways:
+- **SSH Agent** - Git/SSH auth via the 1Password SSH agent (see `dot_ssh/` and the `ssh` / `1password` core packages)
+- **CLI + completions** - 1Password CLI with zsh and PowerShell completions
+An additional, complementary capability exists in the broader 1Password ecosystem that is not currently wired into this repo but is worth being aware of:
+### 1Password Secure Agentic Autofill (Early Access)
+A 1Password feature that lets AI agents sign in to websites on the user's behalf **without ever handling raw credentials**. Documented at https://developer.1password.com/docs/agentic-autofill.
+**How it works:**
+- End-to-end encrypted channel established between the 1Password desktop app and the agent's headless browser
+- Uses the Noise framework with forward-rotating key material (post-compromise security per autofill)
+- 1Password browser extension runs inside the agent's headless browser and injects only the minimum required credential fields
+- Every autofill request triggers an **explicit approval prompt** on the user's 1Password desktop app (Touch ID / Windows Hello / Linux system auth)
+- Future: audit logs showing when, where, and why the agent accessed each item
+**Trust boundaries:**
+- Agents **can**: request autofill for a specific site
+- Agents **cannot**: list items, modify items, or autofill without per-request user approval
+- The paired party is cryptographically validated (e.g., director.ai); untrusted pairings are rejected
+**Current launch partner:** [Browserbase Director](https://www.director.ai/) — no-code AI agent for web automation. Only one paired device is supported at a time; pairing a second device deauthorizes the first.
+**Prerequisites for use:**
+- 1Password desktop app (installed + unlocked)
+- 1Password browser extension (connected to desktop app)
+- Business accounts: admin must enable the "Allow AI Agents to autofill for users" policy under Policies → Sharing and permissions
+**Relationship to this repo:**
+- Not managed by chezmoi — it's a runtime feature of the 1Password desktop app + browser extension, not a dotfile-configurable setting
+- Complements the existing SSH-agent pattern: same philosophy of keeping secrets in 1Password and handing out **scoped, approved** access rather than exporting them to env vars or plaintext
+- No feature flag needed; presence is determined by the user's 1Password account tier and opt-in during Browserbase pairing
+**AI Agent Note**: When the user discusses AI agents needing credentials for web-based tasks, prefer recommending Agentic Autofill (or the 1Password SSH agent for git/SSH flows) over storing secrets in plaintext, env vars, or `.env` files.

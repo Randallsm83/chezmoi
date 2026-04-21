@@ -1195,9 +1195,9 @@ always_install:
     - jq
     - less
     - yq
-    - lazygit
-    - wget
-    - tealdeer
+    # lazygit, wget, tealdeer are owned by their respective feature mappings
+    # (git, wget, rust_alternatives). Removing here avoids double `brew "..."`
+    # lines in the rendered Brewfile.
 
   pacman:
     - re2c

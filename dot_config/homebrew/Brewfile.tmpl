@@ -71,7 +71,7 @@ brew "xdg-ninja"
 
 {{- if eq .chezmoi.os "darwin" }}
 # GNU replacements for BSD tools (macOS only — Linux has these natively)
-brew "coreutils"
+# NOTE: `coreutils` is owned by rust_alternatives.darwin.brew (see .chezmoidata.yaml).
 brew "findutils"
 brew "diffutils"
 brew "binutils"
@@ -133,7 +133,7 @@ cask "{{ . }}"
 # =============================================================================
 # macOS-specific
 # =============================================================================
-brew "zsh"
+# NOTE: `zsh` is owned by zsh.darwin.brew (see .chezmoidata.yaml).
 brew "mas"
 brew "fontconfig"
 
