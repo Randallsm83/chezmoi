@@ -1029,6 +1029,7 @@ package_mapping:
       mise: []
     darwin:
       brew: [docker-compose]
+      cask: [orbstack]
       mise: []
 
   # Hardware & Drivers (Windows-only)
@@ -1082,7 +1083,7 @@ package_mapping:
   # Networking
   network_tools:
     windows:
-      scoop: [bind, rclone]
+      scoop: [bind, rclone, pritunl-client]
       winget: []
       mise: []
     linux:
@@ -1093,6 +1094,9 @@ package_mapping:
       mise: []
     darwin:
       brew: []
+      # VPN clients live with the rest of the network tooling. pritunl &
+      # openvpn-connect are both macOS-only casks.
+      cask: [pritunl, openvpn-connect]
       mise: []
 
   # Miscellaneous Development
@@ -1148,6 +1152,7 @@ scoop_bucket_overrides:
     - nvcleanstall
     - nvidia-profile-inspector
     - postman
+    - pritunl-client
     - rtss
     - vcredist-aio
     - ventoy
