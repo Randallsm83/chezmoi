@@ -279,6 +279,8 @@ package_features:
   # ============================================================================
   # Version Control & Authentication (sane defaults)
   # ============================================================================
+  # NOTE: `1password` starts with a digit — not a valid Go template identifier.
+  # Always access via `index .package_features "1password"`, never dot notation.
   git: true
   ssh: true
   1password: true
@@ -1175,7 +1177,7 @@ always_install:
     - innounp
     - dark
     - scoop-search
-    - sudo
+    # NOTE: `sudo` (scoop) conflicts with `gsudo` — only `gsudo` is kept.
 
   winget: []
 
