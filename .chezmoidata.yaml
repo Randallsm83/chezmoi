@@ -1094,9 +1094,8 @@ package_mapping:
       mise: []
     darwin:
       brew: []
-      # VPN clients live with the rest of the network tooling. pritunl &
-      # openvpn-connect are both macOS-only casks.
-      cask: [pritunl, openvpn-connect]
+      # VPN client (macOS-only cask).
+      cask: [pritunl]
       mise: []
 
   # Miscellaneous Development
