@@ -1115,6 +1115,142 @@ package_mapping:
       mise: []
 
 # ============================================================================
+# Brew Bundle (source of truth for Brewfile.tmpl)
+# ============================================================================
+# Everything in dot_config/homebrew/Brewfile.tmpl is rendered from this
+# section plus `always_install.brew` and `package_mapping.<feat>.<os>.brew/cask`.
+# Do NOT add hardcoded `brew "..."` or `cask "..."` lines to Brewfile.tmpl.
+#
+# Guards applied by the template:
+# - *_darwin / *_linux keys are OS-scoped
+# - formulae_build_deps*, formulae_toolchain*, formulae_standalone are
+#   skipped when .is_remote is true
+# - formulae_php is gated on package_features.php
+# - casks_darwin_*, mas_darwin, taps_darwin apply only on darwin
+
+brew_bundle:
+  # --------------------------------------------------------------------------
+  # Taps
+  # --------------------------------------------------------------------------
+  taps_darwin:
+    - { name: "buo/cask-upgrade" }
+    - { name: "dreamhost/homebrew", url: "git@git.dreamhost.com:dreamhost/homebrew-repo.git" }
+
+  # --------------------------------------------------------------------------
+  # Always-installed formulae (no feature flag, all hosts)
+  # --------------------------------------------------------------------------
+  formulae_darwin:
+    - curl
+    - mas
+    - fontconfig
+
+  # GNU replacements for BSD tools (darwin only; Linux has these natively)
+  formulae_gnu_darwin:
+    - findutils
+    - diffutils
+    - binutils
+    - bash
+    - bison
+    - flex
+    - gawk
+    - gpatch
+    - grep
+    - gzip
+    - gnu-getopt
+    - gnu-indent
+    - gnu-sed
+    - gnu-tar
+    - gnu-which
+    - m4
+    - make
+    - file-formula
+    - openssh
+    - rsync
+    - unzip
+    - watch
+
+  # --------------------------------------------------------------------------
+  # Local-only formulae (skipped on remote hosts)
+  # --------------------------------------------------------------------------
+  # Build deps for mise runtimes
+  formulae_build_deps:
+    - openssl
+    - readline
+    - libyaml
+    - ncurses
+    - xz
+    - libxml2
+    - ca-certificates
+  formulae_build_deps_linux:
+    - zlib
+  # Installed with args: ["HEAD"]
+  formulae_build_deps_head:
+    - utf8proc
+
+  # PHP build deps (only when package_features.php is true)
+  formulae_php:
+    - re2c
+    - gd
+    - libzip
+    - krb5
+
+  # Build toolchain
+  formulae_toolchain:
+    - automake
+    - autogen
+    - autoconf
+    - cmake
+    - libtool
+    - pkgconf
+    - glib
+  formulae_toolchain_darwin:
+    - gcc
+    - libiconv
+  formulae_toolchain_linux:
+    - util-linux
+
+  # Standalone workstation tools
+  formulae_standalone:
+    - gnupg
+    - tree
+    - universal-ctags
+    - perltidy
+    - repomix
+    - xdg-ninja
+
+  # Tap-specific darwin formulae installed with args: ["HEAD"]
+  # (requires the matching entry in taps_darwin)
+  formulae_tap_head_darwin:
+    - dreamhost/homebrew/lde
+
+  # --------------------------------------------------------------------------
+  # Casks (darwin only)
+  # --------------------------------------------------------------------------
+  casks_darwin_fonts:
+    - font-fira-code
+    - font-hack
+    - font-new-york
+    - font-sf-mono
+    - font-sf-pro
+    - font-symbols-only-nerd-font
+
+  casks_darwin_apps:
+    - dropbox
+    - flycut
+    - homerow
+    - firefox@developer-edition
+    - postman
+    - rectangle
+    - slack
+    - spotify
+
+  # --------------------------------------------------------------------------
+  # Mac App Store
+  # --------------------------------------------------------------------------
+  mas_darwin:
+    - { name: "1Password", id: 1569813296 }
+
+# ============================================================================
 # Scoop Buckets
 # ============================================================================
 # Bucket name → repository URL mapping
