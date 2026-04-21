@@ -118,6 +118,11 @@ brew "{{ . }}"
 brew "{{ . }}"
 {{- end }}
 {{- end }}
+{{- if and (hasKey $platform "cask") $platform.cask }}
+{{- range $platform.cask }}
+cask "{{ . }}"
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -151,7 +156,6 @@ cask "postman"
 cask "rectangle"
 cask "slack"
 cask "spotify"
-cask "wezterm"
 
 mas "1Password", id: 1569813296
 {{- end }}

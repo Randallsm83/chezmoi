@@ -462,7 +462,8 @@ package_mapping:
       brew: []  # 1password-cli has no brew formula on Linux - use apt/install script
       mise: []
     darwin:
-      brew: [1password-cli, 1password]
+      brew: []
+      cask: [1password-cli, 1password]  # Both are casks on macOS
       mise: []
 
   # Package & Tool Version Management
@@ -524,7 +525,8 @@ package_mapping:
       brew: []  # wezterm is a cask (macOS only)
       mise: []
     darwin:
-      brew: [wezterm]
+      brew: []
+      cask: [wezterm]
       mise: []
 
   warp:
@@ -539,7 +541,8 @@ package_mapping:
       brew: []  # warp is a cask (macOS only)
       mise: []
     darwin:
-      brew: [warp]
+      brew: []
+      cask: [warp]
       mise: []
 
   windows_terminal:
@@ -600,7 +603,8 @@ package_mapping:
       brew: []  # visual-studio-code is a cask (macOS only)
       mise: []
     darwin:
-      brew: [visual-studio-code]
+      brew: []
+      cask: [visual-studio-code]
       mise: []
 
   # Shell Tools
@@ -723,8 +727,8 @@ package_mapping:
       brew: []
       mise: [github:aristocratos/btop]
     darwin:
-      brew: []
-      mise: [github:aristocratos/btop]
+      brew: [btop]
+      mise: []
 
   fastfetch:
     windows:
@@ -910,10 +914,11 @@ package_mapping:
       # the completions tarball instead of the binary release for eza.
       mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
     darwin:
-      brew: [tealdeer, coreutils]
+      brew: [tealdeer, coreutils, navi, dust, ouch]
       # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
       # the completions tarball instead of the binary release for eza.
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
+      # NOTE: navi, dust, ouch moved to brew — no macOS arm64 GitHub release assets.
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:chmln/sd, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ducaale/xh]
 
   # Development Tools
   sqlite3:
@@ -974,7 +979,8 @@ package_mapping:
       brew: []
       mise: []
     darwin:
-      brew: [font-fira-code-nerd-font, font-hack-nerd-font, font-jetbrains-mono-nerd-font, font-caskaydia-cove-nerd-font]
+      brew: []
+      cask: [font-fira-code-nerd-font, font-hack-nerd-font, font-jetbrains-mono-nerd-font, font-caskaydia-cove-nerd-font]
       mise: []
 
   # AI & ML Tools
