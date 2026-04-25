@@ -6,7 +6,7 @@
 
     <Date>2025-10-19T14:03:46.3860435</Date>
 
-    <Author>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</Author>
+    <Author>{{ .chezmoi.username }}</Author>
 
     <URI>\UtilCacheCleaner</URI>
 
@@ -32,6 +32,8 @@
 
     <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
 
+    <ExecutionTimeLimit>PT30M</ExecutionTimeLimit>
+
     <IdleSettings>
 
       <StopOnIdleEnd>true</StopOnIdleEnd>
@@ -48,7 +50,7 @@
 
     <LogonTrigger>
 
-      <UserId>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</UserId>
+      <UserId>{{ .chezmoi.username }}</UserId>
 
     </LogonTrigger>
 
@@ -58,11 +60,11 @@
 
     <Exec>
 
-      <Command>C:\Windows\System32\conhost.exe</Command>
+      <Command>C:\Program Files\PowerShell\7\pwsh.exe</Command>
 
-      <Arguments>--headless pwsh.exe -WindowStyle Hidden -NoProfile -NonInteractive -File "{{ .chezmoi.homeDir }}\.local\utilities\UtilCacheCleaner.ps1"</Arguments>
+      <Arguments>-NoProfile -NonInteractive -Command "$d = Join-Path $env:LOCALAPPDATA 'CacheCleaner'; if (-not (Test-Path $d)) { [void](New-Item -ItemType Directory -Force -Path $d) }; Import-Module CacheCleaner; Clear-Cache -Unattended *&gt; (Join-Path $d 'last-run.log')"</Arguments>
 
-      <WorkingDirectory>{{ .chezmoi.homeDir }}\.local\utilities\</WorkingDirectory>
+      <WorkingDirectory>{{ .chezmoi.homeDir }}</WorkingDirectory>
 
     </Exec>
 
