@@ -52,6 +52,7 @@ IMPLEMENTATION-PROGRESS.md
 INSTALL-GUIDE.md
 SECRETS.md
 REMOTE.md
+RASPI.md
 ARCHITECTURE.md
 CONTRIBUTING.md
 CHEZMOI-GUIDE.md
@@ -169,11 +170,22 @@ Library/**
 .config/warp/**
 .config/alacritty/**
 .config/kitty/**
-{{- if (index . "remote_minimal" | default false) }}
-# Additional exclusions for minimal remote installs
+{{- if eq (index . "remote_tier" | default "minimal") "minimal" }}
+# Additional exclusions for minimal remote installs (tier=minimal only)
 .config/btop/**
 .config/bottom/**
 {{- end }}
+{{- end }}
+
+{{- /* Mise tier-specific configs - keep only the active tier's file */ -}}
+{{- $tier := (index . "remote_tier" | default "full") }}
+{{- if ne $tier "minimal" }}
+# Exclude minimal-tier mise config when not on minimal tier
+.config/mise/config.remote.toml
+{{- end }}
+{{- if ne $tier "medium" }}
+# Exclude medium-tier mise config when not on medium tier
+.config/mise/config.medium.toml
 {{- end }}
 
 {{- /* Package feature flag exclusions */ -}}

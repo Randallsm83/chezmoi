@@ -39,15 +39,41 @@
 {{- /* Classify machine based on hostname patterns */ -}}
 {{- $is_work := false -}}
 {{- $is_personal := false -}}
+{{- $is_raspi := false -}}
+
+{{- if or (contains "raspi" $hostname) (contains "raspberrypi" $hostname) (contains "rpi" $hostname) -}}
+  {{- $is_raspi = true -}}
+{{- end -}}
 
 {{- if or (contains "work" $hostname) (contains "corp" $hostname) (contains "company" $hostname) (contains "office" $hostname) -}}
   {{- $is_work = true -}}
 {{- else if or (contains "home" $hostname) (contains "personal" $hostname) (contains "laptop" $hostname) (contains "desktop" $hostname) -}}
   {{- $is_personal = true -}}
+{{- else if $is_raspi -}}
+  {{- /* Pi machines are personal */ -}}
+  {{- $is_personal = true -}}
 {{- else if not $is_remote -}}
   {{- /* Default local machines to personal */ -}}
   {{- $is_personal = true -}}
 {{- end -}}
+
+{{- /* ========================================================================== */ -}}
+{{- /* Remote tier selection: minimal | medium | full                          */ -}}
+{{- /* - minimal: tiny SSH-only servers (current default for is_remote)        */ -}}
+{{- /* - medium:  curated set for ARM SBCs / dev VMs (Pi, etc.)                */ -}}
+{{- /* - full:    parity with desktop                                          */ -}}
+{{- /* ========================================================================== */ -}}
+{{- $remote_tier := "" -}}
+{{- if $is_raspi -}}
+  {{- $remote_tier = "medium" -}}
+{{- else if $is_remote -}}
+  {{- $remote_tier = "minimal" -}}
+{{- else -}}
+  {{- $remote_tier = "full" -}}
+{{- end -}}
+
+{{- /* Compat alias: remote_minimal stays a bool for existing templates */ -}}
+{{- $remote_minimal := eq $remote_tier "minimal" -}}
 
 {{- /* ========================================================================== */ -}}
 {{- /* Permission Detection                                                    */ -}}
@@ -113,8 +139,10 @@
     is_remote = {{ $is_remote }}
     is_personal = {{ $is_personal }}
     is_work = {{ $is_work }}
+    is_raspi = {{ $is_raspi }}
     has_sudo = {{ $has_sudo }}  # Estimated, scripts should verify at runtime
     hostname = {{ .chezmoi.hostname | quote }}
+    remote_tier = {{ $remote_tier | quote }}  # minimal | medium | full
     
     # XDG Base Directory paths
     xdg_config_home = {{ $xdg_config_home | quote }}
@@ -154,8 +182,8 @@
     install_packages = {{ and (not $is_remote) (not $is_container) }}  # Skip on remote/containers by default
     install_runtimes = true
     setup_git_ssh = true
-    setup_1password = {{ not $is_remote }}  # Skip on remote by default
-    remote_minimal = {{ $is_remote }}  # Use minimal package set on remote machines
+    setup_1password = {{ and (not $is_remote) (not $is_raspi) }}  # Skip on remote/Pi by default
+    remote_minimal = {{ $remote_minimal }}  # Compat alias: true iff remote_tier == "minimal"
 
 {{- /* ========================================================================== */ -}}
 {{- /* Chezmoi Tool Configuration                                              */ -}}
