@@ -2,6 +2,8 @@
 
 This guide covers using these dotfiles on remote machines where you may have limited permissions or resources.
 
+> **Raspberry Pi?** See [RASPI.md](./RASPI.md) for the dedicated medium-tier Pi profile (auto-detected; one-liner is `RASPI=1 curl -fsSL .../setup.sh | bash`).
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
@@ -501,3 +503,4 @@ python app.py
 - [Mise Documentation](https://mise.jdx.dev/)
 - [Main Install Guide](./INSTALL-GUIDE.md)
 - [Secrets Management](./SECRETS.md)
+- [Raspberry Pi Profile](./RASPI.md)
