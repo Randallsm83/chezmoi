@@ -14,6 +14,12 @@ else
   vim.env.PATH = vim.env.HOME .. '/.local/share/mise/shims:' .. vim.env.PATH
 end
 
+-- Set <leader> and <localleader> BEFORE lazy.nvim is required so plugin
+-- specs that use `<leader>...` keys register against the right key.
+-- See `:help mapleader`.
+vim.g.mapleader = ' '
+vim.g.maplocalleader = ' '
+
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 

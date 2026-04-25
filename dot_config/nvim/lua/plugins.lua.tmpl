@@ -96,6 +96,9 @@ require('lazy').setup({
         silent = false,
       }
       ----------------------------------------------------------------------------
+      -- Icons (provides icons for fzf-lua, mini.files, etc.)
+      require('mini.icons').setup()
+      ----------------------------------------------------------------------------
       -- Alignment
       require('mini.align').setup()
       ----------------------------------------------------------------------------
@@ -1579,12 +1582,9 @@ require('lazy').setup({
   -- require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
 
-  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-  --    This is the easiest way to modularize your config.
-  --
-  --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
+  -- NOTE: The import below automatically adds plugins/configuration from `lua/custom/plugins/*.lua`
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
 }, {
   checker = {
     -- automatically check for plugin updates
