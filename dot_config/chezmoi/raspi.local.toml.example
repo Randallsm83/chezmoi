@@ -1,0 +1,69 @@
+# ============================================================================
+# Raspberry Pi (medium tier) - .chezmoi.local.toml example
+# ============================================================================
+# Copy to ~/.config/chezmoi/.chezmoi.local.toml on a Raspberry Pi to opt into
+# the curated medium-tier package set without relying on hostname detection.
+#
+# `setup.sh` will write this file automatically when invoked with RASPI=1
+# (or when it auto-detects a Pi via /proc/device-tree/model or aarch64+Debian).
+#
+# Usage:
+#   mkdir -p ~/.config/chezmoi
+#   cp ~/.local/share/dotfiles/dot_config/chezmoi/raspi.local.toml.example \
+#      ~/.config/chezmoi/.chezmoi.local.toml
+#   chezmoi apply
+# ============================================================================
+
+[data]
+    is_raspi = true
+    remote_tier = "medium"      # minimal | medium | full
+    remote_minimal = false
+    install_packages = true
+    setup_1password = false
+    has_sudo = true
+    theme = "spaceduck"
+
+    [data.package_features]
+        # essentials on
+        git = true
+        ssh = true
+        mise = true
+        direnv = false
+        # editors
+        nvim = true
+        vim = false
+        vscode = false
+        # shells/tools
+        zsh = true
+        starship = true
+        fzf = true
+        rust_alternatives = true
+        glow = true
+        thefuck = false
+        btop = true
+        fastfetch = true
+        # languages: medium = node + python only
+        node = true
+        python = true
+        rust = false
+        golang = false
+        ruby = false
+        lua = false
+        perl = false
+        julia = false
+        php = false
+        # off entirely on Pi
+        warp = false
+        wezterm = false
+        windows_terminal = false
+        ai_tools = false
+        gaming = false
+        docker = false
+        hardware_tools = false
+        windows_utilities = false
+        sysinternals = false
+        network_tools = false
+        dev_extras = false
+        nerd_fonts = false
+        "1password" = false
+        homebrew = false
