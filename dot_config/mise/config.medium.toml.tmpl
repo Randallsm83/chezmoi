@@ -1,0 +1,93 @@
+# =============================================================================
+# MISE CONFIGURATION FOR MEDIUM-TIER REMOTE MACHINES (Raspberry Pi, ARM SBCs)
+# =============================================================================
+# This configuration is used when:
+#   - is_remote = true
+#   - remote_tier = "medium"
+#
+# Purpose: Curated tool set for ARM SBCs / dev VMs - more than the SSH-only
+# minimal tier, but stripped of GUI/heavy/desktop-only tooling.
+# Strategy: User-space mise installs (cargo-binstall preferred) supplementing
+# the apt-installed essentials from setup.sh.
+# =============================================================================
+{{- if and .is_remote (eq .remote_tier "medium") }}
+
+[tools]
+# === Language Runtimes ===
+{{ if index .package_features "node" -}}
+node = "lts"
+{{- end }}
+
+{{ if index .package_features "python" -}}
+python = "latest"
+pipx = "latest"
+{{- end }}
+
+# === Core CLI ===
+fzf = "latest"
+neovim = "latest"
+
+# === Rust CLI Alternatives (cargo-binstall preferred for ARM) ===
+{{ if index .package_features "rust_alternatives" -}}
+"github:sharkdp/bat" = "latest"
+"github:BurntSushi/ripgrep" = "latest"
+"github:sharkdp/fd" = "latest"
+"github:eza-community/eza" = "latest"
+"github:dandavison/delta" = "latest"
+"github:ajeetdsouza/zoxide" = "latest"
+{{- end }}
+
+# === Prompt ===
+{{ if index .package_features "starship" -}}
+starship = "latest"
+{{- end }}
+
+# === Git UX ===
+{{ if index .package_features "git" -}}
+lazygit = "latest"
+"github-cli" = "latest"
+{{- end }}
+
+[settings]
+idiomatic_version_file = true
+idiomatic_version_file_disable_tools = []
+always_keep_download = false
+always_keep_install = false
+plugin_autoupdate_last_check_duration = '1 week'
+trusted_config_paths = ['']
+verbose = false
+http_timeout = "30s"
+jobs = 2  # Reduced for SBC class hardware
+raw = false
+yes = false
+not_found_auto_install = true
+task_output = "prefix"
+paranoid = false
+shorthands_file = '~/.config/mise/shorthands.toml'
+disable_default_shorthands = false
+experimental = true
+status = { missing_tools = "if_other_versions_installed", show_env = false, show_tools = false }
+# Skip heavy/desktop-only runtimes on Pi
+disable_tools = ["lua", "luajit", "deno", "bun", "ruby", "rust", "go", "perl", "julia", "php"]
+
+# Prefer prebuilt binaries on aarch64 - building from cargo source is slow on a Pi
+[settings.cargo]
+binstall = true
+
+# node
+node = {}
+
+# npm - use built-in npm on remote
+npm = { bun = false }
+
+# python
+python = {}
+
+[_]
+# Medium-tier configuration for ARM SBCs (Raspberry Pi, etc.)
+# Override with .chezmoi.local.toml if you need more tools
+
+[env]
+# Environment variables for medium-tier remote machines
+
+{{- end }}
