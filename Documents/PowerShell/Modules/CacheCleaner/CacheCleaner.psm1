@@ -2,7 +2,20 @@
 # Version 2.0 - Self-contained with colorized output and improved error handling
 function Clear-Cache {
     [CmdletBinding()]
-    param()
+    param(
+        # Skip Write-Progress calls (hangs under headless hosts / Task Scheduler).
+        [switch]$NoProgress,
+        # Skip external command-based cleanup (pnpm store prune, mise cache clear, etc.)
+        # which can block on stdin / network when running non-interactively.
+        [switch]$SkipCommands,
+        # Convenience switch: enables both NoProgress and SkipCommands for Task Scheduler runs.
+        [switch]$Unattended
+    )
+
+    if ($Unattended) {
+        $NoProgress = $true
+        $SkipCommands = $true
+    }
 
     # Statistics tracking
     $Stats = @{
@@ -326,31 +339,41 @@ function Clear-Cache {
             Write-Section $target.Section
         }
 
-        # Update PowerShell progress bar
-        $pct = [math]::Round(($currentTarget / $totalTargets) * 100)
-        Write-Progress -Activity "Cache Cleanup" `
-            -Status "[$currentTarget/$totalTargets] $($target.Description)" `
-            -PercentComplete $pct `
-            -CurrentOperation $target.Path
+        # Update PowerShell progress bar (skip under headless hosts).
+        if (-not $NoProgress) {
+            $pct = [math]::Round(($currentTarget / $totalTargets) * 100)
+            Write-Progress -Activity "Cache Cleanup" `
+                -Status "[$currentTarget/$totalTargets] $($target.Description)" `
+                -PercentComplete $pct `
+                -CurrentOperation $target.Path
+        }
 
         Clear-DirectoryContents -Path $target.Path -Description "[$currentTarget/$totalTargets] $($target.Description)" -Category $target.Category
     }
 
-    Write-Progress -Activity "Cache Cleanup" -Completed
-
-    # Command-based cache cleanup (tools that manage their own store)
-    Write-Section "COMMAND-BASED CACHE CLEANUP"
-    $startCmdSize = $Stats.SpaceFreed
-
-    if (Get-Command pnpm -ErrorAction SilentlyContinue) {
-        Write-Status "Pruning pnpm store..." "Info"
-        pnpm store prune 2>$null | Out-Null
-        Write-Status "pnpm store pruned" "Success"
+    if (-not $NoProgress) {
+        Write-Progress -Activity "Cache Cleanup" -Completed
     }
-    if (Get-Command mise -ErrorAction SilentlyContinue) {
-        Write-Status "Clearing mise cache..." "Info"
-        mise cache clear 2>$null | Out-Null
-        Write-Status "mise cache cleared" "Success"
+
+    # Command-based cache cleanup (tools that manage their own store).
+    # These external commands can block on stdin / network when running under
+    # Task Scheduler, so they are skipped when -SkipCommands / -Unattended is set.
+    if (-not $SkipCommands) {
+        Write-Section "COMMAND-BASED CACHE CLEANUP"
+        $startCmdSize = $Stats.SpaceFreed
+
+        if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+            Write-Status "Pruning pnpm store..." "Info"
+            pnpm store prune 2>$null | Out-Null
+            Write-Status "pnpm store pruned" "Success"
+        }
+        if (Get-Command mise -ErrorAction SilentlyContinue) {
+            Write-Status "Clearing mise cache..." "Info"
+            mise cache clear 2>$null | Out-Null
+            Write-Status "mise cache cleared" "Success"
+        }
+    } else {
+        Write-Status "Skipping command-based cache cleanup" "Skip" "Running unattended"
     }
 
     # Final Summary
