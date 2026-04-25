@@ -1,0 +1,2 @@
+-- Register 'markdown.mdx' as a known compound filetype for marksman
+-- and :checkhealth vim.lsp. Detection rules live in lua/autocommands.lua.

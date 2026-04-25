@@ -1,6 +1,32 @@
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
+-- Register filetypes that LSP configs expect but Neovim doesn't auto-detect.
+-- Silences `:checkhealth vim.lsp` "Unknown filetype" warnings and ensures
+-- gopls/marksman/yamlls attach on these files.
+vim.filetype.add({
+  extension = {
+    mdx = 'markdown.mdx',
+    gotmpl = 'gotmpl',
+    tmpl = 'gotmpl',
+    tpl = 'gotmpl',
+  },
+  filename = {
+    ['go.work'] = 'gowork',
+    ['go.work.sum'] = 'gowork',
+    ['docker-compose.yml'] = 'yaml.docker-compose',
+    ['docker-compose.yaml'] = 'yaml.docker-compose',
+    ['compose.yml'] = 'yaml.docker-compose',
+    ['compose.yaml'] = 'yaml.docker-compose',
+    ['.gitlab-ci.yml'] = 'yaml.gitlab',
+  },
+  pattern = {
+    ['.*/templates/.*%.ya?ml'] = 'yaml.helm-values',
+    ['.*/templates/.*%.tpl'] = 'helm',
+    ['values.*%.ya?ml'] = 'yaml.helm-values',
+  },
+})
+
 -- Async formatting with conform, supporting ranges
 vim.api.nvim_create_user_command('Format', function(args)
   local range = nil

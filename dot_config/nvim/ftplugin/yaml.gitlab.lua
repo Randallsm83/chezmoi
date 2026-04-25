@@ -1,0 +1,2 @@
+-- Register 'yaml.gitlab' as a known compound filetype for yamlls
+-- and :checkhealth vim.lsp. Detection rules live in lua/autocommands.lua.
