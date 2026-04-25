@@ -2,11 +2,11 @@
 # Works across Windows, WSL, macOS, and Linux via 1Password SSH agent.
 #
 # Key selection strategy:
-#   Mac/Linux — IdentityFile .pub hints tell 1Password which specific key to
-#               offer per host, avoiding the OpenSSH 6-key auth limit.
-#               Private keys never leave 1Password.
-#   Windows   — 1Password authenticates all hosts through the named pipe;
-#               IdentityFile hints are ignored by design.
+#   All platforms — IdentityFile .pub hints tell OpenSSH to offer exactly one
+#                   key per host, avoiding the 6-key MaxAuthTries limit.
+#                   OpenSSH matches the .pub fingerprint against the agent and
+#                   uses the corresponding private key in 1Password for signing.
+#                   Private keys never leave 1Password.
 #
 # Key rotation: edit the SSH Key item in the 1Password app (generate new key).
 # Run `chezmoi apply` afterward — .pub files update automatically, no template
@@ -22,29 +22,23 @@ Include config.d/*
 Host gh github.com
   HostName github.com
   User git
-{{- if ne .chezmoi.os "windows" }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/github_com.pub
-{{- end }}
 
 # GitLab  (alias: gl)
 # Use git@gl:user/repo.git or git@gitlab.com:user/repo.git interchangeably.
 Host gl gitlab.com
   HostName gitlab.com
   User git
-{{- if ne .chezmoi.os "windows" }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/gitlab_com.pub
-{{- end }}
 
 # DreamHost Git  (alias: dh-git)
 Host dh-git git.dreamhost.com
   HostName git.dreamhost.com
   User rmiller
-{{- if ne .chezmoi.os "windows" }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/dh_git.pub
-{{- end }}
 
 # ── DreamHost Servers ─────────────────────────────────────────────────────────
 # ForwardAgent enabled on all — git deployments run from these servers.
@@ -53,39 +47,40 @@ Host yakko
   HostName ***REMOVED***
   User rmiller
   ForwardAgent yes
-{{- if ne .chezmoi.os "windows" }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/dh_yakko.pub
-{{- end }}
 
 Host porky
   HostName ***REMOVED***
   User rmiller
   ForwardAgent yes
-{{- if ne .chezmoi.os "windows" }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/dh_porky.pub
-{{- end }}
 
 # VPS running ***REMOVED*** app — git deploy access required.
 Host ***REMOVED***
   HostName ***REMOVED***
   User ***REMOVED***
   ForwardAgent yes
-{{- if ne .chezmoi.os "windows" }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/***REMOVED***.pub
-{{- end }}
 
 # DreamPress WordPress server — git deploy access required.
 Host fp3
   HostName ***REMOVED***
   User ***REMOVED***
   ForwardAgent yes
-{{- if ne .chezmoi.os "windows" }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/fp3.pub
-{{- end }}
+
+# ── Home Lab ──────────────────────────────────────────────────────────────────
+
+# Raspberry Pi on the local network.
+Host raspi raspi.local
+  HostName raspi.local
+  User ranmil
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/raspi.pub
 
 # ── Global Defaults ───────────────────────────────────────────────────────────
 # IMPORTANT: Host * must be last so per-host overrides take effect first.
@@ -110,3 +105,14 @@ Host *
   # Keep connections alive across idle periods.
   ServerAliveInterval 60
   ServerAliveCountMax 3
+{{- if ne .chezmoi.os "windows" }}
+  # Connection multiplexing — reuse one TCP/SSH session for multiple ops.
+  # Reduces 1Password SSH agent prompts: N back-to-back git ops = 1 signing
+  # request instead of N. ControlPath uses %C (hashed conn tuple).
+  # Excluded on Windows: native OpenSSH advertises ControlMaster but fails
+  # with "getsockname failed: Not a socket" — Unix-domain socket paths don't
+  # work as ssh control sockets on Windows.
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%C
+  ControlPersist 10m
+{{- end }}
