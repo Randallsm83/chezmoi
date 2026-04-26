@@ -279,6 +279,8 @@ package_features:
   # ============================================================================
   # Version Control & Authentication (sane defaults)
   # ============================================================================
+  # NOTE: `1password` starts with a digit — not a valid Go template identifier.
+  # Always access via `index .package_features "1password"`, never dot notation.
   git: true
   ssh: true
   1password: true
@@ -316,6 +318,7 @@ package_features:
   thefuck: true         # Command correction (Python)
   btop: true            # System monitor (C++)
   fastfetch: true       # System info display (C++)
+  topgrade: true        # Cross-platform system upgrader (Rust)
   rust_alternatives: true # All Rust CLI tools: bat, rg, fd, eza, delta, zoxide, vivid,
                           # uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine,
                           # just, tokei, ouch, xh
@@ -459,7 +462,8 @@ package_mapping:
       brew: []  # 1password-cli has no brew formula on Linux - use apt/install script
       mise: []
     darwin:
-      brew: [1password-cli, 1password]
+      brew: []
+      cask: [1password-cli, 1password]  # Both are casks on macOS
       mise: []
 
   # Package & Tool Version Management
@@ -521,7 +525,8 @@ package_mapping:
       brew: []  # wezterm is a cask (macOS only)
       mise: []
     darwin:
-      brew: [wezterm]
+      brew: []
+      cask: [wezterm]
       mise: []
 
   warp:
@@ -536,7 +541,8 @@ package_mapping:
       brew: []  # warp is a cask (macOS only)
       mise: []
     darwin:
-      brew: [warp]
+      brew: []
+      cask: [warp]
       mise: []
 
   windows_terminal:
@@ -597,7 +603,8 @@ package_mapping:
       brew: []  # visual-studio-code is a cask (macOS only)
       mise: []
     darwin:
-      brew: [visual-studio-code]
+      brew: []
+      cask: [visual-studio-code]
       mise: []
 
   # Shell Tools
@@ -720,8 +727,8 @@ package_mapping:
       brew: []
       mise: [github:aristocratos/btop]
     darwin:
-      brew: []
-      mise: [github:aristocratos/btop]
+      brew: [btop]
+      mise: []
 
   fastfetch:
     windows:
@@ -736,6 +743,21 @@ package_mapping:
       mise: []
     darwin:
       brew: [fastfetch]
+      mise: []
+
+  topgrade:
+    windows:
+      scoop: [topgrade]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: ["cargo:topgrade"]
+    darwin:
+      brew: [topgrade]
       mise: []
 
   # Language Runtimes
@@ -888,10 +910,15 @@ package_mapping:
       dnf: []
       pacman: []
       brew: [tealdeer, coreutils]
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
+      # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
+      # the completions tarball instead of the binary release for eza.
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
     darwin:
-      brew: [tealdeer, coreutils]
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, github:eza-community/eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
+      brew: [tealdeer, coreutils, navi, dust, ouch]
+      # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
+      # the completions tarball instead of the binary release for eza.
+      # NOTE: navi, dust, ouch moved to brew — no macOS arm64 GitHub release assets.
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:chmln/sd, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ducaale/xh]
 
   # Development Tools
   sqlite3:
@@ -952,7 +979,8 @@ package_mapping:
       brew: []
       mise: []
     darwin:
-      brew: [font-fira-code-nerd-font, font-hack-nerd-font, font-jetbrains-mono-nerd-font, font-caskaydia-cove-nerd-font]
+      brew: []
+      cask: [font-fira-code-nerd-font, font-hack-nerd-font, font-jetbrains-mono-nerd-font, font-caskaydia-cove-nerd-font]
       mise: []
 
   # AI & ML Tools
@@ -1001,6 +1029,7 @@ package_mapping:
       mise: []
     darwin:
       brew: [docker-compose]
+      cask: [orbstack]
       mise: []
 
   # Hardware & Drivers (Windows-only)
@@ -1054,7 +1083,7 @@ package_mapping:
   # Networking
   network_tools:
     windows:
-      scoop: [bind, rclone]
+      scoop: [bind, rclone, pritunl-client]
       winget: []
       mise: []
     linux:
@@ -1065,6 +1094,8 @@ package_mapping:
       mise: []
     darwin:
       brew: []
+      # VPN client (macOS-only cask).
+      cask: [pritunl]
       mise: []
 
   # Miscellaneous Development
@@ -1082,6 +1113,142 @@ package_mapping:
     darwin:
       brew: []
       mise: []
+
+# ============================================================================
+# Brew Bundle (source of truth for Brewfile.tmpl)
+# ============================================================================
+# Everything in dot_config/homebrew/Brewfile.tmpl is rendered from this
+# section plus `always_install.brew` and `package_mapping.<feat>.<os>.brew/cask`.
+# Do NOT add hardcoded `brew "..."` or `cask "..."` lines to Brewfile.tmpl.
+#
+# Guards applied by the template:
+# - *_darwin / *_linux keys are OS-scoped
+# - formulae_build_deps*, formulae_toolchain*, formulae_standalone are
+#   skipped when .is_remote is true
+# - formulae_php is gated on package_features.php
+# - casks_darwin_*, mas_darwin, taps_darwin apply only on darwin
+
+brew_bundle:
+  # --------------------------------------------------------------------------
+  # Taps
+  # --------------------------------------------------------------------------
+  taps_darwin:
+    - { name: "buo/cask-upgrade" }
+    - { name: "dreamhost/homebrew", url: "git@git.dreamhost.com:dreamhost/homebrew-repo.git" }
+
+  # --------------------------------------------------------------------------
+  # Always-installed formulae (no feature flag, all hosts)
+  # --------------------------------------------------------------------------
+  formulae_darwin:
+    - curl
+    - mas
+    - fontconfig
+
+  # GNU replacements for BSD tools (darwin only; Linux has these natively)
+  formulae_gnu_darwin:
+    - findutils
+    - diffutils
+    - binutils
+    - bash
+    - bison
+    - flex
+    - gawk
+    - gpatch
+    - grep
+    - gzip
+    - gnu-getopt
+    - gnu-indent
+    - gnu-sed
+    - gnu-tar
+    - gnu-which
+    - m4
+    - make
+    - file-formula
+    - openssh
+    - rsync
+    - unzip
+    - watch
+
+  # --------------------------------------------------------------------------
+  # Local-only formulae (skipped on remote hosts)
+  # --------------------------------------------------------------------------
+  # Build deps for mise runtimes
+  formulae_build_deps:
+    - openssl
+    - readline
+    - libyaml
+    - ncurses
+    - xz
+    - libxml2
+    - ca-certificates
+  formulae_build_deps_linux:
+    - zlib
+  # Installed with args: ["HEAD"]
+  formulae_build_deps_head:
+    - utf8proc
+
+  # PHP build deps (only when package_features.php is true)
+  formulae_php:
+    - re2c
+    - gd
+    - libzip
+    - krb5
+
+  # Build toolchain
+  formulae_toolchain:
+    - automake
+    - autogen
+    - autoconf
+    - cmake
+    - libtool
+    - pkgconf
+    - glib
+  formulae_toolchain_darwin:
+    - gcc
+    - libiconv
+  formulae_toolchain_linux:
+    - util-linux
+
+  # Standalone workstation tools
+  formulae_standalone:
+    - gnupg
+    - tree
+    - universal-ctags
+    - perltidy
+    - repomix
+    - xdg-ninja
+
+  # Tap-specific darwin formulae installed with args: ["HEAD"]
+  # (requires the matching entry in taps_darwin)
+  formulae_tap_head_darwin:
+    - dreamhost/homebrew/lde
+
+  # --------------------------------------------------------------------------
+  # Casks (darwin only)
+  # --------------------------------------------------------------------------
+  casks_darwin_fonts:
+    - font-fira-code
+    - font-hack
+    - font-new-york
+    - font-sf-mono
+    - font-sf-pro
+    - font-symbols-only-nerd-font
+
+  casks_darwin_apps:
+    - dropbox
+    - flycut
+    - homerow
+    - firefox@developer-edition
+    - postman
+    - rectangle
+    - slack
+    - spotify
+
+  # --------------------------------------------------------------------------
+  # Mac App Store
+  # --------------------------------------------------------------------------
+  mas_darwin:
+    - { name: "1Password", id: 1569813296 }
 
 # ============================================================================
 # Scoop Buckets
@@ -1120,6 +1287,7 @@ scoop_bucket_overrides:
     - nvcleanstall
     - nvidia-profile-inspector
     - postman
+    - pritunl-client
     - rtss
     - vcredist-aio
     - ventoy
@@ -1155,7 +1323,7 @@ always_install:
     - innounp
     - dark
     - scoop-search
-    - sudo
+    # NOTE: `sudo` (scoop) conflicts with `gsudo` — only `gsudo` is kept.
 
   winget: []
 
@@ -1163,9 +1331,9 @@ always_install:
     - jq
     - less
     - yq
-    - lazygit
-    - wget
-    - tealdeer
+    # lazygit, wget, tealdeer are owned by their respective feature mappings
+    # (git, wget, rust_alternatives). Removing here avoids double `brew "..."`
+    # lines in the rendered Brewfile.
 
   pacman:
     - re2c
