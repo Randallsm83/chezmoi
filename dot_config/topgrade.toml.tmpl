@@ -1,0 +1,74 @@
+# topgrade configuration
+# https://github.com/topgrade-rs/topgrade
+#
+# Managed by chezmoi — edit the source template, not this rendered file.
+# Source: {{ .chezmoi.sourceDir }}/dot_config/topgrade.toml.tmpl
+
+[misc]
+# Ask before running each step
+assume_yes = false
+# Keep going even when a step fails
+no_retry = false
+# Run cleanup after upgrade (brew cleanup, apt autoremove, etc.)
+cleanup = true
+# Display a notification when finished
+notify_each_step = false
+# Skip steps that require sudo when unavailable
+{{- if not .has_sudo }}
+disable = ["system"]
+{{- end }}
+
+[git]
+# Pull managed dotfiles first so subsequent steps pick up any changes
+repos = [
+    "{{ .chezmoi.sourceDir }}",
+{{- if .package_features.nvim }}
+    "{{ joinPath .xdg_config_home "nvim" }}",
+{{- end }}
+]
+pull_arguments = "--rebase --autostash"
+
+{{- /* ================================================================ */ -}}
+{{- /* Platform-specific sections                                       */ -}}
+{{- /* ================================================================ */ -}}
+
+{{- if .is_darwin }}
+
+[brew]
+greedy_cask = true
+autoremove = true
+
+[macos]
+# Skip the macOS major-version upgrade prompt
+upgrade_macos = false
+{{- end }}
+
+{{- if .is_linux }}
+
+[linux]
+# Skip if running without sudo (e.g. remote/minimal boxes)
+show_arch_news = true
+{{- if .is_wsl }}
+# WSL: avoid kernel upgrade attempts — handled by Windows host
+emerge_update_flags = ""
+{{- end }}
+{{- end }}
+
+{{- if .is_windows }}
+
+[windows]
+accept_all_winget_updates = true
+open_remotes_in_new_terminal = false
+{{- end }}
+
+[mise]
+# Self-update and runtimes managed in ~/.config/mise/config.toml
+version_update = true
+
+# Hosts to skip entirely (e.g. work boxes where we don't own updates)
+{{- if .is_work }}
+[composite]
+remote_topgrades = []
+{{- end }}
+
+# vim: ft=toml ts=2 sts=2 sw=2 et

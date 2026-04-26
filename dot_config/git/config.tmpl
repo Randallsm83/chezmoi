@@ -135,9 +135,14 @@
 [core]
 	# WSL: Use Windows SSH to access 1Password agent on Windows host
 	sshCommand = /mnt/c/Windows/System32/OpenSSH/ssh.exe
+{{- else if eq .chezmoi.os "darwin" }}
+# macOS: 1Password SSH agent path contains spaces (Group Container), which git
+# cannot quote inside core.sshCommand. IdentityAgent is declared in
+# ~/.ssh/config.d/10-1password-darwin.conf, and SSH_AUTH_SOCK is exported by
+# the zsh 1Password integration (10-1password-ssh-agent.zsh).
 {{- else }}
 [core]
-	# Native Linux/macOS: 1Password SSH agent via socket
+	# Native Linux: 1Password SSH agent via socket
 	sshCommand = ssh -o IdentityAgent=~/.1password/agent.sock
 {{- end }}
 {{- end }}

@@ -112,3 +112,7 @@
 .cache/zsh/completions/_vagrant
 .config/zsh/.zshrc.d/60-vagrant.zsh
 {{- end }}
+
+{{- if not .package_features.topgrade }}
+.config/topgrade.toml
+{{- end }}

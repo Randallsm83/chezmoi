@@ -54,10 +54,13 @@ SECRETS.md
 REMOTE.md
 RASPI.md
 ARCHITECTURE.md
-CONTRIBUTING.md
 CHEZMOI-GUIDE.md
 REINSTALL.md
 CLAUDE.md
+
+# Local-config example (renamed from .chezmoi.local.toml.example so
+# chezmoi doctor no longer flags it as a suspicious entry).
+chezmoi.local.toml.example
 
 # Claude Code memories (live in chezmoi source, junctioned at apply time)
 .claude/project-memories
@@ -273,6 +276,11 @@ Library/**
 # Thefuck package files
 .config/thefuck/**
 .config/zsh/.zshrc.d/90-thefuck.zsh
+{{- end }}
+
+{{- if not .package_features.topgrade }}
+# Topgrade package files
+.config/topgrade.toml
 {{- end }}
 
 {{- if not .package_features.sqlite3 }}
