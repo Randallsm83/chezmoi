@@ -175,7 +175,6 @@ Library/**
 .config/kitty/**
 {{- if eq (index . "remote_tier" | default "minimal") "minimal" }}
 # Additional exclusions for minimal remote installs (tier=minimal only)
-.config/btop/**
 .config/bottom/**
 {{- end }}
 {{- end }}
@@ -257,12 +256,6 @@ Library/**
 # Arduino package files
 .local/share/arduino/**
 .config/zsh/.zshrc.d/70-arduino.zsh
-{{- end }}
-
-{{- if not .package_features.glow }}
-# Glow package files
-.config/glow/**
-.config/zsh/.zshrc.d/90-glow.zsh
 {{- end }}
 
 {{- if not .package_features.tinted_theming }}

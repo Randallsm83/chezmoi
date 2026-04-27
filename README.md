@@ -72,7 +72,6 @@ Languages and tools are controlled by feature flags in `.chezmoidata.yaml`:
 | `ruby` | ✅ Enabled | Ruby environment |
 | `lua` | ✅ Enabled | Lua environment |
 | `node` | ✅ Enabled | Node.js environment |
-| `glow` | ✅ Enabled | Markdown viewer |
 | `vivid` | ✅ Enabled | LS_COLORS generator (follows theme setting) |
 | `sqlite3` | ✅ Enabled | SQLite CLI config |
 | `warp` | ✅ Enabled | Warp terminal configurations |

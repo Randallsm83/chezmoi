@@ -66,7 +66,7 @@ windows:
           panes:
             - cwd: ~
               commands:
-                - exec: btop
+                - exec: top
             - cwd: ~
               commands:
                 - exec: curl -s https://wttr.in?format=v2

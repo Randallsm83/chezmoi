@@ -271,7 +271,7 @@ package_features:
   # Group Flags (convenience shortcuts)
   # ============================================================================
   essentials: true      # git, ssh, 1password, mise, direnv
-  shell_tools: true     # starship, zsh, bat, eza, ripgrep, fd, fzf, zoxide, delta, vivid, wget, glow, thefuck
+  shell_tools: true     # starship, zsh, bat, eza, ripgrep, fd, fzf, zoxide, delta, vivid, wget, thefuck
   languages: true       # All language runtimes (node, python, ruby, go, rust, lua)
   editors: true         # nvim, vscode
   terminals: true       # wezterm, warp, windows_terminal
@@ -314,9 +314,7 @@ package_features:
   powershell: true      # Windows shell
   fzf: true             # Fuzzy finder (Go, not Rust)
   wget: true            # Downloader
-  glow: true            # Markdown renderer (Go)
   thefuck: true         # Command correction (Python)
-  btop: true            # System monitor (C++)
   fastfetch: true       # System info display (C++)
   topgrade: true        # Cross-platform system upgrader (Rust)
   rust_alternatives: true # All Rust CLI tools: bat, rg, fd, eza, delta, zoxide, vivid,
@@ -685,21 +683,6 @@ package_mapping:
       brew: [wget]
       mise: []
 
-  glow:
-    windows:
-      scoop: [glow]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [glow]
-    darwin:
-      brew: []
-      mise: [glow]
-
   thefuck:
     windows:
       scoop: []
@@ -713,21 +696,6 @@ package_mapping:
       mise: []
     darwin:
       brew: [thefuck]
-      mise: []
-
-  btop:
-    windows:
-      scoop: [btop]
-      winget: []
-      mise: []
-    linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: []
-      mise: [github:aristocratos/btop]
-    darwin:
-      brew: [btop]
       mise: []
 
   fastfetch:

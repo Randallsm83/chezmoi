@@ -443,9 +443,7 @@ seed_raspi_local_toml() {
         starship = true
         fzf = true
         rust_alternatives = true
-        glow = true
         thefuck = false
-        btop = true
         fastfetch = true
         # languages: medium = node + python only
         node = true

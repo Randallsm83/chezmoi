@@ -164,14 +164,14 @@ sudo dnf install -y git curl wget unzip zip gcc gcc-c++ make \
 **Excluded** (to save space/time):
 - GUI apps: wezterm, warp
 - Heavy runtimes: ruby, rust compiler, deno, bun
-- Optional tools: eza, starship, zoxide, btop, sqlite
+- Optional tools: eza, starship, zoxide, sqlite
 - Development headers/libraries
 
 ### Full Package Set (`remote_minimal = false`)
 
 **All minimal tools plus**:
 - Additional runtimes: Ruby, Rust, Bun, Deno, Lua
-- Full CLI suite: eza, starship, zoxide, btop, sqlite
+- Full CLI suite: eza, starship, zoxide, sqlite
 - Build tools: cargo-binstall, mise, gh
 - Editors: vim (in addition to neovim)
 

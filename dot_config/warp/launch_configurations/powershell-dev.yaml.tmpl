@@ -74,7 +74,7 @@ windows:
                     - exec: Invoke-RestMethod https://wttr.in
             - cwd: {{ .chezmoi.homeDir }}
               commands:
-                - exec: btop
+                - exec: Get-Process | Sort-Object -Property CPU -Descending | Select-Object -First 20
         color: magenta
 
 # vim: ts=2 sts=2 sw=2 et

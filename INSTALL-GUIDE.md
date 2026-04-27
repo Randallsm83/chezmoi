@@ -104,7 +104,7 @@ graph TD
 1. **Chezmoi Installation**: Tries scoop first (preferred), falls back to winget
 2. **Scoop Installation**: Installs scoop if missing (no admin required)
 3. **Chezmoi Init**: Clones repo to `~/.local/share/dotfiles` and applies configs
-4. **Scoop Packages**: Installs 20+ CLI tools (git, gh, lazygit, neovim, mise, starship, zoxide, fzf, ripgrep, fd, bat, eza, vivid, delta, jq, yq, 1password-cli, cygwin, make, zig, curl, wget, 7zip, btop)
+4. **Scoop Packages**: Installs 20+ CLI tools (git, gh, lazygit, neovim, mise, starship, zoxide, fzf, ripgrep, fd, bat, eza, vivid, delta, jq, yq, 1password-cli, cygwin, make, zig, curl, wget, 7zip)
 5. **Winget Packages**: Installs GUI apps (Git.Git, PowerShell, WindowsTerminal, WezTerm, Warp, VS Code, 7zip)
 6. **Mise Runtimes**: Installs language runtimes (node@lts, python@3.12, ruby@latest, go@latest, rust@stable, lua@latest, bun@latest, deno@latest)
 7. **Mise Tools**: Installs global tools (direnv, 1password-cli, usage, yarn, uv)
@@ -242,7 +242,7 @@ graph TD
     
     InstallMiseScriptMac --> CheckBrewPkgs{Homebrew packages<br/>enabled in data file?}
     
-    CheckBrewPkgs -->|Yes| InstallBrewPkgs[Install homebrew packages<br/>warp, wezterm, starship,<br/>zoxide, fzf, ripgrep, fd,<br/>bat, eza, delta, btop,<br/>neovim, gh, lazygit]
+    CheckBrewPkgs -->|Yes| InstallBrewPkgs[Install homebrew packages<br/>warp, wezterm, starship,<br/>zoxide, fzf, ripgrep, fd,<br/>bat, eza, delta,<br/>neovim, gh, lazygit]
     CheckBrewPkgs -->|No| InstallRuntimesMac
     
     InstallBrewPkgs --> InstallRuntimesMac[Install language runtimes via mise<br/>node@lts, python@3.12,<br/>ruby@latest, go@latest,<br/>rust@stable, lua@latest,<br/>bun@latest, deno@latest]
@@ -595,7 +595,6 @@ Feature flags control which optional packages and configurations are applied. De
 | `php` | ❌ `false` | PHP environment | `.config/zsh/.zshrc.d/70-php.zsh` (future) |
 | **Development Tools** | | | |
 | `arduino` | ❌ `false` | Arduino IDE config | `.config/arduino/**` (future) |
-| `glow` | ✅ `true` | Markdown viewer | `.config/glow/**`, `.config/zsh/.zshrc.d/90-glow.zsh` |
 | `tinted_theming` | ✅ `true` | Base16/Base24 themes | `.config/tinted-theming/**`, `.local/share/tinted-theming/**` |
 | `thefuck` | ✅ `true` | Command corrector | `.config/zsh/.zshrc.d/thefuck.zsh` (future) |
 | `sqlite3` | ✅ `true` | SQLite CLI config | `.config/sqlite3/**` |
@@ -661,7 +660,6 @@ package_features:
   node: false
   perl: false
   php: false
-  glow: false
   tinted_theming: false
   thefuck: false
   sqlite3: false
@@ -680,7 +678,6 @@ package_features:
   node: true
   php: true
   sqlite3: true
-  glow: true
   vivid: true
   warp: true
 ```
@@ -733,7 +730,6 @@ scoop_packages:
   - curl                # URL transfer
   - wget                # Download tool
   - 7zip                # Archive tool
-  - btop                # System monitor
 ```
 
 **Winget packages** (GUI apps):
@@ -799,7 +795,7 @@ mise_cli_tools:
   - bat              # Cat with syntax
   - eza              # Modern ls
   - delta            # Git diff viewer
-  - bottom           # System monitor (btop alternative)
+  - bottom           # System monitor
   - starship         # Prompt
   - zoxide           # Smart cd
 ```
@@ -823,7 +819,7 @@ mise_cli_tools:
   - bat              # Cat with syntax
   - eza              # Modern ls
   - delta            # Git diff viewer
-  - bottom           # System monitor (btop alternative)
+  - bottom           # System monitor
   - starship         # Prompt
   - zoxide           # Smart cd
 ```
@@ -868,8 +864,6 @@ All platforms follow the XDG Base Directory specification:
 │   └── config                # Bat config
 ├── vivid/                    # Vivid themes
 │   └── themes/               # Color themes
-├── glow/                     # Glow markdown viewer
-│   └── glow.yml              # Glow config
 ├── warp/                     # Warp terminal
 │   └── themes/               # Custom themes
 └── [language configs]/       # Per-language configs
