@@ -158,7 +158,6 @@
 #         golang = false
 #         python = true       # Only Python needed
 #         node = false
-#         glow = false
 #         vivid = false
 #         warp = false
 
@@ -179,7 +178,6 @@
 #         # Disable GUI/theme tools
 #         warp = false
 #         vivid = false
-#         glow = false
 
 # ============================================================================
 # Tips

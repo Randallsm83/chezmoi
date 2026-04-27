@@ -45,8 +45,6 @@
     "powershell": ["abgox.PSCompletions", "PowerShell.PSReadLine"],
     "fzf": ["fzf", "kelleyma49.PSFzf"],
     "wget": ["wget", "curl"],
-    "glow": ["glow"],
-    "btop": ["btop"],
     "fastfetch": ["fastfetch"],
     "rust_alternatives": ["bat", "ripgrep", "fd", "eza", "delta", "zoxide", "vivid", "uutils-coreutils", "tealdeer", "navi", "sd", "dust", "procs", "hyperfine", "just", "tokei", "ouch", "xh"],
     "lua": ["lua", "luarocks", "luajit"],

@@ -160,14 +160,6 @@ $asciiArt = @{
 # ██║     ██████╔╝
 # ╚═╝     ╚═════╝
 "@
-    'glow' = @"
-#  ██████╗ ██╗      ██████╗ ██╗    ██╗
-# ██╔════╝ ██║     ██╔═══██╗██║    ██║
-# ██║  ███╗██║     ██║   ██║██║ █╗ ██║
-# ██║   ██║██║     ██║   ██║██║███╗██║
-# ╚██████╔╝███████╗╚██████╔╝╚███╔███╔╝
-#  ╚═════╝ ╚══════╝ ╚═════╝  ╚══╝╚══╝
-"@
     'warp' = @"
 # ██╗    ██╗ █████╗ ██████╗ ██████╗
 # ██║    ██║██╔══██╗██╔══██╗██╔══██╗
@@ -238,7 +230,6 @@ function Get-PackageDescription {
         'sqlite3' = 'Serverless SQL database engine.'
         'npm' = 'Node package manager.'
         'fd' = 'A simple, fast and user-friendly alternative to find.'
-        'glow' = 'Render markdown on the CLI.'
         'warp' = 'The terminal for the 21st century.'
         'vim' = 'Vi IMproved - enhanced vi editor.'
         'asdf' = 'Extendable version manager (deprecated, use mise).'

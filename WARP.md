@@ -313,7 +313,6 @@ Additional development tools:
 
 | Package | Flag | Default | Description |
 |---------|------|---------|-------------|
-| **glow** | `package_features.glow` | ✅ Enabled | Markdown renderer in terminal |
 | **tinted_theming** | `package_features.tinted_theming` | ❌ Disabled | Base16/Base24 theme manager (tinty) - replaced by unified theme system |
 | **sqlite3** | `package_features.sqlite3` | ✅ Enabled | SQLite CLI configuration |
 | **vivid** | `package_features.vivid` | ✅ Enabled | LS_COLORS generator (follows unified theme) |
@@ -386,7 +385,7 @@ When a feature flag is `false`, its files are listed in `.chezmoiignore` and won
   - `50-*` - Package managers (homebrew)
   - `70-*` - Language environments (rust, golang, python, ruby, lua, node, php)
   - `80-*` - Tools (eza, vivid)
-  - `90-*` - Utility tools (glow, thefuck)
+  - `90-*` - Utility tools (thefuck)
 
 - **Shell completions**: Stored in `.cache/zsh/completions/_<command>`
 
@@ -478,7 +477,7 @@ This single command will:
 Per the environment rules:
 
 **Windows:**
-- `scoop` - CLI tools (git, neovim, starship, ripgrep, bat, fd, fzf, eza, btop, delta, gh, lazygit, etc.)
+- `scoop` - CLI tools (git, neovim, starship, ripgrep, bat, fd, fzf, eza, delta, gh, lazygit, etc.)
 - `winget` - GUI apps (Git.Git, wez.wezterm, Microsoft.PowerShell, VS Code, 7zip)
 - `mise` - Language runtimes only (node, python, ruby, go, rust, lua, bun, direnv, usage)
 

@@ -67,10 +67,10 @@
 .config/zsh/.zshrc.d/70-arduino.zsh
 {{- end }}
 
-{{- if not .package_features.glow }}
+# glow + btop removed entirely from dotfiles — always purge from existing machines
 .config/glow/**
 .config/zsh/.zshrc.d/90-glow.zsh
-{{- end }}
+.cache/zsh/completions/_glow
 
 {{- if not .package_features.tinted_theming }}
 .config/tinted-theming/**
