@@ -1369,4 +1369,23 @@ claude_memory_projects:
   dotfiles: "projects/dotfiles"
   projects: "projects"
 
+# ============================================================================
+# VPN split-DNS routes
+# ============================================================================
+# Domains that should be resolved by a specific (typically VPN-side) DNS
+# server instead of the default system resolver. Used by
+# .chezmoiscripts/run_onchange_after_55_vpn-dns-routes_*.tmpl to install:
+#   - Windows  -> NRPT rules (Add-DnsClientNrptRule)
+#   - macOS    -> /etc/resolver/<domain> files
+#   - Linux    -> systemd-resolved domain routing where available
+# Each entry is a logical VPN profile name. The default system resolver
+# (Pi-hole via Tailscale, in this stack) handles everything not listed.
+vpn_dns_routes:
+  pritunl:
+    nameserver: "***REMOVED***"
+    domains:
+      - dreamhost.com
+      - dreamhostps.com
+      - dhcompute.net
+
 # vim: ts=2 sts=2 sw=2 et
