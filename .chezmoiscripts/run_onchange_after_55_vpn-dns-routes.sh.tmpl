@@ -1,0 +1,134 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# Install split-DNS resolver overrides for VPN-internal domains on
+# macOS / Linux. Renders from .chezmoidata.yaml -> vpn_dns_routes.
+# Reruns whenever the data hash changes.
+# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+#
+# macOS: writes /etc/resolver/<domain> with `nameserver <ip>`.
+#        scutil --dns picks these up automatically; no service to restart.
+#
+# Linux: prefers systemd-resolved (resolvectl domain ~<domain> on the VPN
+#        interface). Falls back to printing instructions if it can't detect
+#        a supported resolver setup, since /etc/resolv.conf, dnsmasq, and
+#        NetworkManager all coexist in different distros.
+
+set -euo pipefail
+
+{{- if not (hasKey . "vpn_dns_routes") }}
+echo "[vpn-dns] no VPN DNS routes configured; nothing to do"
+exit 0
+{{- end }}
+
+# Desired routes from chezmoi data
+declare -a routes=(
+{{- with .vpn_dns_routes }}
+{{-   range $vpn, $cfg := . }}
+{{-     range $cfg.domains }}
+    "{{ . }}|{{ $cfg.nameserver }}|{{ $vpn }}"
+{{-     end }}
+{{-   end }}
+{{- end }}
+)
+
+if [ ${#routes[@]} -eq 0 ]; then
+    echo "[vpn-dns] no routes; nothing to do"
+    exit 0
+fi
+
+OS="$(uname -s)"
+echo "[vpn-dns] reconciling split-DNS routes on $OS"
+
+# Comment marker to identify chezmoi-managed entries we can safely remove.
+TAG="# chezmoi: vpn-dns-route"
+
+case "$OS" in
+    Darwin)
+        # /etc/resolver requires sudo. If running non-interactively without
+        # cached creds this will fail loudly — that's better than silently
+        # half-applying.
+        if ! sudo -n true 2>/dev/null; then
+            echo "[vpn-dns] sudo needs a password; pre-authenticate then re-run"
+            sudo -v || exit 1
+        fi
+
+        sudo mkdir -p /etc/resolver
+
+        # Track which files we want present so we can remove stale ones.
+        declare -A want=()
+        for r in "${routes[@]}"; do
+            IFS='|' read -r domain ns vpn <<< "$r"
+            want["$domain"]=1
+            f="/etc/resolver/$domain"
+            content="$TAG
+# vpn=$vpn
+nameserver $ns
+"
+            if [ -f "$f" ] && [ "$(sudo cat "$f")" = "$content" ]; then
+                printf '  ok      %-25s -> %s  [%s]\n' "$domain" "$ns" "$vpn"
+            else
+                printf '  write   %-25s -> %s  [%s]\n' "$domain" "$ns" "$vpn"
+                printf '%s' "$content" | sudo tee "$f" > /dev/null
+            fi
+        done
+
+        # Drop stale chezmoi-managed entries that are no longer in the data file.
+        for f in /etc/resolver/*; do
+            [ -f "$f" ] || continue
+            domain="$(basename "$f")"
+            if [ -z "${want[$domain]:-}" ] && sudo grep -q "^$TAG" "$f"; then
+                printf '  remove  %-25s  (no longer in vpn_dns_routes)\n' "$domain"
+                sudo rm -f "$f"
+            fi
+        done
+        ;;
+
+    Linux)
+        if command -v resolvectl >/dev/null 2>&1 && systemctl is-active systemd-resolved >/dev/null 2>&1; then
+            # systemd-resolved supports per-link domain routing. We need an
+            # interface to attach to — use whichever Pritunl-style tunnel
+            # interface is up. If none, queue the rules at /etc/systemd
+            # /resolved.conf.d/ for next bring-up.
+            iface="$(ip -o link show | awk -F': ' '/(pritunl|tun|wg)/{print $2; exit}')"
+            if [ -z "$iface" ]; then
+                echo "[vpn-dns] no VPN interface up; skipping (will reapply when one comes online)"
+                exit 0
+            fi
+            echo "[vpn-dns] using interface $iface for split-DNS routes"
+
+            for r in "${routes[@]}"; do
+                IFS='|' read -r domain ns vpn <<< "$r"
+                # ~domain syntax = "use this resolver only for queries
+                # matching this domain" (split-DNS, not search domain).
+                sudo resolvectl dns "$iface" "$ns"
+                sudo resolvectl domain "$iface" "~$domain"
+                printf '  set     %-25s -> %s on %s  [%s]\n' "$domain" "$ns" "$iface" "$vpn"
+            done
+        elif command -v nmcli >/dev/null 2>&1; then
+            # NetworkManager handles VPN profiles directly. Hint to user
+            # since the right place is the connection profile, not a
+            # generic resolver config.
+            echo "[vpn-dns] NetworkManager detected. Configure split-DNS per VPN connection:"
+            for r in "${routes[@]}"; do
+                IFS='|' read -r domain ns vpn <<< "$r"
+                echo "    nmcli connection modify <$vpn-profile> ipv4.dns $ns ipv4.dns-search '~$domain' ipv4.ignore-auto-dns yes"
+            done
+        else
+            echo "[vpn-dns] no supported Linux resolver detected (no systemd-resolved, no nmcli)."
+            echo "         Manually add to your resolver config:"
+            for r in "${routes[@]}"; do
+                IFS='|' read -r domain ns vpn <<< "$r"
+                printf '           %s -> %s  [%s]\n' "$domain" "$ns" "$vpn"
+            done
+            exit 0
+        fi
+        ;;
+
+    *)
+        echo "[vpn-dns] unsupported OS: $OS"
+        exit 0
+        ;;
+esac
+
+echo "[vpn-dns] done"
+{{- end }}

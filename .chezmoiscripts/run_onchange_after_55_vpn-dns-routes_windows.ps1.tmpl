@@ -1,0 +1,114 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Install split-DNS NRPT rules for VPN-internal domains. Renders from
+# .chezmoidata.yaml -> vpn_dns_routes. Reruns whenever the data hash changes.
+# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+#
+# What this does:
+#   For each (vpn, domain) pair in vpn_dns_routes, ensures a Name Resolution
+#   Policy Table rule exists routing that domain to the VPN's nameserver.
+#   The matching DNS query bypasses the system resolver (Tailscale -> Pi-hole)
+#   and goes straight to the VPN's DNS, which knows how to resolve internal
+#   names that public DNS doesn't.
+#
+# Why NRPT instead of just adding the VPN to the DNS adapter list:
+#   With multiple DNS servers Windows queries them in parallel and accepts
+#   the first answer, so the VPN's DNS would also field public queries and
+#   bypass Pi-hole. NRPT scopes the VPN resolver to specific domains only.
+
+{{- if not (hasKey . "vpn_dns_routes") }}
+Write-Host "No VPN DNS routes configured (vpn_dns_routes block in .chezmoidata.yaml is missing)."
+exit 0
+{{- end }}
+
+# Build the desired rule set from chezmoi data.
+$desired = @(
+{{- with .vpn_dns_routes }}
+{{-   range $vpn, $cfg := . }}
+{{-     range $cfg.domains }}
+    @{ Domain = '.{{ . }}'; NameServer = '{{ $cfg.nameserver }}'; Vpn = '{{ $vpn }}' },
+{{-     end }}
+{{-   end }}
+{{- end }}
+    $null
+) | Where-Object { $_ }
+
+if (-not $desired) {
+    Write-Host "[vpn-dns] no routes resolved from data; nothing to do"
+    exit 0
+}
+
+# All Get/Add/Remove-DnsClientNrptRule cmdlets need admin.
+# Re-run this script under gsudo if not already elevated.
+function Test-IsAdmin {
+    $id = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $p  = [Security.Principal.WindowsPrincipal]$id
+    $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+if (-not (Test-IsAdmin)) {
+    if (Get-Command gsudo -ErrorAction SilentlyContinue) {
+        Write-Host "[vpn-dns] elevating via gsudo to apply NRPT rules" -ForegroundColor Cyan
+        # Re-invoke this exact script under elevation. $PSCommandPath is the
+        # temp file chezmoi rendered; the elevated child takes the
+        # Test-IsAdmin = $true branch and runs the rest.
+        gsudo pwsh -NoProfile -File $PSCommandPath
+        exit $LASTEXITCODE
+    }
+    Write-Host "[vpn-dns] need admin to manage NRPT rules and gsudo isn't installed; skipping." -ForegroundColor Yellow
+    exit 0
+}
+
+Write-Host "[vpn-dns] reconciling NRPT rules from .chezmoidata.yaml" -ForegroundColor Cyan
+
+# Index existing rules by namespace for fast lookup. NRPT keeps a list, not a
+# map, so two rules can target the same namespace; we treat any matching one
+# as "already configured" and only add if none exists.
+$existing = @{}
+Get-DnsClientNrptRule -ErrorAction SilentlyContinue | ForEach-Object {
+    foreach ($ns in $_.Namespace) {
+        if (-not $existing.ContainsKey($ns)) { $existing[$ns] = @() }
+        $existing[$ns] += $_
+    }
+}
+
+$comment = 'chezmoi: vpn-dns-route'
+
+foreach ($r in $desired) {
+    $matches = $existing[$r.Domain]
+    $matchesThisServer = $matches | Where-Object { $_.NameServers -contains $r.NameServer }
+
+    if ($matchesThisServer) {
+        Write-Host ("  ok      {0,-25} -> {1}  [{2}]" -f $r.Domain, $r.NameServer, $r.Vpn) -ForegroundColor Gray
+        continue
+    }
+
+    # Drop any stale rules for this domain pointing at a different server,
+    # but only the ones we manage (chezmoi-tagged via Comment).
+    $stale = $matches | Where-Object { $_.Comment -eq $comment }
+    foreach ($s in $stale) {
+        Write-Host ("  drop    {0,-25} -> {1}  (stale)" -f $s.Namespace, $s.NameServers -join ',') -ForegroundColor DarkYellow
+        Remove-DnsClientNrptRule -Name $s.Name -Force
+    }
+
+    Add-DnsClientNrptRule -Namespace $r.Domain -NameServers $r.NameServer -Comment $comment | Out-Null
+    Write-Host ("  add     {0,-25} -> {1}  [{2}]" -f $r.Domain, $r.NameServer, $r.Vpn) -ForegroundColor Green
+}
+
+# Optional: drop chezmoi-managed rules whose domains are no longer in the data
+# file. Without this, removing a domain from .chezmoidata.yaml leaves the
+# rule live forever.
+$desiredNamespaces = $desired | ForEach-Object { $_.Domain } | Sort-Object -Unique
+$ourRules = Get-DnsClientNrptRule -ErrorAction SilentlyContinue | Where-Object { $_.Comment -eq $comment }
+foreach ($r in $ourRules) {
+    foreach ($ns in $r.Namespace) {
+        if ($desiredNamespaces -notcontains $ns) {
+            Write-Host ("  remove  {0,-25}  (no longer in vpn_dns_routes)" -f $ns) -ForegroundColor DarkYellow
+            Remove-DnsClientNrptRule -Name $r.Name -Force
+            break
+        }
+    }
+}
+
+Write-Host "[vpn-dns] done" -ForegroundColor Green
+{{- end }}
