@@ -295,7 +295,7 @@ This repository replaces the old GNU Stow-based dotfiles with modern chezmoi:
 ## 📚 Documentation
 
 - [Chezmoi Documentation](https://www.chezmoi.io/)
-- [WARP.md](WARP.md) - AI agent technical reference (package feature flags, testing, architecture)
+- [AGENTS.md](AGENTS.md) - AI agent technical reference (architecture, commands, conventions)
 
 ---
 

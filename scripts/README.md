@@ -146,4 +146,4 @@ catch {
 - [Chezmoi Documentation](https://www.chezmoi.io/)
 - [WSL Documentation](https://learn.microsoft.com/en-us/windows/wsl/)
 - [Main README](../README.md)
-- [WARP.md](../WARP.md) - AI agent technical reference
+- [AGENTS.md](../AGENTS.md) - AI agent technical reference
