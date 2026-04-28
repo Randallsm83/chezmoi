@@ -75,9 +75,9 @@ Host fp3
 
 # ── Home Lab ──────────────────────────────────────────────────────────────────
 
-# Raspberry Pi on the local network.
-Host raspi raspi.local
-  HostName raspi.local
+# Raspberry Pi (resolved via Tailscale MagicDNS).
+Host raspi
+  HostName raspi
   User ranmil
   IdentitiesOnly yes
   IdentityFile ~/.ssh/raspi.pub
