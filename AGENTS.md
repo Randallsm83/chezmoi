@@ -57,8 +57,8 @@ Tests cover `bootstrap.ps1.example` (Install-Chezmoi, Install-Scoop, Initialize-
 ## Architecture (the big picture)
 The system is built around a small set of files that drive everything else:
 
-1. **`.chezmoi.toml.tmpl`** — Detects platform/machine at `chezmoi init` time and sets all the boolean flags (`.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`, `.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`, etc.) plus user identity.
-2. **`.chezmoidata.yaml`** — Single source of truth for static data: `theme.name`, `package_features.*`, package manifests (scoop/winget/mise), and color palettes. Editing this drives most repo-wide behavior changes.
+1. **`.chezmoi.toml.tmpl`** — Detects platform/machine at `chezmoi init` time and sets boolean flags (`.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`, `.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`, `.is_raspi`, `.remote_tier` ∈ {`minimal`, `medium`, `full`}) plus user identity.
+2. **`.chezmoidata.yaml`** — Single source of truth for static data: `theme.name`, `fonts.*`, `ssh.*`, `package_features.*`, `package_mapping.*` (per-feature platform/manager packages, e.g. `package_mapping.<name>.darwin.cask`), `vpn_dns_routes.*`, `remote_packages.<tier>`, `claude_memory_projects`. Editing this drives most repo-wide behavior changes.
 3. **`.chezmoiignore`** — A *template* that uses the flags from steps 1–2 to exclude platform-irrelevant or feature-disabled files (e.g., Unix-only configs on Windows, `70-rust.zsh` when `package_features.rust = false`).
 4. **`.chezmoitemplates/`** — Reusable template fragments (`platform-detect`, `platform-conditional`, `package-manager`, `detect-package-manager`, `xdg-paths`, `1password`, `op-read-safe`, `mise-tool-entry`, `common-header`). Include with `{{ template "name" . }}`.
 5. **`.chezmoiscripts/`** — Auto-run scripts in deterministic order:
@@ -67,16 +67,25 @@ The system is built around a small set of files that drive everything else:
    - `run_onchange_before_install_base_packages_unix.sh.tmpl` — base packages
    - `run_onchange_install-packages-{unix,windows}.{sh,ps1}.tmpl` — packages from manifests
    - `run_onchange_generate_bat_themes*` / `run_after_rebuild_bat_cache*` — bat theme/cache rebuild
+   - `run_onchange_after_55_vpn-dns-routes.{sh,ps1}.tmpl` — split-DNS routes from `vpn_dns_routes` (macOS `/etc/resolver/`, Linux `resolvectl`, Windows NRPT)
    - `run_after_sync_claude_memories.{sh,ps1}.tmpl` — sync Claude memories
-6. **`chezmoi.local.toml`** (gitignored, see `chezmoi.local.toml.example`) — per-machine variable overrides.
+6. **`chezmoi.local.toml`** (gitignored, see `chezmoi.local.toml.example`) — per-machine variable overrides. Anything in this file wins over auto-detection.
 
 ### Template variables you will encounter in `.tmpl` files
-- Platform: `.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`
-- Machine: `.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`, `.hostname`
-- Feature flags: `.package_features.<name>` (rust, golang, python, ruby, lua, node, perl, php, glow, vivid, sqlite3, warp, vim, thefuck, arduino, tinted_theming, …)
+- Platform: `.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`, `.is_raspi`
+- Machine: `.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`, `.hostname`, `.remote_tier`
+- Feature flags: `.package_features.<name>` — see *Feature flags* below.
 - XDG: `.xdg_config_home`, `.xdg_data_home`, `.xdg_state_home`, `.xdg_cache_home`
 - User: `.name`, `.email`, `.github_username`
+- Data blocks: `.vpn_dns_routes`, `.remote_packages.<tier>`, `.package_mapping.<feature>`, `.claude_memory_projects`
 - Built-ins: `.chezmoi.os`, `.chezmoi.arch`, `.chezmoi.hostname`, `.chezmoi.username`, `.chezmoi.kernel.osrelease`
+
+### Feature flags
+Defined in `.chezmoidata.yaml` under `package_features`. Two layers:
+- **Group flags** (convenience shortcuts): `essentials`, `shell_tools`, `languages`, `editors`, `terminals`, `rust_alternatives`, `ai_tools`, `gaming`, `docker`, `hardware_tools`, `windows_utilities`, `sysinternals`, `network_tools`, `dev_extras`, `nerd_fonts`.
+- **Individual flags**: `git`, `ssh`, `1password`, `mise`, `direnv`, `homebrew`, `wezterm`, `warp`, `windows_terminal`, `nvim`, `vim`, `vscode`, `starship`, `zsh`, `powershell`, `fzf`, `wget`, `thefuck`, `fastfetch`, `topgrade`, `rust`, `golang`, `python`, `ruby`, `lua`, `node`, `perl`, `julia`, `php`, `sqlite3`, `arduino`, `vagrant`. Deprecated/off: `asdf`, `nvm`, `tinted_theming`.
+
+**`1password` access caveat**: the flag name starts with a digit, which is invalid Go-template identifier syntax. Always access it as `{{ index .package_features "1password" }}`, **never** `.package_features.1password`.
 
 ### Theme system
 A single `theme.name` in `.chezmoidata.yaml` propagates to neovim, starship, wezterm, eza, vivid, bat, and delta via templates. Available themes: `spaceduck` (default), `onedark`, `gruvbox-material`, `tokyonight`, `tokyonight-storm`, `dracula`, `kanagawa`. Change theme → `chezmoi apply`.
@@ -86,16 +95,17 @@ A single `theme.name` in `.chezmoidata.yaml` propagates to neovim, starship, wez
 
 ### Platform-specific patterns
 - **Windows** — Bootstrap via `bootstrap.ps1` (PowerShell 7+). Packages: Scoop (CLI) + Winget (GUI) + Mise (language runtimes only).
-- **Unix/Linux/macOS** — Bootstrap via `setup.sh`. Packages: Mise (everything, no sudo) + Homebrew (build deps + platform formulae) + apt/dnf/pacman (system bootstrap only when sudo is available).
+- **Unix/Linux/macOS** — Bootstrap via `setup.sh`. Packages: Mise (everything, no sudo) + Homebrew (build deps + platform formulae; cask list is generated from `package_mapping.<feature>.darwin.cask`) + apt/dnf/pacman (system bootstrap only when sudo is available).
 - **WSL** — Detected via `.chezmoi.kernel.osrelease` containing `microsoft`. Shares the 1Password SSH agent from the Windows host via named-pipe relay.
-- **Remote/SSH** — Auto-detected; triggers minimal mode (fewer tools, no GUI apps, no system packages).
+- **Remote/SSH** — Auto-detected; respects `remote_tier` (`minimal` / `medium` / `full`) which selects a package set from `remote_packages.<tier>`.
+- **Raspberry Pi** — `is_raspi` is set when hostname matches `raspi*`/`raspberrypi*`/`rpi*`, or when `RASPI=1 ./setup.sh` is run. Pi defaults to `remote_tier = "medium"`. SSH access uses Tailscale MagicDNS (no `.local` mDNS fallback). See `RASPI.md`.
 
 ### Zsh load order
 Files in `dot_config/zsh/dot_zshrc.d/` use numeric prefixes:
 - `50-*` package managers (homebrew)
 - `70-*` language environments (rust, golang, python, ruby, lua, node, php)
 - `80-*` tool integrations (eza, vivid)
-- `90-*` utility tools (glow, thefuck)
+- `90-*` utility tools (thefuck)
 
 Shell completions live in `dot_cache/zsh/completions/_<command>`.
 
@@ -116,6 +126,8 @@ Shell completions live in `dot_cache/zsh/completions/_<command>`.
 - `INSTALL-GUIDE.md` — full installation walkthrough across all platforms
 - `SECRETS.md` — 1Password / Age integration patterns
 - `CHEZMOI-GUIDE.md` — chezmoi concepts and workflow reference
-- `REMOTE.md` / `REINSTALL.md` — remote/SSH and rebuild scenarios
+- `REMOTE.md` — remote/SSH machine model and tiers
+- `RASPI.md` — Raspberry Pi medium-tier profile
+- `REINSTALL.md` — rebuild / reset scenarios
 - `CONTRIBUTING.md` — branch naming, commit conventions, PR template
 - `scripts/README.md` — utility scripts (WSL reset, healthcheck, rollback, etc.)
