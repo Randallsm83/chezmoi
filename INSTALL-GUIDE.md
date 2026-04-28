@@ -1029,7 +1029,7 @@ $env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
 ## See Also
 
 - [README.md](README.md) - Main documentation and quick start
-- [WARP.md](WARP.md) - AI agent technical reference
+- [AGENTS.md](AGENTS.md) - AI agent technical reference
 - [Chezmoi Documentation](https://www.chezmoi.io/)
 - [Mise Documentation](https://mise.jdx.dev/)
 - [Scoop Documentation](https://scoop.sh/)

@@ -47,7 +47,7 @@ INSTALL*.md
 **/INSTALL*.md
 *.Tests.ps1
 *.example
-WARP.md
+AGENTS.md
 IMPLEMENTATION-PROGRESS.md
 INSTALL-GUIDE.md
 SECRETS.md
