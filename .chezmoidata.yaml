@@ -1386,7 +1386,12 @@ vpn_dns_routes:
     domains:
       - dreamhost.com
       - dreamhostps.com
+      - dreamhostnetworks.com
       - dhcompute.net
       - dh-int.com
+      - dhdap.com
+      - newdream.net
+      - dream.io
+      - dreamhost.io
 
 # vim: ts=2 sts=2 sw=2 et
