@@ -15,6 +15,7 @@ path=(
   $HOME/{,s}bin(N)
   $HOME/.local/{,s}bin(N)
   $HOME/.cargo/bin(N)
+  ${XDG_DATA_HOME:-$HOME/.local/share}/npm/bin(N)
   /opt/{homebrew,local}/{,s}bin(N)
   $HOME/.local/share/homebrew/{,s}bin(N)
   ${DHSPACE:-$HOME/projects}/ndn/dh/bin(N)
