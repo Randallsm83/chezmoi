@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+Guidance for AI coding agents working in this repository.
 
 ## What this is
 Cross-platform dotfiles managed by **chezmoi**. Targets Windows, Linux, macOS, WSL, remote/SSH, and containers. All configs live in this source directory and get applied to `$HOME` via `chezmoi apply`. The repo is the chezmoi *source*; do **not** edit the rendered files in `$HOME` — edit the source here and run `chezmoi apply`.
