@@ -29,10 +29,11 @@ export MISE_IGNORED_CONFIG_PATHS="/mnt/c:/mnt/d"
 export MISE_CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
 export MISE_RUSTUP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/rustup"
 
-# Check direct path first since PATH may not include ~/.local/bin yet
-if [[ -x "$HOME/.local/bin/mise" ]]; then
-  eval "$("$HOME/.local/bin/mise" activate zsh)"
-elif command -v mise >/dev/null 2>&1; then
+# Activate whichever mise is first on PATH. dot_zshenv prepends ~/.local/bin
+# (used during bootstrap before Homebrew exists). Once `brew install mise`
+# runs, the install-packages script removes the standalone binary so this
+# resolves to the brew-managed mise.
+if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
 fi
 
