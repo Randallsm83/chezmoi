@@ -1,0 +1,5 @@
+[env]
+DH_NPM_REGISTRY = "https://git.dreamhost.com/api/v4/packages/npm/"
+# Resolved via 1Password CLI (`op`). Requires an active `op` session
+# (Touch ID / `op signin`). Item: vault=DH, item=warp-gitlab-mcp-pat, field=token.
+DH_GITLAB_TOKEN = "{{ exec(command='op read op://DH/warp-gitlab-mcp-pat/token') }}"
