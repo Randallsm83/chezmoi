@@ -45,11 +45,19 @@
     "claude-code-setup@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "explanatory-output-style@claude-plugins-official": true,
-    "greptile@claude-plugins-official": true,
     "vercel@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "lua-lsp@claude-plugins-official": true,
-    "neon@claude-plugins-official": true
+    "neon@claude-plugins-official": true,
+    "warp@claude-code-warp": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    }
   },
 {{- if eq .chezmoi.os "windows" }}
   "env": {
