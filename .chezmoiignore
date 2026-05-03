@@ -31,6 +31,14 @@
 #    - Minimal installs further reduce configs deployed
 #
 # ============================================================================
+# Windows: junctions / reparse points (chezmoi can't manage through them)
+# ============================================================================
+{{- if eq .chezmoi.os "windows" }}
+projects
+projects/**
+{{- end }}
+
+# ============================================================================
 # Repository Files (Never Deployed to Home)
 # ============================================================================
 

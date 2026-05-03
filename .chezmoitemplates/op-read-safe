@@ -3,14 +3,23 @@ Safely read a 1Password secret reference, returning an empty string on any
 error (op binary missing, not signed in, item not found, network hiccup, …)
 instead of aborting the entire chezmoi apply.
 
+Set CHEZMOI_SKIP_1P=1 to skip op entirely (no calls, no prompts) — useful
+when op isn't signed in and you don't want secret-dependent files to
+trigger 10+ biometric prompts during apply.
+
 Usage:
   {{ includeTemplate "op-read-safe" (dict "ref" "op://vault/item/field" "os" .chezmoi.os) }}
 */ -}}
 {{- $ref := .ref -}}
 {{- if not (lookPath "op") -}}
 {{- /* op CLI not installed → produce empty output */ -}}
+{{- else if eq (env "CHEZMOI_SKIP_1P") "1" -}}
+{{- /* user opted out via env var → produce empty output */ -}}
 {{- else if eq .os "windows" -}}
-{{- output "pwsh" "-NoProfile" "-NonInteractive" "-Command" (printf "try { op read '%s' 2>$null } catch { '' }" $ref) -}}
+{{- /* PowerShell try/catch does NOT catch native command exit codes;
+       we must explicitly normalize $LASTEXITCODE and force exit 0,
+       otherwise pwsh propagates op's non-zero exit and aborts apply. */ -}}
+{{- output "pwsh" "-NoProfile" "-NonInteractive" "-Command" (printf "$ErrorActionPreference='SilentlyContinue'; try { $r = op read '%s' 2>$null; if ($LASTEXITCODE -eq 0) { $r } } catch { }; exit 0" $ref) -}}
 {{- else -}}
 {{- output "sh" "-c" (printf "op read %q 2>/dev/null || true" $ref) -}}
 {{- end -}}
