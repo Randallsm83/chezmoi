@@ -1,0 +1,8 @@
+{{- /*
+GitLab personal access token for ~/.config/gitlab/token.
+Resolved via 1Password CLI at apply time. Requires an active op session.
+Item: `Gitlab PAT Hal9k-Win` (vault: Personal, field: credential).
+
+`private_` prefix → 0600 on Unix; no-op on Windows.
+*/ -}}
+{{ onepasswordRead "op://Personal/Gitlab PAT Hal9k-Win/credential" -}}
