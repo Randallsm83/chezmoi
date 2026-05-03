@@ -1,0 +1,60 @@
+{
+  // Route Zed's AI panel through the homelab LiteLLM proxy at
+  // https://ai.raspi.homelab/v1. The api_url overrides Zed's built-in
+  // OpenAI endpoint; the API key (LITELLM_MASTER_KEY from the Pi's
+  // secrets/) is set via the UI and stored in Windows Credential Manager
+  // — Zed will not read it from this file.
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "vim_mode": true,
+  "theme": {
+    "mode": "system",
+    "light": "Ayu Light",
+    "dark": "Ayu Dark"
+  },
+  "language_models": {
+    "openai": {
+      "api_url": "https://ai.raspi.homelab/v1",
+      "available_models": [
+        { "name": "claude-sonnet",  "display_name": "Claude Sonnet (LiteLLM)",  "max_tokens": 200000 },
+        { "name": "claude-opus",    "display_name": "Claude Opus (LiteLLM)",    "max_tokens": 200000 },
+        { "name": "claude-haiku",   "display_name": "Claude Haiku (LiteLLM)",   "max_tokens": 200000 },
+        { "name": "gpt-5",          "display_name": "GPT-5 (LiteLLM)",          "max_tokens": 128000 },
+        { "name": "gpt-5-mini",     "display_name": "GPT-5 Mini (LiteLLM)",     "max_tokens": 128000 },
+        { "name": "gpt-4o",         "display_name": "GPT-4o (LiteLLM)",         "max_tokens": 128000 },
+        { "name": "gpt-4o-mini",    "display_name": "GPT-4o Mini (LiteLLM)",    "max_tokens": 128000 },
+        { "name": "gemini-pro",     "display_name": "Gemini Pro (LiteLLM)",     "max_tokens": 1000000 },
+        { "name": "gemini-flash",   "display_name": "Gemini Flash (LiteLLM)",   "max_tokens": 1000000 }
+      ]
+    }
+  },
+  /* Duplicated key auto-commented: "agent": {
+    "version": "2",
+    "default_model": {
+      "provider": "openai",
+      "model": "claude-sonnet"
+    },
+    "inline_assistant_model": {
+      "provider": "openai",
+      "model": "claude-haiku"
+    }
+  }, */
+  // Older-version compat alias — some Zed builds still read
+  // `assistant.*` instead of `agent.*`. Harmless on newer builds.
+  "agent": {
+    "inline_assistant_model": {
+      "provider": "openai",
+      "model": "claude-opus",
+      "enable_thinking": false
+    },
+    "default_model": {
+      "provider": "openai",
+      "model": "claude-opus"
+    }
+  }
+}
