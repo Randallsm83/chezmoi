@@ -339,8 +339,11 @@ if (Test-Path $uwd2Path) {
 }
 
 # Create uwd2 logon task (uwd2 doesn't persist between restarts)
+# `inject` is the non-interactive subcommand that patches running explorer.exe;
+# without it uwd2 still defaults to inject, but we pass it explicitly to make
+# intent obvious and to avoid any future change in default behavior.
 if (Test-Path $uwd2Path) {
-    New-LogonTask -Name "uwd2" -Exe $uwd2Path -SkipExeCheck
+    New-LogonTask -Name "uwd2" -Exe $uwd2Path -Arguments "inject" -SkipExeCheck
 }
 
 # ============================================================================
