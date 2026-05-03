@@ -5,4 +5,4 @@ Item: `Gitlab PAT Hal9k-Win` (vault: Personal, field: credential).
 
 `private_` prefix → 0600 on Unix; no-op on Windows.
 */ -}}
-{{ onepasswordRead "op://Personal/Gitlab PAT Hal9k-Win/credential" -}}
+{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/Gitlab PAT Hal9k-Win/credential" "os" .chezmoi.os) -}}

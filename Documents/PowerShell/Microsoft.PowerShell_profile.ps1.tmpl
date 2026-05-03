@@ -145,12 +145,12 @@ $env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"
 
 # Warp API Key (from 1Password)
 {{- if .setup_1password }}
-$env:WARP_API_KEY = "{{ onepasswordRead "op://Personal/Warp API Key/credential" }}"
+$env:WARP_API_KEY = "{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/Warp API Key/credential" "os" .chezmoi.os) }}"
 {{- end }}
 
 # Anthropic API Key (from 1Password)
 {{- if .setup_1password }}
-$env:ANTHROPIC_API_KEY = "{{ onepasswordRead "op://Personal/DH Anthropic/credential" }}"
+$env:ANTHROPIC_API_KEY = "{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/DH Anthropic/credential" "os" .chezmoi.os) }}"
 {{- end }}
 
 # Welcome message (optional - comment out if you prefer clean startup)
