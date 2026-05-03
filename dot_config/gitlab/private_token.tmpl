@@ -5,4 +5,4 @@ Item: `Gitlab PAT ***REMOVED***` (vault: Personal, field: credential).
 
 `private_` prefix → 0600 on Unix; no-op on Windows.
 */ -}}
-{{ onepasswordRead "op://Personal/Gitlab PAT ***REMOVED***/credential" -}}
+{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/Gitlab PAT ***REMOVED***/credential" "os" .chezmoi.os) -}}
