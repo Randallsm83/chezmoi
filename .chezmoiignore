@@ -66,6 +66,12 @@ chezmoi.local.toml.example
 .claude/project-memories
 .claude/project-memories/**
 
+# Claude Code session/state file (auto-rewritten constantly with caches,
+# OAuth tokens, MCP creds, machine-specific project paths). Static config
+# is managed via .claude/settings.json instead.
+.claude.json
+.claude.json.bak-*
+
 # Bootstrap scripts
 bootstrap.ps1
 setup.sh
