@@ -59,12 +59,12 @@ separator = true
 
 [[items]]
 name = "VS Code"
-path = 'C:\Users\randa\AppData\Local\Programs\Microsoft VS Code\Code.exe'
+path = '{{ .chezmoi.homeDir | replace "/" "\\" }}\AppData\Local\Programs\Microsoft VS Code\Code.exe'
 icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\code.ico'
 
 [[items]]
 name = "Warp"
-path = 'C:\Users\randa\AppData\Local\Programs\Warp\warp.exe'
+path = '{{ .chezmoi.homeDir | replace "/" "\\" }}\AppData\Local\Programs\Warp\warp.exe'
 icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\terminix.ico'
 
 [[items]]
@@ -83,7 +83,7 @@ separator = true
 
 [[items]]
 name = "Steam"
-path = 'C:\Users\randa\scoop\apps\steam\current\steam.exe'
+path = '{{ .chezmoi.homeDir | replace "/" "\\" }}\scoop\apps\steam\current\steam.exe'
 icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\steam.ico'
 
 [[items]]
@@ -98,7 +98,7 @@ icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\f
 
 [[items]]
 name = "RTSS"
-path = 'C:\Users\randa\scoop\shims\rtss.exe'
+path = '{{ .chezmoi.homeDir | replace "/" "\\" }}\scoop\shims\rtss.exe'
 icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\PNGS\settings.png'
 
 [[items]]
@@ -112,12 +112,12 @@ separator = true
 
 [[items]]
 name = "Slack"
-path = 'C:\Users\randa\AppData\Local\slack\slack.exe'
+path = '{{ .chezmoi.homeDir | replace "/" "\\" }}\AppData\Local\slack\slack.exe'
 icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\slack.ico'
 
 [[items]]
 name = "Spotify"
-path = 'C:\Users\randa\AppData\Roaming\Spotify\Spotify.exe'
+path = '{{ .chezmoi.homeDir | replace "/" "\\" }}\AppData\Roaming\Spotify\Spotify.exe'
 icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\spotify-client.ico'
 
 [[items]]

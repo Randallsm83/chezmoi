@@ -27,7 +27,13 @@ elif is-wsl; then
   # This allows both interactive SSH (via alias) and non-interactive tools (git, brew, etc.)
   # to authenticate using 1Password keys.
   local _1p_sock="$HOME/.1password/agent.sock"
-  local _npiperelay="/mnt/c/Users/randa/scoop/apps/npiperelay/current/npiperelay.exe"
+
+  # Detect Windows username dynamically (cached in WIN_USER for subsequent shells).
+  # Override by setting WIN_USER in the environment if detection misbehaves.
+  if [[ -z "$WIN_USER" ]]; then
+    export WIN_USER="$(cmd.exe /c 'echo %USERNAME%' 2>/dev/null | tr -d '\r\n')"
+  fi
+  local _npiperelay="/mnt/c/Users/${WIN_USER}/scoop/apps/npiperelay/current/npiperelay.exe"
 
   # Start the bridge if the socket doesn't exist or agent isn't responding
   if [[ ! -S "$_1p_sock" ]] || ! SSH_AUTH_SOCK="$_1p_sock" ssh-add -l &>/dev/null 2>&1; then
