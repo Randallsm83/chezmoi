@@ -212,8 +212,18 @@ $env:MISE_INSTALL_MISSING = 'false'
 # Final order: ~/.local/bin > mise > scoop/shims > system32
 Add-ToPath "$HOME\scoop\shims"
 
-if (Get-Command mise -ErrorAction SilentlyContinue) {
-    Invoke-Expression (& mise activate pwsh | Out-String)
+if ($miseCommand = Get-Command mise -ErrorAction SilentlyContinue) {
+    try {
+        $misePath = if ($miseCommand.Source) { $miseCommand.Source } else { $miseCommand.Definition }
+        $miseActivation = (& $misePath activate pwsh 2>$null | Out-String)
+        if (-not [string]::IsNullOrWhiteSpace($miseActivation)) {
+            Invoke-Expression $miseActivation
+        } else {
+            Write-Verbose "mise activation produced no output; skipping"
+        }
+    } catch {
+        Write-Verbose "mise activation failed: $($_.Exception.Message)"
+    }
 }
 
 # Ensure ~/.local/bin takes precedence over WindowsApps stubs
