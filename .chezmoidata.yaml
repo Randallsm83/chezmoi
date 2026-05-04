@@ -897,7 +897,8 @@ package_mapping:
   # Also controls config deployment for: vivid, coreutils (05-coreutils.ps1), bat themes, etc.
   rust_alternatives:
     windows:
-      scoop: [bat, ripgrep, fd, eza, delta, zoxide, vivid, uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine, just, tokei, ouch, xh]
+      # `less` is the pager `bat` shells out to (Scoop suggestion for bat)
+      scoop: [bat, ripgrep, fd, eza, delta, zoxide, vivid, uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine, just, tokei, ouch, xh, less]
       winget: []
       mise: []
     linux:
@@ -981,7 +982,8 @@ package_mapping:
   # AI & ML Tools
   ai_tools:
     windows:
-      scoop: [ollama, claude-code, opencode]
+      # `ollama-full` is the Scoop-suggested companion that bundles GPU runtime extras
+      scoop: [ollama, ollama-full, claude-code, opencode]
       winget: []
       mise: []
     linux:
@@ -997,7 +999,10 @@ package_mapping:
   # Gaming
   gaming:
     windows:
-      scoop: [steam, ludusavi, rtss, msiafterburner]
+      # `msikombustor` and `furmark` are Scoop suggestions paired with msiafterburner.
+      # `vcredist2022` (suggested for rtss) is intentionally omitted — vcredist-aio
+      # in `windows_utilities` installs all VC++ redistributables.
+      scoop: [steam, ludusavi, rtss, msiafterburner, msikombustor, furmark]
       winget: []
       mise: []
     linux:
@@ -1030,7 +1035,8 @@ package_mapping:
   # Hardware & Drivers (Windows-only)
   hardware_tools:
     windows:
-      scoop: [nvidia-profile-inspector, nvcleanstall, ddu, cpu-z, gpu-z, smartmontools, fancontrol]
+      # `windowsdesktop-runtime-10.0` is the .NET 10 runtime fancontrol depends on
+      scoop: [nvidia-profile-inspector, nvcleanstall, ddu, cpu-z, gpu-z, smartmontools, fancontrol, windowsdesktop-runtime-10.0]
       winget: []
       mise: []
     linux:
@@ -1096,7 +1102,9 @@ package_mapping:
   # Miscellaneous Development
   dev_extras:
     windows:
-      scoop: [postman, ilspy, pandoc, wkhtmltopdf, cygwin, dd, wp-cli]
+      # `windowsdesktop-runtime-8.0` (ilspy) and `latex` (pandoc PDF output) are
+      # Scoop-suggested companions for packages already in this feature.
+      scoop: [postman, ilspy, pandoc, wkhtmltopdf, cygwin, dd, wp-cli, windowsdesktop-runtime-8.0, latex]
       winget: []
       mise: []
     linux:
@@ -1273,14 +1281,17 @@ scoop_bucket_overrides:
     - everything
     - fancontrol
     - flow-launcher
+    - furmark
     - gpu-z
     - ilspy
     - islc
     - lazygit
     - ludusavi
     - msiafterburner
+    - msikombustor
     - nvcleanstall
     - nvidia-profile-inspector
+    - ollama-full
     - postman
     - pritunl-client
     - rtss
@@ -1289,6 +1300,8 @@ scoop_bucket_overrides:
     - zed
   versions:
     - steam
+    - windowsdesktop-runtime-8.0
+    - windowsdesktop-runtime-10.0
   nerd-fonts:
     - CascadiaCode-NF
     - FiraCode-NF
@@ -1306,19 +1319,22 @@ scoop_bucket_overrides:
 # Always-installed packages (not controlled by feature flags)
 always_install:
   scoop:
-    - chezmoi
-    - jq
-    - yq
-    - make
-    - 7zip
-    - unzip
-    - gzip
-    - gsudo
+    # IMPORTANT: order matters — aria2 must be installed FIRST so all
+    # subsequent scoop downloads benefit from multi-connection downloads.
     - aria2
-    - cacert
+    - cacert        # CA cert bundle (needed by aria2 over HTTPS)
+    - 7zip          # extractor used by many later installers
     - innounp
     - dark
+    - chezmoi
+    - gsudo
     - scoop-search
+    - jq
+    - jid           # Interactive JSON drill-down (Scoop suggestion paired with jq)
+    - yq
+    - make
+    - unzip
+    - gzip
     # NOTE: `sudo` (scoop) conflicts with `gsudo` — only `gsudo` is kept.
 
   winget: []
