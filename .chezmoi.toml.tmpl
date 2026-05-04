@@ -222,13 +222,30 @@ gitlab_pat          = "{{ op://Personal/Gitlab PAT ***REMOVED***/credential }}"
 warp_gitlab_mcp_pat = "{{ op://DH/warp-gitlab-mcp-pat/token }}"
 tavily_api_key      = "{{ op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential }}"
 github_pat          = "{{ op://Personal/GitHub Token/token }}"` -}}
-{{- if and (lookPath "op") (ne (env "CHEZMOI_SKIP_1P") "1") }}
-{{- if eq .chezmoi.os "windows" }}
-{{ output "pwsh" "-NoProfile" "-NonInteractive" "-Command" (printf "$ErrorActionPreference='SilentlyContinue'; $t = @'\n%s\n'@; try { $r = ($t | op inject 2>$null); if ($LASTEXITCODE -eq 0 -and $r) { Write-Output $r } else { Write-Output ($t -replace '\\{\\{ op://[^}]+ \\}\\}', '') } } catch { Write-Output ($t -replace '\\{\\{ op://[^}]+ \\}\\}', '') }; exit 0" $secretsTpl) }}
-{{- else }}
+{{ "" }}
+{{- if and (lookPath "op") (ne (env "CHEZMOI_SKIP_1P") "1") -}}
+{{- if eq .chezmoi.os "windows" -}}
+{{- /*
+Windows op inject strategy: write the template to a temp file and run
+`op inject -i FILE -o FILE`. The file-based form avoids stdin-pipe quirks
+in the chezmoi subprocess (which previously caused op inject to silently
+return empty under -NonInteractive).
+
+The pwsh helper:
+  - reads the rendered file as bytes (preserves Unicode key material)
+  - normalizes CRLF -> LF so multi-line secret values (e.g. SSH keys with
+    embedded newlines) don't produce broken TOML lines
+  - trims a single trailing newline so the result lines up cleanly under
+    the [data.secrets] header (which we emit on its own line above)
+  - writes a diagnostic log to %TEMP%\chezmoi-op-inject.log so failures
+    are debuggable without re-running
+  - falls back to placeholder-stripping if op fails for any reason
+*/ -}}
+{{ output "pwsh" "-NoProfile" "-NonInteractive" "-Command" (printf "$ErrorActionPreference='SilentlyContinue'; $log = Join-Path $env:TEMP 'chezmoi-op-inject.log'; $t = @'\n%s\n'@; $tmpIn = [System.IO.Path]::GetTempFileName(); $tmpOut = [System.IO.Path]::GetTempFileName(); $stamp = (Get-Date).ToString('o'); try { [System.IO.File]::WriteAllText($tmpIn, $t, [System.Text.UTF8Encoding]::new($false)); $opErr = & op inject -i $tmpIn -o $tmpOut --force 2>&1; $code = $LASTEXITCODE; $opPath = (Get-Command op -ErrorAction SilentlyContinue).Source; Add-Content -Path $log -Value (\"[$stamp] op=$opPath exit=$code outExists=$(Test-Path $tmpOut) errLen=$($opErr.Length)\"); if ($opErr) { Add-Content -Path $log -Value (\"[$stamp] STDERR: \" + ($opErr -join '|')) }; if ($code -eq 0 -and (Test-Path $tmpOut)) { $rendered = [System.IO.File]::ReadAllText($tmpOut); $rendered = $rendered -replace \"`r`n\", \"`n\"; $rendered = $rendered.TrimEnd(\"`n\"); Add-Content -Path $log -Value (\"[$stamp] rendered len=$($rendered.Length)\"); Write-Output $rendered } else { Add-Content -Path $log -Value (\"[$stamp] FALLBACK to placeholder strip\"); $fallback = $t -replace '\\{\\{ op://[^}]+ \\}\\}', ''; Write-Output $fallback.TrimEnd(\"`n\") } } catch { Add-Content -Path $log -Value (\"[$stamp] EXCEPTION: $($_.Exception.Message)\"); $fallback = $t -replace '\\{\\{ op://[^}]+ \\}\\}', ''; Write-Output $fallback.TrimEnd(\"`n\") } finally { Remove-Item -Force -ErrorAction SilentlyContinue $tmpIn, $tmpOut }; exit 0" $secretsTpl) }}
+{{- else -}}
 {{ output "sh" "-c" (printf "T=$(cat <<'__OP_EOT__'\n%s\n__OP_EOT__\n); printf '%%s\\n' \"$T\" | op inject 2>/dev/null || printf '%%s\\n' \"$T\" | sed -E 's/\\{\\{ op:\\/\\/[^}]+ \\}\\}//g'" $secretsTpl) }}
-{{- end }}
-{{- else }}
+{{- end -}}
+{{- else -}}
 {{ regexReplaceAll "\\{\\{ op://[^}]+ \\}\\}" $secretsTpl "" }}
 {{- end }}
 
