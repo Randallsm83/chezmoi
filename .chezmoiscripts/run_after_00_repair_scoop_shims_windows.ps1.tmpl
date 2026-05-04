@@ -1,0 +1,87 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Repair Scoop shim metadata after package installs/updates.
+#
+# This avoids launching through apps\<app>\current because those links can be
+# rejected by Windows as untrusted mount points on some systems. Scoop itself
+# may recreate current-based shim targets, so this runs after each apply.
+
+$ErrorActionPreference = 'Continue'
+
+$ScoopRoot = if ($env:SCOOP -and (Test-Path -LiteralPath $env:SCOOP)) {
+    $env:SCOOP
+} else {
+    Join-Path $HOME 'scoop'
+}
+
+$ScoopApps = Join-Path $ScoopRoot 'apps'
+$ScoopShims = Join-Path $ScoopRoot 'shims'
+
+if (-not (Test-Path -LiteralPath $ScoopApps) -or -not (Test-Path -LiteralPath $ScoopShims)) {
+    exit 0
+}
+
+function Get-ScoopCurrentTarget {
+    param([Parameter(Mandatory)][string]$AppName)
+
+    $appDir = Join-Path $ScoopApps $AppName
+    $currentPath = Join-Path $appDir 'current'
+
+    $current = Get-Item -LiteralPath $currentPath -Force -ErrorAction SilentlyContinue
+    if ($current -and $current.Target) {
+        $target = @($current.Target)[0]
+        if ($target -and (Test-Path -LiteralPath $target)) {
+            return $target
+        }
+    }
+
+    $latestVersion = Get-ChildItem -LiteralPath $appDir -Directory -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -ne 'current' } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+
+    if ($latestVersion) {
+        return $latestVersion.FullName
+    }
+
+    return $null
+}
+
+$escapedApps = [regex]::Escape($ScoopApps.TrimEnd('\'))
+$pathPattern = '(?<prefix>path\s*=\s*")(?<target>[^"]+)(?<suffix>".*)'
+$currentPattern = '^' + $escapedApps + '\\(?<app>[^\\]+)\\current(?<rest>\\.*)$'
+$updated = 0
+
+Get-ChildItem -LiteralPath $ScoopShims -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match '\.shim(\.bat)?$' } |
+    ForEach-Object {
+        $shimPath = $_.FullName
+        $content = [System.IO.File]::ReadAllText($shimPath)
+        $newContent = [regex]::Replace($content, $pathPattern, {
+            param($match)
+
+            $target = $match.Groups['target'].Value
+            $currentMatch = [regex]::Match($target, $currentPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+            if (-not $currentMatch.Success) {
+                return $match.Value
+            }
+
+            $resolvedRoot = Get-ScoopCurrentTarget -AppName $currentMatch.Groups['app'].Value
+            if (-not $resolvedRoot) {
+                return $match.Value
+            }
+
+            $resolvedTarget = $resolvedRoot.TrimEnd('\') + $currentMatch.Groups['rest'].Value
+            return $match.Groups['prefix'].Value + $resolvedTarget + $match.Groups['suffix'].Value
+        })
+
+        if ($newContent -ne $content) {
+            [System.IO.File]::WriteAllText($shimPath, $newContent, [System.Text.UTF8Encoding]::new($false))
+            $script:updated++
+        }
+    }
+
+if ($updated -gt 0) {
+    Write-Host "Repaired Scoop shim targets: $updated" -ForegroundColor Green
+}
+{{- end -}}
