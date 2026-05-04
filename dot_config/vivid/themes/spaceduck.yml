@@ -110,6 +110,7 @@ media:
   foreground: green
 
 office:
+  foreground: cyan
   document:
     foreground: cyan
   spreadsheet:
@@ -119,6 +120,8 @@ office:
   calendar:
     foreground: cyan
     font-style: underline
+  ebook:
+    foreground: cyan
 
 archives:
   foreground: red
