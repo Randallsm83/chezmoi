@@ -315,6 +315,7 @@ package_features:
   nvim: true
   vim: true
   vscode: true
+  zed: true
 
   # ============================================================================
   # Shell Tools (recommended)
@@ -613,6 +614,22 @@ package_mapping:
     darwin:
       brew: []
       cask: [visual-studio-code]
+      mise: []
+
+  zed:
+    windows:
+      scoop: [zed]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [] # zed installed via official script on Linux
+      mise: []
+    darwin:
+      brew: []
+      cask: [zed]
       mise: []
 
   # Shell Tools
@@ -1269,6 +1286,7 @@ scoop_bucket_overrides:
     - rtss
     - vcredist-aio
     - ventoy
+    - zed
   versions:
     - steam
   nerd-fonts:
