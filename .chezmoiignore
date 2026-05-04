@@ -36,6 +36,18 @@
 {{- if eq .chezmoi.os "windows" }}
 projects
 projects/**
+
+# Flow Launcher (scoop persist): always ignore runtime/cache/log siblings so
+# future `chezmoi re-add` doesn't pull them into source. Tracked files live at
+# scoop/persist/flow-launcher/UserData/Settings/{Settings.json,Plugins/**}.
+scoop/persist/flow-launcher/UserData/Cache/**
+scoop/persist/flow-launcher/UserData/Logs/**
+scoop/persist/flow-launcher/UserData/Plugins/**
+scoop/persist/flow-launcher/UserData/Themes/**
+scoop/persist/flow-launcher/UserData/Settings/History.json
+scoop/persist/flow-launcher/UserData/Settings/UserSelectedRecord.json
+scoop/persist/flow-launcher/UserData/Settings/MultipleTopMostRecord.json
+scoop/persist/flow-launcher/UserData/**/*.bak
 {{- end }}
 
 # ============================================================================
@@ -162,6 +174,10 @@ AppData/
 
 # Windows Terminal
 AppData/Local/Packages/Microsoft.WindowsTerminal_*/
+
+# Scoop persist tree (Flow Launcher etc.) — Windows only
+scoop/
+scoop/**
 
 {{- end }}
 
