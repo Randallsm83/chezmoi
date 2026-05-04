@@ -81,9 +81,18 @@ if (Get-Module -ListAvailable -Name PSCompletions) {
 # (includes starship, zoxide, fzf, completions, aliases, etc.)
 $scriptsDir = Join-Path (Split-Path $PROFILE) "Scripts"
 if (Test-Path $scriptsDir) {
-    Get-ChildItem "$scriptsDir\*.ps1" -ErrorAction SilentlyContinue | ForEach-Object {
+    Get-ChildItem -Path $scriptsDir -Filter "*.ps1" -File -ErrorAction SilentlyContinue |
+        Sort-Object Name |
+        ForEach-Object {
+        if ([string]::IsNullOrWhiteSpace($_.FullName)) {
+            return
+        }
         Write-Verbose "Sourcing: $($_.Name)"
-        . $_.FullName
+        try {
+            . $_.FullName
+        } catch {
+            Write-Warning "Skipping profile script '$($_.Name)': $($_.Exception.Message)"
+        }
     }
 }
 
