@@ -22,6 +22,7 @@
   "always_install": [
     "chezmoi",
     "jq",
+    "jid",
     "yq",
     "make",
     "7zip",
@@ -46,19 +47,19 @@
     "fzf": ["fzf", "kelleyma49.PSFzf"],
     "wget": ["wget", "curl"],
     "fastfetch": ["fastfetch"],
-    "rust_alternatives": ["bat", "ripgrep", "fd", "eza", "delta", "zoxide", "vivid", "uutils-coreutils", "tealdeer", "navi", "sd", "dust", "procs", "hyperfine", "just", "tokei", "ouch", "xh"],
+    "rust_alternatives": ["bat", "ripgrep", "fd", "eza", "delta", "zoxide", "vivid", "uutils-coreutils", "tealdeer", "navi", "sd", "dust", "procs", "hyperfine", "just", "tokei", "ouch", "xh", "less"],
     "lua": ["lua", "luarocks", "luajit"],
     "julia": ["juliaup"],
     "sqlite3": ["sqlite"],
     "arduino": ["arduino", "arduino-cli"],
     "nerd_fonts": ["CascadiaCode-NF", "FiraCode-NF", "Hack-NF", "JetBrainsMono-NF"],
-    "ai_tools": ["ollama", "claude-code", "opencode"],
-    "gaming": ["steam", "ludusavi", "rtss", "msiafterburner"],
+    "ai_tools": ["ollama", "ollama-full", "claude-code", "opencode"],
+    "gaming": ["steam", "ludusavi", "rtss", "msiafterburner", "msikombustor", "furmark"],
     "docker": ["docker-compose"],
-    "hardware_tools": ["nvidia-profile-inspector", "nvcleanstall", "ddu", "cpu-z", "gpu-z", "smartmontools"],
+    "hardware_tools": ["nvidia-profile-inspector", "nvcleanstall", "ddu", "cpu-z", "gpu-z", "smartmontools", "fancontrol", "windowsdesktop-runtime-10.0"],
     "windows_utilities": ["everything", "flow-launcher", "bulk-crap-uninstaller", "ventoy", "vcredist-aio"],
     "sysinternals": ["sysinternals-suite", "ctrl2cap", "whois"],
     "network_tools": ["bind", "rclone"],
-    "dev_extras": ["postman", "ilspy", "pandoc", "wkhtmltopdf", "cygwin", "dd", "wp-cli"]
+    "dev_extras": ["postman", "ilspy", "pandoc", "wkhtmltopdf", "cygwin", "dd", "wp-cli", "windowsdesktop-runtime-8.0", "latex"]
   }
 }
