@@ -10,6 +10,7 @@ $BatThemesDir = if ($env:XDG_CONFIG_HOME) {
 } else {
     Join-Path $HOME ".config\bat\themes"
 }
+$env:BAT_CONFIG_DIR = Split-Path $BatThemesDir -Parent
 
 New-Item -ItemType Directory -Force -Path $BatThemesDir | Out-Null
 
@@ -170,8 +171,12 @@ New-BatTheme `
 
 # Rebuild bat cache to include new themes
 if (Get-Command bat -ErrorAction SilentlyContinue) {
-    bat cache --build
-    Write-Host "✓ Generated bat themes and rebuilt cache" -ForegroundColor Green
+    try {
+        bat cache --build
+        Write-Host "✓ Generated bat themes and rebuilt cache" -ForegroundColor Green
+    } catch {
+        Write-Warning "Generated bat themes but cache rebuild failed: $($_.Exception.Message)"
+    }
 } else {
     Write-Host "⚠ bat not found - themes generated but cache not rebuilt" -ForegroundColor Yellow
 }
