@@ -203,13 +203,29 @@ folders to match `randa`.
 
 Repos and tools live on `D:\` (`D:\dh`, `D:\stormguide`, `D:\wotr`, `D:\game-optimizer`,
 `D:\homelab\pi-stack`). D: is a VHD — confirm it auto-mounts for `ranmil` on login.
-If access is denied:
+Game libraries live on `A:\` (`A:\SteamGames`, `A:\EpicGames`, `A:\XboxGames`,
+`A:\Vortex Mods`). If access is denied on either:
 
 ```powershell
 icacls 'D:\' /grant 'ranmil:(OI)(CI)M' /T /C
+icacls 'A:\' /grant 'ranmil:(OI)(CI)M' /T /C
 ```
 
-### 3.8 Verify the copy
+### 3.8 Game launchers — reinstall client, point at existing libraries
+
+Game data on `A:\` does not move. Reinstall each launcher on `ranmil`, then add
+the existing folder as a library so installs are detected without re-downloading.
+
+- **Steam** — install client, then Settings → Storage → "Add drive" → `A:\SteamGames`.
+  Steam scans and re-registers all installed games.
+- **Epic Games Launcher** — install, then for each game: Library → Install → point
+  at the existing `A:\EpicGames\<Game>` folder. Verify, no re-download.
+- **Xbox app** — install, Settings → Install options → default drive `A:`.
+  Re-detect each game by pointing Install at `A:\XboxGames\<Game>`.
+- **Vortex** — restored from `AppData\Roaming\Vortex` copy (Phase 3.4); on first
+  launch, set Mods path to `A:\Vortex Mods` if not auto-detected.
+
+### 3.9 Verify the copy
 
 ```powershell
 $srcSize = (Get-ChildItem C:\Users\randa\Documents,C:\Users\randa\projects -Recurse -Force `
@@ -379,6 +395,31 @@ All three should return nothing.
 - Top-level: `bin/`, `notes/`, `Saved Games/`, `Recorded Calls/`, `3D Objects/`, `ansel/`,
   `OneDrive/` (re-link instead).
 - WSL distros (HKCU-scoped, see Phase 4).
+- Game launchers (Steam, Epic, Xbox) — reinstall client only; libraries on `A:\` persist.
+
+## Manual reinstalls (not in any export)
+
+These were installed outside scoop/winget on `randa` and need to be reinstalled on
+`ranmil`. Where a scoop manifest exists, prefer that and add to chezmoi.
+
+- **Zed** — currently per-user at `AppData\Local\Programs\Zed`. Use `scoop install
+  extras/zed` on `ranmil` and add to the chezmoi scoop install list.
+- **Notepad++** — `scoop install extras/notepadplusplus` if you want it managed,
+  otherwise reinstall via official installer.
+- **Autodesk Fusion 360** — official installer (account-linked, no scoop).
+- **MSYS2** — `scoop install main/msys2` or official installer.
+- **Equalizer APO** — official installer (audio driver, manual config files preserved
+  in `C:\Program Files\EqualizerAPO\config`, machine-wide).
+- **Focusrite drivers** — reinstall from Focusrite Control downloads.
+- **NVIDIA App / G-Assist / FrameView** — reinstall from NVIDIA App.
+- **Wintoys, WhatsApp, Dolby Access** — Microsoft Store, EULA-blocked from winget import.
+
+### Game library reinstalls (clients only — data on `A:\`)
+
+- **Steam** — installer from steampowered.com, then add `A:\SteamGames` library.
+- **Epic Games Launcher** — installer from epicgames.com, then point at
+  `A:\EpicGames\<Game>` per title.
+- **Xbox app** — Microsoft Store, set default install drive to `A:`.
 
 ## Items chezmoi already covers — don't manually copy
 
