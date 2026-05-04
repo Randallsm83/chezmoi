@@ -19,4 +19,13 @@ if (Test-Path "$winSshDir\ssh.exe") {
     Set-Alias -Name sftp    -Value "$winSshDir\sftp.exe"    -Scope Global
 }
 
+# Expose 1Password's named-pipe SSH agent via SSH_AUTH_SOCK so non-OpenSSH
+# tools (anything that ignores ~/.ssh/config IdentityAgent, e.g. some Git
+# helpers, language SDKs, WSL-Win bridges) can find the agent. OpenSSH
+# itself doesn't need this because IdentityAgent is set in ~/.ssh/config.
+$opSshPipe = '\\.\pipe\openssh-ssh-agent'
+if (-not $env:SSH_AUTH_SOCK -and (Test-Path $opSshPipe)) {
+    $env:SSH_AUTH_SOCK = $opSshPipe
+}
+
 # vim: ts=2 sts=2 sw=2 et
