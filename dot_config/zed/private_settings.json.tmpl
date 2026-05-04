@@ -1,0 +1,505 @@
+{{- /*
+Zed editor settings template.
+
+Secrets are pulled from 1Password at apply time:
+  - Tavily MCP                : op://Personal/Tavily/credential  (item id: ytw3xmw4bkb7u5yamcdzgdsy7u)
+  - GitHub MCP PAT            : op://Personal/GitHub Token/token
+  - GitLab MCP PAT (DH)       : op://DH/warp-gitlab-mcp-pat/token
+
+`private_` prefix → 0600 on Unix; required because the rendered file
+contains decoded secret material from 1Password.
+
+TODO(homelab): The `edit_predictions` block (OpenAI-compatible API
+pointing at https://ai.raspi.homelab/v1/completions) was dropped from
+this template on 2026-05-03. Decommission the corresponding endpoint
+from the homelab once nothing else references it.
+*/ -}}
+{
+  "$schema": "https://zed.dev/schema/settings.json",
+
+  // ── Theme & UI ────────────────────────────────────────────────
+  "theme": {
+    "mode": "dark",
+    "light": "Spaceduck",
+    "dark": "Spaceduck"
+  },
+  "icon_theme": "Material Icon Theme",
+  "ui_font_family": "Hack Nerd Font",
+  "ui_font_size": 15,
+  "buffer_font_family": "Hack Nerd Font Mono",
+  "buffer_font_fallbacks": ["Fira Code", "Symbols Nerd Font Mono", "Noto Color Emoji"],
+  "buffer_font_size": 14,
+  "buffer_font_features": {
+    "calt": true,
+    "ss02": true,
+    "ss03": true,
+    "ss04": true,
+    "ss05": true,
+    "ss08": true,
+    "cv15": true,
+    "cv24": true,
+    "cv29": true
+  },
+  "buffer_line_height": "comfortable",
+
+  // ── Editor behavior ──────────────────────────────────────────
+  "vim_mode": true,
+  "relative_line_numbers": true,
+  "cursor_blink": false,
+  "show_whitespaces": "boundary",
+  "soft_wrap": "editor_width",
+  "preferred_line_length": 100,
+  "wrap_guides": [80, 100],
+  "tab_size": 2,
+  "hard_tabs": false,
+  "remove_trailing_whitespace_on_save": true,
+  "ensure_final_newline_on_save": true,
+  "format_on_save": "on",
+  "autosave": "on_focus_change",
+  "restore_on_startup": "last_workspace",
+  "confirm_quit": false,
+  "use_smartcase_search": true,
+
+  // ── Files & exclusions ───────────────────────────────────────
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/Thumbs.db",
+    "**/.classpath",
+    "**/.settings",
+    "**/node_modules",
+    "**/target",
+    "**/dist",
+    "**/build",
+    "**/.venv",
+    "**/__pycache__"
+  ],
+  "auto_update": true,
+
+  // ── Telemetry / Privacy ──────────────────────────────────────
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "session": {
+    "trust_all_worktrees": true
+  },
+
+  // ── Terminal ─────────────────────────────────────────────────
+  "terminal": {
+    "shell": {
+      "program": "/bin/zsh"
+    },
+    "font_family": "Hack Nerd Font Mono",
+    "font_size": 13,
+    "copy_on_select": false,
+    "blinking": "off",
+    "working_directory": "current_project_directory"
+  },
+
+  // ── Git & version control ────────────────────────────────────
+  "git": {
+    "git_gutter": "tracked_files",
+    "inline_blame": {
+      "enabled": true,
+      "delay_ms": 600
+    }
+  },
+
+  // ── Project panel & UI ───────────────────────────────────────
+  "project_panel": {
+    "dock": "left",
+    "default_width": 280,
+    "git_status": true,
+    "indent_size": 16
+  },
+  "tab_bar": {
+    "show": true,
+    "show_nav_history_buttons": true
+  },
+  "tabs": {
+    "git_status": true,
+    "file_icons": true,
+    "close_position": "right"
+  },
+  "scrollbar": {
+    "show": "auto",
+    "git_diff": true,
+    "selected_symbol": true
+  },
+  "minimap": {
+    "show": "auto"
+  },
+  "indent_guides": {
+    "enabled": true,
+    "coloring": "indent_aware"
+  },
+
+  // ── Language defaults ────────────────────────────────────────
+  "languages": {
+    "Rust": {
+      "tab_size": 4,
+      "format_on_save": "on"
+    },
+    "Python": {
+      "tab_size": 4,
+      "format_on_save": "on",
+      "language_servers": ["pyright", "ruff"],
+      "formatter": [
+        { "language_server": { "name": "ruff" } }
+      ]
+    },
+    "Go": {
+      "tab_size": 4,
+      "hard_tabs": true,
+      "format_on_save": "on"
+    },
+    "Ruby": {
+      "tab_size": 2,
+      "format_on_save": "on"
+    },
+    "Perl": {
+      "tab_size": 4
+    },
+    "Lua": {
+      "tab_size": 2
+    },
+    "Zig": {
+      "tab_size": 4,
+      "format_on_save": "on"
+    },
+    "JavaScript": {
+      "tab_size": 2,
+      "format_on_save": "on",
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true
+      }
+    },
+    "TypeScript": {
+      "tab_size": 2,
+      "format_on_save": "on",
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true
+      }
+    },
+    "JSON": {
+      "tab_size": 2
+    },
+    "TOML": {
+      "tab_size": 2
+    },
+    "YAML": {
+      "tab_size": 2
+    },
+    "Markdown": {
+      "soft_wrap": "preferred_line_length",
+      "format_on_save": "off"
+    }
+  },
+
+  // ── LSP tweaks ───────────────────────────────────────────────
+  "lsp": {
+    "rust-analyzer": {
+      "initialization_options": {
+        "check": { "command": "clippy" },
+        "cargo": { "features": "all" }
+      }
+    },
+    "pyright": {
+      "settings": {
+        "python": {
+          "analysis": {
+            "typeCheckingMode": "basic"
+          }
+        }
+      }
+    }
+  },
+
+  // ── MCP / Context servers ────────────────────────────────────
+  // Secrets templated from 1Password at apply time.
+  "context_servers": {
+    "serena-context-server": {
+      "enabled": true,
+      "remote": false,
+      "settings": {
+        "python_executable": null
+      }
+    },
+    "mcp-server-tavily": {
+      "enabled": true,
+      "remote": false,
+      "settings": {
+        "tavily_api_key": "{{ onepasswordRead "op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential" }}"
+      }
+    },
+    "mcp-server-gitlab": {
+      "enabled": true,
+      "remote": false,
+      "settings": {
+        "gitlab_personal_access_token": "{{ onepasswordRead "op://DH/warp-gitlab-mcp-pat/token" }}",
+        "gitlab_api_url": "https://git.dreamhost.com/api/v4"
+      }
+    },
+    "mcp-server-github": {
+      "enabled": true,
+      "remote": false,
+      "settings": {
+        "github_personal_access_token": "{{ onepasswordRead "op://Personal/GitHub Token/token" }}"
+      }
+    }
+  },
+
+  // ── AI / Agent ───────────────────────────────────────────────
+  "features": {
+    "edit_prediction_provider": "zed"
+  },
+  "agent_servers": {
+    "opencode": {
+      "type": "registry"
+    },
+    "gemini": {
+      "type": "registry"
+    },
+    "cursor": {
+      "type": "registry"
+    },
+    "codex-acp": {
+      "type": "registry"
+    },
+    "claude-acp": {
+      "type": "registry"
+    }
+  },
+  "agent": {
+    "default_profile": "mine",
+    "always_allow_tool_actions": false,
+    "default_model": {
+      "provider": "anthropic",
+      "model": "claude-opus-4-7-latest",
+      "enable_thinking": true,
+      "effort": "high"
+    },
+    "profiles": {
+      "mine": {
+        "name": "Mine",
+        "default_model": {
+          "provider": "anthropic",
+          "model": "claude-opus-4-7-latest",
+          "enable_thinking": true,
+          "effort": "high"
+        },
+        "tools": {
+          "update_plan": true,
+          "terminal": true,
+          "spawn_agent": true,
+          "save_file": true,
+          "restore_file_from_disk": true,
+          "read_file": true,
+          "open": true,
+          "now": true,
+          "move_path": true,
+          "list_directory": true,
+          "grep": true,
+          "find_path": true,
+          "fetch": true,
+          "edit_file": true,
+          "diagnostics": true,
+          "delete_path": true,
+          "create_directory": true,
+          "copy_path": true
+        },
+        "enable_all_context_servers": false,
+        "context_servers": {
+          "mcp-server-tavily": {
+            "tools": {
+              "tavily-search": true,
+              "tavily-map": true,
+              "tavily-extract": true,
+              "tavily-crawl": true
+            }
+          },
+          "mcp-server-sequential-thinking": {
+            "tools": {
+              "sequentialthinking": true
+            }
+          },
+          "mcp-server-gitlab": {
+            "tools": {
+              "verify_namespace": true,
+              "upload_markdown": true,
+              "update_merge_request_note": true,
+              "update_merge_request_discussion_note": true,
+              "update_merge_request": true,
+              "update_label": true,
+              "update_issue_note": true,
+              "update_issue": true,
+              "update_draft_note": true,
+              "unapprove_merge_request": true,
+              "search_repositories": true,
+              "resolve_merge_request_thread": true,
+              "push_files": true,
+              "publish_draft_note": true,
+              "my_issues": true,
+              "mr_discussions": true,
+              "list_projects": true,
+              "merge_merge_request": true,
+              "list_project_members": true,
+              "list_namespaces": true,
+              "list_merge_requests": true,
+              "list_merge_request_versions": true,
+              "list_merge_request_emoji_reactions": true,
+              "list_merge_request_note_emoji_reactions": true,
+              "list_merge_request_changed_files": true,
+              "list_merge_request_diffs": true,
+              "list_labels": true,
+              "list_issues": true,
+              "list_issue_note_emoji_reactions": true,
+              "list_issue_links": true,
+              "list_issue_emoji_reactions": true,
+              "list_issue_discussions": true,
+              "list_group_projects": true,
+              "list_events": true,
+              "list_group_iterations": true,
+              "list_draft_notes": true,
+              "list_commits": true,
+              "get_users": true,
+              "get_repository_tree": true,
+              "get_project_events": true,
+              "get_project": true,
+              "get_namespace": true,
+              "get_merge_request_version": true,
+              "get_merge_request_notes": true,
+              "get_merge_request_note": true,
+              "get_merge_request_file_diff": true,
+              "get_merge_request_diffs": true,
+              "get_merge_request_conflicts": true,
+              "get_merge_request_approval_state": true,
+              "get_merge_request": true,
+              "get_label": true,
+              "get_issue_link": true,
+              "get_issue": true,
+              "get_file_contents": true,
+              "get_draft_note": true,
+              "get_commit_diff": true,
+              "get_commit": true,
+              "get_branch_diffs": true,
+              "fork_repository": true,
+              "download_attachment": true,
+              "discover_tools": true,
+              "delete_merge_request_note_emoji_reaction": true,
+              "delete_merge_request_note": true,
+              "delete_merge_request_emoji_reaction": true,
+              "delete_merge_request_discussion_note": true,
+              "delete_label": true,
+              "delete_issue_note_emoji_reaction": true,
+              "delete_issue_link": true,
+              "delete_issue_emoji_reaction": true,
+              "delete_issue": true,
+              "delete_draft_note": true,
+              "create_repository": true,
+              "create_or_update_file": true,
+              "create_note": true,
+              "create_merge_request_thread": true,
+              "create_merge_request_note_emoji_reaction": true,
+              "create_merge_request_note": true,
+              "create_merge_request_emoji_reaction": true,
+              "create_merge_request_discussion_note": true,
+              "create_merge_request": true,
+              "create_label": true,
+              "create_issue_note_emoji_reaction": true,
+              "create_issue_note": true,
+              "create_issue_link": true,
+              "create_issue_emoji_reaction": true,
+              "create_issue": true,
+              "create_draft_note": true,
+              "bulk_publish_draft_notes": true,
+              "create_branch": true,
+              "approve_merge_request": true
+            }
+          },
+          "mcp-server-github": {
+            "tools": {
+              "update_pull_request_branch": true,
+              "update_pull_request": true,
+              "sub_issue_write": true,
+              "search_users": true,
+              "search_repositories": true,
+              "search_pull_requests": true,
+              "search_issues": true,
+              "search_code": true,
+              "request_copilot_review": true,
+              "push_files": true,
+              "pull_request_review_write": true,
+              "pull_request_read": true,
+              "merge_pull_request": true,
+              "list_tags": true,
+              "list_releases": true,
+              "list_pull_requests": true,
+              "list_issues": true,
+              "list_issue_types": true,
+              "list_commits": true,
+              "list_branches": true,
+              "issue_write": true,
+              "issue_read": true,
+              "get_teams": true,
+              "get_team_members": true,
+              "get_tag": true,
+              "get_release_by_tag": true,
+              "get_me": true,
+              "get_latest_release": true,
+              "get_label": true,
+              "get_file_contents": true,
+              "get_commit": true,
+              "fork_repository": true,
+              "delete_file": true,
+              "create_repository": true,
+              "create_pull_request": true,
+              "create_or_update_file": true,
+              "create_branch": true,
+              "assign_copilot_to_issue": true,
+              "add_reply_to_pull_request_comment": true,
+              "add_issue_comment": true,
+              "add_comment_to_pending_review": true
+            }
+          },
+          "mcp-server-context7": {
+            "tools": {
+              "resolve-library-id": true,
+              "query-docs": true
+            }
+          }
+        }
+      }
+    }
+  },
+
+  // ── Extensions to auto-install ───────────────────────────────
+  // Note: Spaceduck is not in Zed's extension registry; it's installed as a
+  // user theme JSON in ~/.config/zed/themes/spaceduck.json.
+  "auto_install_extensions": {
+    "material-icon-theme": true,
+    "toml": true,
+    "dockerfile": true,
+    "docker-compose": true,
+    "nix": true,
+    "ruby": true,
+    "lua": true,
+    "perl": true,
+    "zig": true,
+    "make": true,
+    "nu": true,
+    "fish": true,
+    "powershell": true,
+    "terraform": true,
+    "ansible": true,
+    "html": true,
+    "git-firefly": true,
+    "log": true,
+    "env": true,
+    "scss": true
+  }
+}
