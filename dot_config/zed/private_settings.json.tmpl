@@ -233,14 +233,14 @@ from the homelab once nothing else references it.
       "enabled": true,
       "remote": false,
       "settings": {
-        "tavily_api_key": "{{ onepasswordRead "op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential" }}"
+        "tavily_api_key": "{{ .secrets.tavily_api_key }}"
       }
     },
     "mcp-server-gitlab": {
       "enabled": true,
       "remote": false,
       "settings": {
-        "gitlab_personal_access_token": "{{ onepasswordRead "op://DH/warp-gitlab-mcp-pat/token" }}",
+        "gitlab_personal_access_token": "{{ .secrets.warp_gitlab_mcp_pat }}",
         "gitlab_api_url": "https://git.dreamhost.com/api/v4"
       }
     },
@@ -248,7 +248,7 @@ from the homelab once nothing else references it.
       "enabled": true,
       "remote": false,
       "settings": {
-        "github_personal_access_token": "{{ onepasswordRead "op://Personal/GitHub Token/token" }}"
+        "github_personal_access_token": "{{ .secrets.github_pat }}"
       }
     }
   },

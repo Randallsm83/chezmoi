@@ -219,7 +219,9 @@ ssh_pub_raspi       = "{{ op://Homelab/qdreol3xtwen3z6lcdcjkbkvw4/public key }}"
 warp_api_key        = "{{ op://Personal/Warp API Key/credential }}"
 anthropic_api_key   = "{{ op://Personal/DH Anthropic/credential }}"
 gitlab_pat          = "{{ op://Personal/Gitlab PAT ***REMOVED***/credential }}"
-warp_gitlab_mcp_pat = "{{ op://DH/warp-gitlab-mcp-pat/token }}"` -}}
+warp_gitlab_mcp_pat = "{{ op://DH/warp-gitlab-mcp-pat/token }}"
+tavily_api_key      = "{{ op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential }}"
+github_pat          = "{{ op://Personal/GitHub Token/token }}"` -}}
 {{- if and (lookPath "op") (ne (env "CHEZMOI_SKIP_1P") "1") }}
 {{- if eq .chezmoi.os "windows" }}
 {{ output "pwsh" "-NoProfile" "-NonInteractive" "-Command" (printf "$ErrorActionPreference='SilentlyContinue'; $t = @'\n%s\n'@; try { $r = ($t | op inject 2>$null); if ($LASTEXITCODE -eq 0 -and $r) { Write-Output $r } else { Write-Output ($t -replace '\\{\\{ op://[^}]+ \\}\\}', '') } } catch { Write-Output ($t -replace '\\{\\{ op://[^}]+ \\}\\}', '') }; exit 0" $secretsTpl) }}
