@@ -51,28 +51,31 @@ function M.apply_to_config(config)
     -- Close Tab
     { key = "w", mods = "SUPER", action = act.CloseCurrentTab({ confirm = true }) },
 
-    -- Activate a Tab
-    { key = "1", mods = "SUPER", action = act.ActivateTab(0) },
-    { key = "2", mods = "SUPER", action = act.ActivateTab(1) },
-    { key = "3", mods = "SUPER", action = act.ActivateTab(2) },
-    { key = "4", mods = "SUPER", action = act.ActivateTab(3) },
-    { key = "5", mods = "SUPER", action = act.ActivateTab(4) },
-    { key = "6", mods = "SUPER", action = act.ActivateTab(5) },
-    { key = "7", mods = "SUPER", action = act.ActivateTab(6) },
-    { key = "8", mods = "SUPER", action = act.ActivateTab(7) },
-    { key = "9", mods = "SUPER", action = act.ActivateTab(-1) },
+    -- Activate a Tab (CTRL to match Warp/VS Code)
+    { key = "1", mods = "CTRL", action = act.ActivateTab(0) },
+    { key = "2", mods = "CTRL", action = act.ActivateTab(1) },
+    { key = "3", mods = "CTRL", action = act.ActivateTab(2) },
+    { key = "4", mods = "CTRL", action = act.ActivateTab(3) },
+    { key = "5", mods = "CTRL", action = act.ActivateTab(4) },
+    { key = "6", mods = "CTRL", action = act.ActivateTab(5) },
+    { key = "7", mods = "CTRL", action = act.ActivateTab(6) },
+    { key = "8", mods = "CTRL", action = act.ActivateTab(7) },
+    { key = "9", mods = "CTRL", action = act.ActivateTab(-1) },
 
-    -- Move Through Tabs
-    { key = "[", mods = "SHIFT|SUPER", action = act.ActivateTabRelative(-1) },
-    { key = "]", mods = "SHIFT|SUPER", action = act.ActivateTabRelative(1) },
+    -- Move Through Tabs (CTRL+SHIFT to match Warp)
+    { key = "[", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
+    { key = "]", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(1) },
 
     --------------------------------- Panes --------------------------------
-    -- Toggle Pane Zoom
+    -- Toggle Pane Zoom (LEADER + CTRL+SHIFT to match Warp pane_group:toggle_maximize_pane)
     { key = "z", mods = "LEADER", action = act.TogglePaneZoomState },
+    { key = "z", mods = "CTRL|SHIFT", action = act.TogglePaneZoomState },
 
-    -- Split Panes
+    -- Split Panes (LEADER + CTRL+SHIFT to match Warp pane_group:add_*)
     { key = "d", mods = "LEADER", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
     { key = "e", mods = "LEADER", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
+    { key = "d", mods = "CTRL|SHIFT", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
+    { key = "e", mods = "CTRL|SHIFT", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
 
     -- Move Through Panes
     -- Handled by smart-splits
@@ -100,9 +103,10 @@ function M.apply_to_config(config)
     split_nav('resize', 'l'),
 
     -------------------------------- Application ---------------------------
-    -- Toggle Fullscreen
+    -- Toggle Fullscreen (F11 matches Warp view:toggle_fullscreen)
     { key = "Enter", mods = "SUPER", action = act.ToggleFullScreen },
     { key = "Enter", mods = "LEADER", action = act.ToggleFullScreen },
+    { key = "F11", mods = "NONE", action = act.ToggleFullScreen },
 
     -- Search
     { key = "/", mods = "SUPER", action = act.Search("CurrentSelectionOrEmptyString") },
