@@ -1,11 +1,14 @@
 {
-  "Shell": 0,
+  "Shell": 1,
   "ReplaceWinR": false,
   "CloseShellAfterPress": false,
-  "LeaveShellOpen": false,
+  "LeaveShellOpen": true,
   "RunAsAdministrator": true,
-  "UseWindowsTerminal": false,
+  "UseWindowsTerminal": true,
   "ShowOnlyMostUsedCMDs": false,
   "ShowOnlyMostUsedCMDsNumber": 5,
-  "CommandHistory": {}
+  "CommandHistory": {
+    "psauxf": 1,
+    "psaux": 1
+  }
 }

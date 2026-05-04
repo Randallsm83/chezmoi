@@ -1,27 +1,27 @@
 {
-  "LastIndexTime": "0001-01-01T00:00:00",
+  "LastIndexTime": "2026-05-03T22:27:46.5740126-07:00",
   "ProgramSources": [],
   "DisabledProgramSources": [],
   "CustomSuffixes": [],
   "CustomProtocols": [],
   "BuiltinSuffixesStatus": {
-    "exe": true,
+    "lnk": true,
     "appref-ms": true,
-    "lnk": true
+    "exe": true
   },
   "BuiltinProtocolsStatus": {
+    "http": false,
     "steam": true,
-    "epic": true,
-    "http": false
+    "epic": true
   },
   "UseCustomSuffixes": false,
   "UseCustomProtocols": false,
   "EnableStartMenuSource": true,
-  "EnableDescription": false,
+  "EnableDescription": true,
   "HideAppsPath": true,
-  "HideUninstallers": false,
+  "HideUninstallers": true,
   "EnableRegistrySource": true,
-  "EnablePathSource": false,
+  "EnablePathSource": true,
   "EnableUWP": true,
-  "HideDuplicatedWindowsApp": false
+  "HideDuplicatedWindowsApp": true
 }
