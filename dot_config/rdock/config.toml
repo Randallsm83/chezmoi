@@ -34,22 +34,22 @@ hide_in_fullscreen = true          # Hide dock when fullscreen app/game is activ
 
 [[items]]
 name = "Start Menu"
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\bcompare.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\bcompare.ico'
 special = "start_menu"
 
 [[items]]
 name = "Recycle Bin"
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\etcher.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\etcher.ico'
 special = "recycle_bin"
 
 [[items]]
 name = "This PC"
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\folder2-.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\folder2-.ico'
 special = "this_pc"
 
 [[items]]
 name = "User Folder"
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\folder2-me.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\folder2-me.ico'
 special = "user_folder"
 
 [[items]]
@@ -59,12 +59,12 @@ separator = true
 [[items]]
 name = "Firefox"
 path = 'C:\Program Files\Firefox Developer Edition\firefox.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\firefox-nightly.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\firefox-nightly.ico'
 
 [[items]]
 name = "Chrome"
 path = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\PNGS\Apps\google-chrome.png'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\PNGS\Apps\google-chrome.png'
 args = ["--disable-windows10-custom-titlebar"]
 
 [[items]]
@@ -74,22 +74,22 @@ separator = true
 [[items]]
 name = "VS Code"
 path = 'C:\Users\randa\AppData\Local\Programs\Microsoft VS Code\Code.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\code.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\code.ico'
 
 [[items]]
 name = "Warp"
 path = 'C:\Users\randa\AppData\Local\Programs\Warp\warp.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\terminix.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\terminix.ico'
 
 [[items]]
 name = "WezTerm"
 path = 'C:\Program Files\WezTerm\wezterm-gui.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\terminal.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\terminal.ico'
 
 [[items]]
 name = "Windows Terminal"
 path = 'C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.23.12811.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\terminator.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\terminator.ico'
 
 [[items]]
 name = "---"
@@ -98,27 +98,27 @@ separator = true
 [[items]]
 name = "Steam"
 path = 'C:\Users\randa\scoop\apps\steam\current\steam.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\steam.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\steam.ico'
 
 [[items]]
 name = "Vortex"
 path = 'C:\Program Files\Black Tree Gaming Ltd\Vortex\Vortex.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\atom.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\atom.ico'
 
 [[items]]
 name = "Lossless Scaling"
 path = 'A:\SteamGames\steamapps\common\Lossless Scaling\LosslessScaling.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\freealchemist.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\freealchemist.ico'
 
 [[items]]
 name = "RTSS"
 path = 'C:\Users\randa\scoop\shims\rtss.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\PNGS\settings.png'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\PNGS\settings.png'
 
 [[items]]
 name = "Xbox"
 path = 'C:\Program Files\WindowsApps\Microsoft.GamingApp_2512.1001.34.0_x64__8wekyb3d8bbwe\XboxPcTray.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\clamav.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\clamav.ico'
 
 [[items]]
 name = "---"
@@ -127,12 +127,12 @@ separator = true
 [[items]]
 name = "Slack"
 path = 'C:\Users\randa\AppData\Local\slack\slack.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\slack.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\slack.ico'
 
 [[items]]
 name = "Spotify"
 path = 'C:\Users\randa\AppData\Roaming\Spotify\Spotify.exe'
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\spotify-client.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\spotify-client.ico'
 
 [[items]]
 name = "---"
@@ -140,20 +140,20 @@ separator = true
 
 [[items]]
 name = "Action Center"
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\preferences-desktop-notification-bell.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\preferences-desktop-notification-bell.ico'
 special = "action_center"
 
 [[items]]
 name = "Settings"
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\preferences-system.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\preferences-system.ico'
 special = "settings"
 
 [[items]]
 name = "System Tray (Hidden Icons)"
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\preferences-desktop-icons.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\preferences-desktop-icons.ico'
 special = "system_tray"
 
 [[items]]
 name = "Quick Settings"
-icon = 'F:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\preferences-system-windows.ico'
+icon = 'C:\Themes\Sweet Paranoia Icon Theme by niivu MARCH 29 2022\candy-icons\preferences-system-windows.ico'
 special = "quick_settings"
