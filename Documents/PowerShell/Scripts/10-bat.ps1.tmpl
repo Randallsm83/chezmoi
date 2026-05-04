@@ -12,8 +12,9 @@
 # Set bat config directory (XDG compliant)
 $env:BAT_CONFIG_DIR = "$env:USERPROFILE\.config\bat"
 
-# Set bat theme to match onedark
-$env:BAT_THEME = "OneHalfDark"
+# Set bat theme to match the active chezmoi theme
+{{- $bat_theme := index .theme_mappings.bat .theme }}
+$env:BAT_THEME = "{{ $bat_theme }}"
 
 # Set bat style (line numbers, git changes)
 $env:BAT_STYLE = "numbers,changes,header"
