@@ -13,7 +13,7 @@
 # ================================================================================================
 
 $env:DHSPACE = "D:\DH Dev"
-$env:DOTFILES = "$HOME\.local\share\dotfiles"
+$env:DOTFILES = "$HOME\.local\share\chezmoi"
 $env:PROJECTS = "D:\DH Dev\projects"
 
 # ================================================================================================
