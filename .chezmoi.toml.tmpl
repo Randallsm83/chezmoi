@@ -115,7 +115,11 @@
 {{- /* Chezmoi Core Settings (top-level keys; must precede any [section])      */ -}}
 {{- /* ========================================================================== */}}
 
-sourceDir = {{ joinPath .chezmoi.homeDir ".local" "share" "dotfiles" | quote }}
+# sourceDir intentionally not set — chezmoi's default is
+# ~/.local/share/chezmoi on every platform, which is where this repo lives.
+# Previously this was overridden to ~/.local/share/dotfiles, but that path
+# was never populated and broke hooks (.install-1password.ps1) and template
+# resolution. To override per-machine, set it in .chezmoi.local.toml instead.
 
 {{- /* ========================================================================== */ -}}
 {{- /* Data Section - Exposed to all templates                                 */ -}}
