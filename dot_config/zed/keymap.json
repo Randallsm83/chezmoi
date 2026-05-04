@@ -1,0 +1,51 @@
+[
+  // Workspace-wide bindings
+  {
+    "context": "Workspace",
+    "bindings": {
+      "cmd-shift-p": "command_palette::Toggle",
+      "cmd-p": "file_finder::Toggle",
+      "cmd-shift-f": "pane::DeploySearch",
+      "cmd-b": "workspace::ToggleLeftDock",
+      "cmd-j": "workspace::ToggleBottomDock",
+      "cmd-shift-e": "project_panel::ToggleFocus",
+      "cmd-`": "terminal_panel::ToggleFocus"
+    }
+  },
+
+  // Vim-mode: Normal — leader-style shortcuts using space
+  {
+    "context": "Editor && vim_mode == normal && !VimWaiting",
+    "bindings": {
+      "space space": "file_finder::Toggle",
+      "space f f": "file_finder::Toggle",
+      "space f g": "pane::DeploySearch",
+      "space f r": "projects::OpenRecent",
+      "space e":   "project_panel::ToggleFocus",
+      "space g g": "git_panel::ToggleFocus",
+      "space b d": "pane::CloseActiveItem",
+      "space b n": "pane::ActivateNextItem",
+      "space b p": "pane::ActivatePrevItem",
+      "space c a": "editor::ToggleCodeActions",
+      "space r n": "editor::Rename",
+      "space q":   "pane::CloseActiveItem",
+      "g d":       "editor::GoToDefinition",
+      "g r":       "editor::FindAllReferences",
+      "g i":       "editor::GoToImplementation",
+      "K":         "editor::Hover",
+      "[ d":       "editor::GoToPreviousDiagnostic",
+      "] d":       "editor::GoToDiagnostic",
+      "[ g":       "editor::GoToPreviousHunk",
+      "] g":       "editor::GoToHunk"
+    }
+  },
+
+  // Better terminal escape
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-shift-c": "terminal::Copy",
+      "ctrl-shift-v": "terminal::Paste"
+    }
+  }
+]
