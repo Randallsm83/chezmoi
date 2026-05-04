@@ -184,6 +184,48 @@ sourceDir = {{ joinPath .chezmoi.homeDir ".local" "share" "dotfiles" | quote }}
     setup_1password = {{ and (not $is_remote) (not $is_raspi) }}  # Skip on remote/Pi by default
     remote_minimal = {{ $remote_minimal }}  # Compat alias: true iff remote_tier == "minimal"
 
+
+# ============================================================================
+# 1Password Secrets - Single Batched Resolution
+# ============================================================================
+# Strategy: ONE `op inject` call resolves ALL op:// refs at chezmoi init time,
+# producing a TOML block exposed as `.secrets.*` in templates.
+#
+# Cost: 1 biometric prompt per `chezmoi apply --init`.
+# Routine `chezmoi apply` reuses cached chezmoi.toml — ZERO prompts.
+#
+# Refresh after key/PAT rotation:  chezmoi apply --init
+# Skip 1Password entirely:         set CHEZMOI_SKIP_1P=1
+#
+# To add a new secret:
+#   1. Append a line to $secretsTpl below (key = "op://vault/item/field").
+#   2. Reference it as `.secrets.<key>` in any template.
+#   3. Run `chezmoi apply --init`.
+[data.secrets]
+{{- /* Note: raspi item title contains '@' which is illegal in op:// refs,
+       so we reference by stable item ID instead. */ -}}
+{{- $secretsTpl := `ssh_pub_github_com  = "{{ op://Personal/GitHub SSH Key/public key }}"
+ssh_pub_gitlab_com  = "{{ op://Personal/GitLab SSH Key/public key }}"
+ssh_pub_dh_git      = "{{ op://Personal/Dreamhost GIt SSH Key/public key }}"
+ssh_pub_dh_yakko    = "{{ op://Personal/Yakko SSH Key/public key }}"
+ssh_pub_dh_porky    = "{{ op://Personal/Porky SSH Key/public key }}"
+ssh_pub_easterseals = "{{ op://Personal/Easterseals SSH Key/public key }}"
+ssh_pub_fp3         = "{{ op://Personal/fp3 SSH Key/public key }}"
+ssh_pub_raspi       = "{{ op://Homelab/qdreol3xtwen3z6lcdcjkbkvw4/public key }}"
+warp_api_key        = "{{ op://Personal/Warp API Key/credential }}"
+anthropic_api_key   = "{{ op://Personal/DH Anthropic/credential }}"
+gitlab_pat          = "{{ op://Personal/Gitlab PAT Hal9k-Win/credential }}"
+warp_gitlab_mcp_pat = "{{ op://DH/warp-gitlab-mcp-pat/token }}"` -}}
+{{- if and (lookPath "op") (ne (env "CHEZMOI_SKIP_1P") "1") }}
+{{- if eq .chezmoi.os "windows" }}
+{{ output "pwsh" "-NoProfile" "-NonInteractive" "-Command" (printf "$ErrorActionPreference='SilentlyContinue'; $t = @'\n%s\n'@; try { $r = ($t | op inject 2>$null); if ($LASTEXITCODE -eq 0 -and $r) { Write-Output $r } else { Write-Output ($t -replace '\\{\\{ op://[^}]+ \\}\\}', '') } } catch { Write-Output ($t -replace '\\{\\{ op://[^}]+ \\}\\}', '') }; exit 0" $secretsTpl) }}
+{{- else }}
+{{ output "sh" "-c" (printf "T=$(cat <<'__OP_EOT__'\n%s\n__OP_EOT__\n); printf '%%s\\n' \"$T\" | op inject 2>/dev/null || printf '%%s\\n' \"$T\" | sed -E 's/\\{\\{ op:\\/\\/[^}]+ \\}\\}//g'" $secretsTpl) }}
+{{- end }}
+{{- else }}
+{{ regexReplaceAll "\\{\\{ op://[^}]+ \\}\\}" $secretsTpl "" }}
+{{- end }}
+
 {{- /* ========================================================================== */ -}}
 {{- /* Chezmoi Tool Configuration                                              */ -}}
 {{- /* ========================================================================== */}}

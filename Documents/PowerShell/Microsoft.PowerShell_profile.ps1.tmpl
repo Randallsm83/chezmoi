@@ -18,11 +18,13 @@ if (-not $env:XDG_CACHE_HOME) { $env:XDG_CACHE_HOME = "$HOME\.cache" }
 # XDG-compliant tool configurations
 $env:LESSHISTFILE = "$env:XDG_STATE_HOME\less\history"
 $env:PYTHON_HISTORY = "$env:XDG_STATE_HOME\python\history"
+$env:PSREADLINE_HISTORY = "$env:XDG_STATE_HOME\powershell\history"
 
 # Ensure XDG state directories for tools exist
 $toolStateDirs = @(
     "$env:XDG_STATE_HOME\less",
-    "$env:XDG_STATE_HOME\python"
+    "$env:XDG_STATE_HOME\python",
+    "$env:XDG_STATE_HOME\powershell"
 )
 foreach ($dir in $toolStateDirs) {
     if (-not (Test-Path $dir)) {
@@ -47,7 +49,8 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     # Vi mode
     Set-PSReadLineOption -EditMode Vi
     
-    # History settings
+    # History settings (XDG-compliant location, mirrors zsh's $XDG_STATE_HOME/zsh/history)
+    Set-PSReadLineOption -HistorySavePath $env:PSREADLINE_HISTORY
     Set-PSReadLineOption -HistorySearchCursorMovesToEnd
     Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
     Set-PSReadLineOption -MaximumHistoryCount 10000
@@ -143,14 +146,14 @@ $global:ErrorActionPreference = 'Continue'
 $env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"
 {{- end }}
 
-# Warp API Key (from 1Password)
-{{- if .setup_1password }}
-$env:WARP_API_KEY = "{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/Warp API Key/credential" "os" .chezmoi.os) }}"
+# Warp API Key (resolved once via batched op inject in .chezmoi.toml.tmpl)
+{{- if and .setup_1password .secrets.warp_api_key }}
+$env:WARP_API_KEY = "{{ .secrets.warp_api_key }}"
 {{- end }}
 
-# Anthropic API Key (from 1Password)
-{{- if .setup_1password }}
-$env:ANTHROPIC_API_KEY = "{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/DH Anthropic/credential" "os" .chezmoi.os) }}"
+# Anthropic API Key (resolved once via batched op inject in .chezmoi.toml.tmpl)
+{{- if and .setup_1password .secrets.anthropic_api_key }}
+$env:ANTHROPIC_API_KEY = "{{ .secrets.anthropic_api_key }}"
 {{- end }}
 
 # Welcome message (optional - comment out if you prefer clean startup)

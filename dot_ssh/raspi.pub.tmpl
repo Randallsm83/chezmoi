@@ -1,3 +1,1 @@
-{{/* Item ID used because the title "ranmil@raspi" contains '@', which is not
-     allowed in op:// references. Stable as long as the item isn't recreated. */}}
-{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/6sswmdigjdlwrzdhhtckpe2c74/public key" "os" .chezmoi.os) }}
+{{ .secrets.ssh_pub_raspi }}

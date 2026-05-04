@@ -16,6 +16,78 @@ Your dotfiles automatically detect and use the available secrets manager.
 
 ---
 
+## Architecture: Batched Secret Resolution (CANONICAL)
+
+This repo uses a **single batched `op inject` call** in `.chezmoi.toml.tmpl` that
+resolves every `op://` reference at chezmoi init time and exposes the results
+as the `.secrets.*` template variable namespace. Templates never call `op`
+directly.
+
+### Why batched?
+
+1Password CLI requires a biometric/PIN approval **per `op` invocation** on
+Windows. Calling `op` from each template (the previous `op-read-safe`
+approach) meant N approvals per `chezmoi apply`. Batching collapses all
+secret reads into one `op inject` invocation — **one approval, period.**
+
+### Cost model
+
+- `chezmoi apply --init`  → 1 biometric prompt (re-renders chezmoi.toml)
+- `chezmoi apply`         → 0 prompts (uses cached chezmoi.toml)
+- `chezmoi diff/status`   → 0 prompts
+- `CHEZMOI_SKIP_1P=1`     → 0 prompts; secrets resolve to empty strings
+
+### Adding a new secret
+
+1. Open `.chezmoi.toml.tmpl`, find `$secretsTpl`, append a line:
+   ```
+   my_new_token = "{{ op://Vault/Item/field }}"
+   ```
+2. Reference it in any template as `{{ .secrets.my_new_token }}`.
+3. Run `chezmoi apply --init` to refresh.
+
+### Refresh after rotation
+
+After rotating a key/PAT in 1Password, run:
+```
+chezmoi apply --init
+```
+The `--init` flag re-renders `chezmoi.toml` from `.chezmoi.toml.tmpl`,
+triggering exactly one `op inject` and one biometric prompt.
+
+### Skip 1Password (offline / CI)
+
+```pwsh
+$env:CHEZMOI_SKIP_1P = "1"
+chezmoi apply --init
+```
+All `.secrets.*` values resolve to empty strings; templates that gate on
+them (e.g. `{{ if .secrets.warp_api_key }}...{{ end }}`) are skipped.
+
+### Current secrets bundle
+
+Defined in `.chezmoi.toml.tmpl` $secretsTpl:
+
+- `ssh_pub_github_com`
+- `ssh_pub_gitlab_com`
+- `ssh_pub_dh_git`
+- `ssh_pub_dh_yakko`
+- `ssh_pub_dh_porky`
+- `ssh_pub_easterseals`
+- `ssh_pub_fp3`
+- `warp_api_key`
+- `anthropic_api_key`
+- `gitlab_pat`
+- `warp_gitlab_mcp_pat`
+
+### Legacy: `op-read-safe`
+
+The `.chezmoitemplates/op-read-safe` partial is retained for one-off cases
+but is **not the preferred pattern** — each invocation triggers its own
+biometric prompt. Prefer adding to `$secretsTpl` instead.
+
+---
+
 ## Option 1: 1Password CLI (Recommended)
 
 ### Why 1Password?
