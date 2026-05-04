@@ -14,3 +14,4 @@
 "pane_group:navigate_up": ctrl-k
 "workspace:activate_prev_tab": "ctrl-shift-{"
 "pane_group:navigate_prev": none
+"terminal:accept_prompt_suggestions": ctrl-enter
