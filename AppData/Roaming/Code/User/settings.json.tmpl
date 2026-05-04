@@ -193,7 +193,7 @@
   // ============================================================================
   // REMOTE DEVELOPMENT (SSH)
   // ============================================================================
-  "remote.SSH.configFile": "C:\\Users\\Randall\\.ssh\\config",
+  "remote.SSH.configFile": "{{ .chezmoi.homeDir | replace "\\" "/" }}/.ssh/config",
   "remote.SSH.connectTimeout": 60,
   "remote.restoreForwardedPorts": false,
   "remote.autoForwardPorts": false,
@@ -357,10 +357,10 @@
   // ============================================================================
   "vscode-neovim.neovimExecutablePaths.linux": "~/.local/share/mise/shims/nvim",
   "vscode-neovim.neovimExecutablePaths.darwin": "~/.local/share/mise/shims/nvim",
-  "vscode-neovim.neovimExecutablePaths.win32": "C:\\Users\\Randall\\.local\\share\\mise\\shims\\nvim.exe",
+  "vscode-neovim.neovimExecutablePaths.win32": "{{ .chezmoi.homeDir | replace "\\" "/" }}/.local/share/mise/shims/nvim.exe",
   "vscode-neovim.neovimInitVimPaths.linux": "~/.config/nvim/init.lua",
   "vscode-neovim.neovimInitVimPaths.darwin": "~/.config/nvim/init.lua",
-  "vscode-neovim.neovimInitVimPaths.win32": "C:\\Users\\Randall\\AppData\\Local\\nvim\\init.lua",
+  "vscode-neovim.neovimInitVimPaths.win32": "{{ .chezmoi.homeDir | replace "\\" "/" }}/AppData/Local/nvim/init.lua",
   // ============================================================================
   // AI AGENTS & ASSISTANTS
   // ============================================================================
