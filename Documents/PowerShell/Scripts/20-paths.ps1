@@ -45,4 +45,32 @@ if ($pkgConfigPaths.Count -gt 0) {
     }
 }
 
+# =================================================================================================
+# Stale-profile PATH sanitizer
+# =================================================================================================
+# Some sessions inherit a stale PATH from a parent process that was launched
+# under a previous Windows user profile (e.g. the username was renamed). The
+# registry might already be clean, but the live $env:PATH still has the old
+# entries. Strip any entries pointing into other Users\<name>\ profiles, and
+# de-duplicate the result while preserving order.
+
+$currentUserProfile = $env:USERPROFILE
+if ($currentUserProfile) {
+    $userProfileRoot = Split-Path -Parent $currentUserProfile      # e.g. C:\Users
+    $currentLeaf     = Split-Path -Leaf   $currentUserProfile      # e.g. ranmil
+    $foreignPattern  = '^' + [regex]::Escape("$userProfileRoot\") + '(?<who>[^\\]+)\\'
+
+    $seen = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::OrdinalIgnoreCase)
+    $kept = New-Object System.Collections.Generic.List[string]
+    foreach ($entry in ($env:PATH -split ';')) {
+        if (-not $entry) { continue }
+        $m = [regex]::Match($entry, $foreignPattern)
+        if ($m.Success -and $m.Groups['who'].Value -ne $currentLeaf) {
+            continue   # foreign user profile path: drop it
+        }
+        if ($seen.Add($entry)) { $kept.Add($entry) | Out-Null }
+    }
+    $env:PATH = ($kept -join ';')
+}
+
 # vim: ts=2 sts=2 sw=2 et
