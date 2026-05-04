@@ -42,7 +42,7 @@
 {{- end }}
 
 # === Feature-Gated Tools ===
-{{- range $feature := list "direnv" "git" "nvim" "vim" "starship" "fzf" "sqlite3" "fastfetch" "rust_alternatives" }}
+{{- range $feature := list "direnv" "git" "nvim" "vim" "starship" "fzf" "sqlite3" "fastfetch" "rust_alternatives" "ai_tools" }}
 {{- if and (hasKey $.package_features $feature) (index $.package_features $feature) }}
 {{- $mapping := index $.package_mapping $feature }}
 {{- if hasKey $mapping $.chezmoi.os }}
@@ -114,7 +114,9 @@ pipx = { uvx = true }
 {{- end }}
 
 # python
-python = {}
+# Force compile from source (precompiled mirror at mise-versions.jdx.dev
+# returned 500s for python-precompiled-aarch64-apple-darwin.gz)
+python = { compile = true }
 
 # ruby
 ruby = {}

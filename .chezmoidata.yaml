@@ -186,6 +186,16 @@ theme_mappings:
     dracula: "dracula"
     kanagawa: "kanagawa"
 
+  # OpenCode TUI theme names (custom JSONs generated from our palette)
+  opencode:
+    spaceduck: "spaceduck"
+    onedark: "onedark"
+    gruvbox-material: "gruvbox-material"
+    tokyonight: "tokyonight"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"
+
   # Vim colorscheme names (vim-plug plugin names)
   vim:
     spaceduck: "spaceduck"           # pineapplegiant/spaceduck
@@ -962,10 +972,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: [ollama]
-      mise: []
+      mise: [claude, opencode]
     darwin:
       brew: [ollama]
-      mise: []
+      mise: [claude, opencode]
 
   # Gaming
   gaming:
