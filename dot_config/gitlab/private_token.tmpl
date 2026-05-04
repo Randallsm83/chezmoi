@@ -1,8 +1,10 @@
 {{- /*
 GitLab personal access token for ~/.config/gitlab/token.
-Resolved via 1Password CLI at apply time. Requires an active op session.
-Item: `Gitlab PAT ***REMOVED***` (vault: Personal, field: credential).
+Resolved once via batched `op inject` in .chezmoi.toml.tmpl, then reused
+from .secrets.gitlab_pat by all consumers.
+
+Refresh after rotating the PAT in 1Password:  chezmoi apply --init
 
 `private_` prefix → 0600 on Unix; no-op on Windows.
 */ -}}
-{{ includeTemplate "op-read-safe" (dict "ref" "op://Personal/Gitlab PAT ***REMOVED***/credential" "os" .chezmoi.os) -}}
+{{ .secrets.gitlab_pat -}}

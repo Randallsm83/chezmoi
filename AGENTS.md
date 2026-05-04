@@ -91,7 +91,11 @@ Defined in `.chezmoidata.yaml` under `package_features`. Two layers:
 A single `theme.name` in `.chezmoidata.yaml` propagates to neovim, starship, wezterm, eza, vivid, bat, and delta via templates. Available themes: `spaceduck` (default), `onedark`, `gruvbox-material`, `tokyonight`, `tokyonight-storm`, `dracula`, `kanagawa`. Change theme → `chezmoi apply`.
 
 ### Secrets
-1Password CLI (`op`) is the primary provider. Templates use `{{ onepasswordRead "op://vault/item/field" }}` (or the `op-read-safe` template fragment for graceful fallbacks). Age-encrypted `.age` files are the backup mechanism. Detailed patterns are in `SECRETS.md`.
+1Password CLI (`op`) is the primary provider, but templates do **not** call `op` directly. Instead, all `op://` references are batched into a single `op inject` invocation in `.chezmoi.toml.tmpl` ($secretsTpl), exposed as the `.secrets.*` template namespace. This means **one biometric prompt per `chezmoi apply --init`** and **zero prompts per `chezmoi apply`**.
+
+To add a secret: append `key = "{{ op://Vault/Item/field }}"` to `$secretsTpl` in `.chezmoi.toml.tmpl`, then reference as `{{ .secrets.key }}` in any template. Run `chezmoi apply --init` to refresh after rotation. Set `CHEZMOI_SKIP_1P=1` to skip 1Password entirely (resolves to empty strings).
+
+The legacy `op-read-safe` partial in `.chezmoitemplates/` is retained for one-off cases but should not be used for new secrets — each invocation triggers its own biometric prompt. Age-encrypted `.age` files are the backup mechanism. Detailed patterns are in `SECRETS.md`.
 
 ### Platform-specific patterns
 - **Windows** — Bootstrap via `bootstrap.ps1` (PowerShell 7+). Packages: Scoop (CLI) + Winget (GUI) + Mise (language runtimes only).
