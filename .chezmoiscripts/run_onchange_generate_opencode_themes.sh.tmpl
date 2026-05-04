@@ -1,0 +1,117 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# Generate opencode theme JSON files from color palettes in .chezmoidata.yaml
+# Runs when .chezmoidata.yaml theme section changes
+
+set -euo pipefail
+
+OPENCODE_THEMES_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/themes"
+mkdir -p "$OPENCODE_THEMES_DIR"
+
+generate_theme() {
+    local name="$1"
+    local bg="$2"
+    local fg="$3"
+    local purple="$4"
+    local pink="$5"
+    local green="$6"
+    local orange="$7"
+    local blue="$8"
+    local cyan="$9"
+    local yellow="${10}"
+
+    cat > "$OPENCODE_THEMES_DIR/${name}.json" <<EOF
+{
+  "\$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "bg": "${bg}",
+    "fg": "${fg}",
+    "purple": "${purple}",
+    "pink": "${pink}",
+    "green": "${green}",
+    "orange": "${orange}",
+    "blue": "${blue}",
+    "cyan": "${cyan}",
+    "yellow": "${yellow}"
+  },
+  "theme": {
+    "primary": "blue",
+    "secondary": "cyan",
+    "accent": "pink",
+    "error": "orange",
+    "warning": "purple",
+    "success": "green",
+    "info": "blue",
+
+    "text": "fg",
+    "textMuted": "cyan",
+
+    "background": "bg",
+    "backgroundPanel": "bg",
+    "backgroundElement": "bg",
+
+    "border": "cyan",
+    "borderActive": "pink",
+    "borderSubtle": "cyan",
+
+    "diffAdded": "green",
+    "diffRemoved": "orange",
+    "diffContext": "cyan",
+    "diffHunkHeader": "blue",
+    "diffHighlightAdded": "green",
+    "diffHighlightRemoved": "orange",
+    "diffAddedBg": "bg",
+    "diffRemovedBg": "bg",
+    "diffContextBg": "bg",
+    "diffLineNumber": "cyan",
+    "diffAddedLineNumberBg": "bg",
+    "diffRemovedLineNumberBg": "bg",
+
+    "markdownText": "fg",
+    "markdownHeading": "purple",
+    "markdownLink": "blue",
+    "markdownLinkText": "cyan",
+    "markdownCode": "green",
+    "markdownBlockQuote": "cyan",
+    "markdownEmph": "pink",
+    "markdownStrong": "yellow",
+    "markdownHorizontalRule": "cyan",
+    "markdownListItem": "blue",
+    "markdownListEnumeration": "cyan",
+    "markdownImage": "pink",
+    "markdownImageText": "blue",
+    "markdownCodeBlock": "fg",
+
+    "syntaxComment": "cyan",
+    "syntaxKeyword": "purple",
+    "syntaxFunction": "blue",
+    "syntaxVariable": "fg",
+    "syntaxString": "green",
+    "syntaxNumber": "orange",
+    "syntaxType": "yellow",
+    "syntaxOperator": "pink",
+    "syntaxPunctuation": "fg"
+  }
+}
+EOF
+}
+
+{{- $themes := (index (fromYaml (include ".chezmoidata.yaml")) "theme") }}
+{{- range $theme_name, $colors := $themes }}
+{{- if and (ne $theme_name "name") (kindIs "map" $colors) }}
+generate_theme \
+    "{{ $theme_name }}" \
+    "{{ $colors.background }}" \
+    "{{ $colors.foreground }}" \
+    "{{ $colors.purple }}" \
+    "{{ $colors.pink }}" \
+    "{{ $colors.green }}" \
+    "{{ $colors.orange }}" \
+    "{{ $colors.blue }}" \
+    "{{ $colors.cyan }}" \
+    "{{ $colors.yellow }}"
+{{- end }}
+{{- end }}
+
+echo "✓ Generated opencode themes in $OPENCODE_THEMES_DIR"
+{{- end }}
