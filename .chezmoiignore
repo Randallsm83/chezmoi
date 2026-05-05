@@ -156,6 +156,9 @@ packages/
 .config/fzf/fzf.bash
 .lde.yml
 
+# 1Password agent.toml lives in %LOCALAPPDATA% on Windows, not ~/.config
+.config/1Password/**
+
 {{- else }}
 # Exclude Windows-specific files on Unix
 
@@ -337,6 +340,12 @@ Library/**
 # Vagrant package files
 .cache/zsh/completions/_vagrant
 .config/zsh/.zshrc.d/60-vagrant.zsh
+{{- end }}
+
+{{- if not (index .package_features "1password") }}
+# 1Password integration files (SSH agent config etc.)
+.config/1Password/**
+AppData/Local/1Password/**
 {{- end }}
 # VS Code shared configs (source of truth, symlinked by AppData profile templates)
 # Lives in vscode/ subfolder to keep repo root clean - not deployed directly
