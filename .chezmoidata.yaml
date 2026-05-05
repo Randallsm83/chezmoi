@@ -255,6 +255,13 @@ ssh:
   agent: "1password"  # Use 1Password SSH agent
   windows_pipe: "\\\\.\\pipe\\openssh-ssh-agent"
   unix_socket: "~/.1password/agent.sock"
+  # 1Password SSH agent vaults to expose (order = key offer order).
+  # Rendered into agent.toml via .chezmoitemplates/1password-agent.toml
+  # Override in .chezmoi.local.toml: [data.ssh] onepassword_vaults = ["Personal"]
+  onepassword_vaults:
+    - Personal
+    - DH
+    - Homelab
 
 # ============================================================================
 # Package Feature Flags
@@ -1427,15 +1434,16 @@ claude_memory_projects:
 vpn_dns_routes:
   pritunl:
     nameserver: "10.25.0.15"
+    # Internal-only namespaces. Public DreamHost domains (dreamhost.com,
+    # dreamhostps.com, dreamhost.io) are intentionally excluded so they
+    # remain reachable when the VPN is down — vpn.dreamhost.io in
+    # particular is the VPN login page itself.
     domains:
-      - dreamhost.com
-      - dreamhostps.com
       - dreamhostnetworks.com
       - dhcompute.net
       - dh-int.com
       - dhdap.com
       - newdream.net
       - dream.io
-      - dreamhost.io
 
 # vim: ts=2 sts=2 sw=2 et
