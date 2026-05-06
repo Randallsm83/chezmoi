@@ -34,8 +34,14 @@
 # Windows: junctions / reparse points (chezmoi can't manage through them)
 # ============================================================================
 {{- if eq .chezmoi.os "windows" }}
-projects
-projects/**
+# Exclude everything under ~/projects except the per-project mise env file at
+# projects/dh/mise.toml. Patterns avoid blanket excluding parent dirs so the
+# negations can re-include the file (gitignore can't un-exclude through a
+# fully-ignored parent).
+projects/*
+!projects/dh
+projects/dh/*
+!projects/dh/mise.toml
 
 # Flow Launcher (scoop persist): always ignore runtime/cache/log siblings so
 # future `chezmoi re-add` doesn't pull them into source. Tracked files live at
