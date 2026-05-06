@@ -1,0 +1,109 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env bash
+# Install or refresh the Encrypted DNS (DoT) configuration profile on macOS.
+# Rendered from the `encrypted_dns` block in .chezmoidata.yaml.
+# Reruns whenever the data hash changes.
+# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+#
+# What this does:
+#   1. Reads encrypted_dns config from chezmoi data.
+#   2. If disabled, removes any installed profile with the same identifier.
+#   3. If enabled, TCP-probes the DoT endpoint. If unreachable, prints a
+#      loud warning and exits 0 (so chezmoi apply isn't broken while you
+#      stand up the Pi side -- see scripts/setup-pihole-dot.sh).
+#   4. If reachable, installs the profile via `sudo profiles install`.
+#      macOS may still require manual approval in
+#      System Settings -> General -> Device Management.
+
+set -euo pipefail
+
+{{- $cfg := .encrypted_dns }}
+
+ENABLED="{{ $cfg.enabled }}"
+IDENTIFIER="{{ $cfg.identifier }}"
+SERVER_NAME="{{ $cfg.server_name }}"
+PORT="{{ $cfg.port }}"
+PROFILE_SRC="${HOME}/.config/dns/pihole-dot.mobileconfig"
+
+log() { printf '[encrypted-dns] %s\n' "$*"; }
+warn() { printf '[encrypted-dns] WARN: %s\n' "$*" >&2; }
+
+if ! command -v profiles >/dev/null 2>&1; then
+    warn "'profiles' CLI not found; skipping (non-macOS or stripped image?)"
+    exit 0
+fi
+
+profile_installed() {
+    sudo profiles list -type configuration 2>/dev/null \
+        | awk -v id="$IDENTIFIER" '$0 ~ id { found=1 } END { exit found ? 0 : 1 }'
+}
+
+remove_profile() {
+    if profile_installed; then
+        log "removing profile $IDENTIFIER"
+        sudo profiles remove -identifier "$IDENTIFIER" || warn "removal failed"
+    else
+        log "no profile to remove"
+    fi
+}
+
+if [ "$ENABLED" != "true" ]; then
+    log "encrypted_dns.enabled=false; ensuring profile is uninstalled"
+    remove_profile
+    exit 0
+fi
+
+if [ ! -f "$PROFILE_SRC" ]; then
+    warn "mobileconfig not found at $PROFILE_SRC; did chezmoi apply render dot_config/dns/?"
+    exit 0
+fi
+
+# Pre-flight: pre-authenticate sudo so the install doesn't hang.
+if ! sudo -n true 2>/dev/null; then
+    log "sudo needs a password; pre-authenticate then re-run"
+    sudo -v || exit 1
+fi
+
+# TCP probe :853. If the Pi-side DoT terminator isn't up, install would
+# leave macOS unable to resolve anything -- skip with a loud warning.
+log "probing ${SERVER_NAME}:${PORT} ..."
+if ! /usr/bin/nc -z -w 3 "$SERVER_NAME" "$PORT" >/dev/null 2>&1; then
+    warn "cannot reach ${SERVER_NAME}:${PORT}"
+    warn "Pi-side DoT terminator is not up. See scripts/setup-pihole-dot.sh"
+    warn "and the Encrypted DNS section of RASPI.md. Skipping install."
+    exit 0
+fi
+log "endpoint reachable"
+
+# Already-installed check: skip noisy re-prompts on every chezmoi apply.
+if profile_installed; then
+    log "profile $IDENTIFIER already installed; skipping"
+    if scutil --dns 2>/dev/null | grep -qiE 'dns over (tls|https)'; then
+        log "verified: scutil shows encrypted DNS active"
+    else
+        log "profile installed but scutil doesn't show encrypted DNS yet --"
+        log "may require approval in System Settings, or a reboot."
+    fi
+    exit 0
+fi
+
+# macOS deprecated `profiles install` for unsigned profiles. Open the file
+# in System Settings instead so the user can approve it interactively.
+# (System Settings -> General -> Device Management on macOS 13+, or
+#  System Settings -> Privacy & Security -> Profiles on macOS 15+.)
+log "staging profile for manual install: $PROFILE_SRC"
+if command -v open >/dev/null 2>&1; then
+    open "$PROFILE_SRC" || warn "could not auto-open System Settings"
+    log ""
+    log "  ACTION REQUIRED:"
+    log "    1. System Settings should now show the profile to review."
+    log "    2. Click 'Install' and authenticate."
+    log "    3. Re-run 'chezmoi apply' (or just verify with scutil --dns)."
+    log ""
+else
+    warn "'open' not available; double-click $PROFILE_SRC to install"
+fi
+
+# Don't fail the apply -- the profile is staged and waiting for user action.
+exit 0
+{{- end }}

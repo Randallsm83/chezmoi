@@ -1,0 +1,127 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env bash
+# Disable per-browser DoH so browsers respect the system resolver
+# (so Pi-hole filtering and the system-wide DoT profile actually apply
+# in-browser instead of being silently bypassed by Mozilla/Cloudflare DoH).
+#
+# Reruns whenever the data hash changes.
+# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+#
+# Targets:
+#   - Firefox: /Library/Application Support/Mozilla/policies/policies.json
+#              (Mozilla enterprise policies, applies to all profiles)
+#   - Chrome:  /Library/Managed Preferences/com.google.Chrome.plist
+#   - Edge:    /Library/Managed Preferences/com.microsoft.Edge.plist
+#   - Brave:   /Library/Managed Preferences/com.brave.Browser.plist
+#
+# Refs:
+#   https://mozilla.github.io/policy-templates/#dnsoverhttps
+#   https://chromeenterprise.google/policies/#DnsOverHttpsMode
+
+set -euo pipefail
+
+{{- $cfg := .browser_doh }}
+
+ENABLED="{{ $cfg.enabled }}"
+{{- /* Build the browser list as a quoted bash array */}}
+BROWSERS=({{ range $cfg.browsers }}"{{ . }}" {{ end }})
+
+log() { printf '[browser-doh] %s\n' "$*"; }
+warn() { printf '[browser-doh] WARN: %s\n' "$*" >&2; }
+
+if [ "$ENABLED" != "true" ]; then
+    log "browser_doh.enabled=false; nothing to do"
+    exit 0
+fi
+
+# Firefox writes to /Library so still needs sudo. Chromium browsers go to
+# the user's own CFPreferences and don't.
+if ! sudo -n true 2>/dev/null; then
+    log "sudo needs a password (Firefox policy file lives in /Library)"
+    sudo -v || exit 1
+fi
+
+apply_firefox() {
+    local dir="/Library/Application Support/Mozilla/policies"
+    local file="$dir/policies.json"
+    local desired
+    desired='{
+  "policies": {
+    "DNSOverHTTPS": {
+      "Enabled": false,
+      "Locked": true
+    }
+  }
+}'
+    sudo mkdir -p "$dir"
+    if [ -f "$file" ] && [ "$(sudo cat "$file")" = "$desired" ]; then
+        log "  ok      firefox        (DoH disabled)"
+        return 0
+    fi
+    log "  write   firefox        (DoH disabled)"
+    printf '%s\n' "$desired" | sudo tee "$file" >/dev/null
+    sudo chmod 0644 "$file"
+}
+
+apply_chromium_family() {
+    # $1 = display name, $2 = bundle id
+    #
+    # /Library/Managed Preferences/<bundle>.plist would be the proper
+    # "forced policy" location, but writes there require MDM enrollment
+    # (SIP/CFPreferences silently no-ops sudo defaults write otherwise).
+    # We instead write to the user's CFPreferences for the bundle, which
+    # Chromium reads on next launch. Not enforced as policy, but we control
+    # the machine so it's effectively the same.
+    local name="$1"
+    local bundle="$2"
+
+    local mode_now templates_now
+    mode_now="$(defaults read "$bundle" DnsOverHttpsMode 2>/dev/null || true)"
+    templates_now="$(defaults read "$bundle" DnsOverHttpsTemplates 2>/dev/null || true)"
+
+    if [ "$mode_now" = "off" ] && [ -z "$templates_now" ]; then
+        log "  ok      ${name}"
+        return 0
+    fi
+
+    log "  write   ${name}"
+    defaults write "$bundle" DnsOverHttpsMode -string "off"
+    defaults write "$bundle" DnsOverHttpsTemplates -string ""
+}
+
+remove_firefox() {
+    local file="/Library/Application Support/Mozilla/policies/policies.json"
+    [ -f "$file" ] && { log "  remove  firefox policy"; sudo rm -f "$file"; } || true
+}
+
+remove_chromium_family() {
+    local name="$1" bundle="$2"
+    if defaults read "$bundle" DnsOverHttpsMode >/dev/null 2>&1 \
+       || defaults read "$bundle" DnsOverHttpsTemplates >/dev/null 2>&1; then
+        log "  remove  ${name} prefs"
+        defaults delete "$bundle" DnsOverHttpsMode 2>/dev/null || true
+        defaults delete "$bundle" DnsOverHttpsTemplates 2>/dev/null || true
+    fi
+}
+
+log "applying browser DoH policies"
+for b in "${BROWSERS[@]}"; do
+    case "$b" in
+        firefox) apply_firefox ;;
+        chrome)  apply_chromium_family "chrome" "com.google.Chrome" ;;
+        edge)    apply_chromium_family "edge"   "com.microsoft.Edge" ;;
+        brave)   apply_chromium_family "brave"  "com.brave.Browser" ;;
+        *) warn "unknown browser '$b' -- skipping" ;;
+    esac
+done
+
+# Clean up entries for browsers that were dropped from the list.
+declare -A want=()
+for b in "${BROWSERS[@]}"; do want["$b"]=1; done
+[ -z "${want[firefox]:-}" ] && remove_firefox
+[ -z "${want[chrome]:-}"  ] && remove_chromium_family "chrome" "com.google.Chrome"
+[ -z "${want[edge]:-}"    ] && remove_chromium_family "edge"   "com.microsoft.Edge"
+[ -z "${want[brave]:-}"   ] && remove_chromium_family "brave"  "com.brave.Browser"
+
+log "done"
+{{- end }}

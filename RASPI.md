@@ -115,3 +115,21 @@ If a tool keeps building from source on aarch64, install the Debian-packaged ver
 ### `setup_1password` keeps prompting
 
 Pi profile sets `setup_1password = false`. If a stale `.chezmoi.local.toml` overrides this, edit it and remove the override, then `chezmoi init` to regenerate.
+## Encrypted DNS (DoT terminator)
+The macOS profile rendered from `encrypted_dns` in `.chezmoidata.yaml` pins the Mac at `***REMOVED***:853` over DoT. The Pi has to terminate that TLS connection and forward to Pi-hole. Stand it up with the helper script in `scripts/`:
+```sh
+# From a workstation that has the dotfiles repo:
+scp ~/projects/personal/dotfiles/scripts/setup-pihole-dot.sh raspi:/tmp/
+ssh raspi 'sudo bash /tmp/setup-pihole-dot.sh'
+```
+The script installs `unbound`, mints a TLS cert via `tailscale cert`, drops a config at `/etc/unbound/unbound.conf.d/99-pihole-dot.conf` that listens on `:853` and forwards plain DNS to Pi-hole on `127.0.0.1:53`, then restarts `unbound`. Re-running upgrades configs and reloads in place.
+Tailscale certs expire after 90 days. Add a weekly cron entry that re-runs the script, or wire up a systemd timer:
+```sh
+echo '0 3 * * 1 root bash /usr/local/sbin/setup-pihole-dot.sh' | sudo tee /etc/cron.d/pihole-dot-renew
+```
+Until the Pi side is up, `chezmoi apply` on the Mac will print a warning and skip the profile install (the script TCP-probes `:853` first). No partial state.
+Verify from the Mac:
+```sh
+nc -z -w 3 ***REMOVED*** 853 && echo reachable
+kdig -d @***REMOVED*** +tls-ca +short example.com
+```

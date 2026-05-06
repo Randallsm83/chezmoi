@@ -1446,4 +1446,58 @@ vpn_dns_routes:
       - newdream.net
       - dream.io
 
+# ============================================================================
+# Encrypted DNS (DoT) profile
+# ============================================================================
+# Used by:
+#   dot_config/dns/private_pihole-dot.mobileconfig.tmpl   (renders the profile)
+#   .chezmoiscripts/run_onchange_after_56_encrypted-dns.sh.tmpl  (installs it)
+#
+# Encrypts the LAN leg of DNS by pinning macOS at a DoT resolver instead of
+# UDP/53 to the LAN Pi-hole. Targets the tailnet hostname so the same profile
+# works on-LAN (Tailscale routes locally) and off-LAN (over WireGuard).
+#
+# Pi-side prerequisite: the host must terminate DoT on :853 with a valid TLS
+# cert. See scripts/setup-pihole-dot.sh and the "Encrypted DNS" section of
+# RASPI.md. The macOS install script will TCP-probe :853 first and skip with
+# a warning if unreachable, so it is safe to enable this before the Pi side
+# is ready.
+#
+# Identifier and UUIDs are intentionally stable so re-applying chezmoi does
+# not produce a new profile each run. Regenerate via `uuidgen` if you ever
+# need to fully reset.
+encrypted_dns:
+  enabled: true
+  protocol: tls                            # "tls" (DoT) or "https" (DoH)
+  server_name: "***REMOVED***"
+  server_addresses:
+    - "***REMOVED***"                     # raspi tailnet IPv4
+  port: 853                                # used for the reachability probe
+  identifier: "com.ranmil.dns.pihole-dot"
+  display_name: "Pi-hole DoT (tailnet)"
+  organization: "ranmil"
+  payload_uuid: "6F4D2A1E-3B8C-4D7F-9E5A-1C2B3D4E5F6A"
+  dns_payload_uuid: "7A5E3B2F-4C9D-5E8A-AF6B-2D3C4E5F6A7B"
+  # When non-empty, the resolver is only used for DNS queries matching one
+  # of these suffixes (split-DNS via DoT). Leave empty to make the resolver
+  # the system default.
+  match_domains: []
+
+# ============================================================================
+# Browser DoH disable
+# ============================================================================
+# Used by .chezmoiscripts/run_onchange_after_57_browser-doh-policies.sh.tmpl
+#
+# Forces Firefox/Chrome/Edge/Brave to use the system resolver instead of
+# their own DoH endpoint. Without this, Pi-hole filtering is silently
+# bypassed by browsers that ship DoH on by default (notably Firefox).
+browser_doh:
+  enabled: true
+  # Each browser writes a managed-policy file owned by root.
+  browsers:
+    - firefox
+    - chrome
+    - edge
+    - brave
+
 # vim: ts=2 sts=2 sw=2 et
