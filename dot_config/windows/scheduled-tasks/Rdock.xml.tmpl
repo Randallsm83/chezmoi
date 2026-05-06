@@ -6,7 +6,7 @@
 
     <Date>2026-01-30T09:31:40.1172223</Date>
 
-    <Author>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</Author>
+    <Author>{{ .chezmoi.username }}</Author>
 
     <URI>\Rdock</URI>
 
@@ -16,7 +16,7 @@
 
     <Principal id="Author">
 
-      <UserId>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</UserId>
+      <UserId>{{ .chezmoi.username }}</UserId>
 
       <LogonType>InteractiveToken</LogonType>
 
@@ -50,7 +50,7 @@
 
     <LogonTrigger>
 
-      <UserId>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</UserId>
+      <UserId>{{ .chezmoi.username }}</UserId>
 
     </LogonTrigger>
 
