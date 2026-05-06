@@ -1,0 +1,73 @@
+{{- /*
+   Encrypted DNS configuration profile for macOS.
+   Rendered from the `encrypted_dns` block in .chezmoidata.yaml.
+
+   This file is the SOURCE for the .mobileconfig that gets installed via
+   .chezmoiscripts/run_onchange_after_56_encrypted-dns.sh.tmpl.
+
+   Excluded on non-darwin hosts via .chezmoiignore.
+
+   Reference:
+     https://developer.apple.com/documentation/devicemanagement/dnssettings
+*/ -}}
+{{- $cfg := .encrypted_dns -}}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadDisplayName</key>
+    <string>{{ $cfg.display_name }}</string>
+    <key>PayloadDescription</key>
+    <string>Pins the system resolver at {{ $cfg.server_name }} over {{ upper $cfg.protocol }}. Managed by chezmoi.</string>
+    <key>PayloadIdentifier</key>
+    <string>{{ $cfg.identifier }}</string>
+    <key>PayloadOrganization</key>
+    <string>{{ $cfg.organization }}</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadScope</key>
+    <string>System</string>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>{{ $cfg.payload_uuid }}</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>PayloadDisplayName</key>
+            <string>Encrypted DNS settings</string>
+            <key>PayloadIdentifier</key>
+            <string>{{ $cfg.identifier }}.dns</string>
+            <key>PayloadType</key>
+            <string>com.apple.dnsSettings.managed</string>
+            <key>PayloadUUID</key>
+            <string>{{ $cfg.dns_payload_uuid }}</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>DNSSettings</key>
+            <dict>
+                <key>DNSProtocol</key>
+                <string>{{ if eq $cfg.protocol "tls" }}TLS{{ else if eq $cfg.protocol "https" }}HTTPS{{ else }}{{ upper $cfg.protocol }}{{ end }}</string>
+                <key>ServerName</key>
+                <string>{{ $cfg.server_name }}</string>
+                <key>ServerAddresses</key>
+                <array>
+                    {{- range $cfg.server_addresses }}
+                    <string>{{ . }}</string>
+                    {{- end }}
+                </array>
+            </dict>
+            {{- if $cfg.match_domains }}
+            <key>SupplementalMatchDomains</key>
+            <array>
+                {{- range $cfg.match_domains }}
+                <string>{{ . }}</string>
+                {{- end }}
+            </array>
+            {{- end }}
+        </dict>
+    </array>
+</dict>
+</plist>

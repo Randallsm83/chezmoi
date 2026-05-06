@@ -77,6 +77,7 @@ ARCHITECTURE.md
 CHEZMOI-GUIDE.md
 REINSTALL.md
 CLAUDE.md
+DNS.md
 
 # Local-config example (renamed from .chezmoi.local.toml.example so
 # chezmoi doctor no longer flags it as a suspicious entry).
@@ -195,8 +196,17 @@ scoop/**
 .config/hammerspoon/**
 .config/mackup
 .config/mackup/**
+# Encrypted DNS configuration profile (consumed by `profiles install` -- macOS only)
+.config/dns
+.config/dns/**
 Library
 Library/**
+{{- end }}
+
+{{- /* Skip the DNS profile entirely when the feature is disabled */ -}}
+{{- if and (hasKey . "encrypted_dns") (not .encrypted_dns.enabled) }}
+.config/dns
+.config/dns/**
 {{- end }}
 
 {{- /* Remote machine exclusions */ -}}

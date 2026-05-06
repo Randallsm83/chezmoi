@@ -6,9 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
-None
-
+### Added
+- **Encrypted DNS profile (macOS)**: New `encrypted_dns` block in `.chezmoidata.yaml` plus `dot_config/dns/private_pihole-dot.mobileconfig.tmpl` and `.chezmoiscripts/run_onchange_after_56_encrypted-dns.sh.tmpl` install a `com.apple.dnsSettings.managed` profile pinning the system resolver at `raspi.tailf7fd34.ts.net:853` over DoT. TCP-probes the endpoint before installing; skips with a warning if the Pi-side terminator isn't up yet. Encrypts the LAN leg of DNS that was previously plaintext UDP/53.
+- **Browser DoH disable (macOS)**: New `browser_doh` block in `.chezmoidata.yaml` plus `.chezmoiscripts/run_onchange_after_57_browser-doh-policies.sh.tmpl` writes managed-policy files for Firefox (`policies.json`), Chrome, Edge, and Brave (`/Library/Managed Preferences/<bundle>.plist`) so they respect the system resolver instead of bypassing Pi-hole via Mozilla/Cloudflare DoH.
+- **Pi-side DoT terminator setup**: `scripts/setup-pihole-dot.sh` installs `unbound`, mints a TLS cert via `tailscale cert`, and forwards plain DNS to Pi-hole. Run on the Pi, not the Mac.
+- **RASPI.md** — "Encrypted DNS (DoT terminator)" section documenting the Pi-side prerequisite.
+- **DNS.md** — full DNS architecture reference: resolver hierarchy, where each component lives in the chezmoi source, browser DoH disable mechanics, verification commands, and past failure modes (unbound validator/localhost defaults, deprecated `profiles install`, `/Library/Managed Preferences/` requiring MDM, the wrong-vault `raspi.pub` template).
+### Changed
+- **`.chezmoiignore`** — excludes `dot_config/dns/**` on non-darwin hosts and when `encrypted_dns.enabled = false`.
 ---
 
 ## [2.0.0] - 2025-01-20
