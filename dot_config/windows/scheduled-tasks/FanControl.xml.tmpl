@@ -6,7 +6,7 @@
 
     <Date>2025-10-27T09:52:40.559-07:00</Date>
 
-    <Author>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</Author>
+    <Author>{{ .chezmoi.username }}</Author>
 
     <Description>Start FanControl at startup</Description>
 
@@ -18,7 +18,7 @@
 
     <Principal id="Author">
 
-      <UserId>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</UserId>
+      <UserId>{{ .chezmoi.username }}</UserId>
 
       <LogonType>InteractiveToken</LogonType>
 
@@ -56,7 +56,7 @@
 
     <LogonTrigger>
 
-      <UserId>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</UserId>
+      <UserId>{{ .chezmoi.username }}</UserId>
 
     </LogonTrigger>
 
@@ -66,9 +66,9 @@
 
     <Exec>
 
-      <Command>FanControl</Command>
+      <Command>{{ .chezmoi.homeDir }}\scoop\apps\fancontrol\current\FanControl.exe</Command>
 
-      <WorkingDirectory>{{ .chezmoi.homeDir }}\Downloads\FanControl_245_net_8_0\</WorkingDirectory>
+      <WorkingDirectory>{{ .chezmoi.homeDir }}\scoop\apps\fancontrol\current</WorkingDirectory>
 
     </Exec>
 

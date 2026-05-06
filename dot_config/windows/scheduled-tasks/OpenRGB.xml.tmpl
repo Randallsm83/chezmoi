@@ -6,7 +6,7 @@
 
     <Date>2026-03-11T00:03:27.3170775</Date>
 
-    <Author>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</Author>
+    <Author>{{ .chezmoi.username }}</Author>
 
     <URI>\OpenRGB</URI>
 
@@ -16,7 +16,7 @@
 
     <Principal id="Author">
 
-      <UserId>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</UserId>
+      <UserId>{{ .chezmoi.username }}</UserId>
 
       <LogonType>InteractiveToken</LogonType>
 
@@ -48,7 +48,7 @@
 
     <LogonTrigger>
 
-      <UserId>{{ .chezmoi.hostname }}\{{ .chezmoi.username }}</UserId>
+      <UserId>{{ .chezmoi.username }}</UserId>
 
     </LogonTrigger>
 
