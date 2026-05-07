@@ -255,6 +255,25 @@ Library/**
 {{- end }}
 {{- end }}
 
+{{- /* SSH .pub hints are templated from .secrets.ssh_pub_*; on machines
+      without a resolved secrets map (remotes without `op`, or configs
+      generated before [data.secrets] existed) the templates render
+      empty and chezmoi would *delete* the on-disk hint files, breaking
+      `IdentitiesOnly yes` host blocks in dot_ssh/config.tmpl.
+      Skip these targets entirely when secrets are absent so existing
+      hints (typically extracted once from the forwarded 1Password
+      agent via `ssh-add -L`) are preserved. */ -}}
+{{- if not (hasKey . "secrets") }}
+.ssh/github_com.pub
+.ssh/gitlab_com.pub
+.ssh/dh_git.pub
+.ssh/dh_yakko.pub
+.ssh/dh_porky.pub
+.ssh/***REMOVED***.pub
+.ssh/fp3.pub
+.ssh/raspi.pub
+{{- end }}
+
 {{- /* Mise tier-specific configs - keep only the active tier's file */ -}}
 {{- $tier := (index . "remote_tier" | default "full") }}
 {{- if ne $tier "minimal" }}
