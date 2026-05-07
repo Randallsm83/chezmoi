@@ -106,62 +106,72 @@ theme:
 
 ## 🦊 LibreWolf (Browser)
 
-LibreWolf is installed as a Scoop portable app. Its profile lives under
-`~/scoop/persist/librewolf/Profiles/Default/`. Only **`user.js`** is tracked
-by chezmoi — every other file in that profile is browser-managed state
-(`prefs.js`, sqlite databases, sessionstore, extension state, etc.) and is
-excluded by `.chezmoiignore`.
+LibreWolf is installed as a Scoop portable app, but its **active profile**
+still lives at the standard Firefox location: `%APPDATA%\LibreWolf\Profiles\<id>.default-default\`.
+The scoop-shipped `~/scoop/persist/librewolf/Profiles/Default/` folder is
+dead weight — LibreWolf does not read it. Always confirm via
+`%APPDATA%\LibreWolf\profiles.ini` or `about:profiles`.
 
-### Why only `user.js`?
+### What's tracked
 
-Firefox/LibreWolf rewrites `prefs.js` on every session with cache state,
-build IDs, sessionstore data, ML model versions, and other transient noise.
-Tracking it produces thousands of meaningless diffs per day. `user.js` is
-the canonical "configure-as-code" file: it's read on every browser startup
-and its values are overlaid onto `prefs.js`, so anything you put in
-`user.js` becomes sticky.
+Two files, both at non-XDG paths chezmoi can't reach via its normal target
+walker. They live as source-only data and are deployed by
+`.chezmoiscripts/run_onchange_after_55_librewolf_windows.ps1.tmpl`:
 
-### Tracked file
+| Source                                  | Target                                                            | Owns                                                                        |
+|-----------------------------------------|-------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| `librewolf/distribution/policies.json`  | `~/scoop/apps/librewolf/current/LibreWolf/distribution/policies.json` | Force-installed extensions, search-engine policy, telemetry/update lockdown |
+| `librewolf/profile/user.js`             | `%APPDATA%\LibreWolf\Profiles\<id>.default-default\user.js`        | Network/fingerprinting hardening, cookies-on-shutdown, HTTPS-only, WebRTC off |
 
-```
-scoop/persist/librewolf/Profiles/Default/user.js
-```
+The profile id is generated per-install. The deploy script discovers it
+at apply time by parsing `%APPDATA%\LibreWolf\profiles.ini` (preferring
+the `[InstallXXX]` section's `Default=`, falling back to the first
+`[ProfileN]` with `Default=1`).
 
-Contains:
-- Curated privacy/fingerprinting hardening (WebGL, geolocation, beacon,
-  WebRTC, telemetry, search suggestions, autoplay, etc.)
-- Recovered user_pref() entries pulled from a previous active `prefs.js`
-  (filtered to drop browser-managed noise; flagged as "review and prune"
-  in the file)
+### Force-installed extensions
+
+Declared in `policies.json` under `ExtensionSettings` with
+`installation_mode: "normal_installed"`. LibreWolf auto-installs them
+from AMO on first profile launch. Current set: uBlock Origin, Bitwarden,
+ClearURLs, LocalCDN, SponsorBlock, Dark Reader, Multi-Account Containers.
+
+### Why these two files (and only these)?
+
+- `prefs.js` is rewritten every session with cache state, build IDs,
+  sessionstore data, etc. — unversionable.
+- `extensions.json`, `extensions/`, sqlite databases, sessionstore
+  backups: all browser-managed state. Fully derivable from
+  `policies.json` + a fresh launch.
+- `user.js` is read on every startup and overlaid onto `prefs.js`, so it
+  is the canonical place for sticky preference overrides.
+- `policies.json` is the canonical place for force-installed extensions
+  and tenant-style policy. Without tracking it, scoop reinstalls or
+  upgrades silently revert your extension list to LibreWolf stock.
 
 ### Adding a new preference
 
-The right way to make an `about:config` change persist:
+1. Make the change in the LibreWolf UI or `about:config`.
+2. Edit `librewolf/profile/user.js` in the chezmoi source (don't edit
+   the deployed copy in the active profile — the script overwrites it).
+3. `chezmoi apply` (the run_onchange script picks up the new sha256 and
+   writes it to the active profile).
+4. Commit `librewolf/profile/user.js`.
 
-1. Make the change in the LibreWolf UI / `about:config`.
-2. Add (or modify) the corresponding `user_pref()` line in `user.js`.
-3. Re-add to chezmoi and commit:
-   ```powershell
-   chezmoi re-add ~/scoop/persist/librewolf/Profiles/Default/user.js
-   git add scoop/persist/librewolf/Profiles/Default/user.js
-   git commit -m "librewolf: <what changed>"
-   ```
+### Adding a force-installed extension
 
-Deleting a line from `user.js` reverts that pref to LibreWolf's default on
-the next browser start.
+1. Edit `librewolf/distribution/policies.json` — add an entry under
+   `ExtensionSettings` with `installation_mode: "normal_installed"` and
+   the AMO `install_url`.
+2. `chezmoi apply` (deploys to the install dir).
+3. Restart LibreWolf to trigger the auto-install on next profile load,
+   or open `about:policies` to confirm the change is recognized.
+4. Commit `librewolf/distribution/policies.json`.
 
-### What is NOT tracked
+### Backups & references
 
-The `.chezmoiignore` block under "LibreWolf (scoop persist)" excludes:
-- `prefs.js`, `prefs-*.js`, `xulstore.json`, `handlers.json`,
-  `containers.json`, `extensions.json`, `addons.json`, `compatibility.ini`
-- All `*.sqlite`, `*.json.lz4`, `*.mozlz4`, `*.bin`, `*.db` files
-- `cache2/`, `startupCache/`, `shader-cache/`, `storage/`, `datareporting/`,
-  `safebrowsing/`, `security_state/`, `sessionstore-backups/`,
-  `bookmarkbackups/`, `extension-store*/`, `extensions/`, `settings/`,
-  `defaults/`, `distribution/`, `pref/`, `Default/`
-
-Future `chezmoi re-add` invocations will not pull any of those into source.
+Detailed setup notes (privacy prefs rationale, search-engine policy,
+restore/rollback procedures, verification steps) live in the personal
+notes vault at `02 Atlas/Reference/Windows/LibreWolf Setup.md`.
 
 ---
 
