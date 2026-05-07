@@ -1,16 +1,17 @@
 {{- /*
 LibreWolf configuration writer.
 
-Two files, both at non-XDG paths chezmoi can't manage as targets:
+Three files, all at non-XDG paths chezmoi can't manage as targets:
   1. policies.json
        Source: librewolf/distribution/policies.json
-       Target: ~/scoop/apps/librewolf/current/LibreWolf/distribution/policies.json
+       Target: C:\Program Files\LibreWolf\distribution\policies.json
+             (winget LibreWolf.LibreWolf install location)
        Owns: force-installed extensions (uBlock, Bitwarden, ClearURLs,
              LocalCDN, SponsorBlock, Dark Reader, Multi-Account
              Containers), default search engine + add/remove list,
              telemetry/update lockdown.
-       Clobber risk: scoop install/update overwrites this from upstream
-             on every refresh.
+       Clobber risk: winget upgrades may replace the distribution dir;
+             this script reapplies after every chezmoi run.
   2. user.js
        Source: librewolf/profile/user.js
        Target: %APPDATA%/LibreWolf/Profiles/<id>.default-default/user.js
@@ -19,6 +20,12 @@ Two files, both at non-XDG paths chezmoi can't manage as targets:
        Clobber risk: lost on profile recreation. The profile id is
              generated per-install, so we discover it at apply time
              from %APPDATA%/LibreWolf/profiles.ini rather than hardcoding.
+  3. chrome/userChrome.css
+       Source: librewolf/profile/chrome/userChrome.css
+       Target: %APPDATA%/LibreWolf/Profiles/<id>.default-default/chrome/userChrome.css
+       Owns: Spaceduck UI theme (toolbar, tabs, urlbar, menus).
+       Requires: toolkit.legacyUserProfileCustomizations.stylesheets=true
+             (set in user.js above).
 
 Why a script instead of normal target-tree management:
   Both targets sit outside the home-relative tree chezmoi expects. Same
@@ -32,16 +39,22 @@ Idempotency:
   Each write checks for an existing identical target and skips silently.
 
 Profile-id discovery (from notes/02 Atlas/Reference/Windows/LibreWolf Setup.md):
-  Always verify the active profile via profiles.ini; the scoop-shipped
-  <install>/Profiles/Default folder is unused dead weight on Windows.
+  Always verify the active profile via profiles.ini.
+
+Install switch from scoop -> winget (LibreWolf.LibreWolf):
+  Install path moved from ~/scoop/apps/librewolf/current/LibreWolf to
+  C:\Program Files\LibreWolf. Winget registers cleanly under HKLM
+  StartMenuInternet\LibreWolf with a single ProgID (LibreWolfHTM).
 */}}
 {{- if eq .chezmoi.os "windows" -}}
-# policies.json sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "distribution" "policies.json") | sha256sum }}
-# user.js       sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "profile" "user.js") | sha256sum }}
+# policies.json   sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "distribution" "policies.json") | sha256sum }}
+# user.js         sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "profile" "user.js") | sha256sum }}
+# userChrome.css  sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "profile" "chrome" "userChrome.css") | sha256sum }}
 $ErrorActionPreference = 'Stop'
 
-$srcPolicies = '{{ joinPath .chezmoi.sourceDir "librewolf" "distribution" "policies.json" | replace "\\" "/" }}'
-$srcUserJs   = '{{ joinPath .chezmoi.sourceDir "librewolf" "profile" "user.js" | replace "\\" "/" }}'
+$srcPolicies     = '{{ joinPath .chezmoi.sourceDir "librewolf" "distribution" "policies.json" | replace "\\" "/" }}'
+$srcUserJs       = '{{ joinPath .chezmoi.sourceDir "librewolf" "profile" "user.js" | replace "\\" "/" }}'
+$srcUserChromeCss = '{{ joinPath .chezmoi.sourceDir "librewolf" "profile" "chrome" "userChrome.css" | replace "\\" "/" }}'
 
 function Write-IfChanged {
     param([string]$Src, [string]$Dst)
@@ -63,11 +76,36 @@ function Write-IfChanged {
 }
 
 # === policies.json -> install dir ===
-$installDist = "$env:USERPROFILE\scoop\apps\librewolf\current\LibreWolf\distribution"
-if (Test-Path -LiteralPath $installDist) {
-    Write-IfChanged -Src $srcPolicies -Dst (Join-Path $installDist 'policies.json')
+# Try winget install location first, then fall back to scoop for backwards-compat.
+# Program Files requires elevation; scoop dir is user-writable.
+$installDistCandidates = @(
+    @{ Path = 'C:\Program Files\LibreWolf\distribution'; NeedsAdmin = $true },
+    @{ Path = "$env:USERPROFILE\scoop\apps\librewolf\current\LibreWolf\distribution"; NeedsAdmin = $false }
+)
+$chosen = $installDistCandidates | Where-Object { Test-Path -LiteralPath (Split-Path -Parent $_.Path) } | Select-Object -First 1
+if ($chosen) {
+    $installDist = $chosen.Path
+    $policiesDst = Join-Path $installDist 'policies.json'
+    $srcText = ([System.IO.File]::ReadAllText($srcPolicies)) -replace "`r`n", "`n"
+    $needsWrite = $true
+    if (Test-Path -LiteralPath $policiesDst) {
+        $dstText = ([System.IO.File]::ReadAllText($policiesDst)) -replace "`r`n", "`n"
+        if ($dstText -eq $srcText) { $needsWrite = $false }
+    }
+    if ($needsWrite) {
+        if ($chosen.NeedsAdmin) {
+            Write-Host "[librewolf] elevating via gsudo to write $policiesDst"
+            $tmp = [System.IO.Path]::GetTempFileName()
+            [System.IO.File]::WriteAllText($tmp, $srcText, [System.Text.UTF8Encoding]::new($false))
+            gsudo --loglevel none -- powershell -NoProfile -Command "if (-not (Test-Path -LiteralPath '$installDist')) { New-Item -ItemType Directory -Path '$installDist' -Force | Out-Null }; Copy-Item -LiteralPath '$tmp' -Destination '$policiesDst' -Force"
+            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+            Write-Host "[librewolf] wrote $policiesDst ($($srcText.Length) bytes)"
+        } else {
+            Write-IfChanged -Src $srcPolicies -Dst $policiesDst
+        }
+    }
 } else {
-    Write-Warning "[librewolf] install dir not found ($installDist) - is LibreWolf installed via scoop?"
+    Write-Warning "[librewolf] install dir not found - is LibreWolf installed via winget (LibreWolf.LibreWolf) or scoop?"
 }
 
 # === user.js -> active profile (id discovered from profiles.ini) ===
@@ -112,11 +150,37 @@ if (-not $relPath) {
     exit 0
 }
 
+# Auto-repair: collapse divergent [InstallX] sections that point to different
+# profiles back to the canonical one. Happens after install path changes
+# (e.g. scoop -> winget) when LibreWolf creates a fresh empty profile under
+# a new install hash.
+function Repair-IniInstallSections {
+    param([string]$Path, [string]$Pattern, [string]$CanonicalPath)
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $text = [System.IO.File]::ReadAllText($Path)
+    $orig = $text
+    $rx = [regex]::new("(?m)^($Pattern)\r?\n((?:(?!^\[).*\r?\n)*)")
+    $text = $rx.Replace($text, {
+        param($m)
+        $header = $m.Groups[1].Value
+        $body   = $m.Groups[2].Value
+        $body   = [regex]::Replace($body, '(?m)^Default=.+', "Default=$CanonicalPath")
+        "$header`n$body"
+    })
+    if ($text -ne $orig) {
+        [System.IO.File]::WriteAllText($Path, $text, [System.Text.UTF8Encoding]::new($false))
+        Write-Host "[librewolf] auto-repaired divergent install sections in $Path -> $CanonicalPath"
+    }
+}
+Repair-IniInstallSections -Path $profilesIni -Pattern '\[Install[0-9A-F]+\]' -CanonicalPath $relPath
+Repair-IniInstallSections -Path (Join-Path $lwAppData 'installs.ini') -Pattern '\[[0-9A-F]{16}\]' -CanonicalPath $relPath
+
 $activeProfile = Join-Path $lwAppData ($relPath -replace '/', '\')
 if (-not (Test-Path -LiteralPath $activeProfile)) {
     Write-Warning "[librewolf] active profile dir not found: $activeProfile"
     exit 0
 }
 
-Write-IfChanged -Src $srcUserJs -Dst (Join-Path $activeProfile 'user.js')
+Write-IfChanged -Src $srcUserJs       -Dst (Join-Path $activeProfile 'user.js')
+Write-IfChanged -Src $srcUserChromeCss -Dst (Join-Path $activeProfile 'chrome\userChrome.css')
 {{- end -}}

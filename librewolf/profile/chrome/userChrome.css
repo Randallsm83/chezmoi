@@ -1,0 +1,149 @@
+/*
+ * Spaceduck userChrome.css for LibreWolf
+ *
+ * Palette (from personal rules):
+ *   Background base   #0f111b   (deeper than tokyo night)
+ *   Surface           #16172d
+ *   Surface raised    #1b1c36
+ *   Foreground text   #ecf0c1   (cream)
+ *   Muted text        #686f9a
+ *   Purple accent     #b3a1e6   (primary)
+ *   Purple bold       #c678dd
+ *   Pink              #ce6f8f
+ *   Green             #5ccc96
+ *   Orange            #e39400
+ *   Cyan              #00a3cc
+ *   Yellow            #f2ce00
+ *
+ * Requires `toolkit.legacyUserProfileCustomizations.stylesheets = true` in user.js
+ * (chezmoi user.js sets it).
+ */
+
+:root {
+  /* Base chrome colors via lightweight-theme tokens */
+  --lwt-accent-color: #0f111b !important;
+  --lwt-accent-color-inactive: #0c0e17 !important;
+  --lwt-text-color: #ecf0c1 !important;
+
+  --toolbar-bgcolor: #16172d !important;
+  --toolbar-color: #ecf0c1 !important;
+  --toolbar-field-background-color: #0f111b !important;
+  --toolbar-field-color: #ecf0c1 !important;
+  --toolbar-field-border-color: transparent !important;
+  --toolbar-field-focus-background-color: #1b1c36 !important;
+  --toolbar-field-focus-color: #ecf0c1 !important;
+  --toolbar-field-focus-border-color: #b3a1e6 !important;
+
+  /* Tabs */
+  --tab-selected-bgcolor: #1b1c36 !important;
+  --tab-selected-textcolor: #b3a1e6 !important;
+  --tabs-navbar-shadow-size: 0 !important;
+  --lwt-tab-text: #ecf0c1 !important;
+
+  /* Buttons */
+  --button-bgcolor: rgba(179, 161, 230, 0.10) !important;
+  --button-hover-bgcolor: rgba(179, 161, 230, 0.22) !important;
+  --button-active-bgcolor: rgba(179, 161, 230, 0.38) !important;
+  --button-primary-bgcolor: #b3a1e6 !important;
+  --button-primary-hover-bgcolor: #c678dd !important;
+  --button-primary-color: #0f111b !important;
+
+  /* URL bar dropdown */
+  --urlbar-box-bgcolor: #0f111b !important;
+  --urlbar-box-focused-bgcolor: #1b1c36 !important;
+  --urlbar-popup-url-color: #00a3cc !important;
+  --urlbar-popup-action-color: #5ccc96 !important;
+
+  /* Sidebar */
+  --lwt-sidebar-background-color: #0f111b !important;
+  --lwt-sidebar-text-color: #ecf0c1 !important;
+}
+
+/* Tab strip */
+.tabbrowser-tab .tab-content {
+  color: #ecf0c1 !important;
+}
+
+.tabbrowser-tab[selected="true"] .tab-content {
+  color: #b3a1e6 !important;
+}
+
+.tabbrowser-tab[selected="true"] .tab-background {
+  background: #1b1c36 !important;
+  border-top: 2px solid #b3a1e6 !important;
+}
+
+.tabbrowser-tab:not([selected="true"]):hover .tab-background {
+  background: rgba(179, 161, 230, 0.12) !important;
+}
+
+/* Window controls / titlebar */
+#TabsToolbar {
+  background-color: #0c0e17 !important;
+}
+
+/* URL bar focus accent */
+#urlbar[focused="true"] > #urlbar-background {
+  border-color: #b3a1e6 !important;
+  box-shadow: 0 0 0 1px #b3a1e6 !important;
+}
+
+/* Navigation buttons */
+#back-button:not([disabled]),
+#forward-button:not([disabled]),
+#reload-button:not([disabled]) {
+  fill: #b3a1e6 !important;
+}
+
+/* Find bar */
+.findbar-container {
+  background-color: #16172d !important;
+  color: #ecf0c1 !important;
+}
+
+/* Bookmarks toolbar */
+#PersonalToolbar {
+  background-color: #0f111b !important;
+  color: #ecf0c1 !important;
+}
+
+.bookmark-item {
+  color: #ecf0c1 !important;
+}
+
+.bookmark-item:hover {
+  background-color: rgba(206, 111, 143, 0.15) !important;
+}
+
+/* Menu popups */
+menupopup, panel {
+  --panel-background: #16172d !important;
+  --panel-color: #ecf0c1 !important;
+  --panel-border-color: #b3a1e6 !important;
+}
+
+menuitem[_moz-menuactive="true"] {
+  background-color: rgba(179, 161, 230, 0.22) !important;
+  color: #b3a1e6 !important;
+}
+
+/* Identity / lock icon coloring for HTTPS */
+#identity-box.verifiedDomain #identity-icon,
+#identity-box[pageproxystate="valid"] #identity-icon[lock-icon-shown] {
+  fill: #5ccc96 !important;
+}
+
+/* Active tab close button */
+.tabbrowser-tab[selected="true"] .tab-close-button {
+  fill: #ce6f8f !important;
+}
+
+/* New-tab button */
+#tabs-newtab-button {
+  fill: #00a3cc !important;
+}
+
+/* Notification / popup borders */
+.popup-notification-icon {
+  filter: hue-rotate(280deg) !important;
+}
