@@ -61,3 +61,9 @@ user_pref("media.peerconnection.enabled", false);
 // Disable autoplay of media (audio + video) by default
 user_pref("media.autoplay.default", 5);
 user_pref("media.autoplay.blocking_policy", 2);
+
+// === Theming ===
+
+// Enable userChrome.css / userContent.css loading from <profile>/chrome/
+// Required for the Spaceduck UI theme deployed by chezmoi.
+user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
