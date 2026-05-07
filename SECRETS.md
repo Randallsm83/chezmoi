@@ -16,12 +16,26 @@ Your dotfiles automatically detect and use the available secrets manager.
 
 ---
 
-## Architecture: Batched Secret Resolution (CANONICAL)
+## Two complementary secret-injection patterns
 
-This repo uses a **single batched `op inject` call** in `.chezmoi.toml.tmpl` that
-resolves every `op://` reference at chezmoi init time and exposes the results
-as the `.secrets.*` template variable namespace. Templates never call `op`
-directly.
+This repo uses **two patterns**, applied to different problems:
+
+| Pattern | When to use | Where the secret ends up |
+|---|---|---|
+| **A. Render-time** (`.secrets.*` chezmoi namespace) | Secret must end up as a literal inside a rendered config file (e.g. SSH `authorized_keys`, public-key fingerprints, `.gitconfig` signing keys). | In the rendered file on disk. |
+| **B. Runtime** (`op run --env-file`) | Secret is an env var consumed by a CLI/process at launch (API keys, tokens, MCP server credentials). | Only in the child process's environment — never on disk. |
+
+If you ever find yourself baking an API key literal into a rendered config
+file via Pattern A, that's a smell — Pattern B almost certainly fits better.
+
+---
+
+## Architecture A: Batched Render-Time Resolution
+
+This pattern uses a **single batched `op inject` call** in `.chezmoi.toml.tmpl`
+that resolves every `op://` reference at chezmoi init time and exposes the
+results as the `.secrets.*` template variable namespace. Templates never call
+`op` directly.
 
 ### Why batched?
 
@@ -64,6 +78,41 @@ chezmoi apply --init
 All `.secrets.*` values resolve to empty strings; templates that gate on
 them (e.g. `{{ if .secrets.warp_api_key }}...{{ end }}`) are skipped.
 
+### Variant: env-file materialization
+
+When the consumer is a tool that auto-loads `KEY=value` files at runtime
+(mise's `_.file` directive, direnv, dotenv-style apps), Pattern A renders
+the secret into an env file rather than embedding it inline in a config.
+
+The recipe:
+
+1. **Source**: `dot_config/<scope>/private_secrets.env.tmpl` with `KEY={{ .secrets.foo }}` lines, one per env var.
+2. **`private_` prefix**: chezmoi sets 0600 on Unix; on Windows the file inherits user-only ACLs from being inside `~/.config`.
+3. **Consumer**: configure the tool to read that file at the deployed path (`~/.config/<scope>/secrets.env`).
+
+For mise specifically:
+
+```toml
+# project mise.toml
+[env]
+_.file = "~/.config/<scope>/secrets.env"
+```
+
+This avoids mise's `exec()` template re-running per `cd` (which prompts
+biometrics or fails when 1Password is locked) by resolving the secret
+once at `chezmoi apply --init` time and letting mise read the cached
+file every shell load.
+
+Trade-off vs Pattern B: the secret IS on disk (file ACLs are the only
+protection), but works for tools that can't be cleanly wrapped (mise's
+per-cd env loading hook, anything that reads `.env` files directly).
+
+Refresh ritual: same as Pattern A — `chezmoi apply --init` after rotating
+in 1Password. The new value materializes into the env file on next apply.
+
+Example in this repo: `dot_config/dh/private_secrets.env.tmpl` materializes
+`DH_GITLAB_TOKEN` from `.secrets.dh_gitlab_pat` for the project mise config.
+
 ### Current secrets bundle
 
 Defined in `.chezmoi.toml.tmpl` $secretsTpl:
@@ -75,16 +124,130 @@ Defined in `.chezmoi.toml.tmpl` $secretsTpl:
 - `ssh_pub_dh_porky`
 - `ssh_pub_easterseals`
 - `ssh_pub_fp3`
-- `warp_api_key`
-- `anthropic_api_key`
+- `warp_api_key` — **still injected as a literal into the rendered PowerShell profile.** Candidate for migration to Pattern B if a Warp wrapper is added.
+- `anthropic_api_key` — **no longer referenced by any template.** Claude Code receives it at runtime via the `claude` op-run wrapper (Pattern B). The bundle entry can be removed once nothing else needs it.
 - `gitlab_pat`
-- `dh_gitlab_pat`
+- `dh_gitlab_pat` — materialized to `~/.config/dh/secrets.env` for mise `_.file` consumption (env-file variant; see above).
 
 ### Legacy: `op-read-safe`
 
 The `.chezmoitemplates/op-read-safe` partial is retained for one-off cases
 but is **not the preferred pattern** — each invocation triggers its own
 biometric prompt. Prefer adding to `$secretsTpl` instead.
+
+---
+
+## Architecture B: Runtime Injection via `op run`
+
+For CLI tools that read API keys / tokens from their environment at launch,
+we wrap the binary so that `op run --env-file=...` resolves `op://` references
+from 1Password and injects the resulting env vars into the child process. The
+plaintext secret never lands on disk and never lives in the parent shell.
+
+### Pattern
+
+Three pieces, one per tool:
+
+1. **1Password item** — the actual credential.
+   Example: `op://Personal/Tavily MCP/credential`
+2. **Env-reference file** — a non-secret file mapping env-var names to
+   `op://` references. Lives at `~/.config/op/<tool>.env` (chezmoi-managed at
+   `dot_config/op/<tool>.env`):
+   ```dotenv
+   TAVILY_API_KEY=op://Personal/Tavily MCP/credential
+   ANTHROPIC_API_KEY=op://Personal/Anthropic API/credential
+   # ... only secrets the wrapped tool needs
+   ```
+3. **Wrapper function** — defined in `Documents/PowerShell/Scripts/99-functions.ps1`,
+   resolves the binary through `op run`:
+   ```powershell
+   if (Test-CommandExists 'op') {
+       function claude {
+           $envFile = Join-Path $HOME '.config\op\claude.env'
+           if (Test-Path $envFile) {
+               & op run --env-file=$envFile --no-masking -- claude.exe @args
+           } else {
+               & claude.exe @args
+           }
+       }
+   }
+   ```
+
+### Why per-tool env files (not one shared file)
+
+**Principle of least privilege.** `op run --env-file=foo.env` injects every
+variable in `foo.env` into the child. A flat `secrets.env` would expose every
+credential to every wrapped tool. Per-tool files mean a `claude` invocation
+only sees what `claude.env` lists; an `aider` invocation only sees what
+`aider.env` lists; etc. Duplication of `op://` *references* (not values) across
+files is cheap and self-documenting.
+
+### Cost model
+
+- First call per session → 1 biometric prompt (then cached by op desktop integration).
+- Subsequent calls within the cache window → 0 prompts.
+- `chezmoi apply` / `diff` / `status` → 0 prompts (Pattern B is runtime-only).
+
+### Adding a new tool
+
+Example: wiring up `aider` with `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`.
+
+1. **Ensure 1Password items exist** for each secret. Create if needed:
+   ```pwsh
+   op item create --category="API Credential" --vault=Personal `
+     --title="OpenAI API" "credential=<paste>"
+   ```
+2. **Create the env-reference file** at
+   `dot_config/op/aider.env` (chezmoi source):
+   ```dotenv
+   ANTHROPIC_API_KEY=op://Personal/Anthropic API/credential
+   OPENAI_API_KEY=op://Personal/OpenAI API/credential
+   ```
+3. **Add the wrapper** to `Documents/PowerShell/Scripts/99-functions.ps1`
+   under the "AI / MCP Wrappers" section, mirroring the `claude` function.
+4. `chezmoi apply` — renders the env file and updated functions script.
+5. New shells will load the wrapper automatically. To use immediately, source
+   the file: `. "$HOME\Documents\PowerShell\Scripts\99-functions.ps1"`.
+
+### Adding a new secret to an existing tool
+
+1. Append a line to `dot_config/op/<tool>.env` in the chezmoi source:
+   ```dotenv
+   NEW_VAR=op://Vault/Item/field
+   ```
+2. `chezmoi apply`. No code changes — the wrapper picks it up automatically.
+
+### Rotating a secret
+
+1. Generate the new key at the provider.
+2. Update the 1Password item:
+   ```pwsh
+   op item edit "Tavily MCP" --vault Personal credential="<new>"
+   ```
+3. Done. No file edits, no `chezmoi apply` — the next wrapper invocation
+   resolves the new value.
+
+### Current Pattern B inventory
+
+| Wrapper | Env file | Secrets injected |
+|---|---|---|
+| `claude` | `~/.config/op/claude.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY` |
+
+`~/.claude.json` references these via `${VAR_NAME}` substitution in HTTP
+header values and stdio MCP `env` blocks, so all four MCP servers
+(`tavily`, `vercel`, `neon`, `qdrant`) connect through the wrapper without
+any literal credentials in `~/.claude.json`.
+
+### Verifying no leakage
+
+```pwsh
+# .claude.json should contain ${VAR} placeholders, not literal tokens
+Select-String -Path "$HOME\.claude.json" -Pattern 'tvly-|sk-ant-|eyJ[A-Za-z0-9_-]+\.eyJ'
+# (no output expected)
+
+# Process env should NOT have ANTHROPIC_API_KEY in a fresh shell
+pwsh -NoProfile -Command 'if ($env:ANTHROPIC_API_KEY) { "LEAK" } else { "clean" }'
+```
 
 ---
 
@@ -646,5 +809,5 @@ A: Run validation script or check `.chezmoiscripts/run_onchange_before_01_valida
 
 ---
 
-**Last Updated**: 2025-01-19  
+**Last Updated**: 2026-05-07  
 **Version**: 2.0.0 (in development)
