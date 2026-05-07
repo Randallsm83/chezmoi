@@ -59,49 +59,19 @@ scoop/persist/flow-launcher/UserData/Settings/UserSelectedRecord.json
 scoop/persist/flow-launcher/UserData/Settings/MultipleTopMostRecord.json
 scoop/persist/flow-launcher/UserData/**/*.bak
 
-# LibreWolf (scoop persist): only `user.js` is tracked. Everything else under
-# the active profile is browser-managed state — prefs.js (auto-rewritten with
-# session/cache state), sqlite databases, session restore, extension state,
-# and binary stores like search.json.mozlz4. user.js is read on every startup
-# and overlays prefs.js, so it's the only file that should be versioned.
-scoop/persist/librewolf/Profiles/*/prefs.js
-scoop/persist/librewolf/Profiles/*/prefs-*.js
-scoop/persist/librewolf/Profiles/*/xulstore.json
-scoop/persist/librewolf/Profiles/*/handlers.json
-scoop/persist/librewolf/Profiles/*/containers.json
-scoop/persist/librewolf/Profiles/*/extensions.json
-scoop/persist/librewolf/Profiles/*/addons.json
-scoop/persist/librewolf/Profiles/*/addonStartup.json.lz4
-scoop/persist/librewolf/Profiles/*/compatibility.ini
-scoop/persist/librewolf/Profiles/*/sessionCheckpoints.json
-scoop/persist/librewolf/Profiles/*/times.json
-scoop/persist/librewolf/Profiles/*/AlternateServices.bin
-scoop/persist/librewolf/Profiles/*/SiteSecurityServiceState.bin
-scoop/persist/librewolf/Profiles/*/serviceworker.txt
-scoop/persist/librewolf/Profiles/*/protections.sqlite*
-scoop/persist/librewolf/Profiles/*/*.sqlite
-scoop/persist/librewolf/Profiles/*/*.sqlite-*
-scoop/persist/librewolf/Profiles/*/*.json.lz4
-scoop/persist/librewolf/Profiles/*/*.mozlz4
-scoop/persist/librewolf/Profiles/*/*.bin
-scoop/persist/librewolf/Profiles/*/*.db
-scoop/persist/librewolf/Profiles/*/cache2/**
-scoop/persist/librewolf/Profiles/*/startupCache/**
-scoop/persist/librewolf/Profiles/*/shader-cache/**
-scoop/persist/librewolf/Profiles/*/storage/**
-scoop/persist/librewolf/Profiles/*/datareporting/**
-scoop/persist/librewolf/Profiles/*/safebrowsing/**
-scoop/persist/librewolf/Profiles/*/security_state/**
-scoop/persist/librewolf/Profiles/*/sessionstore-backups/**
-scoop/persist/librewolf/Profiles/*/extension-store/**
-scoop/persist/librewolf/Profiles/*/extension-store-menus/**
-scoop/persist/librewolf/Profiles/*/extensions/**
-scoop/persist/librewolf/Profiles/*/bookmarkbackups/**
-scoop/persist/librewolf/Profiles/*/settings/**
-scoop/persist/librewolf/Profiles/*/defaults/**
-scoop/persist/librewolf/Profiles/*/distribution/**
-scoop/persist/librewolf/Profiles/*/pref/**
-scoop/persist/librewolf/Profiles/*/Default/**
+# LibreWolf source-only tree. The two files we manage —
+#   librewolf/distribution/policies.json  (force-installed extensions,
+#                                          search engines, telemetry lockdown)
+#   librewolf/profile/user.js              (per-profile preference overrides)
+# — don't live under $HOME, so chezmoi can't reach them via the normal target
+# walker. They sit here as source data and are deployed by:
+#   .chezmoiscripts/run_onchange_after_55_librewolf_windows.ps1.tmpl
+# which copies policies.json into the scoop install dir and writes user.js to
+# the active profile (id discovered at apply time from
+# %APPDATA%/LibreWolf/profiles.ini, since the scoop-shipped Profiles/Default
+# folder is dead weight per notes/02 Atlas/Reference/Windows/LibreWolf Setup.md).
+librewolf
+librewolf/**
 {{- end }}
 
 # ============================================================================

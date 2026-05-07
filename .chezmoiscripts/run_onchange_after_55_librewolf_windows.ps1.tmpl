@@ -1,0 +1,122 @@
+{{- /*
+LibreWolf configuration writer.
+
+Two files, both at non-XDG paths chezmoi can't manage as targets:
+  1. policies.json
+       Source: librewolf/distribution/policies.json
+       Target: ~/scoop/apps/librewolf/current/LibreWolf/distribution/policies.json
+       Owns: force-installed extensions (uBlock, Bitwarden, ClearURLs,
+             LocalCDN, SponsorBlock, Dark Reader, Multi-Account
+             Containers), default search engine + add/remove list,
+             telemetry/update lockdown.
+       Clobber risk: scoop install/update overwrites this from upstream
+             on every refresh.
+  2. user.js
+       Source: librewolf/profile/user.js
+       Target: %APPDATA%/LibreWolf/Profiles/<id>.default-default/user.js
+       Owns: per-profile preference overrides (network/fingerprinting
+             hardening, cookies-on-shutdown, HTTPS-only, WebRTC off, etc).
+       Clobber risk: lost on profile recreation. The profile id is
+             generated per-install, so we discover it at apply time
+             from %APPDATA%/LibreWolf/profiles.ini rather than hardcoding.
+
+Why a script instead of normal target-tree management:
+  Both targets sit outside the home-relative tree chezmoi expects. Same
+  pattern we use for D:\dh\mise.toml in run_onchange_after_50_*.
+
+Trigger semantics:
+  `run_onchange_` re-runs when the rendered script body changes. The
+  embedded sha256 comments below pick up source-file changes.
+
+Idempotency:
+  Each write checks for an existing identical target and skips silently.
+
+Profile-id discovery (from notes/02 Atlas/Reference/Windows/LibreWolf Setup.md):
+  Always verify the active profile via profiles.ini; the scoop-shipped
+  <install>/Profiles/Default folder is unused dead weight on Windows.
+*/}}
+{{- if eq .chezmoi.os "windows" -}}
+# policies.json sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "distribution" "policies.json") | sha256sum }}
+# user.js       sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "profile" "user.js") | sha256sum }}
+$ErrorActionPreference = 'Stop'
+
+$srcPolicies = '{{ joinPath .chezmoi.sourceDir "librewolf" "distribution" "policies.json" | replace "\\" "/" }}'
+$srcUserJs   = '{{ joinPath .chezmoi.sourceDir "librewolf" "profile" "user.js" | replace "\\" "/" }}'
+
+function Write-IfChanged {
+    param([string]$Src, [string]$Dst)
+    if (-not (Test-Path -LiteralPath $Src)) {
+        Write-Warning "[librewolf] source missing: $Src"
+        return
+    }
+    $srcText = ([System.IO.File]::ReadAllText($Src)) -replace "`r`n", "`n"
+    if (Test-Path -LiteralPath $Dst) {
+        $dstText = ([System.IO.File]::ReadAllText($Dst)) -replace "`r`n", "`n"
+        if ($dstText -eq $srcText) { return }
+    }
+    $dstDir = Split-Path -Parent $Dst
+    if (-not (Test-Path -LiteralPath $dstDir)) {
+        New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
+    }
+    [System.IO.File]::WriteAllText($Dst, $srcText, [System.Text.UTF8Encoding]::new($false))
+    Write-Host "[librewolf] wrote $Dst ($($srcText.Length) bytes)"
+}
+
+# === policies.json -> install dir ===
+$installDist = "$env:USERPROFILE\scoop\apps\librewolf\current\LibreWolf\distribution"
+if (Test-Path -LiteralPath $installDist) {
+    Write-IfChanged -Src $srcPolicies -Dst (Join-Path $installDist 'policies.json')
+} else {
+    Write-Warning "[librewolf] install dir not found ($installDist) - is LibreWolf installed via scoop?"
+}
+
+# === user.js -> active profile (id discovered from profiles.ini) ===
+$lwAppData = "$env:APPDATA\LibreWolf"
+$profilesIni = Join-Path $lwAppData 'profiles.ini'
+if (-not (Test-Path -LiteralPath $profilesIni)) {
+    Write-Warning "[librewolf] profiles.ini not found ($profilesIni) - launch LibreWolf once to create it, then re-run chezmoi apply"
+    exit 0
+}
+
+$iniLines = Get-Content -LiteralPath $profilesIni
+$relPath  = $null
+
+# Prefer [InstallXXX] -> Default= (the locked-to-this-install pointer).
+$inInstall = $false
+foreach ($line in $iniLines) {
+    if ($line -match '^\[Install') { $inInstall = $true; continue }
+    if ($line -match '^\[' -and $line -notmatch '^\[Install') { $inInstall = $false; continue }
+    if ($inInstall -and $line -match '^Default=(.+)$') {
+        $relPath = $Matches[1].Trim()
+        break
+    }
+}
+
+# Fallback: first [ProfileN] section with Default=1.
+if (-not $relPath) {
+    $inProfile = $false
+    $candidate = $null
+    foreach ($line in $iniLines) {
+        if ($line -match '^\[Profile\d') { $inProfile = $true; $candidate = $null; continue }
+        if ($line -match '^\[' -and $line -notmatch '^\[Profile\d') { $inProfile = $false; continue }
+        if ($inProfile -and $line -match '^Path=(.+)$')  { $candidate = $Matches[1].Trim() }
+        if ($inProfile -and $line -match '^Default=1\s*$' -and $candidate) {
+            $relPath = $candidate
+            break
+        }
+    }
+}
+
+if (-not $relPath) {
+    Write-Warning "[librewolf] could not determine active profile from $profilesIni"
+    exit 0
+}
+
+$activeProfile = Join-Path $lwAppData ($relPath -replace '/', '\')
+if (-not (Test-Path -LiteralPath $activeProfile)) {
+    Write-Warning "[librewolf] active profile dir not found: $activeProfile"
+    exit 0
+}
+
+Write-IfChanged -Src $srcUserJs -Dst (Join-Path $activeProfile 'user.js')
+{{- end -}}
