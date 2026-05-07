@@ -4,7 +4,7 @@ Zed editor settings template.
 Secrets are pulled from 1Password at apply time:
   - Tavily MCP                : op://Personal/Tavily/credential  (item id: ytw3xmw4bkb7u5yamcdzgdsy7u)
   - GitHub MCP PAT            : op://Personal/GitHub Token/token
-  - GitLab MCP PAT (DH)       : op://DH/warp-gitlab-mcp-pat/token
+  - GitLab MCP PAT (DH)       : .secrets.dh_gitlab_pat (op://DH/DH Gitlab PAT/credential)
 
 `private_` prefix → 0600 on Unix; required because the rendered file
 contains decoded secret material from 1Password.
@@ -240,7 +240,7 @@ from the homelab once nothing else references it.
       "enabled": true,
       "remote": false,
       "settings": {
-        "gitlab_personal_access_token": "{{ .secrets.warp_gitlab_mcp_pat }}",
+        "gitlab_personal_access_token": "{{ .secrets.dh_gitlab_pat }}",
         "gitlab_api_url": "https://git.dreamhost.com/api/v4"
       }
     },
