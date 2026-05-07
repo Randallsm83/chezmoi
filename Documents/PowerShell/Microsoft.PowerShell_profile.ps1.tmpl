@@ -160,10 +160,11 @@ $env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"
 $env:WARP_API_KEY = "{{ .secrets.warp_api_key }}"
 {{- end }}
 
-# Anthropic API Key (resolved once via batched op inject in .chezmoi.toml.tmpl)
-{{- if and .setup_1password .secrets.anthropic_api_key }}
-$env:ANTHROPIC_API_KEY = "{{ .secrets.anthropic_api_key }}"
-{{- end }}
+# ANTHROPIC_API_KEY: NOT injected globally (was leaking literal value into the
+# rendered profile). Claude Code receives it via the `claude` op-run wrapper in
+# 99-functions.ps1, which reads ~/.config/op/claude.env. Other tools that need
+# the key (Anthropic SDK scripts, aider, etc.) should use their own per-tool
+# wrapper or invoke directly: `op run --env-file=~/.config/op/<tool>.env -- ...`
 
 # Welcome message (optional - comment out if you prefer clean startup)
 # Write-Host "PowerShell $($PSVersionTable.PSVersion) - Welcome, {{ .name }}!" -ForegroundColor Cyan
