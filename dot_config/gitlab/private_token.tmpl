@@ -6,5 +6,11 @@ from .secrets.gitlab_pat by all consumers.
 Refresh after rotating the PAT in 1Password:  chezmoi apply --init
 
 `private_` prefix → 0600 on Unix; no-op on Windows.
+
+Defensive lookup via sprig's `dig`: empty when `.secrets` or the key is
+missing (remote machines without `op`, or pre-[data.secrets] configs).
+Empty rendered template → chezmoi skips writing ~/.config/gitlab/token.
 */ -}}
-{{ .secrets.gitlab_pat -}}
+{{- with dig "secrets" "gitlab_pat" "" . -}}
+{{ . }}
+{{- end -}}

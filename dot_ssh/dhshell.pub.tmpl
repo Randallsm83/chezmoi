@@ -1,1 +1,3 @@
-{{ .secrets.ssh_pub_***REMOVED*** }}
+{{- with dig "secrets" "ssh_pub_***REMOVED***" "" . -}}
+{{ . }}
+{{- end -}}
