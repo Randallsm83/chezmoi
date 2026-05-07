@@ -1,0 +1,54 @@
+{{- /*
+Writes D:\dh\mise.toml from the chezmoi source projects/dh/mise.toml.
+
+Why this exists instead of letting chezmoi manage ~/projects/dh/mise.toml
+through the normal target tree:
+
+  ~/projects is a directory junction (reparse point) to D:\. Chezmoi 2.70.x
+  fails with `unsupported file type 0o2000000: unknown type` (Go's
+  os.ModeIrregular bit) when its target walker stats the junction. We
+  exclude `projects/**` from .chezmoiignore and instead write the file
+  directly from the source, sidestepping the junction.
+
+Trigger semantics:
+  `run_onchange_` re-runs whenever the rendered script body changes. The
+  embedded sha256 below changes with the file's bytes, so the script
+  re-fires on every mise.toml edit. Lines outside that hash are stable.
+
+Order:
+  `_after_50_` runs after install/setup scripts but before the bat-cache /
+  scoop-shim repair scripts (which start at 00 in their _after_ tier).
+
+Skip on non-Windows: file gated by name suffix `_windows.ps1.tmpl` plus
+this template only renders content when on Windows.
+*/}}
+{{- if eq .chezmoi.os "windows" -}}
+# Source content sha256: {{ include (joinPath .chezmoi.sourceDir "projects" "dh" "mise.toml") | sha256sum }}
+$ErrorActionPreference = 'Stop'
+
+$src = '{{ joinPath .chezmoi.sourceDir "projects" "dh" "mise.toml" | replace "\\" "/" }}'
+$dst = 'D:\dh\mise.toml'
+
+if (-not (Test-Path -LiteralPath $src)) {
+    Write-Warning "[dh-mise-toml] source missing: $src"
+    exit 0
+}
+
+# Read with LF normalization (chezmoi source files are LF; respect that on
+# write rather than letting Set-Content add CRLF on Windows).
+$content = ([System.IO.File]::ReadAllText($src)) -replace "`r`n", "`n"
+
+# Skip if destination already matches — keeps `chezmoi apply` quiet on no-ops.
+if (Test-Path -LiteralPath $dst) {
+    $existing = ([System.IO.File]::ReadAllText($dst)) -replace "`r`n", "`n"
+    if ($existing -eq $content) { exit 0 }
+}
+
+$dstDir = Split-Path -Parent $dst
+if (-not (Test-Path -LiteralPath $dstDir)) {
+    New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
+}
+
+[System.IO.File]::WriteAllText($dst, $content, [System.Text.UTF8Encoding]::new($false))
+Write-Host "[dh-mise-toml] wrote $dst ($($content.Length) bytes)"
+{{- end -}}
