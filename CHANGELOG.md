@@ -12,8 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pi-side DoT terminator setup**: `scripts/setup-pihole-dot.sh` installs `unbound`, mints a TLS cert via `tailscale cert`, and forwards plain DNS to Pi-hole. Run on the Pi, not the Mac.
 - **RASPI.md** — "Encrypted DNS (DoT terminator)" section documenting the Pi-side prerequisite.
 - **DNS.md** — full DNS architecture reference: resolver hierarchy, where each component lives in the chezmoi source, browser DoH disable mechanics, verification commands, and past failure modes (unbound validator/localhost defaults, deprecated `profiles install`, `/Library/Managed Preferences/` requiring MDM, the wrong-vault `raspi.pub` template).
+- **Runtime secret injection via `op run` (Pattern B)**: New `dot_config/op/claude.env` env-reference file mapping env-var names to `op://` references, and a `claude` wrapper function in `Documents/PowerShell/Scripts/99-functions.ps1` that launches `claude.exe` via `op run --env-file=...`. Migrates `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, and `QDRANT_API_KEY` out of plaintext (`~/.claude.json` headers/env, rendered profile, User-scope env vars) into 1Password. `~/.claude.json` now references each via `${VAR}` substitution; secrets exist only in the wrapped child process. All 8 MCP servers verified connecting through the wrapper with no global env vars set.
+- **SECRETS.md** — "Architecture B: Runtime Injection via `op run`" section documenting the new pattern alongside the existing render-time pattern, with runbooks for adding tools, adding secrets to existing tools, rotation, and leakage verification.
 ### Changed
 - **`.chezmoiignore`** — excludes `dot_config/dns/**` on non-darwin hosts and when `encrypted_dns.enabled = false`.
+- **`Microsoft.PowerShell_profile.ps1.tmpl`** — removed the `$env:ANTHROPIC_API_KEY = "{{ .secrets.anthropic_api_key }}"` block. The literal value was being baked into the rendered profile on disk; Claude Code now receives the key at runtime via the op-run wrapper. Replaced with an explanatory comment.
+### Removed
+- **`~/.claude.json` literal credentials** — Vercel `Authorization: Bearer <token>`, Neon `Authorization: Bearer <token>`, and `qdrant.env.QDRANT_API_KEY` literal values replaced with `${VERCEL_TOKEN}`, `${NEON_API_KEY}`, and `${QDRANT_API_KEY}` references resolved by `op run` at process spawn.
 ---
 
 ## [2.0.0] - 2025-01-20

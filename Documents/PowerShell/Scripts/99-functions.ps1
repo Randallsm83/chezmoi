@@ -433,6 +433,32 @@ if (Test-CommandExists 'scoop') {
 }
 
 # ================================================================================================
+# AI / MCP Wrappers (1Password-injected secrets)
+# ================================================================================================
+# Wrap CLIs that need API keys so secrets are pulled from 1Password at launch
+# rather than persisted in env vars or config files.
+#
+# Pattern: define an env-reference file at ~/.config/op/<tool>.env containing
+#   VAR=op://<vault>/<item>/<field>
+# entries, then wrap the binary with `op run --env-file=...`. The resolved
+# secrets exist only in the child process's environment.
+#
+# Requires: op (1Password CLI) signed in. With Windows desktop-app integration
+# enabled, biometric unlock makes the lookup invisible.
+
+if (Test-CommandExists 'op') {
+    function claude {
+        $envFile = Join-Path $HOME '.config\op\claude.env'
+        if (Test-Path $envFile) {
+            & op run --env-file=$envFile --no-masking -- claude.exe @args
+        } else {
+            Write-Warning "Env file not found: $envFile - launching claude.exe without secret injection"
+            & claude.exe @args
+        }
+    }
+}
+
+# ================================================================================================
 # Common Utility Functions
 # ================================================================================================
 
