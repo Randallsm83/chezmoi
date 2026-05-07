@@ -197,6 +197,15 @@ AppData/
 
 # Windows configs
 .wslconfig
+
+# Docker config: dot_config/docker/config.json carries `credsStore: wincred`
+# (Windows-only credential helper) plus an `auths."git.dreamhost.com:5001"` marker.
+# On macOS this file is owned by OrbStack/Docker Desktop, which writes
+# `currentContext` (runtime state) and the correct credsStore (osxkeychain).
+# Don't fight OrbStack — let the local file be authoritative on darwin.
+{{- if eq .chezmoi.os "darwin" }}
+.config/docker/config.json
+{{- end }}
 .config/mise/config.windows.toml
 .config/windows/**
 

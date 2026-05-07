@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **`.chezmoiignore`** — excludes `dot_config/dns/**` on non-darwin hosts and when `encrypted_dns.enabled = false`.
 - **`Microsoft.PowerShell_profile.ps1.tmpl`** — removed the `$env:ANTHROPIC_API_KEY = "{{ .secrets.anthropic_api_key }}"` block. The literal value was being baked into the rendered profile on disk; Claude Code now receives the key at runtime via the op-run wrapper. Replaced with an explanatory comment.
+- **`.chezmoi.toml.tmpl`** — fixed unix branch of the `op inject` resolver so `[data.secrets]` stays on its own line. Whitespace trimming around `{{- if -}}` was gluing the section header onto the first key (`[data.secrets]ssh_pub_github_com = ...`), causing TOML parse failures (`expected a top-level item to end with a newline ...`) on every `chezmoi init` after pulling commit `9147c48`. Now mirrors the windows branch's `printf "\n%s"` prefix.
+- **`dot_ssh/config.tmpl`** — added a darwin-gated block at the top that re-includes `~/.orbstack/ssh/config`. OrbStack auto-injects this on macOS; without it in the template `chezmoi apply` would strip the include on every run.
+- **`.chezmoiignore`** — excludes `.config/docker/config.json` on darwin. The template's `credsStore: "wincred"` is Windows-only, and OrbStack/Docker Desktop owns the file on macOS (writes `currentContext`, the correct `credsStore`, etc.). Letting the local file be authoritative on darwin stops the per-apply prompt loop.
 ### Removed
 - **`~/.claude.json` literal credentials** — Vercel `Authorization: Bearer <token>`, Neon `Authorization: Bearer <token>`, and `qdrant.env.QDRANT_API_KEY` literal values replaced with `${VERCEL_TOKEN}`, `${NEON_API_KEY}`, and `${QDRANT_API_KEY}` references resolved by `op run` at process spawn.
 ---
