@@ -78,7 +78,7 @@ Defined in `.chezmoi.toml.tmpl` $secretsTpl:
 - `warp_api_key`
 - `anthropic_api_key`
 - `gitlab_pat`
-- `warp_gitlab_mcp_pat`
+- `dh_gitlab_pat`
 
 ### Legacy: `op-read-safe`
 
