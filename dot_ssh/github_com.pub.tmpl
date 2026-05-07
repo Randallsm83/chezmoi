@@ -1,1 +1,3 @@
-{{ .secrets.ssh_pub_github_com }}
+{{- with dig "secrets" "ssh_pub_github_com" "" . -}}
+{{ . }}
+{{- end -}}

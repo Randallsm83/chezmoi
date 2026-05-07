@@ -155,9 +155,12 @@ $global:ErrorActionPreference = 'Continue'
 $env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"
 {{- end }}
 
-# Warp API Key (resolved once via batched op inject in .chezmoi.toml.tmpl)
-{{- if and .setup_1password .secrets.warp_api_key }}
-$env:WARP_API_KEY = "{{ .secrets.warp_api_key }}"
+# Warp API Key (resolved once via batched op inject in .chezmoi.toml.tmpl).
+# `dig` returns "" if .secrets is missing (e.g. pre-[data.secrets] config),
+# keeping `and` short-circuit-safe.
+{{- $warp_key := dig "secrets" "warp_api_key" "" . }}
+{{- if and .setup_1password $warp_key }}
+$env:WARP_API_KEY = "{{ $warp_key }}"
 {{- end }}
 
 # ANTHROPIC_API_KEY: NOT injected globally (was leaking literal value into the
