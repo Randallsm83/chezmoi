@@ -34,14 +34,18 @@
 # Windows: junctions / reparse points (chezmoi can't manage through them)
 # ============================================================================
 {{- if eq .chezmoi.os "windows" }}
-# Exclude everything under ~/projects except the per-project mise env file at
-# projects/dh/mise.toml. Patterns avoid blanket excluding parent dirs so the
-# negations can re-include the file (gitignore can't un-exclude through a
-# fully-ignored parent).
-projects/*
-!projects/dh
-projects/dh/*
-!projects/dh/mise.toml
+# `~/projects` is a directory junction (reparse point) on this machine.
+# Chezmoi 2.70.x reports `unsupported file type 0o2000000` when its target
+# walker stats the junction (Go's os.ModeIrregular), and gitignore-style
+# negation can't re-include children once the parent is excluded — so the
+# previous `projects/*` + `!projects/dh/mise.toml` trick couldn't work.
+#
+# We exclude the whole tree from chezmoi's normal target walk and write
+# `D:\dh\mise.toml` from a run_onchange script instead, sourcing directly
+# from {{ .chezmoi.sourceDir }}/projects/dh/mise.toml (bypassing the junction).
+# See: .chezmoiscripts/run_onchange_after_50_dh-mise-toml_windows.ps1.tmpl
+projects
+projects/**
 
 # Flow Launcher (scoop persist): always ignore runtime/cache/log siblings so
 # future `chezmoi re-add` doesn't pull them into source. Tracked files live at
