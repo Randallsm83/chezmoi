@@ -104,6 +104,67 @@ theme:
 
 ---
 
+## 🦊 LibreWolf (Browser)
+
+LibreWolf is installed as a Scoop portable app. Its profile lives under
+`~/scoop/persist/librewolf/Profiles/Default/`. Only **`user.js`** is tracked
+by chezmoi — every other file in that profile is browser-managed state
+(`prefs.js`, sqlite databases, sessionstore, extension state, etc.) and is
+excluded by `.chezmoiignore`.
+
+### Why only `user.js`?
+
+Firefox/LibreWolf rewrites `prefs.js` on every session with cache state,
+build IDs, sessionstore data, ML model versions, and other transient noise.
+Tracking it produces thousands of meaningless diffs per day. `user.js` is
+the canonical "configure-as-code" file: it's read on every browser startup
+and its values are overlaid onto `prefs.js`, so anything you put in
+`user.js` becomes sticky.
+
+### Tracked file
+
+```
+scoop/persist/librewolf/Profiles/Default/user.js
+```
+
+Contains:
+- Curated privacy/fingerprinting hardening (WebGL, geolocation, beacon,
+  WebRTC, telemetry, search suggestions, autoplay, etc.)
+- Recovered user_pref() entries pulled from a previous active `prefs.js`
+  (filtered to drop browser-managed noise; flagged as "review and prune"
+  in the file)
+
+### Adding a new preference
+
+The right way to make an `about:config` change persist:
+
+1. Make the change in the LibreWolf UI / `about:config`.
+2. Add (or modify) the corresponding `user_pref()` line in `user.js`.
+3. Re-add to chezmoi and commit:
+   ```powershell
+   chezmoi re-add ~/scoop/persist/librewolf/Profiles/Default/user.js
+   git add scoop/persist/librewolf/Profiles/Default/user.js
+   git commit -m "librewolf: <what changed>"
+   ```
+
+Deleting a line from `user.js` reverts that pref to LibreWolf's default on
+the next browser start.
+
+### What is NOT tracked
+
+The `.chezmoiignore` block under "LibreWolf (scoop persist)" excludes:
+- `prefs.js`, `prefs-*.js`, `xulstore.json`, `handlers.json`,
+  `containers.json`, `extensions.json`, `addons.json`, `compatibility.ini`
+- All `*.sqlite`, `*.json.lz4`, `*.mozlz4`, `*.bin`, `*.db` files
+- `cache2/`, `startupCache/`, `shader-cache/`, `storage/`, `datareporting/`,
+  `safebrowsing/`, `security_state/`, `sessionstore-backups/`,
+  `bookmarkbackups/`, `extension-store*/`, `extensions/`, `settings/`,
+  `defaults/`, `distribution/`, `pref/`, `Default/`
+
+Future `chezmoi re-add` invocations will not pull any of those into source.
+
+---
+
 ## 🛠️ Manual Setup (Development)
 
 For development or testing without running the bootstrap:
@@ -316,6 +377,6 @@ MIT License - Feel free to use and modify for your own dotfiles!
 
 **Made with ❤️ using [chezmoi](https://www.chezmoi.io/)**
 
-*Last updated*: 2025-01-14  
+*Last updated*: 2026-05-07  
 *Managed files*: 155+  
 *Platforms*: Windows, Linux, WSL, macOS
