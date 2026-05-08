@@ -1,0 +1,126 @@
+{{- /*
+Windows analog of run_onchange_after_57_browser-doh-policies.sh.tmpl.
+
+Forces Chrome / Edge / Brave to skip DoH and use the system resolver
+(unbound -> raspi DoT). Without this, the browsers default to "automatic"
+DoH and silently upgrade to Cloudflare/NextDNS, bypassing Pi-hole and
+the unbound forwarder we built.
+
+Mechanism: HKLM\SOFTWARE\Policies\<vendor>\<browser> with two values
+  DnsOverHttpsMode      = "off"
+  DnsOverHttpsTemplates = ""
+The browsers read these on launch and surface a "managed by your
+organization" badge with the DoH section greyed out at "off".
+
+Firefox / LibreWolf are intentionally NOT touched here. LibreWolf already
+ships TRR=5 via librewolf/profile/user.js (deployed by
+run_onchange_after_55_librewolf_windows.ps1.tmpl), and vanilla Firefox
+is not installed on this machine. If we add Firefox later, the right
+move is a managed `distribution\policies.json` analogous to the macOS
+script's `apply_firefox`.
+
+Rerun trigger: the .chezmoidata.yaml hash below changes whenever
+browser_doh.{enabled,browsers} is touched.
+# data hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+*/}}
+{{- if eq .chezmoi.os "windows" -}}
+{{- $cfg := .browser_doh -}}
+$ErrorActionPreference = 'Stop'
+
+$enabled = [bool]${{ $cfg.enabled }}
+$browsers = @({{ range $i, $b := $cfg.browsers }}{{ if $i }}, {{ end }}'{{ $b }}'{{ end }})
+
+# Browser -> registry policy key mapping. Matches Google's, Microsoft's,
+# and Brave's documented enterprise policy paths.
+$policyKeys = @{
+    chrome = 'HKLM:\SOFTWARE\Policies\Google\Chrome'
+    edge   = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
+    brave  = 'HKLM:\SOFTWARE\Policies\BraveSoftware\Brave'
+}
+
+# Returns $true if the policy is already in the desired state ("off" + empty
+# template), so we can short-circuit elevation when nothing needs changing.
+function Test-DoHPolicyApplied {
+    param([string]$Key)
+    if (-not (Test-Path -LiteralPath $Key)) { return $false }
+    $mode = (Get-ItemProperty -LiteralPath $Key -Name 'DnsOverHttpsMode' -ErrorAction SilentlyContinue).DnsOverHttpsMode
+    $tmpl = (Get-ItemProperty -LiteralPath $Key -Name 'DnsOverHttpsTemplates' -ErrorAction SilentlyContinue).DnsOverHttpsTemplates
+    return ($mode -eq 'off' -and ($tmpl -eq '' -or $null -eq $tmpl))
+}
+
+# Helper to invoke an elevated PowerShell command. Uses -EncodedCommand
+# (UTF-16LE base64) so multi-line scripts and special characters survive
+# gsudo / cmd.exe argument parsing intact. The naive `-Command "<heredoc>"`
+# approach gets newline-split by the shell and each line tries to run as a
+# separate cmd.exe command, which breaks on `| Out-Null`.
+function Invoke-Elevated {
+    param([string]$Script)
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($Script)
+    $b64 = [Convert]::ToBase64String($bytes)
+    gsudo --loglevel none -- powershell -NoProfile -EncodedCommand $b64
+}
+
+function Set-DoHPolicy {
+    param([string]$Name, [string]$Key)
+    if (Test-DoHPolicyApplied -Key $Key) {
+        Write-Host "[browser-doh]   ok      $Name"
+        return
+    }
+    Write-Host "[browser-doh]   write   $Name -> $Key"
+    Invoke-Elevated @"
+New-Item -Path '$Key' -Force | Out-Null
+New-ItemProperty -Path '$Key' -Name 'DnsOverHttpsMode' -Value 'off' -PropertyType String -Force | Out-Null
+New-ItemProperty -Path '$Key' -Name 'DnsOverHttpsTemplates' -Value '' -PropertyType String -Force | Out-Null
+"@
+}
+
+function Remove-DoHPolicy {
+    param([string]$Name, [string]$Key)
+    if (-not (Test-Path -LiteralPath $Key)) { return }
+    $hasMode = (Get-ItemProperty -LiteralPath $Key -Name 'DnsOverHttpsMode' -ErrorAction SilentlyContinue) -ne $null
+    $hasTmpl = (Get-ItemProperty -LiteralPath $Key -Name 'DnsOverHttpsTemplates' -ErrorAction SilentlyContinue) -ne $null
+    if (-not ($hasMode -or $hasTmpl)) { return }
+    Write-Host "[browser-doh]   remove  $Name (dropped from browser list)"
+    Invoke-Elevated @"
+Remove-ItemProperty -Path '$Key' -Name 'DnsOverHttpsMode' -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path '$Key' -Name 'DnsOverHttpsTemplates' -ErrorAction SilentlyContinue
+"@
+}
+
+if (-not $enabled) {
+    Write-Host "[browser-doh] browser_doh.enabled=false; nothing to do"
+    exit 0
+}
+
+Write-Host "[browser-doh] applying browser DoH policies (HKLM)"
+foreach ($b in $browsers) {
+    switch ($b) {
+        'chrome' { Set-DoHPolicy -Name 'chrome' -Key $policyKeys['chrome'] }
+        'edge'   { Set-DoHPolicy -Name 'edge'   -Key $policyKeys['edge']   }
+        'brave'  { Set-DoHPolicy -Name 'brave'  -Key $policyKeys['brave']  }
+        'firefox' {
+            # Intentional no-op on Windows. LibreWolf is the active Firefox-family
+            # browser on this machine; its TRR=5 lives in librewolf/profile/user.js
+            # under the librewolf chezmoi script. Vanilla Firefox is not installed.
+            # If you ever install it, add an apply_firefox path that writes a
+            # `distribution\policies.json` next to firefox.exe with
+            # {"policies":{"DNSOverHTTPS":{"Enabled":false,"Locked":true}}}.
+            Write-Host "[browser-doh]   skip    firefox (LibreWolf user.js handles TRR; vanilla FF not installed)"
+        }
+        default { Write-Warning "[browser-doh] unknown browser '$b' in .chezmoidata.yaml::browser_doh.browsers; skipping" }
+    }
+}
+
+# Cleanup: remove policy entries for any browser dropped from the list since
+# the last apply. Without this, removing 'chrome' from browser_doh.browsers
+# would leave the registry policy in place forever.
+$wanted = @{}
+foreach ($b in $browsers) { $wanted[$b] = $true }
+foreach ($pair in $policyKeys.GetEnumerator()) {
+    if (-not $wanted.ContainsKey($pair.Key)) {
+        Remove-DoHPolicy -Name $pair.Key -Key $pair.Value
+    }
+}
+
+Write-Host "[browser-doh] done"
+{{- end }}

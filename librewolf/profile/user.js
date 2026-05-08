@@ -67,3 +67,20 @@ user_pref("media.autoplay.blocking_policy", 2);
 // Enable userChrome.css / userContent.css loading from <profile>/chrome/
 // Required for the Spaceduck UI theme deployed by chezmoi.
 user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
+
+// === Trust store ===
+
+// Honor the OS trust store (Windows: certmgr.msc, macOS: Keychain, Linux:
+// p11-kit). LibreWolf/Firefox normally use only Mozilla's bundled CA list,
+// which means internal CAs (Caddy `tls internal`, corporate roots, the
+// homelab's *.raspi.homelab cert chain) are rejected unless manually
+// imported per-profile. Enabling this lets LibreWolf trust system roots
+// in addition to Mozilla's, so the Caddy Local Authority installed via
+// chezmoi (or any other system root) is honored automatically.
+//
+// Threat trade: anything with admin can add a system root and MITM the
+// browser. On a single-user personal box with no AV TLS interception
+// the risk is acceptable; the convenience of internal services Just
+// Working is worth it. Disable if this machine ever joins a corporate
+// MDM / cert-pinning environment.
+user_pref("security.enterprise_roots.enabled", true);
