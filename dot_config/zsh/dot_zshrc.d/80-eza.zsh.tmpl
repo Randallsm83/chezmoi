@@ -44,6 +44,8 @@ _eza_build_flags() {
 }
 
 if _has eza; then
+  # Remove any pre-existing aliases so we can define functions with the same names
+  unalias ls ll la lt 2>/dev/null
   ls() { command eza $(_eza_build_flags) "$@"; }
   ll() { command eza $(_eza_build_flags) -l "$@"; }
   la() { command eza $(_eza_build_flags) -la "$@"; }
