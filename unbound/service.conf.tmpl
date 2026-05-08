@@ -4,20 +4,24 @@ Windows-side unbound: a tiny DoT-forwarding stub resolver.
 Role:
   Local apps (Windows resolver -> 127.0.0.1:53)
     -> unbound here (no recursion, no validation)
-    -> DoT (TCP/853 + TLS) to:
-         primary  raspi.tailf7fd34.ts.net  (via tailscale IP)
-                   - LE cert, ACL on the Pi accepts our tailnet CIDR
-                   - terminates DoT and forwards to Pi-hole, which gives
-                     us the homelab's ad-blocked, locally-overridden DNS
-         fallback Cloudflare 1.1.1.1
-                   - keeps DNS encrypted when off-tailnet (laptop on
-                     cellular, coffee shop, etc.). Skips ad-blocking.
-         fallback Quad9 9.9.9.9
-                   - second public DoT in case Cloudflare is sad
+    -> DoT (TCP/853 + TLS) to raspi.tailf7fd34.ts.net (via LAN or tailnet IP)
+         - LE cert, ACL on the Pi accepts our LAN + tailnet CIDRs
+         - terminates DoT and forwards to Pi-hole, which gives us the
+           homelab's ad-blocked, locally-overridden DNS
 
-DNSSEC validation is OFF. The Pi forwards to Cloudflare which validates;
-public DoT fallbacks validate too. Re-enabling would require unbound-anchor
-to bootstrap the root key on Windows, which adds maintenance for marginal
+No public DoT fallback ON PURPOSE. Earlier iteration included Cloudflare +
+Quad9 as fallbacks for off-network scenarios, but unbound's forwarder
+selection (WP2) was preferring the public anycast resolvers over the LAN
+raspi by RTT, silently bypassing Pi-hole filtering. Single upstream means:
+  - raspi up    -> DNS works, fully encrypted, ad-blocked
+  - raspi down  -> DNS fails (browsers will cache for a while; user fixes Pi)
+If you ever need the public fallback (laptop scenario), switch this conf
+to use only the tailnet IP and add `1.1.1.1@853#cloudflare-dns.com` back.
+Documented in dotfiles README under "Windows DNS".
+
+DNSSEC validation is OFF. The Pi forwards via dnscrypt-proxy to Cloudflare
+which validates upstream. Re-enabling would require unbound-anchor to
+bootstrap the root key on Windows, which adds maintenance for marginal
 benefit (validation already done upstream).
 
 The TLS cert bundle path below is rendered at chezmoi-apply time. cacert
@@ -92,23 +96,14 @@ forward-zone:
     # forward-first must be NO so unbound never silently bypasses TLS.
     forward-first: no
 
-    # Primary: raspi DoT terminator on the LAN. The Pi's ACL also accepts
-    # 192.168.0.0/16. Lower latency than going through the tailnet IP and
-    # avoids the chicken-and-egg of resolving raspi.tailf7fd34.ts.net.
+    # raspi DoT terminator, LAN address. The Pi's ACL accepts 192.168.0.0/16.
     # The "#authname" suffix supplies the SNI / certificate validation
     # hostname; LE cert is for raspi.tailf7fd34.ts.net regardless of which
-    # IP we connect to, so cert validation still passes.
+    # IP we connect to, so cert validation still passes via the system CA
+    # bundle.
     forward-addr: 192.168.0.26@853#raspi.tailf7fd34.ts.net
 
-    # Secondary: same DoT terminator via tailnet. Used when off-LAN (laptop
-    # on cellular, hotel Wi-Fi) but Tailscale is up.
+    # Same terminator via tailnet. Used when off-LAN but Tailscale is up.
+    # Listed second so unbound's WP2 prefers the LAN path when both work
+    # (LAN handshake is generally lower RTT).
     forward-addr: 100.100.149.88@853#raspi.tailf7fd34.ts.net
-
-    # Fallback 1: Cloudflare public DoT. Skips Pi-hole filtering but keeps
-    # encryption. Used when fully off-network.
-    forward-addr: 1.1.1.1@853#cloudflare-dns.com
-    forward-addr: 1.0.0.1@853#cloudflare-dns.com
-
-    # Fallback 2: Quad9 public DoT.
-    forward-addr: 9.9.9.9@853#dns.quad9.net
-    forward-addr: 149.112.112.112@853#dns.quad9.net
