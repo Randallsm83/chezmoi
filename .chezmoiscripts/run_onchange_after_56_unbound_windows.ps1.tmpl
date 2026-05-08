@@ -1,0 +1,183 @@
+{{- /*
+Windows unbound: DoT-forwarding stub resolver setup.
+
+Pipeline:
+  1. Render service.conf.tmpl from `unbound/service.conf.tmpl` into the
+     scoop persist dir (~/scoop/persist/unbound/service.conf). Scoop's
+     `unbound` package symlinks the persist file into apps/unbound/current,
+     so updates survive scoop upgrades.
+  2. Validate via `unbound-checkconf`.
+  3. Install / refresh the Windows "unbound" service (unbound.exe -w
+     install).
+  4. Start the service and wait for 127.0.0.1:53 to answer.
+  5. ONLY if the listener is verified responsive: switch every active
+     IPv4 ethernet/Wi-Fi adapter to use 127.0.0.1 as its primary DNS.
+     If the listener is not responsive, leave adapter DNS alone and
+     emit a warning.
+
+Trigger semantics: same `run_onchange_` pattern as the librewolf script.
+The embedded sha256 comments below pick up changes to the rendered
+service.conf so this script re-runs only when needed.
+
+Recovery: to unwind everything,
+  Set-DnsClientServerAddress -InterfaceAlias <name> -ResetServerAddresses
+  gsudo Stop-Service unbound; gsudo & "$env:USERPROFILE\scoop\apps\unbound\current\unbound.exe" -w remove
+*/}}
+{{- if eq .chezmoi.os "windows" -}}
+# rendered service.conf sha256: {{ includeTemplate "unbound/service.conf.tmpl" . | sha256sum }}
+$ErrorActionPreference = 'Stop'
+
+$srcConfig = @'
+{{ includeTemplate "unbound/service.conf.tmpl" . -}}
+'@
+
+# ── Resolve scoop install + persist dirs ──────────────────────────────────────
+$scoopRoot = "$env:USERPROFILE\scoop"
+$unboundApp = Join-Path $scoopRoot 'apps\unbound\current'
+$unboundPersist = Join-Path $scoopRoot 'persist\unbound'
+$unboundExe = Join-Path $unboundApp 'unbound.exe'
+$checkConfExe = Join-Path $unboundApp 'unbound-checkconf.exe'
+
+if (-not (Test-Path -LiteralPath $unboundExe)) {
+    Write-Warning "[unbound] unbound is not installed via scoop (missing $unboundExe). Skipping. Run 'scoop install unbound' first or wait for the next install-packages-windows pass."
+    exit 0
+}
+
+if (-not (Test-Path -LiteralPath $unboundPersist)) {
+    New-Item -ItemType Directory -Path $unboundPersist -Force | Out-Null
+}
+
+# Verify cacert is present (referenced from service.conf for TLS validation).
+# Filename is cacert.pem in the scoop package, not ca-bundle.crt.
+$cacertPath = Join-Path $scoopRoot 'apps\cacert\current\cacert.pem'
+if (-not (Test-Path -LiteralPath $cacertPath)) {
+    Write-Warning "[unbound] cacert.pem not found at $cacertPath. TLS upstreams will fail. Install via 'scoop install cacert'."
+}
+
+# ── Write service.conf (LF, UTF-8 no BOM) if changed ────────────────────────
+$dstConfig = Join-Path $unboundPersist 'service.conf'
+$dstAppLink = Join-Path $unboundApp 'service.conf'
+$srcText = ($srcConfig -replace "`r`n", "`n")
+$needsWrite = $true
+if (Test-Path -LiteralPath $dstConfig) {
+    $dstText = ([System.IO.File]::ReadAllText($dstConfig)) -replace "`r`n", "`n"
+    if ($dstText -eq $srcText) { $needsWrite = $false }
+}
+if ($needsWrite) {
+    [System.IO.File]::WriteAllText($dstConfig, $srcText, [System.Text.UTF8Encoding]::new($false))
+    Write-Host "[unbound] wrote $dstConfig ($($srcText.Length) bytes)"
+}
+
+# Scoop's unbound install symlinks $unboundApp\service.conf to the persist
+# copy at install time, but if scoop was bypassed or the symlink got broken
+# we re-link here so unbound.exe -c "$dir\service.conf" finds the right file.
+if (-not (Test-Path -LiteralPath $dstAppLink) -or
+    ((Get-Item -LiteralPath $dstAppLink -Force).LinkType -ne 'SymbolicLink' -and
+     (Get-Item -LiteralPath $dstAppLink -Force).LinkType -ne 'HardLink')) {
+    if (Test-Path -LiteralPath $dstAppLink) {
+        Remove-Item -LiteralPath $dstAppLink -Force
+    }
+    try {
+        New-Item -ItemType SymbolicLink -Path $dstAppLink -Target $dstConfig | Out-Null
+        Write-Host "[unbound] linked $dstAppLink -> $dstConfig"
+    } catch {
+        # Symlink requires Windows Developer Mode (the user has it on per
+        # rules) but if it ever fails fall back to a hard copy.
+        Copy-Item -LiteralPath $dstConfig -Destination $dstAppLink -Force
+        Write-Host "[unbound] copied (no symlink) $dstConfig -> $dstAppLink"
+    }
+}
+
+# ── Validate ────────────────────────────────────────────────────────────────
+Write-Host "[unbound] running unbound-checkconf..."
+& $checkConfExe $dstConfig
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "[unbound] config validation failed; leaving system DNS unchanged"
+    exit 1
+}
+
+# ── Install or refresh the Windows service ─────────────────────────────
+# unbound.exe -w install registers the service but hardcodes binPath to
+# `<exe> -w service` with NO config flag, which causes the daemon to look
+# for service.conf at C:\Program Files\Unbound (the upstream default).
+# Scoop installs to a different path, so we must override binPath via
+# `sc config` to add `-c <our-persist-conf>`. cmd.exe is required for the
+# -w flag because pwsh parses it as its own -WindowStyle parameter.
+$wantBin = '"' + $unboundExe + '" -w service -c "' + $dstConfig + '"'
+
+$svc = Get-Service -Name 'unbound' -ErrorAction SilentlyContinue
+if (-not $svc) {
+    Write-Host "[unbound] installing Windows service via gsudo (cmd.exe)..."
+    $installCmd = '"' + $unboundExe + '" -w install'
+    gsudo --loglevel none -- cmd.exe /c $installCmd
+    Start-Sleep -Seconds 2
+    $svc = Get-Service -Name 'unbound' -ErrorAction SilentlyContinue
+}
+
+if (-not $svc) {
+    Write-Warning "[unbound] service install did not register; check gsudo output and re-run"
+    exit 1
+}
+
+# Ensure binPath includes our explicit -c <conf>. unbound -w install hardcodes
+# the path to '<exe> -w service' alone; we need to amend it.
+$currentBin = (Get-CimInstance Win32_Service -Filter "Name='unbound'").PathName
+if ($currentBin -ne $wantBin) {
+    Write-Host "[unbound] updating service binPath to use $dstConfig..."
+    gsudo --loglevel none -- cmd.exe /c "net stop unbound" 2>&1 | Out-Null
+    gsudo --loglevel none -- cmd.exe /c ("sc config unbound binPath= " + ('"' + $wantBin + '"'))
+}
+
+# Ensure auto-start
+if ((Get-Service unbound).StartType -ne 'Automatic') {
+    gsudo --loglevel none -- cmd.exe /c "sc config unbound start= auto" | Out-Null
+}
+
+# Restart on every config change so the new conf takes effect.
+Write-Host "[unbound] (re)starting service to pick up service.conf..."
+gsudo --loglevel none -- cmd.exe /c "net stop unbound & net start unbound" 2>&1 | Out-Null
+
+# ── Verify the listener is actually up ─────────────────────────────────────
+$listening = $false
+for ($i = 0; $i -lt 10; $i++) {
+    Start-Sleep -Milliseconds 500
+    try {
+        $r = Resolve-DnsName -Server 127.0.0.1 -Name 'cloudflare.com' -Type A -DnsOnly -QuickTimeout -ErrorAction Stop
+        if ($r) { $listening = $true; break }
+    } catch {
+        # try again
+    }
+}
+
+if (-not $listening) {
+    Write-Warning "[unbound] listener did not respond on 127.0.0.1:53 within 5s. Leaving Windows DNS unchanged so you don't get locked out. Check 'Get-Service unbound' and 'Get-Content `"$dstConfig`"' then re-run 'chezmoi apply'."
+    exit 0
+}
+
+Write-Host "[unbound] listener responsive on 127.0.0.1:53"
+
+# ── Switch active adapters' DNS to 127.0.0.1 ──────────────────────────────
+# Only IPv4 ethernet/Wi-Fi physical adapters; never touch Tailscale, vEthernet
+# bridges, loopback, or VPN adapters (those manage their own DNS).
+$targetAdapters = Get-NetAdapter -Physical -ErrorAction SilentlyContinue |
+    Where-Object { $_.Status -eq 'Up' -and $_.InterfaceAlias -notmatch '^(Tailscale|vEthernet|Loopback)' }
+
+foreach ($a in $targetAdapters) {
+    $current = (Get-DnsClientServerAddress -InterfaceAlias $a.InterfaceAlias -AddressFamily IPv4 -ErrorAction SilentlyContinue).ServerAddresses
+    if ($current -and ($current.Count -eq 1) -and ($current[0] -eq '127.0.0.1')) {
+        # Already pointing at us.
+        continue
+    }
+    Write-Host "[unbound] $($a.InterfaceAlias): switching IPv4 DNS from [$($current -join ', ')] -> [127.0.0.1]"
+    # Set-DnsClientServerAddress requires admin ("Access to a CIM resource was
+    # not available"); funnel through gsudo. Quote the alias to survive names
+    # like "Wi-Fi" with hyphens or spaces.
+    $aliasQ = $a.InterfaceAlias.Replace("'", "''")
+    gsudo --loglevel none -- powershell -NoProfile -Command "Set-DnsClientServerAddress -InterfaceAlias '$aliasQ' -ServerAddresses '127.0.0.1'"
+}
+
+# Flush the resolver cache so the next query goes through unbound.
+ipconfig /flushdns | Out-Null
+
+Write-Host "[unbound] done. Active resolver: 127.0.0.1 -> DoT to raspi (or public fallback)."
+{{- end -}}

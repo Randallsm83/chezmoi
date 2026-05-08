@@ -72,6 +72,16 @@ scoop/persist/flow-launcher/UserData/**/*.bak
 librewolf
 librewolf/**
 
+# unbound source-only tree (Windows). The single file we manage —
+#   unbound/service.conf.tmpl  (DoT-forwarding stub resolver config)
+# — is rendered + deployed to ~/scoop/persist/unbound/service.conf by:
+#   .chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl
+# Same pattern as librewolf: ignore from normal target walk, surface via
+# the install script. The script's `includeTemplate` call still finds it
+# under .chezmoi.sourceDir.
+unbound
+unbound/**
+
 # ============================================================================
 # Repository Files (Never Deployed to Home)
 # ============================================================================

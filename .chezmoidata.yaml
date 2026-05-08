@@ -1091,7 +1091,13 @@ package_mapping:
   # Networking
   network_tools:
     windows:
-      scoop: [bind, rclone, pritunl-client]
+      # unbound: local DoT-forwarding stub resolver (1.25.0). Configured by
+      #   .chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl
+      #   to listen on 127.0.0.1:53 and forward via DoT to raspi (primary)
+      #   or Cloudflare/Quad9 (fallback). Installs a Windows service.
+      # cacert: required by unbound's tls-cert-bundle setting (it's already
+      #   in always_install.scoop, listed here for documentation only).
+      scoop: [bind, rclone, pritunl-client, unbound]
       winget: []
       mise: []
     linux:
