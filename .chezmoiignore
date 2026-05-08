@@ -58,21 +58,19 @@ scoop/persist/flow-launcher/UserData/Settings/History.json
 scoop/persist/flow-launcher/UserData/Settings/UserSelectedRecord.json
 scoop/persist/flow-launcher/UserData/Settings/MultipleTopMostRecord.json
 scoop/persist/flow-launcher/UserData/**/*.bak
+{{- end }}
 
-# LibreWolf source-only tree. The two files we manage —
+# LibreWolf source-only tree (all platforms). The two files we manage —
 #   librewolf/distribution/policies.json  (force-installed extensions,
 #                                          search engines, telemetry lockdown)
 #   librewolf/profile/user.js              (per-profile preference overrides)
 # — don't live under $HOME, so chezmoi can't reach them via the normal target
-# walker. They sit here as source data and are deployed by:
+# walker. They sit here as source data and are deployed (Windows only) by:
 #   .chezmoiscripts/run_onchange_after_55_librewolf_windows.ps1.tmpl
-# which copies policies.json into the scoop install dir and writes user.js to
-# the active profile (id discovered at apply time from
-# %APPDATA%/LibreWolf/profiles.ini, since the scoop-shipped Profiles/Default
-# folder is dead weight per notes/02 Atlas/Reference/Windows/LibreWolf Setup.md).
+# On non-Windows hosts no consumer exists, so we still must ignore the tree
+# to keep `chezmoi apply` from materializing $HOME/librewolf/...
 librewolf
 librewolf/**
-{{- end }}
 
 # ============================================================================
 # Repository Files (Never Deployed to Home)
