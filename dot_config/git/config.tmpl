@@ -17,6 +17,9 @@
 [core]
 	editor = nvim
 	pager = delta
+	# Personal global gitattributes (LF everywhere, CRLF only for .bat/.cmd/.ps1).
+	# Per-repo .gitattributes always overrides this, so no team impact.
+	attributesFile = {{ .chezmoi.homeDir }}/.config/git/attributes
 {{- if eq .chezmoi.os "windows" }}
 	# Windows: Normalize line endings (LF in repo, no CRLF conversion on checkout)
 	autocrlf = input

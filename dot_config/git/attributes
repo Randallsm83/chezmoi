@@ -1,0 +1,13 @@
+# Global git attributes (managed by chezmoi)
+# Personal preference: LF everywhere on this machine. Per-repo .gitattributes
+# always overrides these rules, so this never imposes anything on teammates.
+
+# Default: auto-detect text, LF in repo and working tree
+* text=auto eol=lf
+
+# Windows-only scripts MUST be CRLF
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+*.psm1  text eol=crlf
+*.psd1  text eol=crlf

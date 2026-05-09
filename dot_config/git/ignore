@@ -192,3 +192,6 @@ logs/
 *.crt
 *.p12
 *.pfx
+
+# === Agent / tooling runtime state ===
+.sisyphus/
