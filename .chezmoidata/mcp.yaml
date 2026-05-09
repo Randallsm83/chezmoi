@@ -1,0 +1,83 @@
+# =============================================================================
+# MCP server inventory — single source of truth.
+# =============================================================================
+#
+# Every MCP-capable tool (Claude Code, Warp, Zed, opencode, VS Code, ...) should
+# render its config from this map. Add or change a server HERE, run
+# `chezmoi apply`, and every tool picks it up.
+#
+# Schema mirrors the on-disk shape used by Claude Code's `~/.claude.json`
+# `mcpServers` block, because it's the most permissive of the schemas in play
+# (stdio + http + headers + env) and trivially translatable to the others.
+#
+# Secret references use ${VAR_NAME} and are resolved at process launch by the
+# `op run --env-file=...` wrapper for that tool (Pattern B in SECRETS.md).
+# Tools that DON'T launch through `op run` must do the substitution inside
+# their own template using `replace ... .secrets.<key>`. See the per-tool
+# renderers for details.
+#
+# To add a server:
+#   1. Append an entry under `mcp.servers`.
+#   2. If it needs a secret, add the env var to the appropriate
+#      ~/.config/op/<tool>.env file(s) so `op run` injects it.
+#   3. `chezmoi apply` — the run_onchange_after_60_claude_mcp script
+#      writes the new entry into ~/.claude.json on next launch.
+#
+# To remove a server: delete its entry here and `chezmoi apply`. The Claude
+# merge script reconciles by replacing the whole `mcpServers` block, so
+# removals propagate without manual `claude mcp remove` calls.
+# =============================================================================
+
+mcp:
+  servers:
+    context7:
+      type: stdio
+      command: cmd
+      args: ["/c", "npx", "-y", "@upstash/context7-mcp@latest"]
+      env: {}
+
+    mcp-deepwiki:
+      type: stdio
+      command: cmd
+      args: ["/c", "npx", "-y", "mcp-deepwiki"]
+      env: {}
+
+    memory:
+      type: stdio
+      command: cmd
+      args: ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"]
+      env: {}
+
+    chrome-devtools:
+      type: stdio
+      command: cmd
+      args: ["/c", "npx", "-y", "chrome-devtools-mcp@latest", "--acceptInsecureCerts"]
+      env: {}
+
+    qdrant:
+      type: stdio
+      command: uvx
+      args: ["--managed-python", "--python", "3.12", "mcp-server-qdrant"]
+      env:
+        QDRANT_URL: "http://raspi.tailf7fd34.ts.net:6333"
+        QDRANT_API_KEY: "${QDRANT_API_KEY}"
+        COLLECTION_NAME: "memories"
+        EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+
+    vercel:
+      type: http
+      url: "https://mcp.vercel.com"
+      headers:
+        Authorization: "Bearer ${VERCEL_TOKEN}"
+
+    neon:
+      type: http
+      url: "https://mcp.neon.tech/mcp"
+      headers:
+        Authorization: "Bearer ${NEON_API_KEY}"
+
+    tavily:
+      type: http
+      url: "https://mcp.tavily.com/mcp/"
+      headers:
+        Authorization: "Bearer ${TAVILY_API_KEY}"
