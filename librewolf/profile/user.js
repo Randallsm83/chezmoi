@@ -28,8 +28,22 @@ user_pref("network.http.referer.XOriginTrimmingPolicy", 2);
 
 // === Cookie & storage hygiene ===
 
-// First-party isolation (already on via RFP, but reinforced)
-user_pref("privacy.firstparty.isolate", true);
+// First-party isolation (FPI) DISABLED.
+//
+// LibreWolf already ships dFPI (Total Cookie Protection, network.cookie.
+// cookieBehavior=5) via librewolf.cfg, which partitions third-party
+// storage per top-level site. Layering classic FPI on top breaks federated
+// auth flows that rely on a third-party iframe reading its OWN cookies
+// (Google Identity Services, MS / Apple SSO, ClickUp's GIS button, etc.):
+// FPI silos the iframe's cookies to the embedder's origin jar instead of
+// the iframe's real session jar, so the auth iframe just renders blank.
+//
+// dFPI alone covers the same cross-site-tracking threat model with
+// storage-access negotiation, so we keep that and drop FPI here.
+//
+// If you ever need maximum isolation again, flip this back to true and
+// expect to break Google SSO across most apps that embed GIS.
+user_pref("privacy.firstparty.isolate", false);
 
 // Clear cookies and site data on shutdown (LibreWolf default; reaffirmed)
 user_pref("privacy.sanitize.sanitizeOnShutdown", true);
