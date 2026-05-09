@@ -120,10 +120,20 @@ chezmoi.local.toml.example
 .claude/project-memories/**
 
 # Claude Code session/state file (auto-rewritten constantly with caches,
-# OAuth tokens, MCP creds, machine-specific project paths). Static config
-# is managed via .claude/settings.json instead.
+# OAuth tokens, MCP creds, machine-specific project paths). The stable
+# `mcpServers` subtree is reconciled by
+# .chezmoiscripts/run_onchange_after_60_claude_mcp_windows.ps1.tmpl.
 .claude.json
 .claude.json.bak-*
+
+# Claude Code static settings file. Claude rewrites it at runtime (theme
+# picks, plugin toggles, key reordering), so tracking the whole file as a
+# template causes perpetual drift. A fixed set of top-level keys
+# (permissions, model, enabledPlugins, etc.) is reconciled by
+# .chezmoiscripts/run_onchange_after_61_claude_settings_windows.ps1.tmpl;
+# every other key (theme, runtime additions) is preserved.
+.claude/settings.json
+.claude/settings.json.bak-*
 
 # Bootstrap scripts
 bootstrap.ps1
