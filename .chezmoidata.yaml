@@ -1506,4 +1506,37 @@ browser_doh:
     - edge
     - brave
 
+# ============================================================================
+# Caddy local-CA trust
+# ============================================================================
+# Used by .chezmoiscripts/run_onchange_after_58_caddy-ca.{sh,ps1}.tmpl
+#
+# Caddy in pi-stack uses `tls internal` and issues certs from a self-signed
+# root CA stored inside the caddy container at
+#   /data/caddy/pki/authorities/local/root.crt
+# Without trusting this root, every https://*.raspi URL throws TLS warnings.
+# The installer scripts pull the cert via SSH (no host-side bind-mount perms
+# required) and import it into the platform trust store:
+#   - Windows: certutil -addstore ROOT
+#   - macOS:   security add-trusted-cert -k /Library/Keychains/System.keychain
+#   - Linux:   /usr/local/share/ca-certificates + update-ca-certificates,
+#              or /etc/pki/ca-trust/source/anchors + update-ca-trust,
+#              or /etc/ca-certificates/trust-source/anchors + trust extract-compat
+# Re-running is idempotent on every platform.
+caddy_ca:
+  enabled: true
+  # SSH alias / hostname of the box running pi-stack's caddy service. Must be
+  # reachable via the user's regular ssh config (1Password agent on Windows,
+  # ~/.ssh on Unix).
+  ssh_host: "raspi"
+  # Command run on $ssh_host whose stdout is the PEM-encoded root cert. Going
+  # through `docker exec` avoids host-side permissions on the bind-mounted
+  # caddy data dir.
+  remote_cert_cmd: "docker exec caddy cat /data/caddy/pki/authorities/local/root.crt"
+  # Substring used by verification checks to confirm the cert landed in the
+  # store (subject CN of Caddy's self-signed root).
+  cert_label: "Caddy Local Authority"
+  # Filename used in platform trust stores (must end in .crt on Debian).
+  store_filename: "caddy-homelab-root.crt"
+
 # vim: ts=2 sts=2 sw=2 et

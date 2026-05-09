@@ -1,0 +1,118 @@
+{{- /*
+Windows analog of run_onchange_after_58_caddy-ca.sh.tmpl.
+
+Trusts the homelab's Caddy `tls internal` root CA in the per-machine
+ROOT (Trusted Root Certification Authorities) store so that
+https://*.raspi URLs don't trip TLS warnings in any system-trust-store
+consumer (Chrome, Edge, Brave, curl, .NET, plus LibreWolf/Firefox via
+security.enterprise_roots.enabled).
+
+Mechanism:
+  1. ssh raspi 'docker exec caddy cat /data/caddy/pki/authorities/local/root.crt'
+     (going through docker exec avoids host-side bind-mount perms).
+  2. sha256-compare against $env:LOCALAPPDATA\chezmoi\caddy-ca-installed.sha256
+     and short-circuit if the cert is already trusted.
+  3. Otherwise certutil -addstore -f ROOT (elevation via gsudo).
+
+Reruns when the rendered script body changes; the cert is fetched fresh
+on each run, idempotency is enforced by the sha256 cache + cert-store
+existence check.
+# data hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+*/}}
+{{- if eq .chezmoi.os "windows" -}}
+{{- $cfg := .caddy_ca -}}
+$ErrorActionPreference = 'Stop'
+
+$enabled       = [bool]${{ $cfg.enabled }}
+$sshHost       = '{{ $cfg.ssh_host }}'
+$remoteCmd     = '{{ $cfg.remote_cert_cmd }}'
+$certLabel     = '{{ $cfg.cert_label }}'
+$storeFilename = '{{ $cfg.store_filename }}'
+
+if (-not $enabled) {
+    Write-Host '[caddy-ca] caddy_ca.enabled=false; nothing to do'
+    exit 0
+}
+
+if (-not (Get-Command ssh -ErrorAction SilentlyContinue)) {
+    Write-Warning '[caddy-ca] ssh.exe not on PATH; skipping'
+    exit 0
+}
+
+# ── Fetch the cert via SSH ───────────────────────────────────────────────
+Write-Host "[caddy-ca] fetching Caddy root from ${sshHost}..."
+$tmpCrt = Join-Path $env:TEMP $storeFilename
+try {
+    # BatchMode=yes avoids interactive password / TOFU prompts hanging the
+    # apply. ConnectTimeout caps the wait when raspi is unreachable.
+    $cert = & ssh -o BatchMode=yes -o ConnectTimeout=10 $sshHost $remoteCmd 2>$null
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($cert)) {
+        Write-Warning "[caddy-ca] ssh to ${sshHost} returned no data; skipping"
+        exit 0
+    }
+} catch {
+    Write-Warning "[caddy-ca] ssh failed: $($_.Exception.Message); skipping"
+    exit 0
+}
+
+# certutil expects a sane PEM file; verify the marker before writing.
+if ($cert -notmatch 'BEGIN CERTIFICATE') {
+    Write-Warning '[caddy-ca] received data does not look like a PEM cert; skipping'
+    exit 0
+}
+
+# ASCII encoding (no BOM, LF or CRLF both fine for PEM).
+Set-Content -Path $tmpCrt -Value $cert -Encoding ascii
+
+$srcSha = (Get-FileHash -Path $tmpCrt -Algorithm SHA256).Hash.ToLowerInvariant()
+
+# ── Idempotency: cache + store-presence check ──────────────────────────
+$cacheDir  = Join-Path $env:LOCALAPPDATA 'chezmoi'
+$cacheFile = Join-Path $cacheDir 'caddy-ca-installed.sha256'
+if (-not (Test-Path -LiteralPath $cacheDir)) {
+    New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null
+}
+
+$cachedSha = if (Test-Path -LiteralPath $cacheFile) {
+    (Get-Content -LiteralPath $cacheFile -ErrorAction SilentlyContinue).Trim()
+} else { $null }
+
+# Probe the per-machine ROOT store for the label. certutil exits non-zero
+# if no match, but writes a banner regardless; capture the boolean.
+$inStore = $false
+try {
+    $null = certutil -store ROOT $certLabel 2>$null
+    if ($LASTEXITCODE -eq 0) { $inStore = $true }
+} catch { $inStore = $false }
+
+if ($cachedSha -eq $srcSha -and $inStore) {
+    Write-Host "[caddy-ca] already trusted (sha matches cache; cert present in ROOT store)"
+    Remove-Item -LiteralPath $tmpCrt -Force -ErrorAction SilentlyContinue
+    exit 0
+}
+
+# ── Install via certutil (needs admin) ─────────────────────────────────
+$gsudo = Get-Command gsudo -ErrorAction SilentlyContinue
+Write-Host "[caddy-ca] importing cert into LocalMachine ROOT store"
+if ($gsudo) {
+    & gsudo --loglevel none -- certutil -addstore -f ROOT $tmpCrt | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "[caddy-ca] certutil exit $LASTEXITCODE; cert left at $tmpCrt"
+        exit 1
+    }
+} else {
+    Write-Warning "[caddy-ca] gsudo not found; falling back to RunAs UAC prompt"
+    Start-Process certutil -ArgumentList @('-addstore','-f','ROOT', "`"$tmpCrt`"") -Verb RunAs -Wait
+}
+
+# ── Verify + cache ─────────────────────────────────────────────────────
+$null = certutil -store ROOT $certLabel 2>$null
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "[caddy-ca] verified: '$certLabel' is in the ROOT store"
+    Set-Content -LiteralPath $cacheFile -Value $srcSha -Encoding ascii -NoNewline
+} else {
+    Write-Warning "[caddy-ca] could not confirm cert is in ROOT store after install"
+}
+
+Remove-Item -LiteralPath $tmpCrt -Force -ErrorAction SilentlyContinue
+{{- end -}}

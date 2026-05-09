@@ -1,19 +1,17 @@
-{{- if eq .chezmoi.os "darwin" -}}
+{{- if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
-# Install or refresh the Encrypted DNS (DoT) configuration profile on macOS.
+# Install or refresh the Encrypted DNS (DoT) configuration on Unix.
+#   - macOS: installs the .mobileconfig profile rendered from
+#            dot_config/dns/private_pihole-dot.mobileconfig.tmpl, via the
+#            `profiles` CLI (interactive approval on macOS 13+).
+#   - Linux: writes /etc/systemd/resolved.conf.d/raspi-dot.conf and reloads
+#            systemd-resolved. Skips with a warning on hosts without
+#            systemd-resolved (no NetworkManager fallback -- the encrypted
+#            DoT path is too easy to misconfigure via per-connection
+#            settings; user can configure manually if needed).
 # Rendered from the `encrypted_dns` block in .chezmoidata.yaml.
 # Reruns whenever the data hash changes.
 # Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
-#
-# What this does:
-#   1. Reads encrypted_dns config from chezmoi data.
-#   2. If disabled, removes any installed profile with the same identifier.
-#   3. If enabled, TCP-probes the DoT endpoint. If unreachable, prints a
-#      loud warning and exits 0 (so chezmoi apply isn't broken while you
-#      stand up the Pi side -- see scripts/setup-pihole-dot.sh).
-#   4. If reachable, installs the profile via `sudo profiles install`.
-#      macOS may still require manual approval in
-#      System Settings -> General -> Device Management.
 
 set -euo pipefail
 
@@ -23,87 +21,217 @@ ENABLED="{{ $cfg.enabled }}"
 IDENTIFIER="{{ $cfg.identifier }}"
 SERVER_NAME="{{ $cfg.server_name }}"
 PORT="{{ $cfg.port }}"
+PROTOCOL="{{ $cfg.protocol }}"
 PROFILE_SRC="${HOME}/.config/dns/pihole-dot.mobileconfig"
+# Space-separated list of upstream addresses (rendered from chezmoi data).
+SERVER_ADDRS="{{ range $i, $a := $cfg.server_addresses }}{{ if $i }} {{ end }}{{ $a }}{{ end }}"
 
 log() { printf '[encrypted-dns] %s\n' "$*"; }
 warn() { printf '[encrypted-dns] WARN: %s\n' "$*" >&2; }
 
-if ! command -v profiles >/dev/null 2>&1; then
-    warn "'profiles' CLI not found; skipping (non-macOS or stripped image?)"
-    exit 0
-fi
+# Comment marker used to identify chezmoi-managed systemd-resolved drop-ins
+# so we can rewrite them safely without clobbering hand-rolled configs.
+LINUX_DROPIN=/etc/systemd/resolved.conf.d/raspi-dot.conf
+LINUX_TAG="# chezmoi: encrypted-dns"
 
-profile_installed() {
-    sudo profiles list -type configuration 2>/dev/null \
-        | awk -v id="$IDENTIFIER" '$0 ~ id { found=1 } END { exit found ? 0 : 1 }'
+# ─── helpers shared by both platforms ────────────────────────────────────────
+
+# TCP probe :853 against the first reachable server_address. If nothing is
+# reachable the caller skips the install with a warning rather than risking
+# breaking the system resolver.
+probe_endpoint() {
+    local addr
+    for addr in $SERVER_ADDRS; do
+        if (exec 3<>/dev/tcp/"$addr"/"$PORT") 2>/dev/null; then
+            exec 3>&- 3<&-
+            log "endpoint reachable: ${addr}:${PORT}"
+            return 0
+        fi
+    done
+    return 1
 }
 
-remove_profile() {
+# ─── macOS branch ────────────────────────────────────────────────────────────
+
+run_darwin() {
+    if ! command -v profiles >/dev/null 2>&1; then
+        warn "'profiles' CLI not found; skipping (non-macOS or stripped image?)"
+        exit 0
+    fi
+
+    profile_installed() {
+        sudo profiles list -type configuration 2>/dev/null \
+            | awk -v id="$IDENTIFIER" '$0 ~ id { found=1 } END { exit found ? 0 : 1 }'
+    }
+
+    remove_profile() {
+        if profile_installed; then
+            log "removing profile $IDENTIFIER"
+            sudo profiles remove -identifier "$IDENTIFIER" || warn "removal failed"
+        else
+            log "no profile to remove"
+        fi
+    }
+
+    if [ "$ENABLED" != "true" ]; then
+        log "encrypted_dns.enabled=false; ensuring profile is uninstalled"
+        remove_profile
+        exit 0
+    fi
+
+    if [ ! -f "$PROFILE_SRC" ]; then
+        warn "mobileconfig not found at $PROFILE_SRC; did chezmoi apply render dot_config/dns/?"
+        exit 0
+    fi
+
+    # Pre-flight: pre-authenticate sudo so the install doesn't hang.
+    if ! sudo -n true 2>/dev/null; then
+        log "sudo needs a password; pre-authenticate then re-run"
+        sudo -v || exit 1
+    fi
+
+    log "probing ${SERVER_NAME}:${PORT} via /usr/bin/nc ..."
+    if ! /usr/bin/nc -z -w 3 "$SERVER_NAME" "$PORT" >/dev/null 2>&1; then
+        warn "cannot reach ${SERVER_NAME}:${PORT}"
+        warn "Pi-side DoT terminator is not up. See scripts/setup-pihole-dot.sh"
+        warn "and the Encrypted DNS section of RASPI.md. Skipping install."
+        exit 0
+    fi
+    log "endpoint reachable"
+
+    # Already-installed check: skip noisy re-prompts on every chezmoi apply.
     if profile_installed; then
-        log "removing profile $IDENTIFIER"
-        sudo profiles remove -identifier "$IDENTIFIER" || warn "removal failed"
+        log "profile $IDENTIFIER already installed; skipping"
+        if scutil --dns 2>/dev/null | grep -qiE 'dns over (tls|https)'; then
+            log "verified: scutil shows encrypted DNS active"
+        else
+            log "profile installed but scutil doesn't show encrypted DNS yet --"
+            log "may require approval in System Settings, or a reboot."
+        fi
+        exit 0
+    fi
+
+    # macOS deprecated `profiles install` for unsigned profiles. Open the file
+    # in System Settings instead so the user can approve it interactively.
+    log "staging profile for manual install: $PROFILE_SRC"
+    if command -v open >/dev/null 2>&1; then
+        open "$PROFILE_SRC" || warn "could not auto-open System Settings"
+        log ""
+        log "  ACTION REQUIRED:"
+        log "    1. System Settings should now show the profile to review."
+        log "    2. Click 'Install' and authenticate."
+        log "    3. Re-run 'chezmoi apply' (or just verify with scutil --dns)."
+        log ""
     else
-        log "no profile to remove"
+        warn "'open' not available; double-click $PROFILE_SRC to install"
     fi
 }
 
-if [ "$ENABLED" != "true" ]; then
-    log "encrypted_dns.enabled=false; ensuring profile is uninstalled"
-    remove_profile
-    exit 0
-fi
+# ─── Linux branch ────────────────────────────────────────────────────────────
 
-if [ ! -f "$PROFILE_SRC" ]; then
-    warn "mobileconfig not found at $PROFILE_SRC; did chezmoi apply render dot_config/dns/?"
-    exit 0
-fi
-
-# Pre-flight: pre-authenticate sudo so the install doesn't hang.
-if ! sudo -n true 2>/dev/null; then
-    log "sudo needs a password; pre-authenticate then re-run"
-    sudo -v || exit 1
-fi
-
-# TCP probe :853. If the Pi-side DoT terminator isn't up, install would
-# leave macOS unable to resolve anything -- skip with a loud warning.
-log "probing ${SERVER_NAME}:${PORT} ..."
-if ! /usr/bin/nc -z -w 3 "$SERVER_NAME" "$PORT" >/dev/null 2>&1; then
-    warn "cannot reach ${SERVER_NAME}:${PORT}"
-    warn "Pi-side DoT terminator is not up. See scripts/setup-pihole-dot.sh"
-    warn "and the Encrypted DNS section of RASPI.md. Skipping install."
-    exit 0
-fi
-log "endpoint reachable"
-
-# Already-installed check: skip noisy re-prompts on every chezmoi apply.
-if profile_installed; then
-    log "profile $IDENTIFIER already installed; skipping"
-    if scutil --dns 2>/dev/null | grep -qiE 'dns over (tls|https)'; then
-        log "verified: scutil shows encrypted DNS active"
-    else
-        log "profile installed but scutil doesn't show encrypted DNS yet --"
-        log "may require approval in System Settings, or a reboot."
+run_linux() {
+    # WSL detection: systemd-resolved is normally absent and /etc/resolv.conf
+    # is rewritten by Windows networking on every restart unless wsl.conf says
+    # otherwise. Bail out cleanly so we don't leave a half-applied config.
+    if grep -qiE 'microsoft|wsl' /proc/sys/kernel/osrelease 2>/dev/null; then
+        if [ -f /etc/wsl.conf ] && grep -qE '^[[:space:]]*generateResolvConf[[:space:]]*=[[:space:]]*false' /etc/wsl.conf; then
+            log "WSL with generateResolvConf=false detected; proceeding"
+        else
+            warn "WSL detected without generateResolvConf=false in /etc/wsl.conf."
+            warn "Windows would clobber /etc/resolv.conf on restart, defeating systemd-resolved."
+            warn "Skipping. Set [network] generateResolvConf=false in /etc/wsl.conf and re-run."
+            exit 0
+        fi
     fi
-    exit 0
-fi
 
-# macOS deprecated `profiles install` for unsigned profiles. Open the file
-# in System Settings instead so the user can approve it interactively.
-# (System Settings -> General -> Device Management on macOS 13+, or
-#  System Settings -> Privacy & Security -> Profiles on macOS 15+.)
-log "staging profile for manual install: $PROFILE_SRC"
-if command -v open >/dev/null 2>&1; then
-    open "$PROFILE_SRC" || warn "could not auto-open System Settings"
-    log ""
-    log "  ACTION REQUIRED:"
-    log "    1. System Settings should now show the profile to review."
-    log "    2. Click 'Install' and authenticate."
-    log "    3. Re-run 'chezmoi apply' (or just verify with scutil --dns)."
-    log ""
-else
-    warn "'open' not available; double-click $PROFILE_SRC to install"
-fi
+    # Linux only supports DoT here; DoH would need a separate stub like dnscrypt-proxy.
+    if [ "$PROTOCOL" != "tls" ]; then
+        warn "encrypted_dns.protocol='$PROTOCOL'; Linux branch only handles DoT (tls). Skipping."
+        exit 0
+    fi
 
-# Don't fail the apply -- the profile is staged and waiting for user action.
+    # Disabled path: remove the drop-in if we own it, then reload.
+    if [ "$ENABLED" != "true" ]; then
+        if [ -f "$LINUX_DROPIN" ] && sudo grep -q "$LINUX_TAG" "$LINUX_DROPIN" 2>/dev/null; then
+            log "encrypted_dns.enabled=false; removing $LINUX_DROPIN"
+            sudo rm -f "$LINUX_DROPIN"
+            sudo systemctl reload-or-restart systemd-resolved 2>/dev/null || true
+        else
+            log "encrypted_dns.enabled=false; no chezmoi-managed drop-in to remove"
+        fi
+        exit 0
+    fi
+
+    # Require systemd-resolved. We don't try to wire DoT into NetworkManager
+    # per-connection profiles; that's brittle and easy to misconfigure.
+    if ! command -v resolvectl >/dev/null 2>&1 || ! systemctl is-active --quiet systemd-resolved 2>/dev/null; then
+        warn "systemd-resolved is not active; encrypted DNS via DoT requires it."
+        warn "Either enable systemd-resolved or configure your stub of choice manually."
+        exit 0
+    fi
+
+    log "probing ${SERVER_NAME}:${PORT} via /dev/tcp ..."
+    if ! probe_endpoint; then
+        warn "cannot reach any of [${SERVER_ADDRS}]:${PORT}"
+        warn "Pi-side DoT terminator unreachable; skipping install."
+        exit 0
+    fi
+
+    # Build the desired drop-in. systemd-resolved's DNS= line accepts
+    # `IP[#hostname]` tuples; the hostname is used for SNI / cert validation.
+    desired_servers=""
+    for addr in $SERVER_ADDRS; do
+        if [ -z "$desired_servers" ]; then
+            desired_servers="${addr}#${SERVER_NAME}"
+        else
+            desired_servers="${desired_servers} ${addr}#${SERVER_NAME}"
+        fi
+    done
+
+    desired="${LINUX_TAG}
+# Managed by .chezmoiscripts/run_onchange_after_56_encrypted-dns.sh.tmpl
+# Do not edit by hand; edit .chezmoidata.yaml :: encrypted_dns and re-apply.
+[Resolve]
+DNS=${desired_servers}
+DNSOverTLS=yes
+# allow-downgrade: Pi-hole strips AD bits on cached/local answers; full
+# 'yes' would cause SERVFAIL for every locally overridden record.
+DNSSEC=allow-downgrade
+Domains=~.
+FallbackDNS=
+Cache=yes
+"
+
+    sudo mkdir -p /etc/systemd/resolved.conf.d
+    needs_write=true
+    if [ -f "$LINUX_DROPIN" ] && [ "$(sudo cat "$LINUX_DROPIN")" = "$desired" ]; then
+        needs_write=false
+    fi
+
+    if $needs_write; then
+        log "writing $LINUX_DROPIN"
+        printf '%s' "$desired" | sudo tee "$LINUX_DROPIN" >/dev/null
+        sudo chmod 0644 "$LINUX_DROPIN"
+        log "reloading systemd-resolved"
+        sudo systemctl reload-or-restart systemd-resolved
+    else
+        log "$LINUX_DROPIN already up to date"
+    fi
+
+    # Verify resolved actually accepted our config.
+    if resolvectl status 2>/dev/null | grep -qE 'DNS Servers:.*\b('"$(printf '%s' "$SERVER_ADDRS" | tr ' ' '|')"')\b'; then
+        log "verified: resolvectl reports our DoT upstreams active"
+    else
+        warn "resolvectl does not yet show our upstreams; may need a `resolvectl flush-caches` or reboot."
+    fi
+}
+
+# ─── dispatch ────────────────────────────────────────────────────────────────
+case "$(uname -s)" in
+    Darwin) run_darwin ;;
+    Linux)  run_linux  ;;
+    *)      log "unsupported OS: $(uname -s); nothing to do" ;;
+esac
+
 exit 0
 {{- end }}
