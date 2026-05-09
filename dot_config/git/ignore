@@ -36,12 +36,20 @@ $RECYCLE.BIN/
 # VSCode
 .vscode/
 *.code-workspace
+# VSCode "Local History" extension cache
+.history/
 
 # JetBrains IDEs
 .idea/
 *.iml
 *.iws
 *.ipr
+
+# Zed
+.zed/
+
+# Helix
+.helix/
 
 # Vim
 [._]*.s[a-v][a-z]
@@ -79,12 +87,33 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 .pnp.*
 .npm
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
+# Bundler / framework / dev-server caches
+.next/
+.nuxt/
+.svelte-kit/
+.astro/
+.turbo/
+.vite/
+.parcel-cache/
+.cache/
+dist-ssr/
+.docusaurus/
+# Deploy preview state
+.vercel/
+.netlify/
+# Test/coverage
+.nyc_output/
+coverage/
+*.lcov
+lcov.info
 
 # Python
 __pycache__/
@@ -112,6 +141,7 @@ MANIFEST
 *.spec
 .pytest_cache/
 .coverage
+.coverage.*
 .tox/
 .nox/
 htmlcov/
@@ -122,6 +152,17 @@ venv/
 ENV/
 env/
 .venv
+# Modern Python type/lint caches
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.pytype/
+.pyright/
+.dmypy.json
+dmypy.json
+# uv / pip-tools / poetry runtime state
+.uv/
+pip-wheel-metadata/
 
 # Ruby
 *.gem
@@ -153,18 +194,56 @@ go.work
 target/
 **/*.rs.bk
 *.pdb
+# NOTE: Cargo.lock is intentionally listed here even though the convention
+# is to commit it for binaries (bins) and ignore it for libraries (libs).
+# Most one-off scratch repos under ~/projects are bin-like; the few lib
+# repos override this with a `!Cargo.lock` in their own .gitignore.
 Cargo.lock
+
+# JVM (Java / Kotlin / Scala)
+*.class
+*.war
+*.ear
+.gradle/
+.mvn/
+out/
+bin/
+hs_err_pid*.log
+replay_pid*.log
+# Scala
+.bloop/
+.metals/
+.bsp/
+
+# PHP
+vendor/
+composer.phar
+.phpunit.result.cache
+
+# Lua
+*.luac
+luac.out
 
 # === Misc ===
 
 # Logs
 *.log
 logs/
+crash.log
+crash.*.log
 
 # Environment files
 .env
 .env.local
 .env.*.local
+# direnv per-directory shell loader cache
+.direnv/
+.envrc.local
+
+# mise local-only overrides (the tracked file is mise.toml / .mise.toml)
+mise.local.toml
+.mise.local.toml
+.tool-versions.local
 
 # Temporary files
 *.tmp
@@ -193,5 +272,32 @@ logs/
 *.p12
 *.pfx
 
+# === Infra-as-code local state ===
+
+# Terraform / OpenTofu
+.terraform/
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+# NOTE: .terraform.lock.hcl is intentionally NOT ignored - commit it.
+.terragrunt-cache/
+
+# Pulumi
+.pulumi/
+
+# Serverless Framework
+.serverless/
+
 # === Agent / tooling runtime state ===
 .sisyphus/
+# AI coding assistants (drop session/cache/history files in repos they touch)
+.aider*
+.cursor/
+.continue/
+.opencode/
+.specstory/
+# repomix CLI output dumps
+repomix-output.*
+
+# === macOS finder cruft we missed up top ===
+Icon\r
