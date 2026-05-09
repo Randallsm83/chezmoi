@@ -1,4 +1,4 @@
-{{- if eq .chezmoi.os "darwin" -}}
+{{- if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Disable per-browser DoH so browsers respect the system resolver
 # (so Pi-hole filtering and the system-wide DoT profile actually apply
@@ -8,15 +8,22 @@
 # Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
 #
 # Targets:
-#   - Firefox: /Library/Application Support/Mozilla/policies/policies.json
-#              (Mozilla enterprise policies, applies to all profiles)
-#   - Chrome:  /Library/Managed Preferences/com.google.Chrome.plist
-#   - Edge:    /Library/Managed Preferences/com.microsoft.Edge.plist
-#   - Brave:   /Library/Managed Preferences/com.brave.Browser.plist
+#   macOS
+#     - Firefox: /Library/Application Support/Mozilla/policies/policies.json
+#                (Mozilla enterprise policies, applies to all profiles)
+#     - Chrome:  /Library/Managed Preferences/com.google.Chrome.plist
+#     - Edge:    /Library/Managed Preferences/com.microsoft.Edge.plist
+#     - Brave:   /Library/Managed Preferences/com.brave.Browser.plist
+#   Linux
+#     - Firefox: /etc/firefox/policies/policies.json
+#     - Chrome:  /etc/opt/chrome/policies/managed/dns-over-https.json
+#     - Edge:    /etc/opt/edge/policies/managed/dns-over-https.json
+#     - Brave:   /etc/brave/policies/managed/dns-over-https.json
 #
 # Refs:
 #   https://mozilla.github.io/policy-templates/#dnsoverhttps
 #   https://chromeenterprise.google/policies/#DnsOverHttpsMode
+#   https://www.chromium.org/administrators/linux-quick-start/
 
 set -euo pipefail
 
@@ -31,21 +38,19 @@ warn() { printf '[browser-doh] WARN: %s\n' "$*" >&2; }
 
 if [ "$ENABLED" != "true" ]; then
     log "browser_doh.enabled=false; nothing to do"
-    exit 0
+    # On disable we still try to clean up any policy files we own (per-OS
+    # branch handles that below).
 fi
 
-# Firefox writes to /Library so still needs sudo. Chromium browsers go to
-# the user's own CFPreferences and don't.
+# Pre-auth sudo once. Both branches need it: macOS for /Library writes,
+# Linux for /etc writes.
 if ! sudo -n true 2>/dev/null; then
-    log "sudo needs a password (Firefox policy file lives in /Library)"
+    log "sudo needs a password (managed-policy files live under /Library or /etc)"
     sudo -v || exit 1
 fi
 
-apply_firefox() {
-    local dir="/Library/Application Support/Mozilla/policies"
-    local file="$dir/policies.json"
-    local desired
-    desired='{
+# Mozilla enterprise-policy JSON used for both Firefox and LibreWolf.
+MOZILLA_DOH_JSON='{
   "policies": {
     "DNSOverHTTPS": {
       "Enabled": false,
@@ -53,75 +58,184 @@ apply_firefox() {
     }
   }
 }'
-    sudo mkdir -p "$dir"
+
+# Chromium managed-policy JSON used for Chrome, Edge, Brave on Linux.
+CHROMIUM_DOH_JSON='{
+  "DnsOverHttpsMode": "off",
+  "DnsOverHttpsTemplates": ""
+}'
+
+# ─── shared helper: idempotent root-owned file write ────────────────────────
+
+write_root_json() {
+    # $1 = absolute file path, $2 = desired content
+    local file="$1" desired="$2"
+    sudo mkdir -p "$(dirname "$file")"
     if [ -f "$file" ] && [ "$(sudo cat "$file")" = "$desired" ]; then
-        log "  ok      firefox        (DoH disabled)"
-        return 0
+        return 1   # already up to date; caller logs accordingly
     fi
-    log "  write   firefox        (DoH disabled)"
     printf '%s\n' "$desired" | sudo tee "$file" >/dev/null
     sudo chmod 0644 "$file"
+    return 0
 }
 
-apply_chromium_family() {
-    # $1 = display name, $2 = bundle id
-    #
-    # /Library/Managed Preferences/<bundle>.plist would be the proper
-    # "forced policy" location, but writes there require MDM enrollment
-    # (SIP/CFPreferences silently no-ops sudo defaults write otherwise).
-    # We instead write to the user's CFPreferences for the bundle, which
-    # Chromium reads on next launch. Not enforced as policy, but we control
-    # the machine so it's effectively the same.
-    local name="$1"
-    local bundle="$2"
+remove_root_file() {
+    local file="$1"
+    [ -f "$file" ] && sudo rm -f "$file"
+}
 
-    local mode_now templates_now
-    mode_now="$(defaults read "$bundle" DnsOverHttpsMode 2>/dev/null || true)"
-    templates_now="$(defaults read "$bundle" DnsOverHttpsTemplates 2>/dev/null || true)"
+# ─── macOS branch ───────────────────────────────────────────────────────────
 
-    if [ "$mode_now" = "off" ] && [ -z "$templates_now" ]; then
-        log "  ok      ${name}"
-        return 0
+run_darwin() {
+    apply_firefox_darwin() {
+        local file="/Library/Application Support/Mozilla/policies/policies.json"
+        if write_root_json "$file" "$MOZILLA_DOH_JSON"; then
+            log "  write   firefox        (DoH disabled)"
+        else
+            log "  ok      firefox        (DoH disabled)"
+        fi
+    }
+
+    apply_chromium_darwin() {
+        # $1 = display name, $2 = bundle id
+        #
+        # /Library/Managed Preferences/<bundle>.plist would be the proper
+        # "forced policy" location, but writes there require MDM enrollment
+        # (SIP/CFPreferences silently no-ops sudo defaults write otherwise).
+        # We instead write to the user's CFPreferences for the bundle, which
+        # Chromium reads on next launch. Not enforced as policy, but we control
+        # the machine so it's effectively the same.
+        local name="$1" bundle="$2"
+        local mode_now templates_now
+        mode_now="$(defaults read "$bundle" DnsOverHttpsMode 2>/dev/null || true)"
+        templates_now="$(defaults read "$bundle" DnsOverHttpsTemplates 2>/dev/null || true)"
+        if [ "$mode_now" = "off" ] && [ -z "$templates_now" ]; then
+            log "  ok      ${name}"
+            return 0
+        fi
+        log "  write   ${name}"
+        defaults write "$bundle" DnsOverHttpsMode -string "off"
+        defaults write "$bundle" DnsOverHttpsTemplates -string ""
+    }
+
+    remove_firefox_darwin() {
+        local file="/Library/Application Support/Mozilla/policies/policies.json"
+        if [ -f "$file" ]; then
+            log "  remove  firefox policy"
+            remove_root_file "$file"
+        fi
+    }
+
+    remove_chromium_darwin() {
+        local name="$1" bundle="$2"
+        if defaults read "$bundle" DnsOverHttpsMode >/dev/null 2>&1 \
+           || defaults read "$bundle" DnsOverHttpsTemplates >/dev/null 2>&1; then
+            log "  remove  ${name} prefs"
+            defaults delete "$bundle" DnsOverHttpsMode 2>/dev/null || true
+            defaults delete "$bundle" DnsOverHttpsTemplates 2>/dev/null || true
+        fi
+    }
+
+    if [ "$ENABLED" = "true" ]; then
+        log "applying browser DoH policies (darwin)"
+        for b in "${BROWSERS[@]}"; do
+            case "$b" in
+                firefox) apply_firefox_darwin ;;
+                chrome)  apply_chromium_darwin "chrome" "com.google.Chrome" ;;
+                edge)    apply_chromium_darwin "edge"   "com.microsoft.Edge" ;;
+                brave)   apply_chromium_darwin "brave"  "com.brave.Browser" ;;
+                *) warn "unknown browser '$b' -- skipping" ;;
+            esac
+        done
     fi
 
-    log "  write   ${name}"
-    defaults write "$bundle" DnsOverHttpsMode -string "off"
-    defaults write "$bundle" DnsOverHttpsTemplates -string ""
+    # Cleanup: drop policy files for browsers that have been removed from the
+    # list (or the whole feature has been disabled).
+    declare -A want=()
+    for b in "${BROWSERS[@]}"; do [ "$ENABLED" = "true" ] && want["$b"]=1; done
+    [ -z "${want[firefox]:-}" ] && remove_firefox_darwin
+    [ -z "${want[chrome]:-}"  ] && remove_chromium_darwin "chrome" "com.google.Chrome"
+    [ -z "${want[edge]:-}"    ] && remove_chromium_darwin "edge"   "com.microsoft.Edge"
+    [ -z "${want[brave]:-}"   ] && remove_chromium_darwin "brave"  "com.brave.Browser"
 }
 
-remove_firefox() {
-    local file="/Library/Application Support/Mozilla/policies/policies.json"
-    [ -f "$file" ] && { log "  remove  firefox policy"; sudo rm -f "$file"; } || true
-}
+# ─── Linux branch ───────────────────────────────────────────────────────────
 
-remove_chromium_family() {
-    local name="$1" bundle="$2"
-    if defaults read "$bundle" DnsOverHttpsMode >/dev/null 2>&1 \
-       || defaults read "$bundle" DnsOverHttpsTemplates >/dev/null 2>&1; then
-        log "  remove  ${name} prefs"
-        defaults delete "$bundle" DnsOverHttpsMode 2>/dev/null || true
-        defaults delete "$bundle" DnsOverHttpsTemplates 2>/dev/null || true
+run_linux() {
+    # Single canonical filename for all chromium-family managed-policy drops
+    # so we can reliably remove our own entries on cleanup.
+    local cfile="dns-over-https.json"
+    local FF_FILE="/etc/firefox/policies/policies.json"
+    local LW_FILE="/etc/librewolf/policies/policies.json"
+    local CHROME_FILE="/etc/opt/chrome/policies/managed/$cfile"
+    local EDGE_FILE="/etc/opt/edge/policies/managed/$cfile"
+    local BRAVE_FILE="/etc/brave/policies/managed/$cfile"
+
+    apply_mozilla_linux() {
+        # $1 = display name, $2 = file path
+        local name="$1" file="$2"
+        if write_root_json "$file" "$MOZILLA_DOH_JSON"; then
+            log "  write   ${name}        -> $file"
+        else
+            log "  ok      ${name}        ($file)"
+        fi
+    }
+
+    apply_chromium_linux() {
+        # $1 = display name, $2 = file path
+        local name="$1" file="$2"
+        if write_root_json "$file" "$CHROMIUM_DOH_JSON"; then
+            log "  write   ${name}         -> $file"
+        else
+            log "  ok      ${name}         ($file)"
+        fi
+    }
+
+    if [ "$ENABLED" = "true" ]; then
+        log "applying browser DoH policies (linux)"
+        for b in "${BROWSERS[@]}"; do
+            case "$b" in
+                # 'firefox' covers both vanilla Firefox and LibreWolf on Linux.
+                # LibreWolf reads its own /etc/librewolf/policies/policies.json,
+                # so we drop both -- harmless if only one is installed.
+                firefox)
+                    apply_mozilla_linux "firefox"  "$FF_FILE"
+                    apply_mozilla_linux "librewolf" "$LW_FILE"
+                    ;;
+                chrome)  apply_chromium_linux "chrome" "$CHROME_FILE" ;;
+                edge)    apply_chromium_linux "edge"   "$EDGE_FILE"   ;;
+                brave)   apply_chromium_linux "brave"  "$BRAVE_FILE"  ;;
+                *) warn "unknown browser '$b' -- skipping" ;;
+            esac
+        done
     fi
+
+    # Cleanup: remove policy files for browsers no longer in the list.
+    declare -A want=()
+    for b in "${BROWSERS[@]}"; do [ "$ENABLED" = "true" ] && want["$b"]=1; done
+    if [ -z "${want[firefox]:-}" ]; then
+        for f in "$FF_FILE" "$LW_FILE"; do
+            if [ -f "$f" ]; then
+                log "  remove  firefox policy ($f)"
+                remove_root_file "$f"
+            fi
+        done
+    fi
+    for pair in "chrome|$CHROME_FILE" "edge|$EDGE_FILE" "brave|$BRAVE_FILE"; do
+        local nm="${pair%%|*}" path="${pair##*|}"
+        if [ -z "${want[$nm]:-}" ] && [ -f "$path" ]; then
+            log "  remove  ${nm} policy ($path)"
+            remove_root_file "$path"
+        fi
+    done
 }
 
-log "applying browser DoH policies"
-for b in "${BROWSERS[@]}"; do
-    case "$b" in
-        firefox) apply_firefox ;;
-        chrome)  apply_chromium_family "chrome" "com.google.Chrome" ;;
-        edge)    apply_chromium_family "edge"   "com.microsoft.Edge" ;;
-        brave)   apply_chromium_family "brave"  "com.brave.Browser" ;;
-        *) warn "unknown browser '$b' -- skipping" ;;
-    esac
-done
-
-# Clean up entries for browsers that were dropped from the list.
-declare -A want=()
-for b in "${BROWSERS[@]}"; do want["$b"]=1; done
-[ -z "${want[firefox]:-}" ] && remove_firefox
-[ -z "${want[chrome]:-}"  ] && remove_chromium_family "chrome" "com.google.Chrome"
-[ -z "${want[edge]:-}"    ] && remove_chromium_family "edge"   "com.microsoft.Edge"
-[ -z "${want[brave]:-}"   ] && remove_chromium_family "brave"  "com.brave.Browser"
+# ─── dispatch ───────────────────────────────────────────────────────────────
+case "$(uname -s)" in
+    Darwin) run_darwin ;;
+    Linux)  run_linux  ;;
+    *)      log "unsupported OS: $(uname -s); nothing to do" ;;
+esac
 
 log "done"
 {{- end }}

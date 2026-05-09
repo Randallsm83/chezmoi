@@ -1,0 +1,148 @@
+{{- /*
+LibreWolf configuration writer (Linux).
+
+Mirrors run_onchange_after_55_librewolf_{darwin,windows}.*. Three files,
+all at non-XDG paths chezmoi can't manage as targets:
+
+  1. policies.json
+       Source: librewolf/distribution/policies.json
+       Target (system-wide): /etc/librewolf/policies/policies.json
+       Owns:   force-installed extensions, default search engine + add/remove
+               list, telemetry/update lockdown.
+       Notes:  /etc/librewolf is the canonical Mozilla-policies path for
+               LibreWolf on Linux (analogous to /etc/firefox for Firefox).
+               Works for the official deb, rpm, and tarball installs.
+               Writes need sudo.
+
+  2. user.js
+       Source: librewolf/profile/user.js
+       Target: ~/.librewolf/<id>.default-default/user.js
+       Owns:   per-profile preference overrides (network/fingerprinting
+               hardening, cookies-on-shutdown, HTTPS-only, WebRTC off, etc).
+       Notes:  Profile id is generated per-install; discover it at apply
+               time from profiles.ini rather than hardcoding.
+
+  3. chrome/userChrome.css
+       Source: librewolf/profile/chrome/userChrome.css
+       Target: ~/.librewolf/<id>.default-default/chrome/userChrome.css
+       Owns:   Spaceduck UI theme.
+       Requires: toolkit.legacyUserProfileCustomizations.stylesheets=true
+                 (set in user.js above).
+
+Trigger semantics:
+  `run_onchange_` re-runs when the rendered script body changes. The
+  embedded sha256 comments below pick up source-file changes.
+
+Idempotency:
+  Each write checks for an identical existing target and skips silently.
+*/}}
+{{- if eq .chezmoi.os "linux" -}}
+#!/usr/bin/env bash
+# policies.json   sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "distribution" "policies.json") | sha256sum }}
+# user.js         sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "profile" "user.js") | sha256sum }}
+# userChrome.css  sha256: {{ include (joinPath .chezmoi.sourceDir "librewolf" "profile" "chrome" "userChrome.css") | sha256sum }}
+set -euo pipefail
+
+SRC_POLICIES='{{ joinPath .chezmoi.sourceDir "librewolf" "distribution" "policies.json" }}'
+SRC_USER_JS='{{ joinPath .chezmoi.sourceDir "librewolf" "profile" "user.js" }}'
+SRC_USER_CHROME='{{ joinPath .chezmoi.sourceDir "librewolf" "profile" "chrome" "userChrome.css" }}'
+
+LW_POLICIES_DIR="/etc/librewolf/policies"
+LW_PROFILES_DIR="$HOME/.librewolf"
+LW_PROFILES_INI="$LW_PROFILES_DIR/profiles.ini"
+
+log()  { printf '[librewolf] %s\n' "$*"; }
+warn() { printf '[librewolf] WARN: %s\n' "$*" >&2; }
+
+# Compare normalised text (strip CR for cross-platform safety) and return 0
+# if dst is missing or differs. Uses cmp via process substitution to avoid
+# loading huge files into shell variables.
+needs_write() {
+    local src="$1" dst="$2" reader="${3:-cat}"
+    [ -f "$dst" ] || return 0
+    ! cmp -s <(tr -d '\r' < "$src") <($reader "$dst" | tr -d '\r')
+}
+
+write_user_file() {
+    # Plain (no-sudo) write to a path the current user owns.
+    local src="$1" dst="$2"
+    if [ ! -f "$src" ]; then
+        warn "source missing: $src"
+        return 0
+    fi
+    if ! needs_write "$src" "$dst"; then
+        return 0
+    fi
+    mkdir -p "$(dirname "$dst")"
+    install -m 0644 "$src" "$dst"
+    log "wrote $dst ($(wc -c <"$src" | tr -d ' ') bytes)"
+}
+
+write_root_file() {
+    # sudo-elevated write for system-wide paths under /etc.
+    local src="$1" dst="$2"
+    if [ ! -f "$src" ]; then
+        warn "source missing: $src"
+        return 0
+    fi
+    if ! needs_write "$src" "$dst" "sudo cat"; then
+        return 0
+    fi
+    if ! sudo -n true 2>/dev/null; then
+        log "sudo needs a password (writing into $LW_POLICIES_DIR)"
+        sudo -v || { warn "sudo declined; skipping $dst"; return 0; }
+    fi
+    sudo mkdir -p "$(dirname "$dst")"
+    sudo install -m 0644 "$src" "$dst"
+    log "wrote $dst ($(wc -c <"$src" | tr -d ' ') bytes)"
+}
+
+# === policies.json -> /etc/librewolf/policies/ ===
+# Skip silently if librewolf isn't installed at all (no librewolf binary
+# anywhere on PATH) -- writing a policies.json with no consumer is harmless
+# but noisy in the log.
+if command -v librewolf >/dev/null 2>&1 \
+   || [ -d /usr/lib/librewolf ] \
+   || [ -d /opt/librewolf ]; then
+    write_root_file "$SRC_POLICIES" "$LW_POLICIES_DIR/policies.json"
+else
+    warn "LibreWolf not detected on PATH or in /usr/lib/librewolf, /opt/librewolf -- skipping policies.json"
+fi
+
+# === user.js + userChrome.css -> active profile (id from profiles.ini) ===
+if [ ! -f "$LW_PROFILES_INI" ]; then
+    warn "profiles.ini not found ($LW_PROFILES_INI) -- launch LibreWolf once, then re-run chezmoi apply"
+    exit 0
+fi
+
+# Discover active profile relative path.
+# Prefer [InstallXXX] -> Default= (locked-to-this-install pointer).
+# Fall back to first [ProfileN] section with Default=1.
+discover_profile() {
+    awk '
+        /^\[Install/                  { in_install=1; in_profile=0; next }
+        /^\[Profile[0-9]/             { in_install=0; in_profile=1; cand=""; next }
+        /^\[/                         { in_install=0; in_profile=0; next }
+        in_install && /^Default=/     { sub(/^Default=/,""); print; exit }
+        in_profile && /^Path=/        { sub(/^Path=/,""); cand=$0 }
+        in_profile && /^Default=1[ \t]*$/ && cand!="" { print cand; exit }
+    ' "$LW_PROFILES_INI"
+}
+
+REL_PATH="$(discover_profile)"
+if [ -z "$REL_PATH" ]; then
+    warn "could not determine active profile from $LW_PROFILES_INI"
+    exit 0
+fi
+
+ACTIVE_PROFILE="$LW_PROFILES_DIR/$REL_PATH"
+if [ ! -d "$ACTIVE_PROFILE" ]; then
+    warn "active profile dir not found: $ACTIVE_PROFILE"
+    exit 0
+fi
+
+write_user_file "$SRC_USER_JS"     "$ACTIVE_PROFILE/user.js"
+write_user_file "$SRC_USER_CHROME" "$ACTIVE_PROFILE/chrome/userChrome.css"
+
+log "done"
+{{- end }}

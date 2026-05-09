@@ -1,0 +1,127 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# Trust the homelab's Caddy `tls internal` root CA on this host so that
+# https://*.raspi (and any other internal hostname Caddy fronts) doesn't
+# trip TLS warnings. Mirrors pi-stack/tools/trust-caddy-cert.sh but
+# wrapped as a chezmoi onchange script for GitOps-managed deploy.
+#
+# Reruns whenever this rendered script body changes. The cert itself is
+# fetched fresh on each run; idempotency is enforced by sha256-comparing
+# against whatever is currently in the platform trust store.
+# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+
+set -euo pipefail
+
+{{- $cfg := .caddy_ca }}
+
+ENABLED="{{ $cfg.enabled }}"
+SSH_HOST="{{ $cfg.ssh_host }}"
+REMOTE_CMD={{ $cfg.remote_cert_cmd | quote }}
+CERT_LABEL="{{ $cfg.cert_label }}"
+STORE_FILE="{{ $cfg.store_filename }}"
+
+log()  { printf '[caddy-ca] %s\n' "$*"; }
+warn() { printf '[caddy-ca] WARN: %s\n' "$*" >&2; }
+
+if [ "$ENABLED" != "true" ]; then
+    log "caddy_ca.enabled=false; nothing to do"
+    exit 0
+fi
+
+if ! command -v ssh >/dev/null 2>&1; then
+    warn "ssh not on PATH; skipping"
+    exit 0
+fi
+
+# Fetch the cert. If the SSH connection fails or the docker exec returns
+# nothing, skip with a warning rather than nuking whatever is currently
+# trusted.
+TMP_CRT="$(mktemp -t caddy-root-XXXXXX.crt)"
+trap 'rm -f "$TMP_CRT"' EXIT
+
+log "fetching Caddy root from ${SSH_HOST}..."
+if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$SSH_HOST" "$REMOTE_CMD" >"$TMP_CRT" 2>/dev/null; then
+    warn "failed to ssh to ${SSH_HOST} (BatchMode); skipping"
+    exit 0
+fi
+if [ ! -s "$TMP_CRT" ]; then
+    warn "empty cert received from ${SSH_HOST}; is the caddy container running?"
+    exit 0
+fi
+if ! grep -q 'BEGIN CERTIFICATE' "$TMP_CRT"; then
+    warn "received data does not look like a PEM cert; skipping"
+    exit 0
+fi
+
+# Hash for idempotent compare.
+SRC_SHA="$(sha256sum "$TMP_CRT" | awk '{print $1}')"
+
+OS="$(uname -s)"
+case "$OS" in
+    Darwin)
+        # macOS System keychain. `security verify-cert` would also work but
+        # is slower; we just sha256-compare against the file we last
+        # installed (cached at $HOME/.cache/chezmoi/caddy-ca-installed.sha256).
+        CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/chezmoi"
+        CACHE_FILE="$CACHE/caddy-ca-installed.sha256"
+        mkdir -p "$CACHE"
+        if [ -f "$CACHE_FILE" ] && [ "$(cat "$CACHE_FILE")" = "$SRC_SHA" ] \
+           && security find-certificate -c "$CERT_LABEL" /Library/Keychains/System.keychain >/dev/null 2>&1; then
+            log "already trusted (sha matches cache; cert present in System keychain)"
+            exit 0
+        fi
+        if ! sudo -n true 2>/dev/null; then
+            log "sudo needs a password (System keychain write)"
+            sudo -v || { warn "sudo declined; skipping"; exit 0; }
+        fi
+        log "installing into /Library/Keychains/System.keychain"
+        sudo security add-trusted-cert -d -r trustRoot \
+            -k /Library/Keychains/System.keychain "$TMP_CRT"
+        printf '%s\n' "$SRC_SHA" >"$CACHE_FILE"
+        ;;
+    Linux)
+        # Distro-specific trust store layout. On all of these,
+        # `update-ca-certificates`/`update-ca-trust`/`trust extract-compat`
+        # is the idempotent step that bakes the new anchor into the
+        # consumer-side bundles.
+        if [ -d /usr/local/share/ca-certificates ] && command -v update-ca-certificates >/dev/null 2>&1; then
+            DST="/usr/local/share/ca-certificates/$STORE_FILE"
+            UPDATE_CMD="update-ca-certificates"
+        elif [ -d /etc/pki/ca-trust/source/anchors ] && command -v update-ca-trust >/dev/null 2>&1; then
+            DST="/etc/pki/ca-trust/source/anchors/$STORE_FILE"
+            UPDATE_CMD="update-ca-trust extract"
+        elif [ -d /etc/ca-certificates/trust-source/anchors ] && command -v trust >/dev/null 2>&1; then
+            DST="/etc/ca-certificates/trust-source/anchors/$STORE_FILE"
+            UPDATE_CMD="trust extract-compat"
+        else
+            warn "could not detect Linux trust-store layout; manual install required"
+            warn "cert saved at $TMP_CRT"
+            trap - EXIT
+            exit 0
+        fi
+
+        # Idempotency: skip if /etc copy already matches what we're about to write.
+        if [ -f "$DST" ] && [ "$(sudo sha256sum "$DST" 2>/dev/null | awk '{print $1}')" = "$SRC_SHA" ]; then
+            log "$DST already up to date (sha matches)"
+            exit 0
+        fi
+
+        if ! sudo -n true 2>/dev/null; then
+            log "sudo needs a password (writing to ${DST})"
+            sudo -v || { warn "sudo declined; skipping"; exit 0; }
+        fi
+        log "installing $DST"
+        sudo install -m 0644 "$TMP_CRT" "$DST"
+        log "running: $UPDATE_CMD"
+        # shellcheck disable=SC2086
+        sudo $UPDATE_CMD >/dev/null
+        ;;
+    *)
+        warn "unsupported OS: $OS; cert saved at $TMP_CRT"
+        trap - EXIT
+        exit 0
+        ;;
+esac
+
+log "done. Restart any open browsers that use the system trust store."
+{{- end }}
