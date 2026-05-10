@@ -56,13 +56,18 @@ try {
 }
 
 # certutil expects a sane PEM file; verify the marker before writing.
-if ($cert -notmatch 'BEGIN CERTIFICATE') {
+# NOTE: $cert is an array of lines (one per stdout line). Using
+# `$cert -notmatch ...` here would be a *filter*, returning the
+# non-matching lines as a (truthy) array — so the branch fired even
+# for a perfectly valid cert. Join first so `-notmatch` is scalar.
+$certText = $cert -join "`n"
+if ($certText -notmatch 'BEGIN CERTIFICATE') {
     Write-Warning '[caddy-ca] received data does not look like a PEM cert; skipping'
     exit 0
 }
 
 # ASCII encoding (no BOM, LF or CRLF both fine for PEM).
-Set-Content -Path $tmpCrt -Value $cert -Encoding ascii
+Set-Content -Path $tmpCrt -Value $certText -Encoding ascii
 
 $srcSha = (Get-FileHash -Path $tmpCrt -Algorithm SHA256).Hash.ToLowerInvariant()
 
@@ -77,12 +82,16 @@ $cachedSha = if (Test-Path -LiteralPath $cacheFile) {
     (Get-Content -LiteralPath $cacheFile -ErrorAction SilentlyContinue).Trim()
 } else { $null }
 
-# Probe the per-machine ROOT store for the label. certutil exits non-zero
-# if no match, but writes a banner regardless; capture the boolean.
+# Probe the per-machine ROOT store by subject CN. We avoid `certutil -store`
+# here because its name argument matches against the cert's Friendly Name,
+# which is empty when importing a raw PEM — so it returns CRYPT_E_NOT_FOUND
+# even when the cert is present. Cert: drive does subject-string matching
+# and works without elevation.
 $inStore = $false
 try {
-    $null = certutil -store ROOT $certLabel 2>$null
-    if ($LASTEXITCODE -eq 0) { $inStore = $true }
+    $found = Get-ChildItem Cert:\LocalMachine\Root -ErrorAction SilentlyContinue |
+        Where-Object { $_.Subject -match [regex]::Escape($certLabel) }
+    if ($found) { $inStore = $true }
 } catch { $inStore = $false }
 
 if ($cachedSha -eq $srcSha -and $inStore) {
@@ -106,8 +115,10 @@ if ($gsudo) {
 }
 
 # ── Verify + cache ─────────────────────────────────────────────────────
-$null = certutil -store ROOT $certLabel 2>$null
-if ($LASTEXITCODE -eq 0) {
+# See note above: subject-CN match via Cert: drive instead of certutil.
+$verified = Get-ChildItem Cert:\LocalMachine\Root -ErrorAction SilentlyContinue |
+    Where-Object { $_.Subject -match [regex]::Escape($certLabel) }
+if ($verified) {
     Write-Host "[caddy-ca] verified: '$certLabel' is in the ROOT store"
     Set-Content -LiteralPath $cacheFile -Value $srcSha -Encoding ascii -NoNewline
 } else {
