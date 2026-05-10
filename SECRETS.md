@@ -232,11 +232,21 @@ Example: wiring up `aider` with `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`.
 | Wrapper | Env file | Secrets injected |
 |---|---|---|
 | `claude` | `~/.config/op/claude.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY` |
+| `opencode` | `~/.config/op/opencode.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY` |
 
 `~/.claude.json` references these via `${VAR_NAME}` substitution in HTTP
 header values and stdio MCP `env` blocks, so all four MCP servers
 (`tavily`, `vercel`, `neon`, `qdrant`) connect through the wrapper without
 any literal credentials in `~/.claude.json`.
+
+`~/.config/opencode/opencode.json` references these via `{env:VAR_NAME}`
+substitution (opencode's syntax — different from Claude Code's `${VAR_NAME}`).
+The MCP block in `opencode.json` is rendered from the same
+`.chezmoidata/mcp.yaml` source of truth, with placeholders rewritten on
+apply. The `oh-my-openagent` plugin is configured (in
+`~/.config/opencode/oh-my-openagent.jsonc`) with `claude_code.mcp: false`
+so it does not also import the `${VAR}`-shaped Claude Code entries — those
+wouldn't be expanded by opencode and would 401 into auto-OAuth.
 
 ### Verifying no leakage
 
