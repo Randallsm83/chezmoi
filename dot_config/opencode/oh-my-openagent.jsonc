@@ -1,0 +1,18 @@
+{
+  // Plugin config for `oh-my-openagent` (in opencode plugin list).
+  //
+  // Disable the plugin's automatic merge of `mcpServers` from ~/.claude.json
+  // into opencode's MCP map. The Claude Code config uses `${VAR}` placeholders
+  // which opencode does NOT expand (opencode uses `{env:VAR}` syntax), so the
+  // merged entries arrive with literal placeholder strings, every remote MCP
+  // 401s on bad auth, and opencode falls into auto-OAuth.
+  //
+  // The same MCP inventory is rendered into opencode.json directly via the
+  // chezmoi template at dot_config/opencode/opencode.json.tmpl, with proper
+  // opencode shape (type: local/remote, oauth: false on remote, {env:VAR}
+  // placeholders, etc.). Source of truth: .chezmoidata/mcp.yaml.
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/main/oh-my-opencode.schema.json",
+  "claude_code": {
+    "mcp": false
+  }
+}

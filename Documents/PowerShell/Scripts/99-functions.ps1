@@ -456,6 +456,16 @@ if (Test-CommandExists 'op') {
             & claude.exe @args
         }
     }
+
+    function opencode {
+        $envFile = Join-Path $HOME '.config\op\opencode.env'
+        if (Test-Path $envFile) {
+            & op run --env-file=$envFile --no-masking -- opencode.exe @args
+        } else {
+            Write-Warning "Env file not found: $envFile - launching opencode.exe without secret injection"
+            & opencode.exe @args
+        }
+    }
 }
 
 # ================================================================================================

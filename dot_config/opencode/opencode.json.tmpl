@@ -229,15 +229,50 @@
     }
   },
 
-  "mcp": {
-    "filesystem": {
-      "type": "local",
-      "enabled": true,
-      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem",
-        {{- if eq .chezmoi.os "windows" }} "{{ .chezmoi.homeDir }}\\projects"
-        {{- else }} "{{ .chezmoi.homeDir }}/projects"{{- end }}]
-    }
-  },
+  {{- /*
+    MCP servers are rendered from .chezmoidata/mcp.yaml (single source of truth
+    shared with Claude Code). Translation rules for opencode shape:
+      stdio  -> type: "local",  args folded into command, env -> environment
+      http   -> type: "remote", oauth: false (suppresses 401-auto-OAuth)
+    Secret placeholders are rewritten ${VAR} -> {env:VAR} so opencode resolves
+    them against the env injected by the `opencode` op-run wrapper (see
+    SECRETS.md, ~/.config/op/opencode.env).
+  */ -}}
+  {{- $mcp := dict -}}
+  {{- $_ := set $mcp "filesystem" (dict
+      "type" "local"
+      "enabled" true
+      "command" (list "npx" "-y" "@modelcontextprotocol/server-filesystem"
+        (eq .chezmoi.os "windows" | ternary (printf "%s\\projects" .chezmoi.homeDir) (printf "%s/projects" .chezmoi.homeDir)))) -}}
+  {{- range $name, $cfg := .mcp.servers -}}
+    {{- $entry := dict "enabled" true -}}
+    {{- if eq $cfg.type "stdio" -}}
+      {{- $args := default (list) $cfg.args -}}
+      {{- $cmd := concat (list $cfg.command) $args -}}
+      {{- $_ := set $entry "type" "local" -}}
+      {{- $_ := set $entry "command" $cmd -}}
+      {{- if $cfg.env -}}
+        {{- $envMap := dict -}}
+        {{- range $k, $v := $cfg.env -}}
+          {{- $_ := set $envMap $k (regexReplaceAll "\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\}" $v "{env:${1}}") -}}
+        {{- end -}}
+        {{- $_ := set $entry "environment" $envMap -}}
+      {{- end -}}
+    {{- else if eq $cfg.type "http" -}}
+      {{- $_ := set $entry "type" "remote" -}}
+      {{- $_ := set $entry "url" $cfg.url -}}
+      {{- $_ := set $entry "oauth" false -}}
+      {{- if $cfg.headers -}}
+        {{- $headersMap := dict -}}
+        {{- range $k, $v := $cfg.headers -}}
+          {{- $_ := set $headersMap $k (regexReplaceAll "\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\}" $v "{env:${1}}") -}}
+        {{- end -}}
+        {{- $_ := set $entry "headers" $headersMap -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $_ := set $mcp $name $entry -}}
+  {{- end }}
+  "mcp": {{ $mcp | toPrettyJson | indent 2 | trim }},
 
   "instructions": [
     "AGENTS.md",
