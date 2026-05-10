@@ -12,6 +12,23 @@
     Requires: PowerShell 5.1+, Windows Defender, Administrator privileges
 #>
 
+# Force materialization of the auto-generated Defender CIM proxy at module-load
+# time. Background:
+#   Get-MpPreference / Add-MpPreference live in a CDXML-generated proxy module
+#   ("ConfigDefender") that PowerShell builds on first invocation by writing
+#   *.format.ps1xml / *.psd1 / *.psm1 into %TEMP% via Copy-Item. When the FIRST
+#   call lands inside an active $WhatIfPreference scope (e.g. our own functions
+#   invoked with -WhatIf), those Copy-Item operations are silently turned into
+#   What-If previews and the proxy never finishes loading. The next call then
+#   fails with "Get-MpPreference command was found in module ConfigDefender,
+#   but the module could not be loaded".
+#
+#   Calling Get-MpPreference once at module-load time — outside any -WhatIf
+#   scope — forces the proxy to materialize for the rest of the session, so
+#   every later call (including under -WhatIf) succeeds. We swallow errors in
+#   case Defender is unavailable (non-Windows hosts, server SKUs without it).
+$null = Get-MpPreference -ErrorAction SilentlyContinue 2>&1 | Out-Null
+
 #region Helper Functions
 
 function Test-Administrator {
@@ -169,6 +186,76 @@ function Find-GameExecutable {
     }
     
     return $null
+}
+
+function Get-CommonShaderCachePath {
+    <#
+    .SYNOPSIS
+        Returns the list of shader cache directories that benefit from a wholesale
+        Defender exclusion regardless of which specific game is running.
+
+    .DESCRIPTION
+        Combines two categories:
+          1. Static GPU-vendor / OS shader caches: AMD, NVIDIA, Intel, and the
+             vendor-agnostic D3D shader cache used by D3D12.
+          2. Dynamic per-library Steam shader caches: `steamapps\shadercache`
+             under every detected Steam library. Steam buckets compiled shaders
+             by AppID at this root; excluding the root covers every installed
+             title automatically.
+
+        Each returned entry is a hashtable with:
+          Name      - human-readable label used in Add-ShaderCacheExclusion logs
+          Path      - absolute filesystem path
+          AlwaysAdd - $true to skip the existence check (Steam roots may not yet
+                      exist on a fresh library; Defender accepts non-existent
+                      paths and Steam will populate them on first shader compile)
+
+        Internal helper. Kept private to the module; consumed by
+        Add-ShaderCacheExclusion (and indirectly Add-BulkGameExclusions).
+    #>
+    [CmdletBinding()]
+    param()
+
+    $entries = @(
+        # ── AMD ─────────────────────────────────────────────────────────────
+        @{ Name = 'AMD DX9 Cache';            Path = Join-Path $env:LOCALAPPDATA 'AMD\DX9Cache' }
+        @{ Name = 'AMD DirectX Cache';        Path = Join-Path $env:LOCALAPPDATA 'AMD\DxCache' }
+        @{ Name = 'AMD DXC Cache';            Path = Join-Path $env:LOCALAPPDATA 'AMD\DxcCache' }
+        @{ Name = 'AMD OpenGL Cache';         Path = Join-Path $env:LOCALAPPDATA 'AMD\OglCache' }
+        @{ Name = 'AMD Vulkan Cache';         Path = Join-Path $env:LOCALAPPDATA 'AMD\VkCache' }
+        @{ Name = 'AMD DirectX Cache (Low)';  Path = Join-Path $env:LOCALAPPDATA '..\LocalLow\AMD\DxCache' }
+
+        # ── NVIDIA ──────────────────────────────────────────────────────────
+        @{ Name = 'NVIDIA DirectX Cache';        Path = Join-Path $env:LOCALAPPDATA 'NVIDIA\DXCache' }
+        @{ Name = 'NVIDIA OpenGL Cache';         Path = Join-Path $env:LOCALAPPDATA 'NVIDIA\GLCache' }
+        @{ Name = 'NVIDIA Cache (Temp)';         Path = Join-Path $env:LOCALAPPDATA 'Temp\NVIDIA Corporation\NV_Cache' }
+        @{ Name = 'NVIDIA DirectX Cache (Low)';  Path = Join-Path $env:LOCALAPPDATA '..\LocalLow\NVIDIA\DXCache' }
+        @{ Name = 'NVIDIA Cache (ProgramData)';  Path = Join-Path $env:ProgramData 'NVIDIA Corporation\NV_Cache' }
+
+        # ── Intel (Arc / iGPU) ──────────────────────────────────────────────
+        @{ Name = 'Intel Shader Cache';       Path = Join-Path $env:LOCALAPPDATA 'Intel\ShaderCache' }
+        @{ Name = 'Intel Graphics Cache';     Path = Join-Path $env:LOCALAPPDATA 'Intel\Graphics' }
+
+        # ── OS / vendor-agnostic ────────────────────────────────────────────
+        # D3D12 driver-side shader cache. Created by recent Windows 10/11 builds
+        # for any D3D12 title regardless of GPU vendor.
+        @{ Name = 'D3D Shader Cache';         Path = Join-Path $env:LOCALAPPDATA 'D3DSCache' }
+    )
+
+    # ── Per-library Steam shader caches ────────────────────────────────────
+    # Steam stores compiled shaders under <library>\steamapps\shadercache\<appid>\.
+    # Excluding the root covers every game in that library and every future install.
+    # Use AlwaysAdd because the directory may not exist on libraries where no
+    # game has compiled shaders yet; Defender accepts the exclusion regardless.
+    foreach ($lib in (Get-SteamLibraries)) {
+        $entries += @{
+            Name      = "Steam Shader Cache ($lib)"
+            Path      = Join-Path $lib 'steamapps\shadercache'
+            AlwaysAdd = $true
+        }
+    }
+
+    return $entries
 }
 
 function Get-ShaderCachePath {
@@ -970,95 +1057,58 @@ function Get-GameSecurityExclusion {
 function Add-ShaderCacheExclusion {
     <#
     .SYNOPSIS
-        Adds Windows Defender exclusions for AMD and NVIDIA shader cache directories.
-    
+        Adds Windows Defender exclusions for GPU and Steam shader cache directories.
+
     .DESCRIPTION
-        This function adds permanent Windows Defender exclusions for the global AMD DxCache
-        and NVIDIA shader cache directories. These caches are used by graphics drivers and
-        excluding them can improve gaming performance.
-    
+        Adds permanent Windows Defender path exclusions for the shader cache
+        directories returned by Get-CommonShaderCachePath:
+
+          - AMD shader caches (DX9, DxCache, DxcCache, OglCache, VkCache,
+            LocalLow\AMD\DxCache)
+          - NVIDIA shader caches (DXCache, GLCache, NV_Cache, LocalLow\NVIDIA,
+            ProgramData NV_Cache)
+          - Intel shader caches (ShaderCache, Graphics)
+          - D3D shader cache (vendor-agnostic, used by D3D12 titles)
+          - Steam per-library shadercache roots (steamapps\shadercache for
+            every detected Steam library)
+
+        Excluding these caches removes the largest source of AV-induced game
+        stutter on Windows because shader compilation produces many small files
+        that Defender's real-time scanner serializes against.
+
     .PARAMETER WhatIf
         Shows what would happen if the command runs without actually making changes.
-    
+
     .EXAMPLE
         Add-ShaderCacheExclusion -Verbose
-        
-        Adds shader cache exclusions with verbose output.
-    
+
+        Adds all common shader-cache exclusions with verbose output.
+
     .EXAMPLE
         Add-ShaderCacheExclusion -WhatIf
-        
+
         Previews what shader cache exclusions would be added.
-    
+
     .NOTES
         Requires: Administrator privileges
         Platform: Windows 10/11
-        Caches: AMD DxCache, NVIDIA NV_Cache
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param()
-    
+
     # Check administrator privileges
     if (-not (Test-Administrator)) {
         throw "This function requires administrator privileges. Please run PowerShell as Administrator."
     }
-    
+
     Write-Host "`n=== Adding Shader Cache Exclusions ===" -ForegroundColor Cyan
-    
-    # Define shader cache paths
-    $cachePaths = @(
-        # AMD Shader Caches
-        @{
-            Name = "AMD DX9 Cache"
-            Path = Join-Path $env:LOCALAPPDATA "AMD\DX9Cache"
-        },
-        @{
-            Name = "AMD DirectX Cache"
-            Path = Join-Path $env:LOCALAPPDATA "AMD\DxCache"
-        },
-        @{
-            Name = "AMD DXC Cache"
-            Path = Join-Path $env:LOCALAPPDATA "AMD\DxcCache"
-        },
-        @{
-            Name = "AMD OpenGL Cache"
-            Path = Join-Path $env:LOCALAPPDATA "AMD\OglCache"
-        },
-        @{
-            Name = "AMD Vulkan Cache"
-            Path = Join-Path $env:LOCALAPPDATA "AMD\VkCache"
-        },
-        @{
-            Name = "AMD DirectX Cache (Low)"
-            Path = Join-Path $env:LOCALAPPDATA "..\LocalLow\AMD\DxCache"
-        },
-        
-        # NVIDIA Shader Caches
-        @{
-            Name = "NVIDIA DirectX Cache"
-            Path = Join-Path $env:LOCALAPPDATA "NVIDIA\DXCache"
-        },
-        @{
-            Name = "NVIDIA OpenGL Cache"
-            Path = Join-Path $env:LOCALAPPDATA "NVIDIA\GLCache"
-        },
-        @{
-            Name = "NVIDIA Cache (Temp)"
-            Path = Join-Path $env:LOCALAPPDATA "Temp\NVIDIA Corporation\NV_Cache"
-        },
-        @{
-            Name = "NVIDIA DirectX Cache (Low)"
-            Path = Join-Path $env:LOCALAPPDATA "..\LocalLow\NVIDIA\DXCache"
-        },
-        @{
-            Name = "NVIDIA Cache (ProgramData)"
-            Path = Join-Path $env:ProgramData "NVIDIA Corporation\NV_Cache"
-        }
-    )
-    
+
+    $cachePaths = Get-CommonShaderCachePath
+
     $added = 0
     $skipped = 0
-    
+    $missing = 0
+
     # Get current exclusions
     try {
         $currentExclusions = (Get-MpPreference).ExclusionPath
@@ -1067,24 +1117,28 @@ function Add-ShaderCacheExclusion {
         Write-Error "Failed to retrieve current exclusions: $_"
         return
     }
-    
+
     foreach ($cache in $cachePaths) {
         $cachePath = $cache.Path
         $cacheName = $cache.Name
-        
-        # Check if path exists
-        if (-not (Test-Path $cachePath)) {
-            Write-Warning "  [!] $cacheName not found at: $cachePath"
+        $always    = [bool]$cache.AlwaysAdd
+
+        # Existence check (skipped for entries flagged AlwaysAdd — Steam library
+        # shadercache roots may not exist yet on a fresh install).
+        if (-not $always -and -not (Test-Path $cachePath)) {
+            Write-Verbose "  [!] $cacheName not found at: $cachePath"
+            $missing++
             continue
         }
-        
-        # Check if already excluded
-        if ($currentExclusions -contains $cachePath) {
+
+        # Already-excluded check (case-insensitive path compare).
+        $alreadyExcluded = $currentExclusions | Where-Object { $_ -ieq $cachePath }
+        if ($alreadyExcluded) {
             Write-Host "  [✓] $cacheName already excluded: $cachePath" -ForegroundColor Gray
             $skipped++
             continue
         }
-        
+
         # Add exclusion
         if ($PSCmdlet.ShouldProcess($cachePath, "Add Defender path exclusion")) {
             try {
@@ -1097,11 +1151,14 @@ function Add-ShaderCacheExclusion {
             }
         }
     }
-    
+
     Write-Host "`n=== Summary ===" -ForegroundColor Cyan
-    Write-Host "  Added: $added" -ForegroundColor Green
-    Write-Host "  Skipped (already excluded): $skipped" -ForegroundColor Gray
-    
+    Write-Host "  Added:                       $added"   -ForegroundColor Green
+    Write-Host "  Skipped (already excluded):  $skipped" -ForegroundColor Gray
+    if ($missing -gt 0) {
+        Write-Host "  Skipped (path not present):  $missing" -ForegroundColor DarkGray
+    }
+
     if ($added -gt 0) {
         Write-Host "`nShader cache exclusions configured successfully!" -ForegroundColor Green
     }
@@ -1355,7 +1412,17 @@ function Add-BulkGameExclusions {
     Write-Host "  Successfully added: $successCount" -ForegroundColor Green
     Write-Host "  Already excluded: $skippedCount" -ForegroundColor Gray
     Write-Host "  Failed: $failCount" -ForegroundColor Red
-    
+
+    # Game install paths cover the executables, but shader compilation also
+    # touches GPU vendor caches (AMD/NVIDIA/Intel/D3DSCache) and Steam's
+    # per-library shadercache roots, none of which live under the game folders.
+    # Run the shader-cache exclusion pass so a single Add-BulkGameExclusions
+    # invocation produces a complete picture. -WhatIf and -Verbose propagate
+    # automatically via $WhatIfPreference / $VerbosePreference; we don't splat
+    # $PSBoundParameters because it would forward -SteamPath / -XboxPath which
+    # Add-ShaderCacheExclusion does not accept.
+    Add-ShaderCacheExclusion
+
     if ($successCount -gt 0) {
         Write-Host "`nBulk exclusions completed successfully!" -ForegroundColor Green
     }
