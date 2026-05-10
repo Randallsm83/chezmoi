@@ -81,3 +81,17 @@ mcp:
       url: "https://mcp.tavily.com/mcp/"
       headers:
         Authorization: "Bearer ${TAVILY_API_KEY}"
+
+    clickup:
+      type: stdio
+      command: cmd
+      args: ["/c", "npx", "-y", "@taazkareem/clickup-mcp-server@latest"]
+      env:
+        # Mapped to dh_clickup_api_key in .chezmoi.toml.tmpl's central
+        # [data.secrets] table; injected by op run from claude.env / opencode.env.
+        CLICKUP_API_KEY: "${DH_CLICKUP_API_KEY}"
+        # Workspace team id is a public identifier (it appears in every
+        # ClickUp URL), so it lives in the env-file as a literal — not in
+        # 1Password — but is still kept out of this YAML so it stays
+        # per-user.
+        CLICKUP_TEAM_ID: "${CLICKUP_TEAM_ID}"
