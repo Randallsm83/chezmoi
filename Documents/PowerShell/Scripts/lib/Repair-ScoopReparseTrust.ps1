@@ -208,9 +208,42 @@ function Repair-ScoopReparseTrust {
     }
 }
 
+# Internal: returns the BaseNames of *.shim files in $shimsDir whose `path = ...`
+# value resolves anywhere under apps\<app>\ (case-insensitive). Matching by app
+# dir rather than just `current\` is necessary because some scoop manifests
+# (e.g. uutils-coreutils) write the resolved version path into shim files
+# instead of routing through the `current` junction.
+function Get-ScoopShimsOwnedByApp {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string]$ShimsDir,
+        [Parameter(Mandatory)] [string]$AppDir
+    )
+    if (-not (Test-Path -LiteralPath $ShimsDir)) { return @() }
+    $pattern = $AppDir.TrimEnd('\') + '\*'
+    $owned = Get-ChildItem -LiteralPath $ShimsDir -Filter '*.shim' -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            $line = (Get-Content -LiteralPath $_.FullName -ErrorAction SilentlyContinue) |
+                Where-Object { $_ -match '^\s*path\s*=' } | Select-Object -First 1
+            if (-not $line) { return $false }
+            $val = ($line -split '=', 2)[1].Trim().Trim('"')
+            $val -like $pattern
+        } | Select-Object -ExpandProperty BaseName
+    , @($owned)
+}
+
 # Re-asserts deterministic shim ownership for collision-prone scoop apps. Runs
 # `scoop reset` for each app in order; the LAST entry in the list wins for any
 # shim name it shares with an earlier entry. Skips apps that aren't installed.
+#
+# Idempotency: a per-app cache at
+#   $env:LOCALAPPDATA\chezmoi\scoop-shim-winners.json
+# records, for each successful reset, the app's `current` junction target and
+# the list of *.shim BaseNames that resolved under apps\<app>\current\ at that
+# moment. On subsequent calls, if the cached target matches and every cached
+# shim still points at this app, the reset is skipped — which also stops
+# `scoop reset` from re-creating the `current` junction user-owned and
+# triggering Repair-ScoopReparseTrust on every chezmoi apply.
 function Set-ScoopShimWinners {
     [CmdletBinding()]
     param(
@@ -221,7 +254,8 @@ function Set-ScoopShimWinners {
 
     if (-not $Winners -or $Winners.Count -eq 0) { return }
     if (-not $ScoopRoot) { $ScoopRoot = Join-Path $HOME 'scoop' }
-    $appsDir = Join-Path $ScoopRoot 'apps'
+    $appsDir  = Join-Path $ScoopRoot 'apps'
+    $shimsDir = Join-Path $ScoopRoot 'shims'
     if (-not (Test-Path -LiteralPath $appsDir)) { return }
 
     $scoopCmd = Get-Command scoop -All -ErrorAction SilentlyContinue |
@@ -232,15 +266,75 @@ function Set-ScoopShimWinners {
         return
     }
 
-    $applied = New-Object System.Collections.Generic.List[string]
+    # ── Cache load ─────────────────────────────────────────────────────────────────
+    $cacheDir  = Join-Path $env:LOCALAPPDATA 'chezmoi'
+    $cacheFile = Join-Path $cacheDir 'scoop-shim-winners.json'
+    if (-not (Test-Path -LiteralPath $cacheDir)) {
+        New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null
+    }
+    $cache = @{}
+    if (Test-Path -LiteralPath $cacheFile) {
+        try {
+            $cache = Get-Content -LiteralPath $cacheFile -Raw | ConvertFrom-Json -AsHashtable
+            if ($null -eq $cache) { $cache = @{} }
+        } catch { $cache = @{} }
+    }
+
+    $applied      = New-Object System.Collections.Generic.List[string]
+    $cacheChanged = $false
+
     foreach ($app in $Winners) {
         if (-not $app) { continue }
-        if (-not (Test-Path -LiteralPath (Join-Path $appsDir $app))) { continue }
+        $appDir = Join-Path $appsDir $app
+        if (-not (Test-Path -LiteralPath $appDir)) { continue }
+        $cur = Join-Path $appDir 'current'
+
+        # Resolve the current target so the cache invalidates on app updates.
+        $target = $null
+        $info = Get-Item -LiteralPath $cur -Force -ErrorAction SilentlyContinue
+        if ($info) { $target = @($info.Target)[0] }
+
+        # Decide whether the cache says we can skip.
+        $skip  = $false
+        $entry = $cache[$app]
+        if ($entry -and $entry.target -eq $target) {
+            $cachedShims = @($entry.shims)
+            if ($cachedShims.Count -eq 0) {
+                # App produces no shims we can track; trust the target match alone.
+                $skip = $true
+            } else {
+                $owned = Get-ScoopShimsOwnedByApp -ShimsDir $shimsDir -AppDir $appDir
+                $stillWinning = $true
+                foreach ($n in $cachedShims) {
+                    if ($owned -notcontains $n) { $stillWinning = $false; break }
+                }
+                if ($stillWinning) { $skip = $true }
+            }
+        }
+
+        if ($skip) {
+            Write-Verbose "[scoop-trust] $app shims already winning (cache hit); skipping reset."
+            continue
+        }
+
         if (-not $Quiet) {
             Write-Host "[scoop-trust] Resetting shim ownership: $app" -ForegroundColor DarkCyan
         }
         & $scoopCmd.Source reset $app *>&1 | Out-Null
         $applied.Add($app) | Out-Null
+
+        # Refresh the cache entry from the on-disk truth after the reset.
+        $ownedAfter = Get-ScoopShimsOwnedByApp -ShimsDir $shimsDir -AppDir $appDir
+        $cache[$app] = @{ target = $target; shims = @($ownedAfter) }
+        $cacheChanged = $true
+    }
+
+    if ($cacheChanged) {
+        try {
+            $cache | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $cacheFile -Encoding UTF8
+        } catch {
+            Write-Warning "[scoop-trust] Failed to write cache file: $($_.Exception.Message)"
+        }
     }
 
     if (-not $Quiet -and $applied.Count -gt 0) {
