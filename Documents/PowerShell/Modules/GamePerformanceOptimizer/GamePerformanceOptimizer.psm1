@@ -1168,31 +1168,43 @@ function Add-BulkGameExclusions {
     <#
     .SYNOPSIS
         Automatically adds security exclusions for all games found in Steam and Xbox Game Pass directories.
-    
+
     .DESCRIPTION
-        This function scans Steam and Xbox Game Pass installation directories for game executables
-        and adds Windows Defender exclusions and disables CFG for each game found. It looks for
-        common game executable patterns and adds exclusions for the game folders and shader caches.
-    
-    .PARAMETER SteamPath
-        Optional. Path to Steam games directory. Defaults to C:\SteamGames\steamapps\common
-    
-    .PARAMETER XboxPath
-        Optional. Path to Xbox games directory. Defaults to C:\XboxGames
-    
+        This function scans every detected Steam library and the configured Xbox Game Pass
+        roots for game executables, then adds Windows Defender exclusions and disables CFG
+        for each game found. After the per-game pass it also runs Add-ShaderCacheExclusion
+        to cover GPU vendor / Steam-library shader caches that don't live under any game's
+        install folder.
+
+        Steam libraries are auto-detected via Get-SteamLibraries (registry +
+        libraryfolders.vdf) so users with multiple libraries on different drives are
+        covered without manual configuration.
+
+    .PARAMETER SteamPaths
+        Optional. One or more steamapps\common paths to scan. When omitted, the function
+        auto-detects every Steam library via Get-SteamLibraries and scans each library's
+        steamapps\common subdirectory. Aliased as -SteamPath for backward compatibility.
+
+    .PARAMETER XboxPaths
+        Optional. One or more Xbox Game Pass install roots to scan. Defaults to the
+        canonical XboxGames roots on common drive letters (C:, A:, B:, D:, E:). Aliased
+        as -XboxPath for backward compatibility.
+
     .PARAMETER WhatIf
         Shows what would happen without actually making changes.
-    
+
     .EXAMPLE
         Add-BulkGameExclusions -Verbose
-        
-        Scans default Steam and Xbox directories and adds exclusions for all games found.
-    
+
+        Auto-detects all Steam libraries plus the default Xbox roots and adds exclusions
+        for every game found.
+
     .EXAMPLE
-        Add-BulkGameExclusions -SteamPath "D:\SteamGames\steamapps\common" -WhatIf
-        
-        Previews what exclusions would be added for games in a custom Steam directory.
-    
+        Add-BulkGameExclusions -SteamPaths 'D:\SteamLibrary\steamapps\common','E:\Games\steamapps\common' -WhatIf
+
+        Previews the bulk exclusion plan against two explicitly-listed Steam libraries
+        (skips auto-detection).
+
     .NOTES
         Requires: Administrator privileges
         Platform: Windows 10/11
@@ -1200,10 +1212,14 @@ function Add-BulkGameExclusions {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter()]
-        [string]$SteamPath = "C:\SteamGames\steamapps\common",
-        
+        [Alias('SteamPath')]
+        [string[]]$SteamPaths,
+
         [Parameter()]
-        [string]$XboxPath = "C:\XboxGames"
+        [Alias('XboxPath')]
+        [string[]]$XboxPaths = @(
+            'C:\XboxGames','A:\XboxGames','B:\XboxGames','D:\XboxGames','E:\XboxGames'
+        )
     )
     
     # Check administrator privileges
@@ -1213,16 +1229,38 @@ function Add-BulkGameExclusions {
     
     Write-Host "`n=== Bulk Game Exclusions ===" -ForegroundColor Cyan
     Write-Host "Scanning for games...`n" -ForegroundColor Yellow
-    
+
+    # Auto-detect Steam libraries when -SteamPaths is not provided. Each detected
+    # library contributes its steamapps\common subdirectory; libraries that don't
+    # have one yet are silently skipped (Steam creates it on first install).
+    if (-not $SteamPaths -or $SteamPaths.Count -eq 0) {
+        $detected = foreach ($lib in (Get-SteamLibraries)) {
+            $p = Join-Path $lib 'steamapps\common'
+            if (Test-Path -LiteralPath $p) { $p }
+        }
+        $SteamPaths = @($detected)
+        if ($SteamPaths.Count -eq 0) {
+            Write-Warning "No Steam libraries detected. Pass -SteamPaths explicitly to override."
+        } else {
+            Write-Verbose "Auto-detected Steam libraries: $($SteamPaths -join ', ')"
+        }
+    }
+
     $gameExecutables = @()
-    
-    # Scan Steam directory
-    if (Test-Path $SteamPath) {
+    $steamScanned = 0
+
+    # Scan each Steam library
+    foreach ($SteamPath in $SteamPaths) {
+        if (-not (Test-Path -LiteralPath $SteamPath)) {
+            Write-Warning "Steam path not found: $SteamPath"
+            continue
+        }
         Write-Host "Scanning Steam games: $SteamPath" -ForegroundColor Cyan
-        
+        $steamScanned++
+
         # Get all game folders
         $gameFolders = Get-ChildItem -Path $SteamPath -Directory -ErrorAction SilentlyContinue
-        
+
         foreach ($folder in $gameFolders) {
             # Look for executables (common patterns for game launchers)
             $exeFiles = Get-ChildItem -Path $folder.FullName -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue -Depth 3 |
@@ -1264,20 +1302,21 @@ function Add-BulkGameExclusions {
                 }
             }
         }
-        
-        Write-Host "  Found $($gameExecutables.Count) Steam games" -ForegroundColor Green
     }
-    else {
-        Write-Warning "Steam path not found: $SteamPath"
+    if ($steamScanned -gt 0) {
+        $steamFound = ($gameExecutables | Where-Object Source -eq 'Steam').Count
+        Write-Host ("  Found {0} Steam game(s) across {1} librar{2}" -f $steamFound, $steamScanned, $(if ($steamScanned -eq 1) { 'y' } else { 'ies' })) -ForegroundColor Green
     }
-    
-    # Scan Xbox Game Pass directory
-    if (Test-Path $XboxPath) {
+
+    # Scan each Xbox Game Pass root (silent for non-existent paths since defaults
+    # cover several drive letters; only the present ones are interesting).
+    $xboxCount = 0
+    foreach ($XboxPath in $XboxPaths) {
+        if (-not (Test-Path -LiteralPath $XboxPath)) { continue }
         Write-Host "Scanning Xbox games: $XboxPath" -ForegroundColor Cyan
-        
+
         $xboxFolders = Get-ChildItem -Path $XboxPath -Directory -ErrorAction SilentlyContinue
-        $xboxCount = 0
-        
+
         foreach ($folder in $xboxFolders) {
             # Xbox games often have Content subfolder
             $contentPath = Join-Path $folder.FullName "Content"
@@ -1311,11 +1350,9 @@ function Add-BulkGameExclusions {
                 }
             }
         }
-        
-        Write-Host "  Found $xboxCount Xbox games" -ForegroundColor Green
     }
-    else {
-        Write-Warning "Xbox path not found: $XboxPath"
+    if ($xboxCount -gt 0) {
+        Write-Host "  Found $xboxCount Xbox game(s)" -ForegroundColor Green
     }
     
     if ($gameExecutables.Count -eq 0) {
