@@ -113,13 +113,24 @@ fi
 # Discover active profile relative path.
 # Prefer [InstallXXX] -> Default= (locked-to-this-install pointer).
 # Fall back to first [ProfileN] section with Default=1.
+# Two-pass so [Install*] wins even when it appears AFTER [Profile*] in the file.
 discover_profile() {
+    # Pass 1: any [Install*] -> Default= entry takes precedence.
+    local install_default
+    install_default=$(awk '
+        /^\[Install/             { in_install=1; next }
+        /^\[/                    { in_install=0; next }
+        in_install && /^Default=/ { sub(/^Default=/,""); print; exit }
+    ' "$LW_PROFILES_INI")
+    if [ -n "$install_default" ]; then
+        printf '%s\n' "$install_default"
+        return
+    fi
+    # Pass 2: fall back to first [ProfileN] with Default=1.
     awk '
-        /^\[Install/                  { in_install=1; in_profile=0; next }
-        /^\[Profile[0-9]/             { in_install=0; in_profile=1; cand=""; next }
-        /^\[/                         { in_install=0; in_profile=0; next }
-        in_install && /^Default=/     { sub(/^Default=/,""); print; exit }
-        in_profile && /^Path=/        { sub(/^Path=/,""); cand=$0 }
+        /^\[Profile[0-9]/         { in_profile=1; cand=""; next }
+        /^\[/                     { in_profile=0; next }
+        in_profile && /^Path=/    { sub(/^Path=/,""); cand=$0 }
         in_profile && /^Default=1[ \t]*$/ && cand!="" { print cand; exit }
     ' "$LW_PROFILES_INI"
 }
