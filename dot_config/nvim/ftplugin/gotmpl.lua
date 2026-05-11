@@ -1,2 +1,11 @@
+-- ███╗   ██╗██╗   ██╗██╗███╗   ███╗
+-- ████╗  ██║██║   ██║██║████╗ ████║
+-- ██╔██╗ ██║██║   ██║██║██╔████╔██║
+-- ██║╚██╗██║╚██╗ ██╔╝██║██║╚██╔╝██║
+-- ██║ ╚████║ ╚████╔╝ ██║██║ ╚═╝ ██║
+-- ╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝
+-- Hyperextensible Vim-based text editor.
+--
+
 -- Register 'gotmpl' as a known filetype for gopls and :checkhealth vim.lsp.
 -- Detection rules live in lua/autocommands.lua (vim.filetype.add).

@@ -5,7 +5,7 @@
 -- ██║ ╚████║ ╚████╔╝ ██║██║ ╚═╝ ██║
 -- ╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝
 -- Hyperextensible Vim-based text editor.
--- run `:checkhealth` for more info.
+--
 
 -- Prepend mise shims to PATH
 if vim.fn.has('win32') == 1 then

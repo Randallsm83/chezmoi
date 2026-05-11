@@ -1,3 +1,12 @@
+# ███████╗███████╗██╗  ██╗
+# ╚══███╔╝██╔════╝██║  ██║
+#   ███╔╝ ███████╗███████║
+#  ███╔╝  ╚════██║██╔══██║
+# ███████╗███████║██║  ██║
+# ╚══════╝╚══════╝╚═╝  ╚═╝
+# Z Shell - powerful command interpreter.
+#
+
 # Below, there should be one TERM entry for each termtype that is colorizable
 TERM Eterm
 TERM ansi

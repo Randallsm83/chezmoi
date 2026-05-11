@@ -1,3 +1,12 @@
+-- ███╗   ██╗██╗   ██╗██╗███╗   ███╗
+-- ████╗  ██║██║   ██║██║████╗ ████║
+-- ██╔██╗ ██║██║   ██║██║██╔████╔██║
+-- ██║╚██╗██║╚██╗ ██╔╝██║██║╚██╔╝██║
+-- ██║ ╚████║ ╚████╔╝ ██║██║ ╚═╝ ██║
+-- ╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝
+-- Hyperextensible Vim-based text editor.
+--
+
 return {
   { -- Add indentation guides even on blank lines
     'lukas-reineke/indent-blankline.nvim',
