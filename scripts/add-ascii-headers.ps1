@@ -508,6 +508,59 @@ $asciiArt = @{
 # ███████║██║     ██║  ██║╚██████╗███████╗██████╔╝╚██████╔╝╚██████╗██║  ██╗
 # ╚══════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝╚═════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝
 "@
+    'chezmoi' = @"
+#  ██████╗██╗  ██╗███████╗███████╗███╗   ███╗ ██████╗ ██╗
+# ██╔════╝██║  ██║██╔════╝╚══███╔╝████╗ ████║██╔═══██╗██║
+# ██║     ███████║█████╗    ███╔╝ ██╔████╔██║██║   ██║██║
+# ██║     ██╔══██║██╔══╝   ███╔╝  ██║╚██╔╝██║██║   ██║██║
+# ╚██████╗██║  ██║███████╗███████╗██║ ╚═╝ ██║╚██████╔╝██║
+#  ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚═╝ ╚═════╝ ╚═╝
+"@
+}
+
+function Get-EffectiveExtension {
+    # Resolve a file's effective config-format extension, even when chezmoi
+    # template wrappers (.tmpl) or local-only variants (.disabled, .example,
+    # etc.) hide the real extension. E.g. foo.lua.tmpl -> .lua, bar.toml.example
+    # -> .toml. This lets us pick the right comment style downstream.
+    param([string]$Path)
+    $ext = [System.IO.Path]::GetExtension($Path).ToLower()
+    if ($ext -in @('.tmpl', '.example', '.disabled', '.disabled2', '.off')) {
+        $base = [System.IO.Path]::GetFileNameWithoutExtension($Path)
+        $inner = [System.IO.Path]::GetExtension($base).ToLower()
+        if ($inner) { return $inner }
+    }
+    return $ext
+}
+
+function Get-CommentPrefix {
+    # Pick a single-line comment prefix for the given effective extension.
+    # Returns the punctuation only ('#', '--', '//'); a trailing space is
+    # added by the caller where appropriate.
+    param([string]$EffectiveExt)
+    switch ($EffectiveExt.ToLower()) {
+        '.lua'   { return '--' }
+        '.jsonc' { return '//' }
+        default  { return '#' }
+    }
+}
+
+function ConvertTo-CommentedArt {
+    # The art literals in `$asciiArt` are stored with a leading '# ' on every
+    # line. For languages that don't use '#' for comments we re-prefix each
+    # line in place. Lines that are just '#' become just the new prefix.
+    param([string]$Art, [string]$Prefix)
+    if ($Prefix -eq '#') { return $Art }
+    $lines = $Art -split "(?:`r`n|`n)"
+    $out = foreach ($l in $lines) {
+        if ($l -match '^# ?(.*)$') {
+            $rest = $Matches[1]
+            if ($rest.Length -gt 0) { "$Prefix $rest" } else { $Prefix }
+        } else {
+            $l
+        }
+    }
+    return ($out -join "`n")
 }
 
 function Get-PackageNameForFile {
@@ -602,6 +655,7 @@ function Get-PackageDescription {
         'pastel' = 'Generate, analyze, convert and manipulate colors.'
         'pure' = 'Pure prompt for zsh.'
         'spaceduck' = 'Spaceduck color theme.'
+        'chezmoi' = 'Manage your dotfiles across multiple machines.'
     }
     
     return $descriptions[$Package]
@@ -619,10 +673,18 @@ function Add-HeaderToFile {
     $content = Get-Content -Path $FilePath -Raw
     if ($null -eq $content) { $content = '' }
 
-    # Detect any existing ASCII art block (uses █ = full block). The block
-    # is the run of consecutive `# ...█...` lines plus the trailing
-    # `# <description>` / `#` lines up to the first blank line.
-    $hasHeader = $content -match '^(?:#[^\r\n]*█[^\r\n]*\r?\n)+'
+    $effExt = Get-EffectiveExtension -Path $FilePath
+    $prefix = Get-CommentPrefix -EffectiveExt $effExt
+
+    # Detect any leading ASCII art header in *any* supported comment style
+    # (#, --, //). We tolerate leading blank lines and at most a small run of
+    # plain comment lines before the art block (handles wezterm.lua.tmpl,
+    # which used to have a wrong '#' header stacked on top of the original
+    # '--' header).
+    $detectPattern = '\A(?:\r?\n)*(?:(?:#|--|//)[^\r\n]*\r?\n)*(?:(?:#|--|//)[^\r\n]*█[^\r\n]*\r?\n)+'
+    $stripPattern  = '\A(?:\r?\n)*(?:(?:#|--|//)[^\r\n]*\r?\n)*?(?:(?:#|--|//)[^\r\n]*█[^\r\n]*\r?\n)+(?:(?:#|--|//)[^\r\n]*\r?\n)*(?:\r?\n)*'
+
+    $hasHeader = $content -match $detectPattern
 
     if ($hasHeader -and -not $ForceReplace) {
         Write-Host "  ⏭️  Skipping (already has header, use -Force to replace): $FilePath" -ForegroundColor Yellow
@@ -630,27 +692,32 @@ function Add-HeaderToFile {
     }
 
     if ($hasHeader) {
-        # Strip the existing header block: art lines + immediately following
-        # `# <text>` and bare `#` lines, up to the first blank line.
-        $stripPattern = '\A(?:#[^\r\n]*█[^\r\n]*\r?\n)+(?:#[^\r\n]*\r?\n)*\r?\n?'
-        $content = [regex]::Replace($content, $stripPattern, '')
+        # Iteratively strip stacked legacy header blocks until stable, so a
+        # mixed file (e.g. wrong '#' art followed by original '--' art) ends
+        # up with no header at the top before we re-add the right one.
+        while ($true) {
+            $next = [regex]::Replace($content, $stripPattern, '')
+            if ($next -eq $content) { break }
+            $content = $next
+        }
     }
 
+    $art         = ConvertTo-CommentedArt -Art $AsciiArt -Prefix $prefix
     $description = Get-PackageDescription -Package $PackageName
-    $header = "$AsciiArt`n"
-    if ($description) { $header += "# $description`n" }
-    $header += "#`n`n"
+    $header      = "$art`n"
+    if ($description) { $header += "$prefix $description`n" }
+    $header += "$prefix`n`n"
 
     $verb = if ($hasHeader) { 'Replaced' } else { 'Added' }
 
     if ($IsDryRun) {
-        Write-Host "  ✓ Would $($verb.ToLower()) header in: $FilePath (package=$PackageName)" -ForegroundColor Cyan
+        Write-Host "  ✓ Would $($verb.ToLower()) header in: $FilePath (package=$PackageName, style='$prefix')" -ForegroundColor Cyan
         return
     }
 
     $newContent = $header + $content
     Set-Content -Path $FilePath -Value $newContent -NoNewline -Encoding utf8
-    Write-Host "  ✓ $verb header in: $FilePath (package=$PackageName)" -ForegroundColor Green
+    Write-Host "  ✓ $verb header in: $FilePath (package=$PackageName, style='$prefix')" -ForegroundColor Green
 }
 
 function Process-ConfigDirectory {
@@ -663,7 +730,10 @@ function Process-ConfigDirectory {
     $configDirs = Get-ChildItem -Path $Path -Directory
 
     foreach ($dir in $configDirs) {
-        $dirPackageName = $dir.Name
+        # Strip chezmoi attribute prefixes from the directory name too, so
+        # dirs like 'private_op' or 'encrypted_keys' resolve to a known
+        # package ('op', 'keys') instead of getting skipped.
+        $dirPackageName = $dir.Name -replace '^(dot|private|encrypted|empty|executable|once|run|symlink|create|modify|remove|exact)_', ''
 
         # Skip the directory entirely only if it has neither a directory-level
         # art nor any filename-derivable art. We can't know that without
@@ -673,7 +743,12 @@ function Process-ConfigDirectory {
         Write-Host "`n📦 Processing $dirPackageName..." -ForegroundColor Cyan
 
         $configFiles = Get-ChildItem -Path $dir.FullName -File -Recurse |
-            Where-Object { $_.Extension -in @('.conf', '.config', '', '.toml', '.yaml', '.yml', '.json', '.bash', '.zsh', '.sh', '.tmpl', '.ps1') }
+            Where-Object { $_.Extension -in @(
+                '.conf', '.config', '', '.toml', '.yaml', '.yml',
+                '.json', '.jsonc', '.bash', '.zsh', '.sh', '.tmpl',
+                '.ps1', '.lua', '.py', '.dircolors', '.env',
+                '.zsh-syntax-theme', '.example'
+            ) }
 
         foreach ($file in $configFiles) {
             $pkg = Get-PackageNameForFile -FilePath $file.FullName -DirPackageName $dirPackageName -ArtMap $asciiArt
