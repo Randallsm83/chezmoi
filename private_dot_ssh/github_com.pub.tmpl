@@ -1,3 +1,1 @@
-{{- with dig "secrets" "ssh_pub_github_com" "" . -}}
-{{ . }}
-{{- end -}}
+{{ includeTemplate "ssh-pub-resolve" (dict "key" "ssh_pub_github_com" "comment" "GitHub SSH Key" "root" .) }}
