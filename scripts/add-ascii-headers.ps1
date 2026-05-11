@@ -25,6 +25,10 @@
 [CmdletBinding()]
 param(
     [switch]$DryRun,
+    # Replace an existing ASCII-art header if the file already has one. Without
+    # this, files that already start with `# ███...` are skipped untouched
+    # (which is how wrong/legacy headers got stuck in place).
+    [switch]$Force,
     [string]$ConfigDir = "$PSScriptRoot\..\dot_config"
 )
 
@@ -208,6 +212,331 @@ $asciiArt = @{
 # ╚███╔███╔╝██║██║ ╚████║██████╔╝╚██████╔╝╚███╔███╔╝███████║
 #  ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝  ╚══╝╚══╝ ╚══════╝
 "@
+    'aliases' = @"
+#  █████╗ ██╗     ██╗ █████╗ ███████╗███████╗███████╗
+# ██╔══██╗██║     ██║██╔══██╗██╔════╝██╔════╝██╔════╝
+# ███████║██║     ██║███████║███████╗█████╗  ███████╗
+# ██╔══██║██║     ██║██╔══██║╚════██║██╔══╝  ╚════██║
+# ██║  ██║███████╗██║██║  ██║███████║███████╗███████║
+# ╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
+"@
+    'functions' = @"
+# ███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
+# ██╔════╝██║   ██║████╗  ██║██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+# █████╗  ██║   ██║██╔██╗ ██║██║        ██║   ██║██║   ██║██╔██╗ ██║███████╗
+# ██╔══╝  ██║   ██║██║╚██╗██║██║        ██║   ██║██║   ██║██║╚██╗██║╚════██║
+# ██║     ╚██████╔╝██║ ╚████║╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
+# ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+"@
+    'helpers' = @"
+# ██╗  ██╗███████╗██╗     ██████╗ ███████╗██████╗ ███████╗
+# ██║  ██║██╔════╝██║     ██╔══██╗██╔════╝██╔══██╗██╔════╝
+# ███████║█████╗  ██║     ██████╔╝█████╗  ██████╔╝███████╗
+# ██╔══██║██╔══╝  ██║     ██╔═══╝ ██╔══╝  ██╔══██╗╚════██║
+# ██║  ██║███████╗███████╗██║     ███████╗██║  ██║███████║
+# ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝
+"@
+    'history' = @"
+# ██╗  ██╗██╗███████╗████████╗ ██████╗ ██████╗ ██╗   ██╗
+# ██║  ██║██║██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗╚██╗ ██╔╝
+# ███████║██║███████╗   ██║   ██║   ██║██████╔╝ ╚████╔╝
+# ██╔══██║██║╚════██║   ██║   ██║   ██║██╔══██╗  ╚██╔╝
+# ██║  ██║██║███████║   ██║   ╚██████╔╝██║  ██║   ██║
+# ╚═╝  ╚═╝╚═╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+"@
+    'completions' = @"
+#  ██████╗ ██████╗ ███╗   ███╗██████╗ ██╗     ███████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
+# ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██║     ██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+# ██║     ██║   ██║██╔████╔██║██████╔╝██║     █████╗     ██║   ██║██║   ██║██╔██╗ ██║███████╗
+# ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██║     ██╔══╝     ██║   ██║██║   ██║██║╚██╗██║╚════██║
+# ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ███████╗███████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
+#  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚══════╝╚══════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+"@
+    'paths' = @"
+# ██████╗  █████╗ ████████╗██╗  ██╗███████╗
+# ██╔══██╗██╔══██╗╚══██╔══╝██║  ██║██╔════╝
+# ██████╔╝███████║   ██║   ███████║███████╗
+# ██╔═══╝ ██╔══██║   ██║   ██╔══██║╚════██║
+# ██║     ██║  ██║   ██║   ██║  ██║███████║
+# ╚═╝     ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚══════╝
+"@
+    'python' = @"
+# ██████╗ ██╗   ██╗████████╗██╗  ██╗ ██████╗ ███╗   ██╗
+# ██╔══██╗╚██╗ ██╔╝╚══██╔══╝██║  ██║██╔═══██╗████╗  ██║
+# ██████╔╝ ╚████╔╝    ██║   ███████║██║   ██║██╔██╗ ██║
+# ██╔═══╝   ╚██╔╝     ██║   ██╔══██║██║   ██║██║╚██╗██║
+# ██║        ██║      ██║   ██║  ██║╚██████╔╝██║ ╚████║
+# ╚═╝        ╚═╝      ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+"@
+    'node' = @"
+# ███╗   ██╗ ██████╗ ██████╗ ███████╗
+# ████╗  ██║██╔═══██╗██╔══██╗██╔════╝
+# ██╔██╗ ██║██║   ██║██║  ██║█████╗
+# ██║╚██╗██║██║   ██║██║  ██║██╔══╝
+# ██║ ╚████║╚██████╔╝██████╔╝███████╗
+# ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝
+"@
+    'ruby' = @"
+# ██████╗ ██╗   ██╗██████╗ ██╗   ██╗
+# ██╔══██╗██║   ██║██╔══██╗╚██╗ ██╔╝
+# ██████╔╝██║   ██║██████╔╝ ╚████╔╝
+# ██╔══██╗██║   ██║██╔══██╗  ╚██╔╝
+# ██║  ██║╚██████╔╝██████╔╝   ██║
+# ╚═╝  ╚═╝ ╚═════╝ ╚═════╝    ╚═╝
+"@
+    'rust' = @"
+# ██████╗ ██╗   ██╗███████╗████████╗
+# ██╔══██╗██║   ██║██╔════╝╚══██╔══╝
+# ██████╔╝██║   ██║███████╗   ██║
+# ██╔══██╗██║   ██║╚════██║   ██║
+# ██║  ██║╚██████╔╝███████║   ██║
+# ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝
+"@
+    'golang' = @"
+#  ██████╗  ██████╗ ██╗      █████╗ ███╗   ██╗ ██████╗
+# ██╔════╝ ██╔═══██╗██║     ██╔══██╗████╗  ██║██╔════╝
+# ██║  ███╗██║   ██║██║     ███████║██╔██╗ ██║██║  ███╗
+# ██║   ██║██║   ██║██║     ██╔══██║██║╚██╗██║██║   ██║
+# ╚██████╔╝╚██████╔╝███████╗██║  ██║██║ ╚████║╚██████╔╝
+#  ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝
+"@
+    'lua' = @"
+# ██╗     ██╗   ██╗ █████╗
+# ██║     ██║   ██║██╔══██╗
+# ██║     ██║   ██║███████║
+# ██║     ██║   ██║██╔══██║
+# ███████╗╚██████╔╝██║  ██║
+# ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+"@
+    'perl' = @"
+# ██████╗ ███████╗██████╗ ██╗
+# ██╔══██╗██╔════╝██╔══██╗██║
+# ██████╔╝█████╗  ██████╔╝██║
+# ██╔═══╝ ██╔══╝  ██╔══██╗██║
+# ██║     ███████╗██║  ██║███████╗
+# ╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝
+"@
+    'php' = @"
+# ██████╗ ██╗  ██╗██████╗
+# ██╔══██╗██║  ██║██╔══██╗
+# ██████╔╝███████║██████╔╝
+# ██╔═══╝ ██╔══██║██╔═══╝
+# ██║     ██║  ██║██║
+# ╚═╝     ╚═╝  ╚═╝╚═╝
+"@
+    'bun' = @"
+# ██████╗ ██╗   ██╗███╗   ██╗
+# ██╔══██╗██║   ██║████╗  ██║
+# ██████╔╝██║   ██║██╔██╗ ██║
+# ██╔══██╗██║   ██║██║╚██╗██║
+# ██████╔╝╚██████╔╝██║ ╚████║
+# ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝
+"@
+    'nvm' = @"
+# ███╗   ██╗██╗   ██╗███╗   ███╗
+# ████╗  ██║██║   ██║████╗ ████║
+# ██╔██╗ ██║██║   ██║██╔████╔██║
+# ██║╚██╗██║╚██╗ ██╔╝██║╚██╔╝██║
+# ██║ ╚████║ ╚████╔╝ ██║ ╚═╝ ██║
+# ╚═╝  ╚═══╝  ╚═══╝  ╚═╝     ╚═╝
+"@
+    '1password' = @"
+#  ██╗██████╗  █████╗ ███████╗███████╗██╗    ██╗ ██████╗ ██████╗ ██████╗
+# ███║██╔══██╗██╔══██╗██╔════╝██╔════╝██║    ██║██╔═══██╗██╔══██╗██╔══██╗
+# ╚██║██████╔╝███████║███████╗███████╗██║ █╗ ██║██║   ██║██████╔╝██║  ██║
+#  ██║██╔═══╝ ██╔══██║╚════██║╚════██║██║███╗██║██║   ██║██╔══██╗██║  ██║
+#  ██║██║     ██║  ██║███████║███████║╚███╔███╔╝╚██████╔╝██║  ██║██████╔╝
+#  ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝ ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝
+"@
+    'op' = @"
+#  ██████╗ ██████╗
+# ██╔═══██╗██╔══██╗
+# ██║   ██║██████╔╝
+# ██║   ██║██╔═══╝
+# ╚██████╔╝██║
+#  ╚═════╝ ╚═╝
+"@
+    'zoxide' = @"
+# ███████╗ ██████╗ ██╗  ██╗██╗██████╗ ███████╗
+# ╚══███╔╝██╔═══██╗╚██╗██╔╝██║██╔══██╗██╔════╝
+#   ███╔╝ ██║   ██║ ╚███╔╝ ██║██║  ██║█████╗
+#  ███╔╝  ██║   ██║ ██╔██╗ ██║██║  ██║██╔══╝
+# ███████╗╚██████╔╝██╔╝ ██╗██║██████╔╝███████╗
+# ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝ ╚══════╝
+"@
+    'thefuck' = @"
+# ████████╗██╗  ██╗███████╗███████╗██╗   ██╗ ██████╗██╗  ██╗
+# ╚══██╔══╝██║  ██║██╔════╝██╔════╝██║   ██║██╔════╝██║ ██╔╝
+#    ██║   ███████║█████╗  █████╗  ██║   ██║██║     █████╔╝
+#    ██║   ██╔══██║██╔══╝  ██╔══╝  ██║   ██║██║     ██╔═██╗
+#    ██║   ██║  ██║███████╗██║     ╚██████╔╝╚██████╗██║  ██╗
+#    ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝      ╚═════╝  ╚═════╝╚═╝  ╚═╝
+"@
+    'topgrade' = @"
+# ████████╗ ██████╗ ██████╗  ██████╗ ██████╗  █████╗ ██████╗ ███████╗
+# ╚══██╔══╝██╔═══██╗██╔══██╗██╔════╝ ██╔══██╗██╔══██╗██╔══██╗██╔════╝
+#    ██║   ██║   ██║██████╔╝██║  ███╗██████╔╝███████║██║  ██║█████╗
+#    ██║   ██║   ██║██╔═══╝ ██║   ██║██╔══██╗██╔══██║██║  ██║██╔══╝
+#    ██║   ╚██████╔╝██║     ╚██████╔╝██║  ██║██║  ██║██████╔╝███████╗
+#    ╚═╝    ╚═════╝ ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝
+"@
+    'iterm2' = @"
+# ██╗████████╗███████╗██████╗ ███╗   ███╗██████╗
+# ██║╚══██╔══╝██╔════╝██╔══██╗████╗ ████║╚════██╗
+# ██║   ██║   █████╗  ██████╔╝██╔████╔██║ █████╔╝
+# ██║   ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██╔═══╝
+# ██║   ██║   ███████╗██║  ██║██║ ╚═╝ ██║███████╗
+# ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝
+"@
+    'vscode' = @"
+# ██╗   ██╗███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+# ██║   ██║██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+# ██║   ██║███████╗██║     ██║   ██║██║  ██║█████╗
+# ╚██╗ ██╔╝╚════██║██║     ██║   ██║██║  ██║██╔══╝
+#  ╚████╔╝ ███████║╚██████╗╚██████╔╝██████╔╝███████╗
+#   ╚═══╝  ╚══════╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
+"@
+    'zed' = @"
+# ███████╗███████╗██████╗
+# ╚══███╔╝██╔════╝██╔══██╗
+#   ███╔╝ █████╗  ██║  ██║
+#  ███╔╝  ██╔══╝  ██║  ██║
+# ███████╗███████╗██████╔╝
+# ╚══════╝╚══════╝╚═════╝
+"@
+    'opencode' = @"
+#  ██████╗ ██████╗ ███████╗███╗   ██╗ ██████╗ ██████╗ ██████╗ ███████╗
+# ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗██╔════╝
+# ██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║     ██║   ██║██║  ██║█████╗
+# ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║     ██║   ██║██║  ██║██╔══╝
+# ╚██████╔╝██║     ███████╗██║ ╚████║╚██████╗╚██████╔╝██████╔╝███████╗
+#  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
+"@
+    'scoop' = @"
+# ███████╗ ██████╗ ██████╗  ██████╗ ██████╗
+# ██╔════╝██╔════╝██╔═══██╗██╔═══██╗██╔══██╗
+# ███████╗██║     ██║   ██║██║   ██║██████╔╝
+# ╚════██║██║     ██║   ██║██║   ██║██╔═══╝
+# ███████║╚██████╗╚██████╔╝╚██████╔╝██║
+# ╚══════╝ ╚═════╝ ╚═════╝  ╚═════╝ ╚═╝
+"@
+    'winget' = @"
+# ██╗    ██╗██╗███╗   ██╗ ██████╗ ███████╗████████╗
+# ██║    ██║██║████╗  ██║██╔════╝ ██╔════╝╚══██╔══╝
+# ██║ █╗ ██║██║██╔██╗ ██║██║  ███╗█████╗     ██║
+# ██║███╗██║██║██║╚██╗██║██║   ██║██╔══╝     ██║
+# ╚███╔███╔╝██║██║ ╚████║╚██████╔╝███████╗   ██║
+#  ╚══╝╚══╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚══════╝   ╚═╝
+"@
+    'docker' = @"
+# ██████╗  ██████╗  ██████╗██╗  ██╗███████╗██████╗
+# ██╔══██╗██╔═══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗
+# ██║  ██║██║   ██║██║     █████╔╝ █████╗  ██████╔╝
+# ██║  ██║██║   ██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗
+# ██████╔╝╚██████╔╝╚██████╗██║  ██╗███████╗██║  ██║
+# ╚═════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+"@
+    'gh' = @"
+#  ██████╗ ██╗  ██╗
+# ██╔════╝ ██║  ██║
+# ██║  ███╗███████║
+# ██║   ██║██╔══██║
+# ╚██████╔╝██║  ██║
+#  ╚═════╝ ╚═╝  ╚═╝
+"@
+    'gitlab' = @"
+#  ██████╗ ██╗████████╗██╗      █████╗ ██████╗
+# ██╔════╝ ██║╚══██╔══╝██║     ██╔══██╗██╔══██╗
+# ██║  ███╗██║   ██║   ██║     ███████║██████╔╝
+# ██║   ██║██║   ██║   ██║     ██╔══██║██╔══██╗
+# ╚██████╔╝██║   ██║   ███████╗██║  ██║██████╔╝
+#  ╚═════╝ ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═════╝
+"@
+    'arduino' = @"
+#  █████╗ ██████╗ ██████╗ ██╗   ██╗██╗███╗   ██╗ ██████╗
+# ██╔══██╗██╔══██╗██╔══██╗██║   ██║██║████╗  ██║██╔═══██╗
+# ███████║██████╔╝██║  ██║██║   ██║██║██╔██╗ ██║██║   ██║
+# ██╔══██║██╔══██╗██║  ██║██║   ██║██║██║╚██╗██║██║   ██║
+# ██║  ██║██║  ██║██████╔╝╚██████╔╝██║██║ ╚████║╚██████╔╝
+# ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝
+"@
+    'vagrant' = @"
+# ██╗   ██╗ █████╗  ██████╗ ██████╗  █████╗ ███╗   ██╗████████╗
+# ██║   ██║██╔══██╗██╔════╝ ██╔══██╗██╔══██╗████╗  ██║╚══██╔══╝
+# ██║   ██║███████║██║  ███╗██████╔╝███████║██╔██╗ ██║   ██║
+# ╚██╗ ██╔╝██╔══██║██║   ██║██╔══██╗██╔══██║██║╚██╗██║   ██║
+#  ╚████╔╝ ██║  ██║╚██████╔╝██║  ██║██║  ██║██║ ╚████║   ██║
+#   ╚═══╝  ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝
+"@
+    'rdock' = @"
+# ██████╗ ██████╗  ██████╗  ██████╗██╗  ██╗
+# ██╔══██╗██╔══██╗██╔═══██╗██╔════╝██║ ██╔╝
+# ██████╔╝██║  ██║██║   ██║██║     █████╔╝
+# ██╔══██╗██║  ██║██║   ██║██║     ██╔═██╗
+# ██║  ██║██████╔╝╚██████╔╝╚██████╗██║  ██╗
+# ╚═╝  ╚═╝╚═════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝
+"@
+    'tinty' = @"
+# ████████╗██╗███╗   ██╗████████╗██╗   ██╗
+# ╚══██╔══╝██║████╗  ██║╚══██╔══╝╚██╗ ██╔╝
+#    ██║   ██║██╔██╗ ██║   ██║    ╚████╔╝
+#    ██║   ██║██║╚██╗██║   ██║     ╚██╔╝
+#    ██║   ██║██║ ╚████║   ██║      ██║
+#    ╚═╝   ╚═╝╚═╝  ╚═══╝   ╚═╝      ╚═╝
+"@
+    'pastel' = @"
+# ██████╗  █████╗ ███████╗████████╗███████╗██╗
+# ██╔══██╗██╔══██╗██╔════╝╚══██╔══╝██╔════╝██║
+# ██████╔╝███████║███████╗   ██║   █████╗  ██║
+# ██╔═══╝ ██╔══██║╚════██║   ██║   ██╔══╝  ██║
+# ██║     ██║  ██║███████║   ██║   ███████╗███████╗
+# ╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚══════╝
+"@
+    'pure' = @"
+# ██████╗ ██╗   ██╗██████╗ ███████╗
+# ██╔══██╗██║   ██║██╔══██╗██╔════╝
+# ██████╔╝██║   ██║██████╔╝█████╗
+# ██╔═══╝ ██║   ██║██╔══██╗██╔══╝
+# ██║     ╚██████╔╝██║  ██║███████╗
+# ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚══════╝
+"@
+    'spaceduck' = @"
+# ███████╗██████╗  █████╗  ██████╗███████╗██████╗ ██╗   ██╗ ██████╗██╗  ██╗
+# ██╔════╝██╔══██╗██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██║ ██╔╝
+# ███████╗██████╔╝███████║██║     █████╗  ██║  ██║██║   ██║██║     █████╔╝
+# ╚════██║██╔═══╝ ██╔══██║██║     ██╔══╝  ██║  ██║██║   ██║██║     ██╔═██╗
+# ███████║██║     ██║  ██║╚██████╗███████╗██████╔╝╚██████╔╝╚██████╗██║  ██╗
+# ╚══════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝╚═════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝
+"@
+}
+
+function Get-PackageNameForFile {
+    # Pick the most specific ASCII art for a file. Filename stem wins over
+    # the parent directory name so that e.g. dot_config/zsh/dot_zshrc.d/40-wezterm.zsh
+    # gets the wezterm art instead of zsh.
+    param(
+        [string]$FilePath,
+        [string]$DirPackageName,
+        [hashtable]$ArtMap
+    )
+
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($FilePath)
+    # Strip chezmoi attribute prefixes (dot_, private_, encrypted_, etc.) and
+    # leading numeric ordering prefixes like "25-" or "00_".
+    $stem = $stem -replace '^(dot|private|encrypted|empty|executable|once|run|symlink|create|modify|remove|exact)_', ''
+    $stem = $stem -replace '^[0-9]+[-_]', ''
+
+    # Try the whole stem first, then strip trailing "-something" segments to
+    # match the prefix (e.g. aliases-ndn -> aliases -> ... -> no match).
+    $candidate = $stem
+    while ($candidate) {
+        if ($ArtMap.ContainsKey($candidate)) { return $candidate }
+        if ($candidate -notmatch '-') { break }
+        $candidate = $candidate -replace '-[^-]+$', ''
+    }
+
+    # Fallback: the directory name (legacy behaviour).
+    return $DirPackageName
 }
 
 function Get-PackageDescription {
@@ -236,6 +565,43 @@ function Get-PackageDescription {
         'homebrew' = 'The Missing Package Manager for macOS (or Linux).'
         'tinted-theming' = 'Base16 and Base24 color scheme manager.'
         'windows' = 'Windows-specific configurations.'
+        'aliases' = 'Shorter command aliases.'
+        'functions' = 'Custom shell functions.'
+        'helpers' = 'Internal helper utilities.'
+        'history' = 'Shell history configuration.'
+        'completions' = 'Shell completion definitions.'
+        'paths' = 'PATH and environment paths.'
+        'python' = 'Python language tooling.'
+        'node' = 'Node.js runtime and tooling.'
+        'ruby' = 'Ruby language tooling.'
+        'rust' = 'Rust language tooling.'
+        'golang' = 'Go language tooling.'
+        'lua' = 'Lua language tooling.'
+        'perl' = 'Perl language tooling.'
+        'php' = 'PHP language tooling.'
+        'bun' = 'Fast JavaScript runtime and toolkit.'
+        'nvm' = 'Node Version Manager.'
+        '1password' = '1Password secret manager and SSH agent.'
+        'op' = '1Password CLI.'
+        'zoxide' = 'A smarter cd command.'
+        'thefuck' = 'Magnificent app that corrects previous console command.'
+        'topgrade' = 'Upgrade all the things.'
+        'iterm2' = 'macOS terminal replacement.'
+        'vscode' = 'Visual Studio Code editor.'
+        'zed' = 'High-performance multiplayer code editor.'
+        'opencode' = 'AI coding agent built for the terminal.'
+        'scoop' = 'Windows command-line installer.'
+        'winget' = 'Windows Package Manager.'
+        'docker' = 'Container platform.'
+        'gh' = 'GitHub command-line tool.'
+        'gitlab' = 'GitLab command-line tool (glab).'
+        'arduino' = 'Arduino microcontroller toolchain.'
+        'vagrant' = 'Portable development environments.'
+        'rdock' = 'Rdock display and dashboard tool.'
+        'tinty' = 'Tinted-theming CLI for base16/base24.'
+        'pastel' = 'Generate, analyze, convert and manipulate colors.'
+        'pure' = 'Pure prompt for zsh.'
+        'spaceduck' = 'Spaceduck color theme.'
     }
     
     return $descriptions[$Package]
@@ -246,69 +612,79 @@ function Add-HeaderToFile {
         [string]$FilePath,
         [string]$PackageName,
         [string]$AsciiArt,
-        [bool]$IsDryRun
+        [bool]$IsDryRun,
+        [bool]$ForceReplace
     )
-    
+
     $content = Get-Content -Path $FilePath -Raw
-    
-    # Check if file already has ASCII art header
-    if ($content -match '███') {
-        Write-Host "  ⏭️  Skipping (already has header): $FilePath" -ForegroundColor Yellow
+    if ($null -eq $content) { $content = '' }
+
+    # Detect any existing ASCII art block (uses █ = full block). The block
+    # is the run of consecutive `# ...█...` lines plus the trailing
+    # `# <description>` / `#` lines up to the first blank line.
+    $hasHeader = $content -match '^(?:#[^\r\n]*█[^\r\n]*\r?\n)+'
+
+    if ($hasHeader -and -not $ForceReplace) {
+        Write-Host "  ⏭️  Skipping (already has header, use -Force to replace): $FilePath" -ForegroundColor Yellow
         return
     }
-    
-    # Get package description
+
+    if ($hasHeader) {
+        # Strip the existing header block: art lines + immediately following
+        # `# <text>` and bare `#` lines, up to the first blank line.
+        $stripPattern = '\A(?:#[^\r\n]*█[^\r\n]*\r?\n)+(?:#[^\r\n]*\r?\n)*\r?\n?'
+        $content = [regex]::Replace($content, $stripPattern, '')
+    }
+
     $description = Get-PackageDescription -Package $PackageName
-    
-    # Build header
     $header = "$AsciiArt`n"
-    if ($description) {
-        $header += "# $description`n"
-    }
+    if ($description) { $header += "# $description`n" }
     $header += "#`n`n"
-    
-    # Determine comment style based on file extension
-    $ext = [System.IO.Path]::GetExtension($FilePath)
-    
+
+    $verb = if ($hasHeader) { 'Replaced' } else { 'Added' }
+
     if ($IsDryRun) {
-        Write-Host "  ✓ Would add header to: $FilePath" -ForegroundColor Cyan
-        Write-Host $header -ForegroundColor Gray
+        Write-Host "  ✓ Would $($verb.ToLower()) header in: $FilePath (package=$PackageName)" -ForegroundColor Cyan
         return
     }
-    
-    # Add header to file
+
     $newContent = $header + $content
-    Set-Content -Path $FilePath -Value $newContent -NoNewline
-    
-    Write-Host "  ✓ Added header to: $FilePath" -ForegroundColor Green
+    Set-Content -Path $FilePath -Value $newContent -NoNewline -Encoding utf8
+    Write-Host "  ✓ $verb header in: $FilePath (package=$PackageName)" -ForegroundColor Green
 }
 
 function Process-ConfigDirectory {
     param(
         [string]$Path,
-        [bool]$IsDryRun
+        [bool]$IsDryRun,
+        [bool]$ForceReplace
     )
-    
-    # Get all config directories
+
     $configDirs = Get-ChildItem -Path $Path -Directory
-    
+
     foreach ($dir in $configDirs) {
-        $packageName = $dir.Name
-        
-        # Skip if no ASCII art defined
-        if (-not $asciiArt.ContainsKey($packageName)) {
-            Write-Host "⏭️  Skipping $packageName (no ASCII art defined)" -ForegroundColor Gray
-            continue
-        }
-        
-        Write-Host "`n📦 Processing $packageName..." -ForegroundColor Cyan
-        
-        # Find config files (including shell scripts and templates)
-        $configFiles = Get-ChildItem -Path $dir.FullName -File -Recurse | 
+        $dirPackageName = $dir.Name
+
+        # Skip the directory entirely only if it has neither a directory-level
+        # art nor any filename-derivable art. We can't know that without
+        # walking the files; cheaper to walk and per-file fall back to skip.
+        $dirHasArt = $asciiArt.ContainsKey($dirPackageName)
+
+        Write-Host "`n📦 Processing $dirPackageName..." -ForegroundColor Cyan
+
+        $configFiles = Get-ChildItem -Path $dir.FullName -File -Recurse |
             Where-Object { $_.Extension -in @('.conf', '.config', '', '.toml', '.yaml', '.yml', '.json', '.bash', '.zsh', '.sh', '.tmpl') }
-        
+
         foreach ($file in $configFiles) {
-            Add-HeaderToFile -FilePath $file.FullName -PackageName $packageName -AsciiArt $asciiArt[$packageName] -IsDryRun $IsDryRun
+            $pkg = Get-PackageNameForFile -FilePath $file.FullName -DirPackageName $dirPackageName -ArtMap $asciiArt
+            if (-not $asciiArt.ContainsKey($pkg)) {
+                if ($dirHasArt) { $pkg = $dirPackageName }
+                else {
+                    Write-Host "  ⏭️  Skipping (no matching art): $($file.FullName)" -ForegroundColor DarkGray
+                    continue
+                }
+            }
+            Add-HeaderToFile -FilePath $file.FullName -PackageName $pkg -AsciiArt $asciiArt[$pkg] -IsDryRun $IsDryRun -ForceReplace $ForceReplace
         }
     }
 }
@@ -322,7 +698,7 @@ if ($DryRun) {
     Write-Host "🔍 DRY RUN MODE - No files will be modified`n" -ForegroundColor Yellow
 }
 
-Process-ConfigDirectory -Path $ConfigDir -IsDryRun $DryRun
+Process-ConfigDirectory -Path $ConfigDir -IsDryRun $DryRun -ForceReplace $Force
 
 Write-Host "`n✅ Complete!" -ForegroundColor Green
 

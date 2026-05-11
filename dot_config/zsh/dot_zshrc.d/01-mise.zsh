@@ -1,3 +1,12 @@
+# ███╗   ███╗██╗███████╗███████╗
+# ████╗ ████║██║██╔════╝██╔════╝
+# ██╔████╔██║██║███████╗█████╗
+# ██║╚██╔╝██║██║╚════██║██╔══╝
+# ██║ ╚═╝ ██║██║███████║███████╗
+# ╚═╝     ╚═╝╚═╝╚══════╝╚══════╝
+# Polyglot tool version manager.
+#
+
 # Early mise initialization for WSL
 # Sets env vars BEFORE config discovery - actual activation in 50-mise.zsh
 if [[ -n "$WSL_DISTRO_NAME" ]] || grep -qiE "(microsoft|wsl)" /proc/version 2>/dev/null; then

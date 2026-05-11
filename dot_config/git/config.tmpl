@@ -1,9 +1,9 @@
-#  ΓûêΓûêΓûêΓûêΓûêΓûêΓòù ΓûêΓûêΓòùΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓòù
-# ΓûêΓûêΓòöΓòÉΓòÉΓòÉΓòÉΓò¥ ΓûêΓûêΓòæΓòÜΓòÉΓòÉΓûêΓûêΓòöΓòÉΓòÉΓò¥
-# ΓûêΓûêΓòæ  ΓûêΓûêΓûêΓòùΓûêΓûêΓòæ   ΓûêΓûêΓòæ
-# ΓûêΓûêΓòæ   ΓûêΓûêΓòæΓûêΓûêΓòæ   ΓûêΓûêΓòæ
-# ΓòÜΓûêΓûêΓûêΓûêΓûêΓûêΓòöΓò¥ΓûêΓûêΓòæ   ΓûêΓûêΓòæ
-#  ΓòÜΓòÉΓòÉΓòÉΓòÉΓòÉΓò¥ ΓòÜΓòÉΓò¥   ΓòÜΓòÉΓò¥
+#  ██████╗ ██╗████████╗
+# ██╔════╝ ██║╚══██╔══╝
+# ██║  ███╗██║   ██║
+# ██║   ██║██║   ██║
+# ╚██████╔╝██║   ██║
+#  ╚═════╝ ╚═╝   ╚═╝
 # Distributed version control system.
 #
 
@@ -30,6 +30,23 @@
 {{- else }}
 	# Unix: Keep LF line endings
 	autocrlf = input
+{{- end }}
+{{- if .setup_1password }}
+{{- if eq .chezmoi.os "windows" }}
+	# Windows: Use native OpenSSH which reads ~/.ssh/config for 1Password agent
+	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
+{{- else if and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
+	# WSL: Use Windows SSH to access 1Password agent on Windows host
+	sshCommand = /mnt/c/Windows/System32/OpenSSH/ssh.exe
+{{- else if eq .chezmoi.os "darwin" }}
+	# macOS: 1Password SSH agent path contains spaces (Group Container), which git
+	# cannot quote inside core.sshCommand. IdentityAgent is declared in
+	# ~/.ssh/config.d/10-1password-darwin.conf, and SSH_AUTH_SOCK is exported by
+	# the zsh 1Password integration (10-1password-ssh-agent.zsh).
+{{- else }}
+	# Native Linux: 1Password SSH agent via socket
+	sshCommand = ssh -o IdentityAgent=~/.1password/agent.sock
+{{- end }}
 {{- end }}
 
 [init]
@@ -75,8 +92,12 @@
 
 {{- if eq .chezmoi.os "windows" }}
 [credential]
-	# Windows: Use Git Credential Manager
+	# Windows: Git Credential Manager handles HTTPS auth (push goes over SSH via
+	# 1Password agent; this only covers HTTPS fetches that need a token).
 	helper = manager
+[credential "helperselector"]
+	# Pin the helper choice so GCM doesn't prompt when multiple helpers exist.
+	selected = manager
 {{- end }}
 
 # Delta (diff tool) configuration
@@ -107,7 +128,7 @@
 	diffFilter = delta --color-only
 
 # Color configuration (spaceduck-harmonious)
-# NOTE: [color "diff"] intentionally omitted ΓÇö delta handles all diff coloring
+# NOTE: [color "diff"] intentionally omitted — delta handles all diff coloring
 # via syntax-theme + minus/plus styles. Git's color.diff.old interferes with
 # delta's syntax highlighting on removed lines.
 [color]
@@ -125,33 +146,17 @@
 	local = "#5ccc96" bold
 	remote = "#42b3c2" bold
 
-# 1Password SSH Agent
+# 1Password SSH Agent: push over SSH (auth via 1Password), fetch over HTTPS
+# (auth via GCM if a private repo needs a token). Symmetric for every host
+# below to keep behaviour predictable.
 {{- if .setup_1password }}
-# Use SSH for GitHub pushes when 1Password agent is available
 [url "git@github.com:"]
 	pushInsteadOf = https://github.com/
-{{- if eq .chezmoi.os "windows" }}
-[core]
-	# Windows: Use native OpenSSH which reads ~/.ssh/config for 1Password agent
-	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
-{{- else if and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
-[core]
-	# WSL: Use Windows SSH to access 1Password agent on Windows host
-	sshCommand = /mnt/c/Windows/System32/OpenSSH/ssh.exe
-{{- else if eq .chezmoi.os "darwin" }}
-# macOS: 1Password SSH agent path contains spaces (Group Container), which git
-# cannot quote inside core.sshCommand. IdentityAgent is declared in
-# ~/.ssh/config.d/10-1password-darwin.conf, and SSH_AUTH_SOCK is exported by
-# the zsh 1Password integration (10-1password-ssh-agent.zsh).
-{{- else }}
-[core]
-	# Native Linux: 1Password SSH agent via socket
-	sshCommand = ssh -o IdentityAgent=~/.1password/agent.sock
-{{- end }}
+[url "git@git.dreamhost.com:"]
+	pushInsteadOf = https://git.dreamhost.com/
 {{- end }}
 {{- if eq .chezmoi.os "windows" }}
 [safe]
-	directory = D:/
 	# Wildcard allows repos on drives with ownership mismatches (e.g. files
 	# originally created under a different Windows user SID). Safe on a
 	# personal developer machine where you control what repos you clone.
