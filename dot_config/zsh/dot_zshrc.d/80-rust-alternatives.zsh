@@ -1,3 +1,12 @@
+# ██████╗ ██╗   ██╗███████╗████████╗
+# ██╔══██╗██║   ██║██╔════╝╚══██╔══╝
+# ██████╔╝██║   ██║███████╗   ██║
+# ██╔══██╗██║   ██║╚════██║   ██║
+# ██║  ██║╚██████╔╝███████║   ██║
+# ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝
+# Rust language tooling.
+#
+
 # Modern Rust-based replacements for traditional Unix tools
 # These shadow the legacy command names so muscle memory works
 # Use `command <original>` to bypass (e.g. `command find`)

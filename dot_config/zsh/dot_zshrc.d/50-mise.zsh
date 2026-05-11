@@ -4,7 +4,7 @@
 # ██║╚██╔╝██║██║╚════██║██╔══╝
 # ██║ ╚═╝ ██║██║███████║███████╗
 # ╚═╝     ╚═╝╚═╝╚══════╝╚══════╝
-# Polyglot runtime manager
+# Polyglot tool version manager.
 #
 
 #!/usr/bin/env zsh

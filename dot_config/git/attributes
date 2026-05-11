@@ -1,3 +1,12 @@
+#  ██████╗ ██╗████████╗
+# ██╔════╝ ██║╚══██╔══╝
+# ██║  ███╗██║   ██║
+# ██║   ██║██║   ██║
+# ╚██████╔╝██║   ██║
+#  ╚═════╝ ╚═╝   ╚═╝
+# Distributed version control system.
+#
+
 # Global git attributes (managed by chezmoi)
 # Personal preference: LF everywhere on this machine. Per-repo .gitattributes
 # always overrides these rules, so this never imposes anything on teammates.
