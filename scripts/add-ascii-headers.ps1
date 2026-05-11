@@ -579,13 +579,26 @@ function Get-PackageNameForFile {
     $stem = $stem -replace '^(dot|private|encrypted|empty|executable|once|run|symlink|create|modify|remove|exact)_', ''
     $stem = $stem -replace '^[0-9]+[-_]', ''
 
-    # Try the whole stem first, then strip trailing "-something" segments to
-    # match the prefix (e.g. aliases-ndn -> aliases -> ... -> no match).
+    # Try the whole stem first, then peel trailing ".something" or "-something"
+    # segments to find a match. This handles both:
+    #   - aliases-ndn        -> aliases
+    #   - golang.zsh         -> golang   (after the outer .tmpl already stripped)
+    #   - 1password-setup-op -> 1password
+    # Prefer stripping dot-suffixes first (inner template type, e.g. `.zsh`,
+    # `.lua`) before hyphen-suffixes so language helpers like 70-golang.zsh.tmpl
+    # resolve to 'golang' instead of falling all the way back to the zsh dir.
     $candidate = $stem
     while ($candidate) {
         if ($ArtMap.ContainsKey($candidate)) { return $candidate }
-        if ($candidate -notmatch '-') { break }
-        $candidate = $candidate -replace '-[^-]+$', ''
+        if ($candidate -match '\.') {
+            $candidate = $candidate -replace '\.[^.]+$', ''
+            continue
+        }
+        if ($candidate -match '-') {
+            $candidate = $candidate -replace '-[^-]+$', ''
+            continue
+        }
+        break
     }
 
     # Fallback: the directory name (legacy behaviour).
