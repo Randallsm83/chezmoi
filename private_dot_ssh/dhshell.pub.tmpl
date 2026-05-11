@@ -1,3 +1,1 @@
-{{- with dig "secrets" "ssh_pub_***REMOVED***" "" . -}}
-{{ . }}
-{{- end -}}
+{{ includeTemplate "ssh-pub-resolve" (dict "key" "ssh_pub_***REMOVED***" "comment" "***REMOVED*** SSH Key" "root" .) }}

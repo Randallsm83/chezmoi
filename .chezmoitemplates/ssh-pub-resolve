@@ -1,0 +1,37 @@
+{{- /*
+Resolve an SSH public key as a single line of text.
+
+Order of precedence:
+  1. .secrets.<key>  (populated by `op inject` at chezmoi init time)
+  2. The running ssh-agent, matched by SSH comment suffix
+     (non-Windows only; relies on a forwarded 1Password agent or
+     locally-loaded keys)
+  3. Empty string
+
+The agent fallback is what keeps SSH working on remote hosts (yakko,
+porky, raspi, etc.) where the 1Password CLI is intentionally absent
+and `.secrets.ssh_pub_*` therefore renders empty.
+
+Args (dict):
+  key      string  secret data key, e.g. "ssh_pub_dh_yakko"
+  comment  string  SSH comment suffix to match in `ssh-add -L`,
+                   e.g. "Yakko SSH Key"
+  root     dict    pass `.` from the caller so we can read .secrets
+                   and .chezmoi.os
+Usage:
+  {{ includeTemplate "ssh-pub-resolve" (dict
+       "key" "ssh_pub_dh_yakko"
+       "comment" "Yakko SSH Key"
+       "root" .) }}
+*/ -}}
+{{- $val := dig "secrets" .key "" .root -}}
+{{- if and (eq $val "") (ne .root.chezmoi.os "windows") -}}
+  {{- $match := .comment -}}
+  {{- $agent := output "sh" "-c" "ssh-add -L 2>/dev/null || true" -}}
+  {{- range $line := splitList "\n" $agent -}}
+    {{- if and (ne $line "") (hasSuffix $match $line) -}}
+      {{- $val = $line -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $val -}}

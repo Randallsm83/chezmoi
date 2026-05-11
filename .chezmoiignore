@@ -273,23 +273,28 @@ Library/**
 {{- end }}
 {{- end }}
 
-{{- /* SSH .pub hints are templated from .secrets.ssh_pub_*; on machines
-      without a resolved secrets map (remotes without `op`, or configs
-      generated before [data.secrets] existed) the templates render
-      empty and chezmoi would *delete* the on-disk hint files, breaking
-      `IdentitiesOnly yes` host blocks in dot_ssh/config.tmpl.
-      Skip these targets entirely when secrets are absent so existing
-      hints (typically extracted once from the forwarded 1Password
-      agent via `ssh-add -L`) are preserved. */ -}}
-{{- if not (hasKey . "secrets") }}
-.ssh/github_com.pub
-.ssh/gitlab_com.pub
-.ssh/dh_git.pub
-.ssh/dh_yakko.pub
-.ssh/dh_porky.pub
-.ssh/***REMOVED***.pub
-.ssh/fp3.pub
-.ssh/raspi.pub
+{{- /* SSH .pub hints are sourced via .chezmoitemplates/ssh-pub-resolve
+      which tries .secrets.ssh_pub_* first, then falls back to the
+      running ssh-agent (matched by SSH comment suffix) on Unix.
+      If neither source yields a value the rendered file would be
+      empty and overwrite a previously-seeded hint, which breaks
+      `IdentitiesOnly yes` host blocks in dot_ssh/private_config.tmpl.
+      Skip per-target only when its resolved value is empty so other
+      hints still deploy. */ -}}
+{{- $ssh_pubs := list
+    (list "github_com"  "ssh_pub_github_com"  "GitHub SSH Key")
+    (list "gitlab_com"  "ssh_pub_gitlab_com"  "GitLab SSH Key")
+    (list "dh_git"      "ssh_pub_dh_git"      "Dreamhost GIt SSH Key")
+    (list "dh_yakko"    "ssh_pub_dh_yakko"    "Yakko SSH Key")
+    (list "dh_porky"    "ssh_pub_dh_porky"    "Porky SSH Key")
+    (list "***REMOVED***" "ssh_pub_***REMOVED***" "***REMOVED*** SSH Key")
+    (list "fp3"         "ssh_pub_fp3"         "fp3 SSH Key")
+    (list "raspi"       "ssh_pub_raspi"       "ranmil@raspi") -}}
+{{- range $p := $ssh_pubs -}}
+{{- $resolved := includeTemplate "ssh-pub-resolve" (dict "key" (index $p 1) "comment" (index $p 2) "root" $) | trim -}}
+{{- if eq $resolved "" }}
+.ssh/{{ index $p 0 }}.pub
+{{- end -}}
 {{- end }}
 
 {{- /* Mise tier-specific configs - keep only the active tier's file */ -}}
