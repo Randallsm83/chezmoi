@@ -673,7 +673,7 @@ function Process-ConfigDirectory {
         Write-Host "`n📦 Processing $dirPackageName..." -ForegroundColor Cyan
 
         $configFiles = Get-ChildItem -Path $dir.FullName -File -Recurse |
-            Where-Object { $_.Extension -in @('.conf', '.config', '', '.toml', '.yaml', '.yml', '.json', '.bash', '.zsh', '.sh', '.tmpl') }
+            Where-Object { $_.Extension -in @('.conf', '.config', '', '.toml', '.yaml', '.yml', '.json', '.bash', '.zsh', '.sh', '.tmpl', '.ps1') }
 
         foreach ($file in $configFiles) {
             $pkg = Get-PackageNameForFile -FilePath $file.FullName -DirPackageName $dirPackageName -ArtMap $asciiArt
