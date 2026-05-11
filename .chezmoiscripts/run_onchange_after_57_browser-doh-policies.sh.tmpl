@@ -151,12 +151,14 @@ run_darwin() {
 
     # Cleanup: drop policy files for browsers that have been removed from the
     # list (or the whole feature has been disabled).
+    # Use if/fi (not `[ ] && cmd`) so a "nothing to remove" path doesn't make
+    # the function return non-zero and trip `set -e`.
     declare -A want=()
     for b in "${BROWSERS[@]}"; do [ "$ENABLED" = "true" ] && want["$b"]=1; done
-    [ -z "${want[firefox]:-}" ] && remove_firefox_darwin
-    [ -z "${want[chrome]:-}"  ] && remove_chromium_darwin "chrome" "com.google.Chrome"
-    [ -z "${want[edge]:-}"    ] && remove_chromium_darwin "edge"   "com.microsoft.Edge"
-    [ -z "${want[brave]:-}"   ] && remove_chromium_darwin "brave"  "com.brave.Browser"
+    if [ -z "${want[firefox]:-}" ]; then remove_firefox_darwin; fi
+    if [ -z "${want[chrome]:-}"  ]; then remove_chromium_darwin "chrome" "com.google.Chrome"; fi
+    if [ -z "${want[edge]:-}"    ]; then remove_chromium_darwin "edge"   "com.microsoft.Edge";   fi
+    if [ -z "${want[brave]:-}"   ]; then remove_chromium_darwin "brave"  "com.brave.Browser";    fi
 }
 
 # ─── Linux branch ───────────────────────────────────────────────────────────
