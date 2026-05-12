@@ -40,12 +40,17 @@ if (Get-Command eza -ErrorAction SilentlyContinue) {
     $env:FZF_ALT_C_OPTS = "--preview 'eza --tree --level=2 --color=always {}' --preview-window=right:60%"
 }
 
-# Initialize PSFzf module if available
-if (Get-Module -ListAvailable -Name PSFzf) {
+# Initialize PSFzf module if available.
+#
+# Warp intercepts the PSReadLine chords (Ctrl+R, Ctrl+T, Alt+C, Tab) that PSFzf
+# binds to, so loading the module there pays a ~240ms cost for keybindings that
+# never fire. The fh/fe/fcd/ff/fgb/fgl/fkill/ftab helper functions below are the
+# Warp-friendly replacements. Skip the heavy import inside Warp.
+if ($env:TERM_PROGRAM -ne 'WarpTerminal' -and (Get-Module -ListAvailable -Name PSFzf)) {
     Import-Module PSFzf -ErrorAction SilentlyContinue
-    
+
     if (Get-Module PSFzf) {
-        # Set keybindings - use explicit PSReadLineKeyHandler for better Warp compatibility
+        # Set keybindings - use explicit PSReadLineKeyHandler for better terminal compatibility
         try {
             Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r' -ErrorAction Stop
         } catch {
@@ -56,7 +61,7 @@ if (Get-Module -ListAvailable -Name PSFzf) {
                 [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
             }
         }
-        
+
         # Enable tab completion only if PSCompletions isn't handling it
         if (-not (Get-Module PSCompletions)) {
             Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }

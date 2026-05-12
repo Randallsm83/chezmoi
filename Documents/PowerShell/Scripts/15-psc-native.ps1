@@ -2,16 +2,44 @@
 # ╠═╝╚═╗║    │││├─┤ │ │└┐┌┘├┤
 # ╩  ╚═╝╚═╝  ┘└┘┴ ┴ ┴ ┴ └┘ └─┘
 # Bridge PSCompletions data to native Register-ArgumentCompleter
-# so completions work in terminals without psc's custom menu (e.g., Warp)
+# so completions work in terminals without psc's custom menu (e.g., Warp).
+#
+# The parsed completion-tree hashtable is CACHED to disk via Export-Clixml.
+# Rebuilds only when the psc completions root (or any of its subdirs) is
+# newer than the cache.
 
 $pscRoot = "$HOME\scoop\modules\PSCompletions\completions"
 if (-not (Test-Path $pscRoot)) { return }
+
+$pscCacheFile = Join-Path $env:XDG_CACHE_HOME "powershell\psc-trees.clixml"
+$pscCacheDir = Split-Path $pscCacheFile
+if (-not (Test-Path $pscCacheDir)) {
+    New-Item -ItemType Directory -Path $pscCacheDir -Force | Out-Null
+}
 
 # Commands that already have dedicated native completions — skip these
 $completionsDir = Join-Path (Split-Path $PROFILE) "Completions"
 $existing = @()
 if (Test-Path $completionsDir) {
     $existing = @(Get-ChildItem "$completionsDir\*.ps1" -EA SilentlyContinue | ForEach-Object { $_.BaseName })
+}
+
+# Cache invalidation: rebuild if cache missing or if any psc completion dir
+# has been modified since the cache was last written.
+$pscRebuild = -not (Test-Path $pscCacheFile)
+if (-not $pscRebuild) {
+    $pscCacheTime = (Get-Item $pscCacheFile).LastWriteTime
+    $pscRootMtime = (Get-Item $pscRoot).LastWriteTime
+    if ($pscRootMtime -gt $pscCacheTime) {
+        $pscRebuild = $true
+    } else {
+        $latestSub = (Get-ChildItem $pscRoot -Directory -EA SilentlyContinue |
+            ForEach-Object { $_.LastWriteTime } |
+            Measure-Object -Maximum).Maximum
+        if ($latestSub -and $latestSub -gt $pscCacheTime) {
+            $pscRebuild = $true
+        }
+    }
 }
 
 # Global store for parsed completion trees (keyed by command name)
@@ -181,32 +209,47 @@ $pscNativeCompleter = {
     return $results
 }
 
-# Process each psc completion directory
-foreach ($dir in (Get-ChildItem $pscRoot -Directory)) {
-    $cmdName = $dir.Name
+if ($pscRebuild) {
+    # Walk every psc completion directory, parse JSON, build hashtable trees.
+    $trees = @{}
+    foreach ($dir in (Get-ChildItem $pscRoot -Directory)) {
+        $cmdName = $dir.Name
+        if ($cmdName -in $existing) { continue }
 
-    # Skip commands with dedicated native completers
-    if ($cmdName -in $existing) { continue }
+        $jsonPath = Join-Path $dir.FullName "language\en-US.json"
+        if (-not (Test-Path $jsonPath)) { continue }
 
-    $jsonPath = Join-Path $dir.FullName "language\en-US.json"
-    if (-not (Test-Path $jsonPath)) { continue }
+        try {
+            $data = Get-Content -Raw $jsonPath -Encoding utf8 | ConvertFrom-Json
+        }
+        catch { continue }
 
-    try {
-        $data = Get-Content -Raw $jsonPath -Encoding utf8 | ConvertFrom-Json
+        $tree = ConvertTo-CompletionTree `
+            -Items         @($data.root) `
+            -Options       @($data.options) `
+            -CommonOptions @($data.common_options)
+
+        $trees[$cmdName] = $tree
     }
-    catch { continue }
 
-    $tree = ConvertTo-CompletionTree `
-        -Items      @($data.root) `
-        -Options    @($data.options) `
-        -CommonOptions @($data.common_options)
+    $global:__psc_trees = $trees
+    try {
+        $trees | Export-Clixml -Path $pscCacheFile -Depth 100 -Force
+    } catch {
+        Write-Verbose "psc-trees cache write failed: $($_.Exception.Message)"
+    }
+} else {
+    try {
+        $global:__psc_trees = Import-Clixml -Path $pscCacheFile
+    } catch {
+        Write-Verbose "psc-trees cache load failed; ignoring: $($_.Exception.Message)"
+        $global:__psc_trees = @{}
+    }
+}
 
-    $global:__psc_trees[$cmdName] = $tree
-
-    # Determine all command names (primary + aliases from psc list)
-    $cmdNames = @($cmdName)
-
-    Register-ArgumentCompleter -Native -CommandName $cmdNames -ScriptBlock $pscNativeCompleter
+# Register native ArgumentCompleter for every command we have a tree for.
+foreach ($cmdName in $global:__psc_trees.Keys) {
+    Register-ArgumentCompleter -Native -CommandName $cmdName -ScriptBlock $pscNativeCompleter
 }
 
 # vim: ts=2 sts=2 sw=2 et

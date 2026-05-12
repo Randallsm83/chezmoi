@@ -70,8 +70,12 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
 }
 
 # PSCompletions (completion manager) - must load AFTER PSReadLine key bindings
-# as it overrides Tab with its own custom menu
-if (Get-Module -ListAvailable -Name PSCompletions) {
+# as it overrides Tab with its own custom menu.
+#
+# In Warp the custom Tab menu doesn't render usefully, and `15-psc-native.ps1`
+# already bridges psc's JSON data to native ArgumentCompleters that DO work in
+# Warp. Skip the heavy Import-Module here (~180ms) when running inside Warp.
+if ($env:TERM_PROGRAM -ne 'WarpTerminal' -and (Get-Module -ListAvailable -Name PSCompletions)) {
     Import-Module PSCompletions
     $PSCompletions.init_data()
     $PSCompletions.handle_completion()
@@ -96,9 +100,29 @@ if (Test-Path $scriptsDir) {
     }
 }
 
-# Import GamePerformanceOptimizer
+# GamePerformanceOptimizer - lazy-loaded to avoid ~2s startup cost.
+# Stubs for the module's exported commands trigger Import-Module on first use,
+# then re-invoke the now-real command.
 if (Get-Module -ListAvailable -Name GamePerformanceOptimizer) {
-    Import-Module GamePerformanceOptimizer
+    $gpoCommands = @(
+        'Add-GameSecurityExclusion',
+        'Remove-GameSecurityExclusion',
+        'Get-GameSecurityExclusion',
+        'Add-ShaderCacheExclusion',
+        'Add-BulkGameExclusions',
+        'Set-GameProcessPriority',
+        'Remove-GameProcessPriority',
+        'Export-GameOptimizations',
+        'Import-GameOptimizations'
+    )
+    foreach ($cmd in $gpoCommands) {
+        $sb = [scriptblock]::Create(@"
+            Remove-Item Function:\$cmd -ErrorAction SilentlyContinue
+            Import-Module GamePerformanceOptimizer
+            & $cmd @args
+"@)
+        Set-Item -Path "Function:\$cmd" -Value $sb -Force
+    }
 }
 
 
