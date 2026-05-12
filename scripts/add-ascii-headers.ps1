@@ -540,7 +540,6 @@ function Get-CommentPrefix {
     param([string]$EffectiveExt)
     switch ($EffectiveExt.ToLower()) {
         '.lua'   { return '--' }
-        '.jsonc' { return '//' }
         default  { return '#' }
     }
 }
@@ -758,10 +757,10 @@ function Process-ConfigDirectory {
         $configFiles = Get-ChildItem -Path $dir.FullName -File -Recurse |
             Where-Object { $_.Extension -in @(
                 '.conf', '.config', '', '.toml', '.yaml', '.yml',
-                '.json', '.jsonc', '.bash', '.zsh', '.sh', '.tmpl',
+                '.bash', '.zsh', '.sh', '.tmpl',
                 '.ps1', '.lua', '.py', '.dircolors', '.env',
                 '.zsh-syntax-theme', '.example'
-            ) }
+            ) -and $_.Name -notmatch '\.(json|jsonc)(\.tmpl)?$' }
 
         foreach ($file in $configFiles) {
             $pkg = Get-PackageNameForFile -FilePath $file.FullName -DirPackageName $dirPackageName -ArtMap $asciiArt
