@@ -55,6 +55,14 @@ $funcNames = @(
         Sort-Object -Unique
 )
 
+# When uutils-coreutils is active, it owns these as executables.
+# Skip creating stubs — the body's conditional block won't redefine them,
+# so the stub would call itself recursively (call-depth overflow).
+if ($env:__UUTILS_COREUTILS) {
+    $coreutilsOwned = @('rm', 'cp', 'mv', 'touch')
+    $funcNames = $funcNames | Where-Object { $coreutilsOwned -notcontains $_ }
+}
+
 # Global guard so the body file is dot-sourced at most once per session, even
 # if two stubs are called in quick succession or recursively.
 if (-not (Get-Variable '__99_functions_loaded' -Scope Global -ErrorAction SilentlyContinue)) {

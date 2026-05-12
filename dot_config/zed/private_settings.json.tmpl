@@ -1,32 +1,16 @@
-# ███████╗███████╗██████╗
-# ╚══███╔╝██╔════╝██╔══██╗
-#   ███╔╝ █████╗  ██║  ██║
-#  ███╔╝  ██╔══╝  ██║  ██║
-# ███████╗███████╗██████╔╝
-# ╚══════╝╚══════╝╚═════╝
-# High-performance multiplayer code editor.
-#
+// ███████╗███████╗██████╗
+// ╚══███╔╝██╔════╝██╔══██╗
+//   ███╔╝ █████╗  ██║  ██║
+//  ███╔╝  ██╔══╝  ██║  ██║
+// ███████╗███████╗██████╔╝
+// ╚══════╝╚══════╝╚═════╝
+// High-performance multiplayer code editor.
+//
 
-{{- /*
-Zed editor settings template.
-
-Secrets are pulled from 1Password at apply time:
-  - Tavily MCP                : op://Personal/Tavily/credential  (item id: ytw3xmw4bkb7u5yamcdzgdsy7u)
-  - GitHub MCP PAT            : op://Personal/GitHub Token/token
-  - GitLab MCP PAT (DH)       : .secrets.dh_gitlab_pat (op://DH/DH Gitlab PAT/credential)
-
-`private_` prefix → 0600 on Unix; required because the rendered file
-contains decoded secret material from 1Password.
-
-TODO(homelab): The `edit_predictions` block (OpenAI-compatible API
-pointing at https://ai.raspi.homelab/v1/completions) was dropped from
-this template on 2026-05-03. Decommission the corresponding endpoint
-from the homelab once nothing else references it.
-*/ -}}
 {
   "$schema": "https://zed.dev/schema/settings.json",
 
-  // ── Theme & UI ────────────────────────────────────────────────
+  // ── Theme & UI ──────────────────────────────────
   "theme": {
     "mode": "dark",
     "light": "Spaceduck",
@@ -51,7 +35,7 @@ from the homelab once nothing else references it.
   },
   "buffer_line_height": "comfortable",
 
-  // ── Editor behavior ──────────────────────────────────────────
+  // ── Editor behavior ────────────────────────────────
   "vim_mode": true,
   "relative_line_numbers": true,
   "cursor_blink": false,
@@ -69,7 +53,7 @@ from the homelab once nothing else references it.
   "confirm_quit": false,
   "use_smartcase_search": true,
 
-  // ── Files & exclusions ───────────────────────────────────────
+  // ── Files & exclusions ─────────────────────────────
   "file_scan_exclusions": [
     "**/.git",
     "**/.svn",
@@ -88,7 +72,7 @@ from the homelab once nothing else references it.
   ],
   "auto_update": true,
 
-  // ── Telemetry / Privacy ──────────────────────────────────────
+  // ── Telemetry / Privacy ─────────────────────────────
   "telemetry": {
     "diagnostics": false,
     "metrics": false
@@ -97,7 +81,7 @@ from the homelab once nothing else references it.
     "trust_all_worktrees": true
   },
 
-  // ── Terminal ─────────────────────────────────────────────────
+  // ── Terminal ─────────────────────────────────────
   "terminal": {
     "shell": {
       "program": "/bin/zsh"
@@ -109,7 +93,7 @@ from the homelab once nothing else references it.
     "working_directory": "current_project_directory"
   },
 
-  // ── Git & version control ────────────────────────────────────
+  // ── Git & version control ─────────────────────────────
   "git": {
     "git_gutter": "tracked_files",
     "inline_blame": {
@@ -118,7 +102,7 @@ from the homelab once nothing else references it.
     }
   },
 
-  // ── Project panel & UI ───────────────────────────────────────
+  // ── Project panel & UI ─────────────────────────────
   "project_panel": {
     "dock": "left",
     "default_width": 280,
@@ -147,7 +131,7 @@ from the homelab once nothing else references it.
     "coloring": "indent_aware"
   },
 
-  // ── Language defaults ────────────────────────────────────────
+  // ── Language defaults ───────────────────────────────
   "languages": {
     "Rust": {
       "tab_size": 4,
@@ -209,7 +193,7 @@ from the homelab once nothing else references it.
     }
   },
 
-  // ── LSP tweaks ───────────────────────────────────────────────
+  // ── LSP tweaks ────────────────────────────────────
   "lsp": {
     "rust-analyzer": {
       "initialization_options": {
@@ -228,7 +212,7 @@ from the homelab once nothing else references it.
     }
   },
 
-  // ── MCP / Context servers ────────────────────────────────────
+  // ── MCP / Context servers ─────────────────────────────
   // Secrets templated from 1Password at apply time.
   "context_servers": {
     "serena-context-server": {
@@ -262,7 +246,7 @@ from the homelab once nothing else references it.
     }
   },
 
-  // ── AI / Agent ───────────────────────────────────────────────
+  // ── AI / Agent ────────────────────────────────────
   "features": {
     "edit_prediction_provider": "zed"
   },
@@ -486,7 +470,7 @@ from the homelab once nothing else references it.
     }
   },
 
-  // ── Extensions to auto-install ───────────────────────────────
+  // ── Extensions to auto-install ───────────────────────
   // Note: Spaceduck is not in Zed's extension registry; it's installed as a
   // user theme JSON in ~/.config/zed/themes/spaceduck.json.
   "auto_install_extensions": {

@@ -91,7 +91,7 @@ function Invoke-OpEnsure {
     # op writes shell-export syntax to stdout when not running in a
     # `Invoke-Expression $(op signin)` pattern, and we don't need that
     # because the desktop app integration sets the session for us.
-    & op signin 2>&1 | Out-Null
+    # & op signin 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
         $Global:__OP_ENSURED = $true
         return $true
