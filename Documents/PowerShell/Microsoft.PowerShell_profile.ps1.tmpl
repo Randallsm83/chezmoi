@@ -178,22 +178,18 @@ $global:ErrorActionPreference = 'Continue'
 {{- if .setup_1password }}
 $env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"
 
-# Eagerly unlock the 1Password CLI on shell start so that SSH agent
-# signing (git push, ssh) and `op read` / `op run` calls work the moment
-# the prompt is interactive. The 1Password SSH agent serves cached key
-# *metadata* even when the vault is locked, so `ssh-add -l` succeeds
-# but `ssh` / `git push` fail with "communication with agent failed"
-# until the vault is unlocked. op-ensure (defined in Scripts/80-op.ps1)
-# checks `op whoami`, prompts biometric on first invocation, and caches
-# the result so subsequent shell-load calls are no-ops.
+# NOTE: op-ensure is intentionally lazy. Earlier versions of this profile
+# called `Invoke-OpEnsure -Quiet` at every shell start, but on Windows the
+# 1Password CLI authorization handshake is keyed to the *parent process*,
+# so each new pwsh.exe re-triggers the desktop "Authorize 1Password CLI"
+# biometric prompt regardless of vault unlock duration. Authorizing only
+# on demand (from Invoke-OpRun, when a secret is actually needed) means
+# opening a shell is silent; the prompt fires the first time you run
+# `opr <tool>` per shell, which is when the secret is required anyway.
 #
-# Skip cleanly when:
-#   - stdin is redirected (CI, scripts) -> op-ensure short-circuits.
-#   - $env:SCOTT_SKIP_OP_ENSURE is set, useful for benchmark/diagnostic
-#     sessions where the biometric prompt is unwanted.
-if (-not $env:SCOTT_SKIP_OP_ENSURE -and (Get-Command Invoke-OpEnsure -ErrorAction SilentlyContinue)) {
-    [void](Invoke-OpEnsure -Quiet)
-}
+# git push / ssh continue to work because they consume the 1Password SSH
+# agent over the named pipe directly; that path doesn't require the CLI
+# to be authorized, only the desktop vault to be unlocked.
 {{- end }}
 
 # Warp API Key (resolved once via batched op inject in .chezmoi.toml.tmpl).

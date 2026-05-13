@@ -21,30 +21,36 @@ if (Test-Path $opPluginsFile) {
 
 <#
 .SYNOPSIS
-    Idempotent 1Password CLI sign-in. Returns $true when `op` is usable for
-    secret reads (whoami succeeds), $false otherwise.
+    Idempotent 1Password CLI sign-in. Returns $true when `op` is usable
+    for secret reads (whoami succeeds), $false otherwise.
 
 .DESCRIPTION
-    Solves the recurring "agent ready but vault locked" failure where
-    `ssh-add -l` enumerates keys from the 1Password SSH agent but signing
-    requests fail because the vault is locked. After op-ensure succeeds,
-    signing works too, because both flows depend on the same desktop-app
-    unlock state.
+    With the desktop-app CLI integration enabled, an unlocked vault is
+    necessary but not sufficient: `op` also needs a per-binary CLI
+    authorization handshake. Until that handshake exists, every `op`
+    call returns "account is not signed in" even while the desktop app
+    is unlocked. Running `op signin` triggers the desktop app's
+    "Authorize 1Password CLI" prompt (biometric / Windows Hello), and
+    on success a session is established that persists across shells.
 
-    Caching: once op whoami succeeds in this shell, subsequent calls are
-    no-ops thanks to a process-scoped $Global:__OP_ENSURED sentinel.
+    Flow:
+      1. Short-circuit if we've already verified op in this shell.
+      2. Short-circuit if OP_SERVICE_ACCOUNT_TOKEN is set (headless).
+      3. Probe `op whoami`. If it exits 0, we're done.
+      4. If stdin is redirected (CI, scripts), bail without prompting.
+      5. Otherwise run `op signin` once and re-check via whoami.
+         Stdout is discarded because integration-mode signin does not
+         emit `OP_SESSION_*` exports we'd need to eval.
 
-    Headless: if OP_SERVICE_ACCOUNT_TOKEN is set, op derives auth from it
-    and needs no sign-in. We honor that by short-circuiting straight to
-    success on the Pi and other non-GUI hosts.
-
-    Non-interactive: if stdin is redirected (CI, scripts) we never prompt
-    for sign-in; we just report that op isn't ready and let the caller
-    decide how to fail.
+    Caching: once whoami succeeds in this shell, subsequent calls are
+    no-ops thanks to a process-scoped $Global:__OP_ENSURED sentinel. A
+    failed signin is NOT cached so a later desktop unlock + retry can
+    succeed without spawning a new shell.
 
 .PARAMETER Quiet
     Suppress the "signing in..." notice on the first sign-in of the
-    session. Useful for shell-startup wiring.
+    session. Used by shell-startup wiring so a fresh prompt doesn't
+    print chatter when the handshake is already cached.
 
 .OUTPUTS
     [bool] $true when op is signed in (or assumed signed in via
@@ -68,36 +74,43 @@ function Invoke-OpEnsure {
     }
 
     # Cheap probe: op whoami exits 0 only when the desktop vault is
-    # unlocked and the CLI has a session.
+    # unlocked AND the CLI has an authorized session.
     $null = & op whoami 2>$null
     if ($LASTEXITCODE -eq 0) {
         $Global:__OP_ENSURED = $true
         return $true
     }
 
-    # Stdin redirected => non-interactive context. Don't hang on a prompt.
+    # Stdin redirected => non-interactive context. Don't hang waiting
+    # for a desktop prompt the user can't see.
     if ([System.Console]::IsInputRedirected) {
         return $false
     }
 
     if (-not $Quiet) {
-        Write-Host '1Password: signing in (vault locked)...' -ForegroundColor DarkGray
+        Write-Host '1Password: authorizing CLI (approve in desktop app)...' -ForegroundColor DarkGray
     }
 
-    # `op signin` with the desktop app integration triggers a biometric /
-    # master-password prompt and finishes in ~1s on success. We don't pin
-    # an account because the user has exactly one configured here; op
-    # picks it automatically. The redirect to Out-Null is intentional:
-    # op writes shell-export syntax to stdout when not running in a
-    # `Invoke-Expression $(op signin)` pattern, and we don't need that
-    # because the desktop app integration sets the session for us.
-    # & op signin 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        $Global:__OP_ENSURED = $true
-        return $true
+    # `op signin` with desktop integration raises the "Authorize 1Password
+    # CLI" prompt in the desktop app. Stdout is discarded because in
+    # integration mode it's empty; in legacy mode it would be the
+    # `export OP_SESSION_*=...` syntax we don't want leaking into the
+    # shell. We capture the signin's own exit code immediately so we
+    # don't confuse it with the prior whoami failure.
+    & op signin 2>$null | Out-Null
+    $signinExit = $LASTEXITCODE
+
+    if ($signinExit -eq 0) {
+        # Re-probe rather than trusting the signin exit code alone: the
+        # handshake can succeed-but-yield-no-session in edge cases.
+        $null = & op whoami 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            $Global:__OP_ENSURED = $true
+            return $true
+        }
     }
 
-    Write-Warning 'op signin failed; secrets-dependent commands will fail until you unlock 1Password.'
+    Write-Warning 'op signin failed; secrets-dependent commands will fail until 1Password CLI access is authorized.'
     return $false
 }
 Set-Alias -Name op-ensure -Value Invoke-OpEnsure -Scope Global
