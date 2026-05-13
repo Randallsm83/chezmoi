@@ -260,6 +260,11 @@ The pwsh helper:
     command = "nvim"
 
 [diff]
+    # Disable the pager so `chezmoi apply` never blocks on `more`/`less`
+    # waiting for stdin. When the apply also calls `sudo -v` (e.g. the
+    # vpn-dns reconcile script), a stuck pager owns the TTY and causes
+    # sudo to silently fail with 3 incorrect password attempts.
+    pager = ""
     # Delta provides nice diffs; falls back to built-in diff if not found
     # Uncomment after first chezmoi apply installs delta via mise
     # command = "delta"
