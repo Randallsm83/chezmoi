@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/theme.json",
+  "name": "Spaceduck",
   "defs": {
     "bg":            "#0f111b",
     "bgPanel":       "#16172d",

@@ -27,7 +27,10 @@ if (-not (Test-Path $env:STARSHIP_CACHE)) {
 # =============================================================================
 
 if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Invoke-Expression (&starship init powershell)
+    # Skip starship in Warp - conflicts with Warp's shell integration
+    if ($env:TERM_PROGRAM -ne 'WarpTerminal') {
+        Invoke-Expression (&starship init powershell)
+    }
 }
 
 # vim: ts=2 sts=2 sw=2 et

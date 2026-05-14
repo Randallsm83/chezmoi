@@ -229,7 +229,8 @@ Add-ToPath "$HOME\scoop\shims"
 
 # `mise activate pwsh` output is cached: rebuilds when the binary or the global
 # config.toml change. Saves a ~120-500ms subprocess on every shell start.
-if ($miseCommand = Get-Command mise -ErrorAction SilentlyContinue) {
+# Skip mise activate in Warp - conflicts with Warp's shell integration
+if ($env:TERM_PROGRAM -ne 'WarpTerminal' -and ($miseCommand = Get-Command mise -ErrorAction SilentlyContinue)) {
     $misePath = if ($miseCommand.Source) { $miseCommand.Source } else { $miseCommand.Definition }
     $miseConfig = $env:MISE_GLOBAL_CONFIG_FILE
 
