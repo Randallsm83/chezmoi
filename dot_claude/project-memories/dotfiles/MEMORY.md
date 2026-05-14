@@ -1,1 +1,0 @@
-- [Dotfiles source directory](feedback_dotfiles_source.md) — Real chezmoi source is ~/.local/share/dotfiles, not ~/projects/dotfiles

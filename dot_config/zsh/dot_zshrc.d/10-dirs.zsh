@@ -36,7 +36,7 @@ export PROJECTS="$HOME/projects"
 export DHSPACE="$PROJECTS/dh"
 export NOTES="$PROJECTS/notes"
 
-export DOTFILES="$XDG_CONFIG_HOME/dotfiles"
+export DOTFILES="$XDG_DATA_HOME/chezmoi"
 
 env_dirs=(
   "$ENV_DIRS"

@@ -1423,7 +1423,7 @@ remote_packages:
 # Claude Code encodes paths like: C:\Users\randa\projects → C--Users-randa-projects
 # The encoding differs per OS, so we compute it at apply time.
 claude_memory_projects:
-  dotfiles: "projects/dotfiles"
+  chezmoi: "projects/chezmoi"
   projects: "projects"
 
 # ============================================================================

@@ -33,9 +33,9 @@ sshkeygen() {
   ssh-keygen -t ed25519 -f ~/.ssh/"$1" -C "$2"
 }
 
-# Install dotfiles
+# Install chezmoi-managed dotfiles
 dotinstall() {
-  bash <(wget -qO- https://raw.githubusercontent.com/Randallsm83/dotfiles/refs/heads/main/install.sh)
+  bash <(wget -qO- https://raw.githubusercontent.com/Randallsm83/chezmoi/refs/heads/main/install.sh)
 }
 
 # Quick move up directories
