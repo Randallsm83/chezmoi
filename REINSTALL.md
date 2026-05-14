@@ -84,7 +84,7 @@ This is the main automation step. One command does most of the work:
 
 ```powershell
 # Option A: Direct from GitHub (production)
-iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Randallsm83/chezmoi/main/bootstrap.ps1 | iex
 
 # Option B: With scoop/winget exports for faster bulk install
 .\bootstrap.ps1 -ScoopExport A:\bak\scoop-export.json -WingetExport A:\bak\winget-export.json

@@ -10,7 +10,7 @@ Modern, cross-platform dotfile management using [chezmoi](https://www.chezmoi.io
 
 ### Windows (PowerShell)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/Randallsm83/chezmoi/main/bootstrap.ps1 | iex
 ```
 
 ### Windows — Restore from Scoop Export (fastest)
@@ -23,12 +23,12 @@ irm get.scoop.sh | iex
 scoop import .\scoop-export.json
 
 # 3. Apply configs
-chezmoi init --apply Randallsm83/dotfiles
+chezmoi init --apply Randallsm83/chezmoi
 ```
 
 Or use the bootstrap script with `-ScoopExport`:
 ```powershell
-iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 -OutFile bootstrap.ps1
+iwr -useb https://raw.githubusercontent.com/Randallsm83/chezmoi/main/bootstrap.ps1 -OutFile bootstrap.ps1
 .\bootstrap.ps1 -ScoopExport .\scoop-export.json
 ```
 
@@ -36,7 +36,7 @@ iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.
 
 ### Unix/Linux/WSL (bash/zsh)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Randallsm83/chezmoi/main/setup.sh | bash
 ```
 
 This single command will:
@@ -190,7 +190,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)"
 
 ### 2. Initialize from this repository
 ```bash
-chezmoi init --apply Randallsm83/dotfiles
+chezmoi init --apply Randallsm83/chezmoi
 ```
 
 ### 3. Verify and update
@@ -244,7 +244,7 @@ Package lists are in `.chezmoidata.yaml` under `packages.scoop`, `winget_package
 ## 📁 Repository Structure
 
 ```
-.local/share/dotfiles/          # Chezmoi source directory
+.local/share/chezmoi/          # Chezmoi source directory
 ├── .chezmoi.toml.tmpl         # Chezmoi configuration
 ├── .chezmoidata.yaml          # Template variables & feature flags
 ├── .chezmoiignore             # Platform & package exclusions
@@ -359,7 +359,7 @@ This repository replaces the old GNU Stow-based dotfiles with modern chezmoi:
 - ✅ ~5-10 minute setup (vs 30-60 minutes)
 
 **Old repository**: Stow-based (deprecated)  
-**New repository**: This one (`Randallsm83/dotfiles`)
+**New repository**: This one (`Randallsm83/chezmoi`)
 
 ---
 
