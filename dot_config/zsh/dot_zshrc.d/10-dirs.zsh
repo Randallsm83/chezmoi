@@ -34,9 +34,12 @@ export SSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ssh"
 export MYSPACE="$HOME/Dev"
 export PROJECTS="$HOME/projects"
 export DHSPACE="$PROJECTS/dh"
+export BACKEND="$DHSPACE/BACKEND"
+export FRONTEND="$DHSPACE/FRONTEND"
+export HELPSERVICES="$DHSPACE/HELPSERVICES"
 export NOTES="$PROJECTS/notes"
 
-export DOTFILES="$XDG_DATA_HOME/chezmoi"
+export DOTFILES="$XDG_CONFIG_HOME/dotfiles"
 
 env_dirs=(
   "$ENV_DIRS"

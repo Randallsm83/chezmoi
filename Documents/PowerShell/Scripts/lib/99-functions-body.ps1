@@ -75,32 +75,41 @@ function functions {
 # Navigation Functions
 # ================================================================================================
 
-if (Test-DirectoryExists $env:PROJECTS) {
-    function cdp { Set-Location "$env:PROJECTS" }
-}
+# Workspace roots
+if (Test-DirectoryExists $env:PROJECTS)     { function cdp    { Set-Location "$env:PROJECTS" } }
+if (Test-DirectoryExists $env:DHSPACE)      { function dh     { Set-Location "$env:DHSPACE" } }
+if (Test-DirectoryExists $env:BACKEND)      { function cdbe   { Set-Location "$env:BACKEND" } }
+if (Test-DirectoryExists $env:FRONTEND)     { function cdfe   { Set-Location "$env:FRONTEND" } }
+if (Test-DirectoryExists $env:HELPSERVICES) { function cdhs   { Set-Location "$env:HELPSERVICES" } }
+if (Test-DirectoryExists $env:DOTFILES)     { function dots   { Set-Location "$env:DOTFILES" } }
+if (Test-DirectoryExists $env:NOTES)        { function notes  { Set-Location "$env:NOTES" } }
 
-if (Test-DirectoryExists "$env:DHSPACE\ndn") {
-    function cdn { Set-Location "$env:DHSPACE\ndn" }
-}
+# Top-level DH repos (live directly under $DHSPACE)
+if (Test-DirectoryExists "$env:DHSPACE\ndn")             { function cdn      { Set-Location "$env:DHSPACE\ndn" } }
+if (Test-DirectoryExists "$env:DHSPACE\ndn-audit")       { function cdaudit  { Set-Location "$env:DHSPACE\ndn-audit" } }
+if (Test-DirectoryExists "$env:DHSPACE\pam")             { function cdpam    { Set-Location "$env:DHSPACE\pam" } }
+if (Test-DirectoryExists "$env:DHSPACE\scott")           { function cdscott  { Set-Location "$env:DHSPACE\scott" } }
+if (Test-DirectoryExists "$env:DHSPACE\task-management") { function cdtm     { Set-Location "$env:DHSPACE\task-management" } }
 
-if (Test-DirectoryExists "$env:DHSPACE\api-gateway") {
-    function cdapi { Set-Location "$env:DHSPACE\api-gateway" }
-}
+# Common backend services (under $BACKEND)
+if (Test-DirectoryExists "$env:BACKEND\api-gateway")     { function cdapi    { Set-Location "$env:BACKEND\api-gateway" } }
+if (Test-DirectoryExists "$env:BACKEND\cdn-service")     { function cdcdn    { Set-Location "$env:BACKEND\cdn-service" } }
 
-if (Test-DirectoryExists "$env:DHSPACE\cdn-service") {
-    function cdcdn { Set-Location "$env:DHSPACE\cdn-service" }
-}
-
-if (Test-DirectoryExists $env:DHSPACE) {
-    function dh { Set-Location "$env:DHSPACE" }
-}
-
-if (Test-DirectoryExists $env:DOTFILES) {
-    function dots { Set-Location "$env:DOTFILES" }
-}
-
-if (Test-DirectoryExists $env:NOTES) {
-    function notes { Set-Location "$env:NOTES" }
+<#
+.SYNOPSIS
+    Run a git command across every service repo under BACKEND/FRONTEND/HELPSERVICES.
+#>
+function dhgitall {
+    foreach ($root in @($env:BACKEND, $env:FRONTEND, $env:HELPSERVICES)) {
+        if (-not (Test-DirectoryExists $root)) { continue }
+        Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+            if (Test-Path (Join-Path $_.FullName '.git')) {
+                Write-Host "=== $($_.Name) ===" -ForegroundColor Cyan
+                Push-Location $_.FullName
+                try { git @args } finally { Pop-Location }
+            }
+        }
+    }
 }
 
 function .. { Set-Location .. }
