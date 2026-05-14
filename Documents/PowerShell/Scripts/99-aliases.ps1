@@ -12,9 +12,10 @@
 # Environment Variables
 # ================================================================================================
 
-$env:DHSPACE = "D:\DH Dev"
-$env:DOTFILES = "$HOME\.local\share\chezmoi"
-$env:PROJECTS = "D:\DH Dev\projects"
+$env:PROJECTS = Join-Path $HOME 'projects'
+$env:DHSPACE  = Join-Path $env:PROJECTS 'dh'
+$env:NOTES    = Join-Path $env:PROJECTS 'notes'
+$env:DOTFILES = Join-Path $HOME '.local' 'share' 'chezmoi'
 
 # ================================================================================================
 # Profile Management

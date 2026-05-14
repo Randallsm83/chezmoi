@@ -119,16 +119,16 @@ mkcd() { mkdir -p "$1" && cd "$1" }
 # Fuzzy find note by name, open in Obsidian (requires: fd, fzf, bat, obsidian CLI)
 nf() {
   local file
-  file=$(fd --type f --extension md . ~/notes | sed "s|$HOME/notes/||" \
-    | fzf --preview 'bat --color=always ~/notes/{}')
+  file=$(fd --type f --extension md . "$NOTES" | sed "s|$NOTES/||" \
+    | fzf --preview "bat --color=always $NOTES/{}")
   [[ -n "$file" ]] && obsidian open "file=$file"
 }
 
 # Fuzzy search note content, open match in Obsidian (requires: rg, fzf, obsidian CLI)
 nfs() {
   local file
-  file=$(rg --type md -l "$1" ~/notes | sed "s|$HOME/notes/||" \
-    | fzf --preview "rg --color=always '$1' ~/notes/{}")
+  file=$(rg --type md -l "$1" "$NOTES" | sed "s|$NOTES/||" \
+    | fzf --preview "rg --color=always '$1' $NOTES/{}")
   [[ -n "$file" ]] && obsidian open "file=$file"
 }
 
@@ -142,7 +142,7 @@ nc() {
 }
 
 # Grep notes (raw, no app required)
-ngrep() { rg --type md "$@" ~/notes; }
+ngrep() { rg --type md "$@" "$NOTES"; }
 
 # List all note/Obsidian aliases and functions with dependency status
 note-tools() {
@@ -175,7 +175,7 @@ note-tools() {
 
   echo "\n${CYAN}Commands${RESET}"
   local cmds=(
-    "notes:cd ~/notes"
+    "notes:cd \$NOTES"
     "n [args]:obsidian CLI passthrough"
     "nd:open today's daily note"
     "nt:list today's tasks"
