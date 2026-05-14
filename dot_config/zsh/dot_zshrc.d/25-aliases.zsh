@@ -19,16 +19,16 @@ alias aliases='alias | sed "s/=.*//"'
 alias functions='declare -f | grep "^[a-z].* ()" | sed "s/{$//"'
 
 # Navigate to projects root
-alias cdp='cd /home/rmiller/projects'
+alias cdp='cd $PROJECTS'
 
 # Quick navigation to repos
-alias cdn='cd $HOME/projects/ndn'
-alias cdapi='cd $HOME/projects/api-gateway'
-alias cdcdn='cd $HOME/projects/cdn-service'
+alias cdn='cd $DHSPACE/ndn'
+alias cdapi='cd $DHSPACE/api-gateway'
+alias cdcdn='cd $DHSPACE/cdn-service'
 
 # Run command in all repos
 function dhgitall() {
-    for dir in /home/rmiller/projects/*/; do
+    for dir in "$DHSPACE"/*/; do
         (cd "$dir" && echo "=== $(basename $dir) ===" && git "$@")
     done
 }
@@ -39,7 +39,7 @@ alias has='curl -sL https://git.io/_has | bash -s '
 # CD Shortcuts
 alias dh='cd $DHSPACE'
 alias dots='cd $DOTFILES'
-alias notes='cd ~/notes'
+alias notes='cd $NOTES'
 
 # Chezmoi
 alias czs='chezmoi status'                          # what's changed

@@ -79,16 +79,16 @@ if (Test-DirectoryExists $env:PROJECTS) {
     function cdp { Set-Location "$env:PROJECTS" }
 }
 
-if (Test-DirectoryExists "$env:PROJECTS\ndn") {
-    function cdn { Set-Location "$env:PROJECTS\ndn" }
+if (Test-DirectoryExists "$env:DHSPACE\ndn") {
+    function cdn { Set-Location "$env:DHSPACE\ndn" }
 }
 
-if (Test-DirectoryExists "$env:PROJECTS\api-gateway") {
-    function cdapi { Set-Location "$env:PROJECTS\api-gateway" }
+if (Test-DirectoryExists "$env:DHSPACE\api-gateway") {
+    function cdapi { Set-Location "$env:DHSPACE\api-gateway" }
 }
 
-if (Test-DirectoryExists "$env:PROJECTS\cdn-service") {
-    function cdcdn { Set-Location "$env:PROJECTS\cdn-service" }
+if (Test-DirectoryExists "$env:DHSPACE\cdn-service") {
+    function cdcdn { Set-Location "$env:DHSPACE\cdn-service" }
 }
 
 if (Test-DirectoryExists $env:DHSPACE) {
@@ -99,8 +99,8 @@ if (Test-DirectoryExists $env:DOTFILES) {
     function dots { Set-Location "$env:DOTFILES" }
 }
 
-if (Test-DirectoryExists "$env:USERPROFILE\notes") {
-    function notes { Set-Location "$env:USERPROFILE\notes" }
+if (Test-DirectoryExists $env:NOTES) {
+    function notes { Set-Location "$env:NOTES" }
 }
 
 function .. { Set-Location .. }
@@ -136,7 +136,7 @@ if (Test-CommandExists 'obsidian') {
 # Fuzzy find note by name, open in Obsidian (requires: fd, fzf, bat, obsidian)
 if ((Test-CommandExists 'fd') -and (Test-CommandExists 'fzf') -and (Test-CommandExists 'obsidian')) {
     function nf {
-        $notesPath = "$env:USERPROFILE\notes"
+        $notesPath = $env:NOTES
         $file = fd --type f --extension md . $notesPath |
             ForEach-Object { $_ -replace [regex]::Escape("$notesPath\"), '' } |
             fzf --preview "bat --color=always $notesPath\{}"
@@ -148,7 +148,7 @@ if ((Test-CommandExists 'fd') -and (Test-CommandExists 'fzf') -and (Test-Command
 if ((Test-CommandExists 'rg') -and (Test-CommandExists 'fzf') -and (Test-CommandExists 'obsidian')) {
     function nfs {
         param([Parameter(Mandatory)][string]$Query)
-        $notesPath = "$env:USERPROFILE\notes"
+        $notesPath = $env:NOTES
         $file = rg --type md -l $Query $notesPath |
             ForEach-Object { $_ -replace [regex]::Escape("$notesPath\"), '' } |
             fzf --preview "rg --color=always $Query $notesPath\{}"
@@ -160,7 +160,7 @@ if ((Test-CommandExists 'rg') -and (Test-CommandExists 'fzf') -and (Test-Command
 if (Test-CommandExists 'rg') {
     function ngrep {
         param([Parameter(ValueFromRemainingArguments)][string[]]$Args)
-        rg --type md @Args "$env:USERPROFILE\notes"
+        rg --type md @Args $env:NOTES
     }
 }
 
@@ -188,7 +188,7 @@ function note-tools {
 
     Write-Host "`nCommands" -ForegroundColor Cyan
     $cmds = @(
-        @{ Cmd = 'notes';           Does = 'cd ~/notes' }
+        @{ Cmd = 'notes';           Does = 'cd $env:NOTES' }
         @{ Cmd = 'n [args]';        Does = 'obsidian CLI passthrough' }
         @{ Cmd = 'nd';              Does = "open today's daily note" }
         @{ Cmd = 'nt';              Does = "list today's tasks" }
