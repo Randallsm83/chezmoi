@@ -24,7 +24,7 @@ The dotfiles automatically detect remote environments and adjust accordingly:
 
 ```bash
 # One-line install on remote machine
-curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Randallsm83/chezmoi/main/setup.sh | bash
 ```
 
 This will:
@@ -39,7 +39,7 @@ If you prefer manual control:
 
 ```bash
 # 1. Install chezmoi
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init Randallsm83/dotfiles
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init Randallsm83/chezmoi
 
 # 2. Review what will be installed
 chezmoi diff
@@ -458,7 +458,7 @@ Don't install everything at once on remote:
 
 ```bash
 # 1. Start minimal
-chezmoi init --apply Randallsm83/dotfiles
+chezmoi init --apply Randallsm83/chezmoi
 
 # 2. Install only what you need
 mise use node@latest

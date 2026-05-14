@@ -525,7 +525,7 @@ chezmoi add --encrypt ~/.ssh/id_ed25519
 
 # Method 2: Manual encryption
 age -r $(age-keygen -y ~/.config/chezmoi/key.txt) \
-    -o ~/.local/share/dotfiles/private_dot_ssh/private_id_ed25519.age \
+    -o ~/.local/share/chezmoi/private_dot_ssh/private_id_ed25519.age \
     ~/.ssh/id_ed25519
 ```
 
@@ -534,7 +534,7 @@ age -r $(age-keygen -y ~/.config/chezmoi/key.txt) \
 # Encrypt GitHub token
 echo -n "ghp_your_token_here" | \
     age -r $(age-keygen -y ~/.config/chezmoi/key.txt) \
-    > ~/.local/share/dotfiles/encrypted_github_token.age
+    > ~/.local/share/chezmoi/encrypted_github_token.age
 ```
 
 ### Usage in Templates
@@ -815,7 +815,7 @@ A: Run validation script or check `.chezmoiscripts/run_onchange_before_01_valida
 - [1Password CLI Documentation](https://developer.1password.com/docs/cli/)
 - [age Documentation](https://github.com/FiloSottile/age)
 - [chezmoi Secrets Documentation](https://www.chezmoi.io/user-guide/password-managers/)
-- [.chezmoi.local.toml.example](https://github.com/Randallsm83/dotfiles/blob/main/.chezmoi.local.toml.example)
+- [.chezmoi.local.toml.example](https://github.com/Randallsm83/chezmoi/blob/main/.chezmoi.local.toml.example)
 
 ---
 

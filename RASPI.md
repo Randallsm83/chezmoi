@@ -9,7 +9,7 @@ A consolidated, **medium-tier** profile for a Raspberry Pi (aarch64 Debian Bookw
 One-liner from a fresh Pi over SSH:
 
 ```sh
-RASPI=1 curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+RASPI=1 curl -fsSL https://raw.githubusercontent.com/Randallsm83/chezmoi/main/setup.sh | bash
 ```
 
 `setup.sh` will:
@@ -92,7 +92,7 @@ Common tweaks:
 chezmoi update
 
 # Refresh apt extras and shims
-RASPI=1 ~/.local/share/dotfiles/setup.sh   # idempotent
+RASPI=1 ~/.local/share/chezmoi/setup.sh   # idempotent
 
 # Refresh mise tools
 mise upgrade

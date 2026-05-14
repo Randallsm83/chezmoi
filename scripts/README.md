@@ -38,7 +38,7 @@ pwsh .\reset-wsl-arch.ps1 -ChezmoisRepo "yourusername/your-dotfiles"
 **Parameters:**
 - `DistroName` - WSL distribution name (default: `archlinux`)
 - `SkipBootstrap` - Skip chezmoi bootstrap after WSL installation
-- `ChezmoisRepo` - GitHub repository for dotfiles (default: `Randallsm83/dotfiles`)
+- `ChezmoisRepo` - GitHub repository for dotfiles (default: `Randallsm83/chezmoi`)
 - `ChezmoiBranch` - Git branch to use (default: `main`)
 
 **Duration:** ~10-15 minutes for complete setup
@@ -54,13 +54,13 @@ pwsh .\reset-wsl-arch.ps1 -ChezmoisRepo "yourusername/your-dotfiles"
 
 ### Reset Arch Linux WSL (Full)
 ```powershell
-pwsh $HOME\.local\share\dotfiles\scripts\reset-wsl-arch.ps1
+pwsh $HOME\.local\share\chezmoi\scripts\reset-wsl-arch.ps1
 ```
 
 ### Manual Bootstrap in Existing WSL
 ```bash
 # From within WSL
-curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Randallsm83/chezmoi/main/setup.sh | bash
 ```
 
 ### Verify Installation
