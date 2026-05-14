@@ -1,0 +1,1 @@
+- [Chezmoi source directory](feedback_chezmoi_source.md) — Real chezmoi source is ~/.local/share/chezmoi, not ~/projects/chezmoi
