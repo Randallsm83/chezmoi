@@ -157,10 +157,45 @@ if (-not $listening) {
 Write-Host "[unbound] listener responsive on 127.0.0.1:53"
 
 # ── Switch active adapters' DNS to 127.0.0.1 ──────────────────────────────
-# Only IPv4 ethernet/Wi-Fi physical adapters; never touch Tailscale, vEthernet
-# bridges, loopback, or VPN adapters (those manage their own DNS).
-$targetAdapters = Get-NetAdapter -Physical -ErrorAction SilentlyContinue |
+# Physical ethernet/Wi-Fi adapters AND user-space VPN tunnels (ProtonVPN,
+# Pritunl, etc.) all get pinned to 127.0.0.1 so the local unbound is the
+# only DNS server in the per-adapter list.
+#
+# Tailscale is excluded on purpose: it auto-installs an NRPT catch-all
+# (`.` -> 100.100.100.100, fd7a:115c:a1e0::53) and that's how MagicDNS
+# resolves `*.ts.net` and short tailnet hostnames. Forcing its adapter to
+# 127.0.0.1 doesn't kill MagicDNS (NRPT still wins for matching names) but
+# leave it alone so the system has a clean fallback path.
+#
+# vEthernet / Loopback are skipped because they're virtual bridges / lo.
+#
+# Why VPN tunnels need this: when Proton's WireGuard tunnel comes up it
+# attaches `10.2.0.1` to its adapter, which Windows happily queries in
+# parallel with NRPT catch-all rules and 10.2.0.1 typically wins the race
+# (in-tunnel resolver, lower latency than unbound -> DoT -> raspi). Result:
+# Proton answers DNS even though NRPT says it should go to 127.0.0.1.
+# Pinning the tunnel adapter to only 127.0.0.1 removes the competing entry.
+#
+# Live cleanup on every Proton reconnect is handled by an event-triggered
+# Scheduled Task installed by
+# .chezmoiscripts/run_onchange_after_59_vpn-dns-watcher_windows.ps1.tmpl,
+# which runs dot_config/windows/scripts/clean-vpn-adapter-dns.ps1 whenever
+# the `ProtonVPN WireGuard` service enters the running state (System log
+# event 7036). This script's adapter pass is the chezmoi-apply-time
+# version of the same cleanup and is mostly redundant with the watcher,
+# but keeps the post-install state correct on fresh boxes before the
+# watcher fires its first event.
+# See clean-vpn-adapter-dns.ps1 for why Pritunl is excluded (its adapter
+# DNS is empty; it uses NRPT split-DNS instead of adapter injection).
+# `ProtonVPN` is the WireGuard adapter alias; `ProtonVPN TUN` is the
+# OpenVPN/TUN adapter alias. Both inject a non-loopback DNS server that
+# must be stripped.
+$vpnTunnelAliasPattern = '^ProtonVPN( TUN)?$'
+$physical = Get-NetAdapter -Physical -ErrorAction SilentlyContinue |
     Where-Object { $_.Status -eq 'Up' -and $_.InterfaceAlias -notmatch '^(Tailscale|vEthernet|Loopback)' }
+$tunnels = Get-NetAdapter -ErrorAction SilentlyContinue |
+    Where-Object { $_.Status -eq 'Up' -and $_.InterfaceAlias -match $vpnTunnelAliasPattern }
+$targetAdapters = @($physical) + @($tunnels)
 
 foreach ($a in $targetAdapters) {
     $current = (Get-DnsClientServerAddress -InterfaceAlias $a.InterfaceAlias -AddressFamily IPv4 -ErrorAction SilentlyContinue).ServerAddresses
