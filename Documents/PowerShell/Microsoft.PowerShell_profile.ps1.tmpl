@@ -15,6 +15,11 @@ if (-not $env:XDG_DATA_HOME) { $env:XDG_DATA_HOME = "$HOME\.local\share" }
 if (-not $env:XDG_STATE_HOME) { $env:XDG_STATE_HOME = "$HOME\.local\state" }
 if (-not $env:XDG_CACHE_HOME) { $env:XDG_CACHE_HOME = "$HOME\.cache" }
 
+# Default editor / pager (mirrors ~/.zprofile)
+$env:EDITOR = 'nvim'
+$env:VISUAL = $env:EDITOR
+$env:PAGER  = 'less'
+
 # XDG-compliant tool configurations
 $env:LESSHISTFILE = "$env:XDG_STATE_HOME\less\history"
 $env:PYTHON_HISTORY = "$env:XDG_STATE_HOME\python\history"
