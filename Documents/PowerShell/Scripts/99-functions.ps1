@@ -37,20 +37,25 @@ if (-not $funcsRebuild) {
 
 if ($funcsRebuild) {
     $bodyContent = Get-Content -Raw -Path $bodyFile -Encoding utf8
-    # Inject `global:` scope qualifier on top-level function declarations so
-    # they end up in global scope even when the cache file is dot-sourced
-    # from inside the stub function's local scope.
+    # Inject `global:` scope qualifier on function declarations so they end up
+    # in global scope even when the cache file is dot-sourced from inside the
+    # stub function's local scope. Allow leading whitespace so functions
+    # defined inside `if (Test-CommandExists 'X') { ... }` guard blocks (which
+    # are still executed at dot-source time) also get globalized — otherwise
+    # they remain scoped to the guard block and vanish.
     $globalized = [regex]::Replace(
         $bodyContent,
-        '(?m)^function\s+([A-Za-z_][A-Za-z0-9_\-]*)',
-        'function global:$1'
+        '(?m)^(\s*)function\s+([A-Za-z_][A-Za-z0-9_\-]*)',
+        '${1}function global:$2'
     )
     Set-Content -Path $funcsCacheFile -Value $globalized -Encoding utf8
 }
 
 # Extract function names from the source body (used to create stubs).
+# Match optionally-indented declarations to pick up conditionally-defined
+# functions inside `if (...) { function foo { ... } }` blocks.
 $funcNames = @(
-    Select-String -Path $bodyFile -Pattern '^function\s+([A-Za-z_][A-Za-z0-9_\-]*)' |
+    Select-String -Path $bodyFile -Pattern '^\s*function\s+([A-Za-z_][A-Za-z0-9_\-]*)' |
         ForEach-Object { $_.Matches[0].Groups[1].Value } |
         Sort-Object -Unique
 )
