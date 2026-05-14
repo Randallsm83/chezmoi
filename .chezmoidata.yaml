@@ -125,9 +125,11 @@ theme_mappings:
     dracula: "dracula"                       # dracula/vim
     kanagawa: "kanagawa"                     # rebelot/kanagawa.nvim
 
-  # WezTerm builtin colorscheme names
+  # WezTerm colorscheme names
+  # NOTE: "Spaceduck" is a custom scheme shipped in dot_config/wezterm/colors/Spaceduck.toml
+  # (wezterm has no builtin Spaceduck scheme as of 20240203).
   wezterm:
-    spaceduck: "Spaceduck (Gogh)"
+    spaceduck: "Spaceduck"
     onedark: "OneDark (base16)"
     gruvbox-material: "Gruvbox Material (Gogh)"
     tokyonight: "Tokyo Night"
