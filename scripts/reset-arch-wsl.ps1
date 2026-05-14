@@ -126,13 +126,13 @@ Start-Sleep -Seconds 3
 Write-Log "✓ WSL restarted" 'Green'
 
 Write-Log "`n▶ Step 7/7: Bootstrapping with chezmoi dotfiles..." 'Cyan'
-Write-Log "  Repository: Randallsm83/dotfiles" 'Gray'
+Write-Log "  Repository: Randallsm83/chezmoi" 'Gray'
 Write-Log "  Duration: ~5-10 minutes (installing mise runtimes)" 'Gray'
 Write-Log "  You can monitor progress below`n" 'Gray'
 
 # Use official chezmoi one-line installer as the newly created user
 Write-Log "Running official chezmoi installer as user '$username'..." 'Gray'
-$bootstrapOutput = wsl -d archlinux bash -c "curl -fsSL https://get.chezmoi.io | sh -s -- init --apply --ssh Randallsm83/dotfiles" 2>&1 | Out-String
+$bootstrapOutput = wsl -d archlinux bash -c "curl -fsSL https://get.chezmoi.io | sh -s -- init --apply --ssh Randallsm83/chezmoi" 2>&1 | Out-String
 Write-Log "Exit code: $LASTEXITCODE" 'Gray'
 Write-Log "Bootstrap output:`n$bootstrapOutput" 'Gray'
 
@@ -141,7 +141,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Log "Full output logged to: $logFile" 'Yellow'
     Write-Log "You can retry manually from within WSL:" 'Yellow'
     Write-Log "  wsl -d archlinux" 'White'
-    Write-Log "  sh -c '`$(curl -fsLS get.chezmoi.io)' -- init --apply --ssh Randallsm83/dotfiles`n" 'White'
+    Write-Log "  sh -c '`$(curl -fsLS get.chezmoi.io)' -- init --apply --ssh Randallsm83/chezmoi`n" 'White'
     exit 1
 }
 

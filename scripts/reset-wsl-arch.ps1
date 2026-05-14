@@ -25,7 +25,7 @@
     If specified, only unregister and install WSL without running the chezmoi bootstrap
 
 .PARAMETER ChezmoisRepo
-    GitHub repository for chezmoi dotfiles. Default: "Randallsm83/dotfiles"
+    GitHub repository for chezmoi dotfiles. Default: "Randallsm83/chezmoi"
 
 .PARAMETER ChezmoiBranch
     Branch to use for chezmoi initialization. Default: "main"
@@ -61,7 +61,7 @@ param(
     [switch]$SkipBootstrap,
     
     [Parameter()]
-    [string]$ChezmoisRepo = "Randallsm83/dotfiles",
+    [string]$ChezmoisRepo = "Randallsm83/chezmoi",
     
     [Parameter()]
     [string]$ChezmoiBranch = "main"

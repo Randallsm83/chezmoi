@@ -18,7 +18,7 @@
 #
 # Usage:
 #   mkdir -p ~/.config/chezmoi
-#   cp ~/.local/share/dotfiles/dot_config/chezmoi/raspi.local.toml.example \
+#   cp ~/.local/share/chezmoi/dot_config/chezmoi/raspi.local.toml.example \
 #      ~/.config/chezmoi/.chezmoi.local.toml
 #   chezmoi apply
 # ============================================================================

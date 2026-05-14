@@ -12,7 +12,7 @@
     5. Trigger package installation via chezmoi run scripts
     
 .PARAMETER Repository
-    GitHub repository (default: Randallsm83/dotfiles)
+    GitHub repository (default: Randallsm83/chezmoi)
     
 .PARAMETER Branch
     Branch to clone (default: main)
@@ -22,7 +22,7 @@
     
 .EXAMPLE
     # One-command install from GitHub (production)
-    iwr -useb https://raw.githubusercontent.com/Randallsm83/dotfiles/main/bootstrap.ps1 | iex
+    iwr -useb https://raw.githubusercontent.com/Randallsm83/chezmoi/main/bootstrap.ps1 | iex
     
 .EXAMPLE
     # Local install
@@ -47,7 +47,7 @@
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [string]$Repository = "Randallsm83/dotfiles",
+    [string]$Repository = "Randallsm83/chezmoi",
     [string]$Branch = "main",
     [switch]$SkipPackages,
     [string]$ScoopExport,

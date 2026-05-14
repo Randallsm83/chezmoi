@@ -3,10 +3,10 @@
 # Bootstrap script for Unix systems (Linux/WSL/macOS)
 #
 # Usage - Fresh machine (no SSH keys yet):
-#   curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Randallsm83/chezmoi/main/setup.sh | bash
 #
 # Usage - Force SSH (if SSH keys already configured):
-#   USE_SSH=1 curl -fsSL https://raw.githubusercontent.com/Randallsm83/dotfiles/main/setup.sh | bash
+#   USE_SSH=1 curl -fsSL https://raw.githubusercontent.com/Randallsm83/chezmoi/main/setup.sh | bash
 #
 # Recovery (after failed/partial chezmoi apply):
 #   brew autoremove                    # clean orphaned brew deps
@@ -16,7 +16,7 @@
 # Env overrides:
 #   CI=true          - skip all interactive prompts (auto-yes)
 #   USE_SSH=1        - force SSH clone URL (requires GitHub SSH access)
-#   REPO=user/repo   - override dotfiles repo (default: Randallsm83/dotfiles)
+#   REPO=user/repo   - override dotfiles repo (default: Randallsm83/chezmoi)
 #   BRANCH=name      - override branch (default: main)
 #   RASPI=1          - force Raspberry Pi (medium tier) profile; auto-detected
 #                      from /proc/device-tree/model or aarch64+Debian otherwise
@@ -28,7 +28,7 @@ set -euo pipefail
 # Configuration
 # ============================================================================
 
-REPO="${REPO:-Randallsm83/dotfiles}"
+REPO="${REPO:-Randallsm83/chezmoi}"
 BRANCH="${BRANCH:-main}"
 CHEZMOI_VERSION="${CHEZMOI_VERSION:-latest}"
 
@@ -506,9 +506,12 @@ install_and_apply_dotfiles() {
 
     # Installer flags (-b BINDIR) go BEFORE the `--` separator; everything
     # after `--` is forwarded as chezmoi's own args.
+    # NOTE: --source is intentionally omitted so chezmoi uses its default
+    # source dir (~/.local/share/chezmoi). Overriding to a different path
+    # historically broke .chezmoi.toml.tmpl path assumptions.
     if [ "${USE_SSH:-0}" = "1" ]; then
         log_info "Cloning via SSH (USE_SSH=1)..."
-        if CI=true sh -c "$chezmoi_installer" -s -b "$bindir" -- init --apply --source "$HOME/.local/share/dotfiles" --ssh "$REPO" --branch "$BRANCH"; then
+        if CI=true sh -c "$chezmoi_installer" -s -b "$bindir" -- init --apply --ssh "$REPO" --branch "$BRANCH"; then
             log_success "Dotfiles applied successfully (SSH)"
             return 0
         fi
@@ -516,7 +519,7 @@ install_and_apply_dotfiles() {
     fi
 
     log_info "Cloning via HTTPS..."
-    if CI=true sh -c "$chezmoi_installer" -s -b "$bindir" -- init --apply --source "$HOME/.local/share/dotfiles" "https://github.com/${REPO}.git" --branch "$BRANCH"; then
+    if CI=true sh -c "$chezmoi_installer" -s -b "$bindir" -- init --apply "https://github.com/${REPO}.git" --branch "$BRANCH"; then
         log_success "Dotfiles applied successfully (HTTPS)"
         log_info "To switch remote to SSH later: chezmoi git remote set-url origin git@github.com:${REPO}.git"
         return 0
