@@ -18,17 +18,27 @@ alias paths='echo -e ${PATH//:/\\n}'
 alias aliases='alias | sed "s/=.*//"'
 alias functions='declare -f | grep "^[a-z].* ()" | sed "s/{$//"'
 
-# Navigate to projects root
+# Workspace roots
 alias cdp='cd $PROJECTS'
+alias cdbe='cd $BACKEND'
+alias cdfe='cd $FRONTEND'
+alias cdhs='cd $HELPSERVICES'
 
-# Quick navigation to repos
+# Top-level DH repos (live directly under $DHSPACE)
 alias cdn='cd $DHSPACE/ndn'
-alias cdapi='cd $DHSPACE/api-gateway'
-alias cdcdn='cd $DHSPACE/cdn-service'
+alias cdaudit='cd $DHSPACE/ndn-audit'
+alias cdpam='cd $DHSPACE/pam'
+alias cdscott='cd $DHSPACE/scott'
+alias cdtm='cd $DHSPACE/task-management'
 
-# Run command in all repos
+# Common backend services (under $BACKEND)
+alias cdapi='cd $BACKEND/api-gateway'
+alias cdcdn='cd $BACKEND/cdn-service'
+
+# Run a git command across every service repo under BACKEND/FRONTEND/HELPSERVICES
 function dhgitall() {
-    for dir in "$DHSPACE"/*/; do
+    for dir in "$BACKEND"/*/ "$FRONTEND"/*/ "$HELPSERVICES"/*/; do
+        [[ -d "$dir/.git" ]] || continue
         (cd "$dir" && echo "=== $(basename $dir) ===" && git "$@")
     done
 }
@@ -40,6 +50,9 @@ alias has='curl -sL https://git.io/_has | bash -s '
 alias dh='cd $DHSPACE'
 alias dots='cd $DOTFILES'
 alias notes='cd $NOTES'
+alias backend='cd $BACKEND'
+alias frontend='cd $FRONTEND'
+alias helpservices='cd $HELPSERVICES'
 
 # Chezmoi
 alias czs='chezmoi status'                          # what's changed

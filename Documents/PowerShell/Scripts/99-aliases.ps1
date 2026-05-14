@@ -12,10 +12,13 @@
 # Environment Variables
 # ================================================================================================
 
-$env:PROJECTS = Join-Path $HOME 'projects'
-$env:DHSPACE  = Join-Path $env:PROJECTS 'dh'
-$env:NOTES    = Join-Path $env:PROJECTS 'notes'
-$env:DOTFILES = Join-Path $HOME '.local' 'share' 'chezmoi'
+$env:PROJECTS     = Join-Path $HOME 'projects'
+$env:DHSPACE      = Join-Path $env:PROJECTS 'dh'
+$env:BACKEND      = Join-Path $env:DHSPACE 'BACKEND'
+$env:FRONTEND     = Join-Path $env:DHSPACE 'FRONTEND'
+$env:HELPSERVICES = Join-Path $env:DHSPACE 'HELPSERVICES'
+$env:NOTES        = Join-Path $env:PROJECTS 'notes'
+$env:DOTFILES     = Join-Path $HOME '.local' 'share' 'chezmoi'
 
 # ================================================================================================
 # Profile Management
