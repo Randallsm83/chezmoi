@@ -272,6 +272,64 @@ Package lists are in `.chezmoidata.yaml` under `packages.scoop`, `winget_package
 
 ---
 
+## 🗂️ Workspace Layout & Shell Shortcuts
+
+The shells export a small set of environment variables that describe the local workspace, plus matching `cd`-style shortcuts. All paths derive from `$HOME` — no machine-specific absolute paths in the dotfiles.
+
+### Environment variables
+
+Exported from `dot_config/zsh/dot_zshrc.d/10-dirs.zsh` (zsh) and `Documents/PowerShell/Scripts/99-aliases.ps1` (pwsh):
+
+| Var | Value | Purpose |
+|---|---|---|
+| `PROJECTS` | `$HOME/projects` | General projects root |
+| `DHSPACE` | `$PROJECTS/dh` | DreamHost workspace |
+| `BACKEND` | `$DHSPACE/BACKEND` | Backend service repos |
+| `FRONTEND` | `$DHSPACE/FRONTEND` | Frontend dashboard repos |
+| `HELPSERVICES` | `$DHSPACE/HELPSERVICES` | Supporting service repos |
+| `NOTES` | `$PROJECTS/notes` | Obsidian vault |
+| `MYSPACE` | `$HOME/Dev` | Personal dev space (zsh only) |
+| `DOTFILES` | `$HOME/.local/share/chezmoi` | Chezmoi source dir |
+
+On Windows, `$HOME/projects` is a junction to `D:\`, so `DHSPACE` resolves to `D:\dh`, `NOTES` to `D:\notes`, etc.
+
+### Navigation shortcuts
+
+zsh aliases and pwsh functions (pwsh functions are only defined when the target directory exists):
+
+| Command | Goes to | Notes |
+|---|---|---|
+| `cdp` | `$PROJECTS` | general projects root |
+| `dh` | `$DHSPACE` | DH workspace |
+| `cdbe` / `cdfe` / `cdhs` | `$BACKEND` / `$FRONTEND` / `$HELPSERVICES` | service-tree roots |
+| `dots` | `$DOTFILES` | chezmoi source |
+| `notes` | `$NOTES` | Obsidian vault |
+| `cdn` | `$DHSPACE/ndn` | top-level DH repo |
+| `cdaudit` | `$DHSPACE/ndn-audit` | top-level DH repo |
+| `cdpam` | `$DHSPACE/pam` | top-level DH repo |
+| `cdscott` | `$DHSPACE/scott` | top-level DH repo |
+| `cdtm` | `$DHSPACE/task-management` | top-level DH repo |
+| `cdapi` | `$BACKEND/api-gateway` | common backend service |
+| `cdcdn` | `$BACKEND/cdn-service` | common backend service |
+
+zsh also exposes the longer-form aliases `backend`, `frontend`, `helpservices` as synonyms for `cdbe`/`cdfe`/`cdhs`.
+
+### `dhgitall`
+
+Runs a `git` command across every repo under `$BACKEND/`, `$FRONTEND/`, and `$HELPSERVICES/`. Entries without a `.git` directory are skipped. Top-level repos under `$DHSPACE` (ndn, ndn-audit, pam, scott, task-management) are **intentionally excluded** — run git commands against them individually.
+
+```bash
+dhgitall status -sb           # quick status across all service repos
+dhgitall fetch --prune
+dhgitall checkout main
+```
+
+Defined in:
+- `dot_config/zsh/dot_zshrc.d/25-aliases.zsh` (zsh)
+- `Documents/PowerShell/Scripts/lib/99-functions-body.ps1` (pwsh)
+
+---
+
 ## 🔧 Common Tasks
 
 ### Update Dotfiles
