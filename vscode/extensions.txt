@@ -1,0 +1,67 @@
+# VS Code extensions installed into the default profile by chezmoi.
+#
+# Edit this list to add/remove extensions, then run `chezmoi apply`.
+# Lines starting with `#` and blank lines are ignored.
+#
+# Driven by:
+#   .chezmoiscripts/run_onchange_after_70_vscode-extensions_windows.ps1.tmpl
+#   .chezmoiscripts/run_onchange_after_70_vscode-extensions_unix.sh.tmpl
+#
+# Gate: package_features.vscode (see .chezmoidata.yaml). When false, the
+# scripts skip silently. When the `code` CLI isn't installed, the scripts
+# also skip silently (VS Code can be installed via winget/brew/etc).
+#
+# This file is NOT deployed to $HOME (see .chezmoiignore: vscode/**).
+# It lives in the chezmoi source dir and is read by the run_onchange
+# scripts via `include`.
+
+aaron-bond.better-comments
+asvetliakov.vscode-neovim
+atommaterial.a-file-icon-vscode
+christian-kohler.npm-intellisense
+christian-kohler.path-intellisense
+editorconfig.editorconfig
+enkia.tokyo-night
+esbenp.prettier-vscode
+gitlab.gitlab-workflow
+gruntfuggly.todo-tree
+ibm.output-colorizer
+jdinhlife.gruvbox
+jonathanharty.gruvbox-material-icon-theme
+kilocode.kilo-code
+kodu-ai.claude-dev-experimental
+mechatroner.rainbow-csv
+ms-azuretools.vscode-containers
+ms-azuretools.vscode-docker
+ms-python.debugpy
+ms-python.python
+ms-python.vscode-pylance
+ms-python.vscode-python-envs
+ms-vscode-remote.remote-containers
+ms-vscode-remote.remote-ssh
+ms-vscode-remote.remote-ssh-edit
+ms-vscode-remote.remote-wsl
+ms-vscode.cmake-tools
+ms-vscode.cpp-devtools
+ms-vscode.cpptools
+ms-vscode.cpptools-extension-pack
+ms-vscode.cpptools-themes
+ms-vscode.remote-explorer
+ms-vscode.vscode-serial-monitor
+naumovs.color-highlight
+nhoizey.gremlins
+pkief.material-icon-theme
+richterger.perl
+rooveterinaryinc.roo-cline
+rust-lang.rust-analyzer
+saoudrizwan.claude-dev
+sfodje.perltidy
+shd101wyy.markdown-preview-enhanced
+vscode-arduino.vscode-arduino-community
+vscodevim.vim
+vspacecode.whichkey
+wayou.vscode-todo-highlight
+wheredoesyourmindgo.gruvbox-concoctis
+youssefbouzekri.spaceduck
+zaidalsaheb.search-preview
+zhuangtongfa.material-theme

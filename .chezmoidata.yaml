@@ -125,9 +125,11 @@ theme_mappings:
     dracula: "dracula"                       # dracula/vim
     kanagawa: "kanagawa"                     # rebelot/kanagawa.nvim
 
-  # WezTerm builtin colorscheme names
+  # WezTerm colorscheme names
+  # NOTE: "Spaceduck" is a custom scheme shipped in dot_config/wezterm/colors/Spaceduck.toml
+  # (wezterm has no builtin Spaceduck scheme as of 20240203).
   wezterm:
-    spaceduck: "Spaceduck (Gogh)"
+    spaceduck: "Spaceduck"
     onedark: "OneDark (base16)"
     gruvbox-material: "Gruvbox Material (Gogh)"
     tokyonight: "Tokyo Night"
@@ -1427,17 +1429,35 @@ claude_memory_projects:
   projects: "projects"
 
 # ============================================================================
-# VPN split-DNS routes
+# DNS routing rules (NRPT / /etc/resolver / systemd-resolved)
 # ============================================================================
-# Domains that should be resolved by a specific (typically VPN-side) DNS
-# server instead of the default system resolver. Used by
-# .chezmoiscripts/run_onchange_after_55_vpn-dns-routes_*.tmpl to install:
+# Per-namespace DNS routing. Each entry is a logical profile name; for every
+# (profile, domain) pair the cross-platform install scripts ensure a routing
+# rule exists sending queries for that domain to the profile's nameserver.
+#
+# Installers:
 #   - Windows  -> NRPT rules (Add-DnsClientNrptRule)
 #   - macOS    -> /etc/resolver/<domain> files
 #   - Linux    -> systemd-resolved domain routing where available
-# Each entry is a logical VPN profile name. The default system resolver
-# (Pi-hole via Tailscale, in this stack) handles everything not listed.
+#
+# A `domains: [""]` entry is special-cased to the NRPT catch-all (Namespace
+# = "."), which forces ALL queries — not just suffix-matched ones — to that
+# profile's nameserver. Used by the `pihole` profile below to pin every
+# query to the loopback unbound stub on Windows, overriding any per-adapter
+# DNS list a VPN tries to inject (Proton's `10.2.0.1` is the motivating
+# case). On Tailscale-only or no-VPN states the catch-all is harmless: 127.0.0.1
+# is the existing default resolver anyway (see DNS.md).
 vpn_dns_routes:
+  # Force every DNS query through the local DoT-forwarding unbound stub
+  # (managed by run_onchange_after_56_unbound_windows.ps1.tmpl). Without
+  # this, when a VPN like Proton attaches its own DNS to its tunnel adapter,
+  # Windows uses the VPN-adapter DNS list for outbound queries and bypasses
+  # 127.0.0.1 entirely — silently leaking DNS to the VPN's resolver.
+  pihole:
+    nameserver: "127.0.0.1"
+    domains:
+      - ""   # empty -> NRPT catch-all (Namespace = ".")
+
   pritunl:
     nameserver: "***REMOVED***"
     # Internal-only namespaces. Public DreamHost domains (dreamhost.com,
@@ -1449,7 +1469,9 @@ vpn_dns_routes:
     # internal infra: *.kubecluster.vk.dreamhost.io, lde-service-master
     # under prod-bm, etc.). NRPT picks the longest-matching suffix, so this
     # entry coexists safely with the unrouted parent .dreamhost.io and does
-    # NOT shadow vpn.dreamhost.io (which is at the apex).
+    # NOT shadow vpn.dreamhost.io (which is at the apex). The pihole
+    # catch-all (`.`) above is the shortest possible match, so any of these
+    # work-domain rules win over it for matching queries.
     domains:
       - dreamhostnetworks.com
       - dhcompute.net
