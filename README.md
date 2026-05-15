@@ -104,6 +104,49 @@ theme:
 
 ---
 
+## 🧩 VS Code
+
+VS Code is fully chezmoi-managed on the default profile:
+
+| File in $HOME | Source in chezmoi | Notes |
+|---|---|---|
+| `%APPDATA%\Code\User\settings.json` | `AppData/Roaming/Code/User/settings.json.tmpl` | Theme, fonts, editor behavior, language overrides, vim/neovim, AI panels, Remote-SSH |
+| `%APPDATA%\Code\User\keybindings.json` | symlink → `vscode/keybindings.json` | Custom keybinds |
+| `%APPDATA%\Code\User\mcp.json` | symlink → `vscode/mcp.json` | MCP servers (currently empty) |
+| `%APPDATA%\Code\User\tasks.json` | symlink → `vscode/tasks.json` | Default-profile tasks |
+| `%APPDATA%\Code\User\extensions.json` | symlink → `vscode/extensions.json` | Workspace recommendations (not the install DB) |
+| _installed extensions_ | `vscode/extensions.txt` | Driven by `run_onchange_after_70_vscode-extensions_*` |
+
+### Extensions are auto-installed
+
+`vscode/extensions.txt` is the single source of truth. One extension ID
+per line, blank lines and `#` comments allowed. On every `chezmoi apply`,
+the `run_onchange_after_70_vscode-extensions_{windows,unix}.{ps1,sh}.tmpl`
+scripts diff the list against `code --list-extensions` and install only
+the missing ones (additive — they never uninstall).
+
+Gating:
+- `package_features.vscode = true` (default in `.chezmoidata.yaml`)
+- `code` CLI on PATH (script skips silently if VS Code isn't installed yet)
+
+To add or remove an extension:
+```bash
+chezmoi edit ~/.local/share/chezmoi/vscode/extensions.txt   # edit list
+chezmoi apply                                               # installs missing
+```
+
+To force a re-run of the script after editing:
+```bash
+chezmoi state delete-bucket --bucket=scriptState
+chezmoi apply
+```
+
+The `vscode/` directory is excluded from `$HOME` deployment via
+`.chezmoiignore`; it's source-only data read by the install script
+through `include`.
+
+---
+
 ## 🦊 LibreWolf (Browser)
 
 LibreWolf is installed as a Scoop portable app, but its **active profile**

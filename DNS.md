@@ -1,7 +1,9 @@
 # DNS Architecture
 
-How DNS resolution actually works on this stack, and where each piece lives in the chezmoi source tree. Last verified `2026-05-04`.
-
+How DNS resolution actually works on this stack, and where each piece lives in the chezmoi source tree. Last verified `2026-05-13`.
+## Platform variants
+- **macOS** uses the resolver chain described below (Tailscale MagicDNS -> Pi-hole over the tailnet, with `/etc/resolver` split-DNS for work domains).
+- **Windows** uses a different first hop: a local `unbound` Windows service on `127.0.0.1:53` (managed by `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl`) that forwards via DoT to the raspi terminator on `:853`. Per-adapter DNS is set to `127.0.0.1`. A system-wide NRPT catch-all (`pihole` profile in `vpn_dns_routes`) pins every query to `127.0.0.1` regardless of which interface is up, so DNS doesn't leak to VPN-injected adapter DNS lists (Proton's `10.2.0.1` is the motivating case). See the Windows section below.
 ## TL;DR
 
 ```text
@@ -134,7 +136,46 @@ ssh raspi 'sudo unbound-control status'
   networksetup -setdnsservers "Wi-Fi" empty
   ```
 - **Adding a new VPN's split-DNS**: edit `vpn_dns_routes` in `.chezmoidata.yaml` and `chezmoi apply`. The `run_onchange_after_55` script reconciles `/etc/resolver/<domain>` files.
-
+## Windows variant
+The Windows hop chain is intentionally different because Windows lacks `/etc/resolver` and because VPN adapters there (Proton, Pritunl) attach their own DNS to their tunnel interfaces, which Windows happily uses over the loopback resolver. Layout:
+```text
+Windows app
+  | (Windows DNS Client; NRPT catch-all forces 127.0.0.1)
+  v
+127.0.0.1:53  -- unbound service (no recursion, DoT forward-only)
+  | DoT (TCP/853 + TLS)
+  v
+  forward-addr: 192.168.0.26@853#raspi.tailf7fd34.ts.net   (LAN, preferred)
+  forward-addr: 100.100.149.88@853#raspi.tailf7fd34.ts.net (tailnet fallback)
+  | TLS, validated against scoop cacert bundle
+  v
+raspi:853  -- unbound DoT terminator (iterator only, no validator)
+  v
+127.0.0.1:53 on raspi  -- Pi-hole (dnsmasq, filter + log)
+  v
+dnscrypt-proxy:5053  -- DoH/DNSCrypt outbound (encrypted upstream to Cloudflare/Quad9/etc.)
+```
+Key pieces:
+| Concern | File | Notes |
+| --- | --- | --- |
+| Local unbound install/refresh | `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl` | Installs scoop `unbound` as a Windows service; sets adapter DNS to `127.0.0.1` only after the listener responds. |
+| unbound config | `unbound/service.conf.tmpl` | Forwarder mode, no recursion, no validator, no public DoT fallback. |
+| NRPT catch-all (Proton override) | `.chezmoiscripts/run_onchange_after_55_vpn-dns-routes_windows.ps1.tmpl` + `vpn_dns_routes.pihole` in `.chezmoidata.yaml` | `Add-DnsClientNrptRule -Namespace "." -NameServers 127.0.0.1`. Needed because Proton's WireGuard tunnel attaches `10.2.0.1` to the ProtonVPN adapter, and without NRPT Windows would prefer that over loopback whenever Proton is the default route. |
+| NRPT VPN-internal routes | same script, `vpn_dns_routes.pritunl` | Longest-suffix match wins, so `.dh-int.com` etc. go to `10.25.0.15` (Pritunl) while the rest hits the `.` catch-all. |
+| Proton split-tunnel allow-list | Proton GUI -> Settings -> Split Tunneling -> Bypass VPN | Must include `100.64.0.0/10` and `fd7a:115c:a1e0::/48` so unbound's tailnet fallback (`100.100.149.88@853`) is reachable when off-LAN. Without this Proton's kill switch drops all Tailscale traffic, including DNS. |
+| VPN tunnel adapter DNS auto-cleanup | `.chezmoiscripts/run_onchange_after_59_vpn-dns-watcher_windows.ps1.tmpl` + `dot_config/windows/scripts/clean-vpn-adapter-dns.ps1` | Registers a Scheduled Task triggered by System log event 7036 (Service Control Manager: `ProtonVPN WireGuard` -> `running`). Runs the cleanup script as SYSTEM, which strips everything except `127.0.0.1` from VPN tunnel adapter DNS. Without this, Proton's WireGuard tunnel re-injects `10.2.0.1` on every reconnect (sleep/wake, server hop, kill-switch toggle) and DNS leaks until the next `chezmoi apply`. Logs to `%ProgramData%\chezmoi\clean-vpn-adapter-dns.log`. |
+Verification (Windows):
+```pwsh
+# All queries should be forced to 127.0.0.1 by NRPT
+Get-DnsClientNrptRule | Where-Object Namespace -eq '.'
+# o-o.myaddr.l.google.com TXT should return dnscrypt-proxy's upstream
+# (Cloudflare, 172.x), NOT Proton's exit (159.26.x).
+(Resolve-DnsName -Name 'o-o.myaddr.l.google.com' -Type TXT -QuickTimeout).Strings
+# Egress IP test - should be Proton's exit when Proton is on.
+curl.exe -s https://api.ipify.org
+# Confirm Pi-hole sees queries (run on raspi):
+#   docker exec pihole tail -f /var/log/pihole/pihole.log
+```
 ## Past failure modes (so we don't repeat them)
 
 - `unbound` defaulted to `module-config: "validator iterator"` and `do-not-query-localhost: yes`. The first needed `auto-trust-anchor-file` (`/var/lib/unbound/root.key`) seeded; the second blocks forwarding to `127.0.0.1:53`. Fixed by setting `module-config: "iterator"` and `do-not-query-localhost: no` in the unbound config — unbound here is a pure DoT terminator/forwarder, not a recursive resolver.

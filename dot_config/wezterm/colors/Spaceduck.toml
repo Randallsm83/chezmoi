@@ -1,0 +1,72 @@
+[metadata]
+name = "Spaceduck"
+author = "Pine (pineapplegiant)"
+origin_url = "https://github.com/pineapplegiant/spaceduck-terminal"
+
+[colors]
+foreground = "#ecf0c1"
+background = "#0f111b"
+
+cursor_bg = "#f2ce00"
+cursor_fg = "#0f111b"
+cursor_border = "#f2ce00"
+
+selection_bg = "#30365f"
+selection_fg = "#ecf0c1"
+
+scrollbar_thumb = "#686f9a"
+split        = "#b3a1e6"
+visual_bell  = "#16172d"
+compose_cursor = "#e39400"
+
+# Spaceduck's "non-standard" ANSI mapping (matches pineapplegiant/spaceduck-terminal):
+#   index 3 (yellow slot)  → purple #b3a1e6
+#   index 5 (magenta slot) → yellow #f2ce00
+#   index 6 (cyan slot)    → blue-purple #7a5ccc
+ansi = [
+  "#000000",  # 0 black
+  "#e33400",  # 1 red
+  "#5ccc96",  # 2 green
+  "#b3a1e6",  # 3 yellow (spaceduck purple)
+  "#00a3cc",  # 4 blue
+  "#f2ce00",  # 5 magenta (spaceduck yellow)
+  "#7a5ccc",  # 6 cyan (spaceduck purple-blue)
+  "#ecf0c1",  # 7 white
+]
+
+brights = [
+  "#686f9a",  # 8  bright black
+  "#e33400",  # 9  bright red
+  "#5ccc96",  # 10 bright green
+  "#f2ce00",  # 11 bright yellow
+  "#00a3cc",  # 12 bright blue
+  "#ce6f8f",  # 13 bright magenta (spaceduck pink)
+  "#42b3c2",  # 14 bright cyan (spaceduck teal)
+  "#f0f0f0",  # 15 bright white
+]
+
+[colors.tab_bar]
+background = "#0f111b"
+
+[colors.tab_bar.active_tab]
+bg_color = "#b3a1e6"
+fg_color = "#0f111b"
+intensity = "Bold"
+
+[colors.tab_bar.inactive_tab]
+bg_color = "#16172d"
+fg_color = "#ecf0c1"
+
+[colors.tab_bar.inactive_tab_hover]
+bg_color = "#30365f"
+fg_color = "#ecf0c1"
+italic = true
+
+[colors.tab_bar.new_tab]
+bg_color = "#16172d"
+fg_color = "#b3a1e6"
+
+[colors.tab_bar.new_tab_hover]
+bg_color = "#30365f"
+fg_color = "#f2ce00"
+italic = true

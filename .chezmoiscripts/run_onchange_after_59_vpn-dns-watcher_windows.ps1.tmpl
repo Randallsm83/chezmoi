@@ -1,0 +1,158 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Install an event-triggered Scheduled Task that runs the VPN-adapter-DNS
+# cleanup script every time `ProtonVPN WireGuard` enters the "running" state.
+# Rerenders/reregisters whenever the cleanup script or this installer changes.
+#
+# Script sha256 (triggers reregister on edit):
+#   {{ include "dot_config/windows/scripts/clean-vpn-adapter-dns.ps1" | sha256sum }}
+#
+# Why a scheduled task instead of doing this in the unbound run_onchange:
+#   The unbound install script runs on `chezmoi apply`. Proton reconnects
+#   constantly (kill-switch toggles, server hops, sleep/wake). Each
+#   reconnect re-attaches 10.2.0.1 to the ProtonVPN adapter. We need a live,
+#   event-driven hook to scrub the DNS list on every reconnect, not just at
+#   apply time.
+#
+# Trigger:
+#   Microsoft-Windows-NetworkProfile/Operational, Event ID 10000
+#   ("Network Connected"), filtered to Name = "ProtonVPN". Fires on every
+#   reconnect (server hop, sleep/wake, kill-switch toggle).
+#
+#   The first iteration tried SCM event 7036 ("service entered running")
+#   but ProtonVPN's WireGuard service does not produce SCM 7036 entries
+#   for state transitions on this machine (verified empirically with
+#   Get-WinEvent after a Stop-Service/Start-Service bounce). The
+#   NetworkProfile log fires the moment the tunnel adapter binds an
+#   IP/network, which is exactly when Proton has just re-injected
+#   10.2.0.1 onto the adapter and we want to scrub it.
+#
+# Principal: SYSTEM. Set-DnsClientServerAddress needs admin.
+$ErrorActionPreference = 'Stop'
+
+# Path the cleanup script gets deployed to by the dot_config/windows/scripts
+# tree. Must match the chezmoi target.
+$cleanupScript = Join-Path $env:USERPROFILE '.config\windows\scripts\clean-vpn-adapter-dns.ps1'
+$taskName = 'CleanVpnAdapterDns'
+
+if (-not (Test-Path -LiteralPath $cleanupScript)) {
+    Write-Warning "[vpn-dns-watcher] cleanup script not yet deployed at $cleanupScript; rerun chezmoi apply"
+    exit 0
+}
+
+function Test-IsAdmin {
+    $id = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $p  = [Security.Principal.WindowsPrincipal]$id
+    $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+if (-not (Test-IsAdmin)) {
+    if (Get-Command gsudo -ErrorAction SilentlyContinue) {
+        Write-Host "[vpn-dns-watcher] elevating via gsudo to register scheduled task" -ForegroundColor Cyan
+        gsudo pwsh -NoProfile -File $PSCommandPath
+        exit $LASTEXITCODE
+    }
+    Write-Warning "[vpn-dns-watcher] need admin to register scheduled task and gsudo isn't installed; skipping"
+    exit 0
+}
+
+# XPath subscription matching any NetworkProfile event 10000 ("Network
+# Connected"). No Name filter — the cleanup script is idempotent and only
+# touches the ProtonVPN adapter, so unrelated connects (Wi-Fi, Ethernet,
+# Tailscale, pritunl0) just trigger a sub-second log-and-exit. We can't
+# usefully filter on Data[1] (the network Name) here because:
+#   - Windows event log XPath uses a restricted XPath 1.0 subset that does
+#     not support starts-with() or contains() (verified empirically: the
+#     task scheduler rejects those expressions as "invalid query").
+#   - Equality (Data[1]='ProtonVPN') misses Windows' auto-numbered profile
+#     variants like `ProtonVPN 2`, `ProtonVPN 3` that appear after rapid
+#     reconnects (observed in the live event log).
+#   - Enumerating each variant with `or` works but caps at whatever number
+#     we guess; better to skip the filter and let the script self-check.
+$xpath = @'
+<QueryList>
+  <Query Id="0" Path="Microsoft-Windows-NetworkProfile/Operational">
+    <Select Path="Microsoft-Windows-NetworkProfile/Operational">*[System[Provider[@Name='Microsoft-Windows-NetworkProfile'] and (EventID=10000)]]</Select>
+  </Query>
+</QueryList>
+'@
+
+# Encode XPath for embedding in the task XML <Subscription> element.
+$encodedXpath = $xpath -replace '&', '&amp;' -replace '<', '&lt;' -replace '>', '&gt;'
+
+# Quote args carefully — Argument string is split on whitespace by the task
+# scheduler. -File needs the path quoted because it lives under
+# %USERPROFILE% which may contain a space.
+$pwshExe = 'pwsh.exe'
+$args = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $cleanupScript + '"'
+
+# Build full task XML. Using the XML form (not New-Scheduled* cmdlets)
+# because PS's MSFT_TaskEventTrigger CIM class is awkward to assemble for
+# Subscription strings and ValueQueries.
+$taskXml = @"
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>Strip non-loopback DNS from VPN tunnel adapters whenever Proton's WireGuard service enters running state. Managed by chezmoi (.chezmoiscripts/run_onchange_after_59_vpn-dns-watcher_windows.ps1.tmpl).</Description>
+    <URI>\$taskName</URI>
+  </RegistrationInfo>
+  <Triggers>
+    <EventTrigger>
+      <Enabled>true</Enabled>
+      <Subscription>$encodedXpath</Subscription>
+    </EventTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <UserId>S-1-5-18</UserId>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT5M</ExecutionTimeLimit>
+    <Priority>5</Priority>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>$pwshExe</Command>
+      <Arguments>$args</Arguments>
+    </Exec>
+  </Actions>
+</Task>
+"@
+
+# Remove and reregister — simpler than diffing the XML for parity. The task
+# is fast to (re)create so re-registering on every run_onchange is cheap.
+$existing = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+if ($existing) {
+    Write-Host "[vpn-dns-watcher] removing existing task '$taskName' to refresh definition"
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+}
+
+Register-ScheduledTask -TaskName $taskName -Xml $taskXml -Force | Out-Null
+Write-Host "[vpn-dns-watcher] registered '$taskName' (trigger: NetworkProfile 10000 for 'ProtonVPN', runs as SYSTEM)" -ForegroundColor Green
+
+# Smoke test: run the task once now so the current Proton session is
+# already cleaned even if the next 7036 hasn't fired yet.
+try {
+    Start-ScheduledTask -TaskName $taskName
+    Write-Host "[vpn-dns-watcher] kicked off one-shot run; check $env:ProgramData\chezmoi\clean-vpn-adapter-dns.log" -ForegroundColor Cyan
+} catch {
+    Write-Warning "[vpn-dns-watcher] smoke-test start failed: $_"
+}
+{{- end }}
