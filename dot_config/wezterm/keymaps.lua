@@ -60,6 +60,23 @@ local M = {}
 --
 -- ─ Domains (WSL / SSH) ───────────────────────────────────────
 -- LEADER+G .......... Spawn into a WSL distro / SSH domain
+--
+-- ─ Sessions (resurrect.wezterm) ────────────────────────────
+-- LEADER+A .......... Save current workspace snapshot to disk
+-- LEADER+E .......... Fuzzy-load saved workspace/window/tab
+--
+-- ─ Project workspaces (zoxide) ────────────────────────────
+-- LEADER+J .......... Jump to a zoxide dir as a named workspace
+--
+-- ─ Tool overlays ─────────────────────────────────────────────
+-- LEADER+X then ...   g=lazygit  t=btop  n=navi  o=opencode
+--                     (same key toggles back to previous workspace)
+--
+-- ─ Broadcast ─────────────────────────────────────────────────
+-- LEADER+B .......... Type a command → send to every pane in current tab
+--
+-- ─ Discovery ──────────────────────────────────────────────────
+-- LEADER+? .......... Which-key style menu (fuzzy list of LEADER actions)
 
 function M.apply_to_config(config)
   config.disable_default_key_bindings = true
@@ -72,6 +89,20 @@ function M.apply_to_config(config)
   -- ───────────────────────────────────────────────────────────────────────────
   -- Plugin is required for its side-effects; we just need the IS_NVIM detection.
   pcall(wezterm.plugin.require, "https://github.com/mrjones2014/smart-splits.nvim")
+
+  -- ───────────────────────────────────────────────────────────────────────────
+  -- resurrect.wezterm — session/workspace persistence to disk
+  -- ───────────────────────────────────────────────────────────────────────────
+  local ok_resurrect, resurrect = pcall(wezterm.plugin.require, "https://github.com/MLFlexer/resurrect.wezterm")
+  if ok_resurrect then
+    -- Auto-save the workspace state every 15 minutes.
+    resurrect.state_manager.periodic_save({
+      interval_seconds = 15 * 60,
+      save_workspaces = true,
+      save_windows = true,
+      save_tabs = false,
+    })
+  end
 
   local function is_vim(pane)
     return pane:get_user_vars().IS_NVIM == "true"
@@ -123,6 +154,227 @@ function M.apply_to_config(config)
     action = wezterm.action_callback(function(_, _, line)
       if line and #line > 0 then
         wezterm.mux.rename_workspace(wezterm.mux.get_active_workspace(), line)
+      end
+    end),
+  })
+
+  -- ───────────────────────────────────────────────────────────────────────────
+  -- resurrect.wezterm save/load actions (LEADER+A / LEADER+E)
+  -- ───────────────────────────────────────────────────────────────────────────
+  local save_state = wezterm.action_callback(function(win, _)
+    if not ok_resurrect then return end
+    resurrect.state_manager.save_state(resurrect.workspace_state.get_workspace_state())
+    win:toast_notification("resurrect", "workspace saved", nil, 2000)
+  end)
+
+  local load_state = wezterm.action_callback(function(win, pane)
+    if not ok_resurrect then return end
+    resurrect.fuzzy_loader.fuzzy_load(win, pane, function(id)
+      local kind, file = id:match("^([^/]+)/(.+)$")
+      if not kind or not file then return end
+      file = file:gsub("%.json$", "")
+      local opts = {
+        window         = win:mux_window(),
+        relative       = true,
+        restore_text   = true,
+        on_pane_restore = resurrect.tab_state.default_on_pane_restore,
+      }
+      if kind == "workspace" then
+        local state = resurrect.state_manager.load_state(file, "workspace")
+        resurrect.workspace_state.restore_workspace(state, opts)
+      elseif kind == "window" then
+        local state = resurrect.state_manager.load_state(file, "window")
+        resurrect.window_state.restore_window(pane:window(), state, opts)
+      elseif kind == "tab" then
+        local state = resurrect.state_manager.load_state(file, "tab")
+        resurrect.tab_state.restore_tab(pane:tab(), state, opts)
+      end
+    end)
+  end)
+
+  -- ───────────────────────────────────────────────────────────────────────────
+  -- Zoxide project workspace picker (LEADER+J)
+  -- Reads `zoxide query -l`, presents fuzzy selector, switches to a workspace
+  -- named after the dir's basename, spawning the shell in that dir.
+  -- ───────────────────────────────────────────────────────────────────────────
+  local zoxide_workspace = wezterm.action_callback(function(win, pane)
+    local handle = io.popen("zoxide query -l")
+    if not handle then return end
+    local out = handle:read("*a") or ""
+    handle:close()
+
+    local choices = {}
+    for line in out:gmatch("[^\r\n]+") do
+      if #line > 0 then table.insert(choices, { label = line }) end
+    end
+    if #choices == 0 then
+      win:toast_notification("zoxide", "no entries", nil, 2000)
+      return
+    end
+
+    win:perform_action(act.InputSelector({
+      title = "  Project workspace (zoxide)",
+      fuzzy = true,
+      fuzzy_description = "  > ",
+      choices = choices,
+      action = wezterm.action_callback(function(w, p, _, label)
+        if not label then return end
+        local name = label:match("[^\\/]+$") or label
+        w:perform_action(act.SwitchToWorkspace({
+          name  = name,
+          spawn = { cwd = label },
+        }), p)
+      end),
+    }), pane)
+  end)
+
+  -- ───────────────────────────────────────────────────────────────────────────
+  -- Tool overlay workspaces (LEADER+X then g/t/n/o)
+  -- Toggles between the tool's dedicated workspace and the previous one.
+  -- ───────────────────────────────────────────────────────────────────────────
+  local function toggle_overlay(ws_name, cmd_args)
+    return wezterm.action_callback(function(win, pane)
+      local current = wezterm.mux.get_active_workspace()
+      if current == ws_name then
+        local prev = wezterm.GLOBAL.prev_workspace or "default"
+        win:perform_action(act.SwitchToWorkspace({ name = prev }), pane)
+      else
+        wezterm.GLOBAL.prev_workspace = current
+        win:perform_action(act.SwitchToWorkspace({
+          name  = ws_name,
+          spawn = { args = cmd_args },
+        }), pane)
+      end
+    end)
+  end
+
+  -- ───────────────────────────────────────────────────────────────────────────
+  -- Broadcast a command to every pane in the current tab (LEADER+B)
+  -- ───────────────────────────────────────────────────────────────────────────
+  local broadcast = act.PromptInputLine({
+    description = "Broadcast to all panes in tab:",
+    action = wezterm.action_callback(function(_, pane, line)
+      if not line or #line == 0 then return end
+      local tab = pane:tab()
+      if not tab then return end
+      for _, p in ipairs(tab:panes()) do
+        p:send_text(line .. "\r")
+      end
+    end),
+  })
+
+  -- ───────────────────────────────────────────────────────────────────────────
+  -- Which-key menu (LEADER+?) — fuzzy-searchable popup of LEADER actions.
+  -- Wezterm has no native which-key timed popup; this is the InputSelector
+  -- idiom that gives equivalent discoverability.
+  -- ───────────────────────────────────────────────────────────────────────────
+  local wk_dispatch = {
+    -- Application
+    fullscreen     = act.ToggleFullScreen,
+    opacity        = toggle_opacity,
+    palette        = act.ActivateCommandPalette,
+    reload         = act.ReloadConfiguration,
+
+    -- Tabs
+    tab_new        = act.SpawnTab("CurrentPaneDomain"),
+    tab_close      = act.CloseCurrentTab({ confirm = true }),
+    tab_rename     = rename_tab,
+    tab_next       = act.ActivateTabRelative(1),
+    tab_prev       = act.ActivateTabRelative(-1),
+
+    -- Panes
+    split_right    = act.SplitHorizontal({ domain = "CurrentPaneDomain" }),
+    split_down     = act.SplitVertical({ domain = "CurrentPaneDomain" }),
+    pane_close     = act.CloseCurrentPane({ confirm = true }),
+    pane_zoom      = act.TogglePaneZoomState,
+    pane_rotate    = act.RotatePanes("Clockwise"),
+    pane_break     = act.PaneSelect({ mode = "MoveToNewTab" }),
+    pane_swap      = act.PaneSelect({ mode = "SwapWithActive" }),
+    pane_resize    = act.ActivateKeyTable({ name = "resize_pane", one_shot = false, timeout_milliseconds = 4000 }),
+
+    -- Workspaces
+    ws_launcher    = act.ShowLauncherArgs({ flags = "FUZZY|WORKSPACES" }),
+    ws_rename      = rename_workspace,
+    ws_next        = act.SwitchWorkspaceRelative(1),
+    ws_prev        = act.SwitchWorkspaceRelative(-1),
+
+    -- Copy / search
+    copy_mode      = act.ActivateCopyMode,
+    search         = act.Search({ CaseInSensitiveString = "" }),
+    quick_select   = act.QuickSelect,
+    char_select    = act.CharSelect({ copy_on_select = true, copy_to = "ClipboardAndPrimarySelection" }),
+    clear          = act.ClearScrollback("ScrollbackAndViewport"),
+
+    -- Domain launcher
+    domain_launch  = act.ShowLauncherArgs({ flags = "FUZZY|DOMAINS" }),
+
+    -- Sessions / projects / tools / broadcast
+    rs_save        = save_state,
+    rs_load        = load_state,
+    zoxide_ws      = zoxide_workspace,
+    tools_menu     = act.ActivateKeyTable({ name = "tools", one_shot = true, timeout_milliseconds = 2000 }),
+    broadcast      = broadcast,
+  }
+
+  -- Display labels mirror the cheat sheet at the top of this file.
+  -- Keep them aligned so the picker is grep-able / scannable.
+  local wk_choices = {
+    { label = "  App   fullscreen          F11 / LEADER+F",   id = "fullscreen" },
+    { label = "  App   command palette     CTRL+SHIFT+P",     id = "palette" },
+    { label = "  App   reload config       CTRL+SHIFT+R",     id = "reload" },
+    { label = "  App   cycle opacity       LEADER+O",         id = "opacity" },
+
+    { label = "  Tab   new                 CTRL+SHIFT+T",     id = "tab_new" },
+    { label = "  Tab   close               CTRL+SHIFT+W",     id = "tab_close" },
+    { label = "  Tab   rename              LEADER+,",         id = "tab_rename" },
+    { label = "  Tab   next                CTRL+SHIFT+]",     id = "tab_next" },
+    { label = "  Tab   prev                CTRL+SHIFT+[",     id = "tab_prev" },
+
+    { label = "  Pane  split right         LEADER+\\",        id = "split_right" },
+    { label = "  Pane  split down          LEADER+-",         id = "split_down" },
+    { label = "  Pane  close               LEADER+D",         id = "pane_close" },
+    { label = "  Pane  zoom toggle         LEADER+Z",         id = "pane_zoom" },
+    { label = "  Pane  rotate              LEADER+SPACE",     id = "pane_rotate" },
+    { label = "  Pane  break to new tab    LEADER+!",         id = "pane_break" },
+    { label = "  Pane  swap with...        LEADER+@",         id = "pane_swap" },
+    { label = "  Pane  resize mode         LEADER+R",         id = "pane_resize" },
+
+    { label = "  WS    launcher            LEADER+S",         id = "ws_launcher" },
+    { label = "  WS    rename current      LEADER+W",         id = "ws_rename" },
+    { label = "  WS    next                LEADER+N",         id = "ws_next" },
+    { label = "  WS    prev                LEADER+P",         id = "ws_prev" },
+
+    { label = "  Copy  copy mode           LEADER+[",         id = "copy_mode" },
+    { label = "  Copy  search              LEADER+/",         id = "search" },
+    { label = "  Copy  quick select        LEADER+Y",         id = "quick_select" },
+    { label = "  Copy  char picker         LEADER+U",         id = "char_select" },
+    { label = "  Copy  clear scrollback    LEADER+K",         id = "clear" },
+
+    { label = "  Dom   WSL / SSH launcher  LEADER+G",         id = "domain_launch" },
+
+    { label = "  Sess  save workspace        LEADER+A",         id = "rs_save" },
+    { label = "  Sess  load (fuzzy)          LEADER+E",         id = "rs_load" },
+
+    { label = "  Proj  zoxide workspace      LEADER+J",         id = "zoxide_ws" },
+
+    { label = "  Tool  open overlay (g/t/n/o) LEADER+X",         id = "tools_menu" },
+
+    { label = "  Bcst  send cmd to all panes LEADER+B",         id = "broadcast" },
+  }
+
+  local which_key = act.InputSelector({
+    title = "  Which-key  (LEADER actions — type to filter, Esc to cancel)",
+    fuzzy = true,
+    fuzzy_description = "  > ",
+    choices = wk_choices,
+    action = wezterm.action_callback(function(win, pane, _, label)
+      if not label then return end
+      -- find the choice with this label, then dispatch by id
+      for _, c in ipairs(wk_choices) do
+        if c.label == label and wk_dispatch[c.id] then
+          win:perform_action(wk_dispatch[c.id], pane)
+          return
+        end
       end
     end),
   })
@@ -210,6 +462,25 @@ function M.apply_to_config(config)
 
     -- ── Domain launcher (WSL / SSH) ──────────────────────────
     { key = "g",          mods = "LEADER",      action = act.ShowLauncherArgs({ flags = "FUZZY|DOMAINS" }) },
+
+    -- ── Sessions (resurrect.wezterm) ─────────────────────────
+    { key = "a",          mods = "LEADER",      action = save_state },
+    { key = "e",          mods = "LEADER",      action = load_state },
+
+    -- ── Project workspaces (zoxide) ─────────────────────────
+    { key = "j",          mods = "LEADER",      action = zoxide_workspace },
+
+    -- ── Tool overlays (LEADER+X then g/t/n/o) ────────────────────
+    {
+      key = "x", mods = "LEADER",
+      action = act.ActivateKeyTable({ name = "tools", one_shot = true, timeout_milliseconds = 2000 }),
+    },
+
+    -- ── Broadcast ───────────────────────────────────────────────
+    { key = "b",          mods = "LEADER",      action = broadcast },
+
+    -- ── Discovery / which-key ────────────────────────────────
+    { key = "?",          mods = "LEADER|SHIFT", action = which_key },
   }
 
   -- ───────────────────────────────────────────────────────────────────────────
@@ -273,6 +544,16 @@ function M.apply_to_config(config)
       { key = "DownArrow",  mods = "NONE",  action = act.CopyMode("MoveDown") },
       { key = "UpArrow",    mods = "NONE",  action = act.CopyMode("MoveUp") },
       { key = "RightArrow", mods = "NONE",  action = act.CopyMode("MoveRight") },
+    },
+
+    -- LEADER+X then g/t/n/o — spawn (or return from) a tool's dedicated workspace.
+    tools = {
+      { key = "g",      mods = "NONE", action = toggle_overlay("lazygit",  { "pwsh.exe", "-NoLogo", "-NoProfile", "-Command", "lazygit" }) },
+      { key = "t",      mods = "NONE", action = toggle_overlay("btop",     { "pwsh.exe", "-NoLogo", "-NoProfile", "-Command", "btop" }) },
+      { key = "n",      mods = "NONE", action = toggle_overlay("navi",     { "pwsh.exe", "-NoLogo", "-NoProfile", "-Command", "navi" }) },
+      { key = "o",      mods = "NONE", action = toggle_overlay("opencode", { "pwsh.exe", "-NoLogo", "-NoProfile", "-Command", "opencode" }) },
+      { key = "Escape", mods = "NONE", action = "PopKeyTable" },
+      { key = "q",      mods = "NONE", action = "PopKeyTable" },
     },
 
     search_mode = {
