@@ -1,0 +1,69 @@
+{{- /*
+VS Code default-profile extension installer (Linux/macOS).
+
+Source of truth:
+  {{ .chezmoi.sourceDir }}/vscode/extensions.txt
+  (ignored from $HOME deployment via .chezmoiignore: vscode/**, but readable
+  here via `include` since chezmoi resolves it against the source dir.)
+
+Trigger:
+  `run_onchange_` rehashes the rendered script body. The list is inlined
+  below, so editing vscode/extensions.txt re-renders this script and
+  re-triggers it on the next `chezmoi apply`.
+
+Behavior:
+  - No-op if package_features.vscode is false
+  - No-op if the `code` CLI isn't on PATH
+  - Installs only missing extensions (idempotent, additive only)
+  - Case-insensitive ID comparison
+*/}}
+{{- if and (or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin")) .package_features.vscode }}
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v code >/dev/null 2>&1; then
+    echo "[vscode-extensions] 'code' CLI not on PATH - skipping (install VS Code first)"
+    exit 0
+fi
+
+# Inlined extension list (source: vscode/extensions.txt).
+WANTED_RAW=$(cat <<'EOF'
+{{ include "vscode/extensions.txt" -}}
+EOF
+)
+
+mapfile -t wanted < <(
+    printf '%s\n' "$WANTED_RAW" \
+    | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+    | grep -Ev '^(#|$)'
+)
+
+if [ "${#wanted[@]}" -eq 0 ]; then
+    echo "[vscode-extensions] list is empty - nothing to do"
+    exit 0
+fi
+
+installed=$(code --list-extensions 2>/dev/null | tr '[:upper:]' '[:lower:]' | sort -u || true)
+
+to_install=()
+for ext in "${wanted[@]}"; do
+    lower=$(printf '%s' "$ext" | tr '[:upper:]' '[:lower:]')
+    if ! grep -qFx "$lower" <<<"$installed"; then
+        to_install+=("$ext")
+    fi
+done
+
+if [ "${#to_install[@]}" -eq 0 ]; then
+    echo "[vscode-extensions] all ${#wanted[@]} extensions already installed"
+    exit 0
+fi
+
+echo "[vscode-extensions] installing ${#to_install[@]} of ${#wanted[@]} extensions..."
+for ext in "${to_install[@]}"; do
+    echo "  -> $ext"
+    if ! code --install-extension "$ext" --force >/dev/null 2>&1; then
+        echo "  [warn] failed to install: $ext" >&2
+    fi
+done
+echo "[vscode-extensions] done"
+{{- end }}

@@ -198,13 +198,27 @@ Review `$Config` at the top of the script — adjust paths if any changed after 
 
 ### 4d. VS Code
 
-Extensions auto-install from chezmoi-managed `extensions.json` or restore:
+Extensions are installed automatically by chezmoi on `chezmoi apply` via
+`.chezmoiscripts/run_onchange_after_70_vscode-extensions_windows.ps1.tmpl`,
+driven by the list in `vscode/extensions.txt`. Requires:
+
+- `package_features.vscode = true` (default)
+- `code` CLI on PATH (VS Code installed via winget — `Microsoft.VisualStudioCode`)
+
+If the `code` CLI wasn't on PATH yet when bootstrap ran, just re-run
+`chezmoi apply` after VS Code is installed. To force re-run after editing
+the list:
 
 ```powershell
-Get-Content "A:\bak\vscode-extensions.txt" | ForEach-Object { code --install-extension $_ }
+chezmoi state delete-bucket --bucket=scriptState
+chezmoi apply
 ```
 
-Profiles/snippets: copy from `A:\bak\vscode-profiles\`
+Profiles and snippets are **not** restored from backup — they were not
+useful (per-profile `extensions.json` is just an enabled-subset, and the
+backup didn't include the default profile's enabled list or profile
+names). Recreate any profiles you want from scratch in VS Code
+(Settings > Profiles > New Profile…).
 
 ### 4e. WSL (When Ready)
 
