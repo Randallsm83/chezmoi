@@ -49,6 +49,40 @@
 {{- end }}
 {{- end }}
 
+# ============================================================================
+# Aliases
+# ============================================================================
+# `git land <branch>` is the canonical "merge a feature branch into main"
+# flow when the repo is mirrored across multiple hosts (e.g. GitLab + GitHub).
+#
+# Background: when a repo has dual push URLs (or you open MR+PR on each host)
+# and you click "Merge" in both web UIs, each side creates its own squash
+# commit with a different SHA. Local main then diverges from one of them and
+# subsequent pushes are rejected with `(fetch first)` until you force-push.
+#
+# `git land` keeps a single canonical SHA: merge locally, push once, both
+# remotes get the same commit. Never click Merge in the web UI; use this.
+#
+#   git land feature/foo            # default --no-ff merge
+#   GIT_LAND_FF=1 git land foo      # force --ff-only (rebased branches)
+#   GIT_LAND_KEEP=1 git land foo    # don't delete the local branch after
+[alias]
+	land = "!f() { \
+		set -e; \
+		branch=\"$1\"; \
+		if [ -z \"$branch\" ]; then echo 'usage: git land <branch>' >&2; exit 2; fi; \
+		if [ \"$branch\" = main ] || [ \"$branch\" = master ]; then echo 'refusing to land main/master onto itself' >&2; exit 2; fi; \
+		git checkout main; \
+		git pull --ff-only; \
+		if [ -n \"$GIT_LAND_FF\" ]; then \
+			git merge --ff-only \"$branch\"; \
+		else \
+			git merge --no-ff --no-edit \"$branch\"; \
+		fi; \
+		git push origin main; \
+		if [ -z \"$GIT_LAND_KEEP\" ]; then git branch -d \"$branch\"; fi; \
+	}; f"
+
 [init]
 	defaultBranch = main
 
