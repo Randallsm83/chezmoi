@@ -198,6 +198,43 @@ Brief description of what this PR does
 3. Address any feedback
 4. Once approved, changes will be merged
 
+### Merging (mirrored remotes)
+
+This repo is mirrored across **GitLab** (canonical `origin` fetch) and
+**GitHub** (additional push URL on `origin`, plus a `github` remote).
+
+**Do not click "Merge" in either web UI.** Each host's Merge button creates
+its own squash/merge commit with a different SHA. The two `main` branches
+then diverge and subsequent pushes get rejected (`fetch first`) until
+someone force-pushes. The web UI is for review only.
+
+Use the `land` alias instead — it merges locally and pushes once, so both
+remotes get the same canonical commit:
+
+```bash
+git land feature/your-branch
+```
+
+The alias:
+1. Checks out `main` and `git pull --ff-only`
+2. Merges your branch with `--no-ff --no-edit` (or `--ff-only` if
+   `GIT_LAND_FF=1` is set, useful for already-rebased branches)
+3. `git push origin main` — single push, both remotes get the same SHA
+4. Deletes the local feature branch (skip with `GIT_LAND_KEEP=1`)
+
+Close the MR/PR on each side after the push (`glab mr close <id>` /
+`gh pr close <id>`); the commit is already there.
+
+If the two remotes have already diverged from prior web-UI merges:
+```bash
+git fetch origin
+git fetch github
+# Pick the canonical side (usually whatever matches `origin` fetch URL).
+git push github main --force-with-lease
+```
+Force-with-lease is safe when the trees match — confirm first with
+`git diff origin/main github/main`.
+
 ---
 
 ## Style Guidelines
