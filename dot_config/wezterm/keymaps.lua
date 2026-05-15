@@ -16,67 +16,79 @@ local M = {}
 --
 -- LEADER ............ CTRL+;
 --
--- ─ Application ───────────────────────────────────────────────
--- CTRL+SHIFT+P ...... Command palette
--- CTRL+SHIFT+L ...... Debug overlay
--- F11 / LEADER+F .... Toggle fullscreen
--- CTRL+SHIFT+R ...... Reload config
--- CTRL+SHIFT+Q ...... Quit application
--- CTRL+SHIFT+N ...... New OS window
--- CTRL+SHIFT+= / - .. Font size +/- (also CTRL+SHIFT+0 reset)
--- LEADER+O .......... Cycle window opacity (1.0 → 0.95 → 0.85 → 0.75)
+-- ─ Application ──────────────────────────────────────────────────────────
+-- CTRL+SHIFT+P ........... Command palette
+-- CTRL+SHIFT+L ........... Debug overlay
+-- F11 ................... Toggle fullscreen
+-- LEADER+F ............... Toggle fullscreen
+-- CTRL+SHIFT+R ........... Reload config
+-- CTRL+SHIFT+Q ........... Quit application
+-- CTRL+SHIFT+N ........... New OS window
+-- CTRL+SHIFT+= ........... Increase font size
+-- CTRL+SHIFT+- ........... Decrease font size
+-- CTRL+SHIFT+0 ........... Reset font size
+-- LEADER+O ............... Cycle window opacity (1.0 → 0.95 → 0.85 → 0.75)
 --
--- ─ Tabs ──────────────────────────────────────────────────────
--- CTRL+SHIFT+T ...... New tab
--- CTRL+SHIFT+W ...... Close tab (with confirm)
--- CTRL+1..9 ......... Activate tab 1..9 (9 = last)
--- CTRL+SHIFT+] / [ .. Next / prev tab
--- CTRL+SHIFT+→ / ← .. Move tab right / left
--- LEADER+, .......... Rename current tab
+-- ─ Tabs ─────────────────────────────────────────────────────────────────
+-- CTRL+SHIFT+T ........... New tab
+-- CTRL+SHIFT+W ........... Close tab (with confirm)
+-- CTRL+1 … CTRL+9 ........ Activate tab 1..9 (9 = last)
+-- CTRL+SHIFT+] ........... Next tab
+-- CTRL+SHIFT+[ ........... Prev tab
+-- CTRL+SHIFT+RightArrow .. Move tab right
+-- CTRL+SHIFT+LeftArrow ... Move tab left
+-- LEADER+, ............... Rename current tab
 --
--- ─ Panes ─────────────────────────────────────────────────────
--- LEADER+\ / -  ..... Split right / down  (LEADER+| also splits right)
--- LEADER+D .......... Close pane (with confirm)
--- LEADER+Z .......... Zoom toggle
--- CTRL+h/j/k/l ...... Move between panes (smart-splits, vim-aware)
--- META+h/j/k/l ...... Resize panes (smart-splits, vim-aware)
--- LEADER+R .......... Resize-pane mode (hjkl/arrows; ESC/Enter/q exits)
--- LEADER+SPACE ...... Rotate panes clockwise
--- LEADER+! .......... Break pane into its own tab
--- LEADER+@ .......... Swap pane with another (visual picker)
+-- ─ Panes ────────────────────────────────────────────────────────────────
+-- LEADER+\ ............... Split right (split horizontal)
+-- LEADER+| ............... Split right (alias, SHIFT+\)
+-- LEADER+- ............... Split down  (split vertical)
+-- LEADER+D ............... Close pane (with confirm)
+-- LEADER+Z ............... Zoom toggle
+-- CTRL+H, CTRL+J, CTRL+K, CTRL+L .. Move between panes (smart-splits, vim-aware)
+-- META+H, META+J, META+K, META+L .. Resize panes (smart-splits, vim-aware)
+-- LEADER+R ............... Resize-pane mode (hjkl or arrows; ESC, Enter, or q exits)
+-- LEADER+Space ........... Rotate panes clockwise
+-- LEADER+! ............... Break pane into its own tab
+-- LEADER+@ ............... Swap pane with another (visual picker)
 --
--- ─ Workspaces ────────────────────────────────────────────────
--- LEADER+S .......... Show workspace launcher (fuzzy)
--- LEADER+W .......... Rename current workspace
--- LEADER+N / P ...... Next / prev workspace
+-- ─ Workspaces ──────────────────────────────────────────────────────────
+-- LEADER+S ............... Show workspace launcher (fuzzy)
+-- LEADER+W ............... Rename current workspace
+-- LEADER+N ............... Next workspace
+-- LEADER+P ............... Prev workspace
 --
--- ─ Copy / search ─────────────────────────────────────────────
--- CTRL+SHIFT+C / V .. Copy / paste
--- LEADER+[ .......... Enter copy mode (vi-style; tmux-compatible)
--- LEADER+/ .......... Search
--- LEADER+Y .......... Quick-select (open links/SHAs/etc.)
--- LEADER+U .......... Character picker
--- LEADER+K .......... Clear scrollback + viewport
+-- ─ Copy and search ────────────────────────────────────────────────────────
+-- CTRL+SHIFT+C ........... Copy to clipboard
+-- CTRL+SHIFT+V ........... Paste from clipboard
+-- LEADER+[ ............... Enter copy mode (vi-style; tmux-compatible)
+-- LEADER+/ ............... Search
+-- LEADER+Y ............... Quick-select (links, SHAs, etc.)
+-- LEADER+U ............... Character picker
+-- LEADER+K ............... Clear scrollback + viewport
 --
--- ─ Domains (WSL / SSH) ───────────────────────────────────────
--- LEADER+G .......... Spawn into a WSL distro / SSH domain
+-- ─ Domains (WSL, SSH) ────────────────────────────────────────
+-- LEADER+G ............... Spawn into a WSL distro or SSH domain
 --
 -- ─ Sessions (resurrect.wezterm) ────────────────────────────
--- LEADER+A .......... Save current workspace snapshot to disk
--- LEADER+E .......... Fuzzy-load saved workspace/window/tab
+-- LEADER+A ............... Save current workspace snapshot to disk
+-- LEADER+E ............... Fuzzy-load saved workspace, window, or tab
 --
 -- ─ Project workspaces (zoxide) ────────────────────────────
--- LEADER+J .......... Jump to a zoxide dir as a named workspace
+-- LEADER+J ............... Jump to a zoxide dir as a named workspace
 --
 -- ─ Tool overlays ─────────────────────────────────────────────
--- LEADER+X then ...   g=lazygit  t=btop  n=navi  o=opencode
---                     (same key toggles back to previous workspace)
+-- LEADER+X then G ........ Toggle lazygit overlay workspace
+-- LEADER+X then T ........ Toggle btop overlay workspace
+-- LEADER+X then N ........ Toggle navi overlay workspace
+-- LEADER+X then O ........ Toggle opencode overlay workspace
+--                         (same key returns to previous workspace)
 --
 -- ─ Broadcast ─────────────────────────────────────────────────
--- LEADER+B .......... Type a command → send to every pane in current tab
+-- LEADER+B ............... Type a command, send to every pane in current tab
 --
 -- ─ Discovery ──────────────────────────────────────────────────
--- LEADER+? .......... Which-key style menu (fuzzy list of LEADER actions)
+-- LEADER+? ............... Which-key style menu (fuzzy list of LEADER actions)
 
 function M.apply_to_config(config)
   config.disable_default_key_bindings = true
