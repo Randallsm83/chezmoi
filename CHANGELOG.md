@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **VS Code extensions managed by chezmoi**: New `vscode/extensions.txt` (single source of truth, one ID per line, `#` comments allowed) drives two new `run_onchange_after_70_vscode-extensions_{windows,unix}.{ps1,sh}.tmpl` scripts that install missing extensions on `chezmoi apply`. Gated by `package_features.vscode` and the presence of the `code` CLI; idempotent and additive (never uninstalls). The list is inlined into the rendered script body so editing `vscode/extensions.txt` re-triggers the install. Closes the long-standing gap where the chezmoi-managed `settings.json` referenced extensions (spaceduck, vim, prettier, AI panels, etc.) that were never auto-installed.
 - **Workspace environment variables**: `PROJECTS`, `DHSPACE`, `BACKEND`, `FRONTEND`, `HELPSERVICES`, `NOTES` exported from `dot_config/zsh/dot_zshrc.d/10-dirs.zsh` (zsh) and `Documents/PowerShell/Scripts/99-aliases.ps1` (pwsh). All paths derive from `$HOME` via `Join-Path` (pwsh) / `$HOME/...` (zsh) — no hardcoded Windows paths. Structure: `PROJECTS = $HOME/projects`, `DHSPACE = $PROJECTS/dh`, `BACKEND/FRONTEND/HELPSERVICES = $DHSPACE/<bucket>`, `NOTES = $PROJECTS/notes`.
 - **Navigation shortcuts** (zsh aliases / pwsh functions, guarded by directory existence on pwsh):
   - Workspace roots: `cdp`, `dh`, `cdbe`, `cdfe`, `cdhs`, `dots`, `notes`
