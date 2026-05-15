@@ -1,0 +1,71 @@
+{{- /*
+VS Code default-profile extension installer (Windows).
+
+Source of truth:
+  {{ .chezmoi.sourceDir }}\vscode\extensions.txt
+  (ignored from $HOME deployment via .chezmoiignore: vscode/**, but readable
+  here via `include` since chezmoi resolves it against the source dir.)
+
+Trigger:
+  `run_onchange_` rehashes the rendered script body. The list is inlined
+  below, so editing vscode/extensions.txt re-renders this script and
+  re-triggers it on the next `chezmoi apply`.
+
+Behavior:
+  - No-op if package_features.vscode is false
+  - No-op if the `code` CLI isn't on PATH (lets VS Code install lazily)
+  - Installs only missing extensions (idempotent)
+  - Comparison is case-insensitive (VS Code IDs aren't case-sensitive)
+  - Does NOT uninstall extensions that aren't in the list (additive only)
+*/}}
+{{- if and (eq .chezmoi.os "windows") .package_features.vscode -}}
+$ErrorActionPreference = 'Stop'
+
+$code = Get-Command code -ErrorAction SilentlyContinue
+if (-not $code) {
+    Write-Host "[vscode-extensions] 'code' CLI not on PATH - skipping (install VS Code first)"
+    return
+}
+
+# Inlined extension list (source: vscode/extensions.txt). Re-rendering this
+# script when the list changes is what triggers re-installation.
+$listText = @'
+{{ include "vscode/extensions.txt" -}}
+'@
+
+$wanted = $listText -split "`r?`n" |
+    ForEach-Object { $_.Trim() } |
+    Where-Object   { $_ -and -not $_.StartsWith('#') }
+
+if (-not $wanted) {
+    Write-Host "[vscode-extensions] list is empty - nothing to do"
+    return
+}
+
+$installed = @(& code --list-extensions 2>$null) |
+    ForEach-Object { $_.Trim().ToLowerInvariant() } |
+    Where-Object   { $_ }
+
+$lookup = @{}
+foreach ($i in $installed) { $lookup[$i] = $true }
+
+$toInstall = @()
+foreach ($ext in $wanted) {
+    if (-not $lookup.ContainsKey($ext.ToLowerInvariant())) { $toInstall += $ext }
+}
+
+if (-not $toInstall) {
+    Write-Host "[vscode-extensions] all $($wanted.Count) extensions already installed"
+    return
+}
+
+Write-Host "[vscode-extensions] installing $($toInstall.Count) of $($wanted.Count) extensions..."
+foreach ($ext in $toInstall) {
+    Write-Host "  -> $ext"
+    & code --install-extension $ext --force 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "[vscode-extensions] failed to install: $ext (exit $LASTEXITCODE)"
+    }
+}
+Write-Host "[vscode-extensions] done"
+{{- end -}}

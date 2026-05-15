@@ -68,6 +68,7 @@ The system is built around a small set of files that drive everything else:
    - `run_onchange_install-packages-{unix,windows}.{sh,ps1}.tmpl` — packages from manifests
    - `run_onchange_generate_bat_themes*` / `run_after_rebuild_bat_cache*` — bat theme/cache rebuild
    - `run_onchange_after_55_vpn-dns-routes.{sh,ps1}.tmpl` — split-DNS routes from `vpn_dns_routes` (macOS `/etc/resolver/`, Linux `resolvectl`, Windows NRPT)
+   - `run_onchange_after_70_vscode-extensions_{windows,unix}.{ps1,sh}.tmpl` — install missing VS Code extensions from `vscode/extensions.txt` (gated by `package_features.vscode` and presence of the `code` CLI; idempotent, additive only)
    - `run_after_sync_claude_memories.{sh,ps1}.tmpl` — sync Claude memories
 6. **`chezmoi.local.toml`** (gitignored, see `chezmoi.local.toml.example`) — per-machine variable overrides. Anything in this file wins over auto-detection.
 
