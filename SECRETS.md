@@ -233,11 +233,14 @@ Example: wiring up `aider` with `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`.
 |---|---|---|
 | `claude` | `~/.config/op/claude.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY` |
 | `opencode` | `~/.config/op/opencode.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY` |
+| `pam` | `~/.config/op/pam.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY`, `DH_CLICKUP_API_KEY` (+ public `CLICKUP_TEAM_ID`) |
 
 `~/.claude.json` references these via `${VAR_NAME}` substitution in HTTP
 header values and stdio MCP `env` blocks, so all four MCP servers
 (`tavily`, `vercel`, `neon`, `qdrant`) connect through the wrapper without
 any literal credentials in `~/.claude.json`.
+
+The `pam` daemon (Personal Agent Multiplexer, MCP proxy) is wrapped the same way: `op run --env-file=~/.config/op/pam.env -- pam.exe start`. The manifest at `~/.config/pam/manifest.toml` resolves most secrets inline via `${op://...}` placeholders at backend spawn; `pam.env` covers the subset the manifest pulls from the process environment via `env://` references (today: the clickup backend's `DH_CLICKUP_API_KEY`), and pre-stages the rest of the AI-provider set so future backends that switch to `env://` Just Work. Source lives at `dot_config/private_op/private_pam.env` (chezmoi `private_` prefix → 0600 on disk).
 
 `~/.config/opencode/opencode.json` references these via `{env:VAR_NAME}`
 substitution (opencode's syntax — different from Claude Code's `${VAR_NAME}`).
