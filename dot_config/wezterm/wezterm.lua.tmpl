@@ -83,58 +83,73 @@ config.color_scheme_dirs = { wezterm.home_dir .. "/.config/wezterm/colors" }
 config.color_scheme = THEME_NAME
 config.colors = {}
 
--- Spaceduck palette (pineapplegiant/spaceduck) — used for chrome accents
+-- Spaceduck palette — matches starship's [palettes.spaceduck] and the
+-- normalized ANSI mapping in dot_config/wezterm/colors/Spaceduck.toml.
 local spaceduck = {
-  bg        = "#0f111b",
-  bg_alt    = "#16172d",
+  bg        = "#0f111b",  -- color_bg0
+  bg_alt    = "#16192e",  -- color_bg1
+  bg_sel    = "#1e2340",  -- color_bg2
   fg        = "#ecf0c1",
   fg_dim    = "#b3a1e6",
-  selection = "#30365f",
   cursor    = "#f2ce00",
+  red       = "#e33400",
+  orange    = "#e39400",
+  yellow    = "#f2ce00",
+  green     = "#5ccc96",
+  cyan      = "#00a3cc",  -- spaceduck's teal-blue (starship's color_cyan)
+  blue      = "#7a5ccc",  -- spaceduck's purple-blue (starship's color_blue)
   purple    = "#b3a1e6",
   pink      = "#ce6f8f",
-  green     = "#5ccc96",
-  orange    = "#e39400",
-  red       = "#e33400",
-  blue      = "#00a3cc",
-  cyan      = "#42b3c2",
-  yellow    = "#f2ce00",
 }
 
-config.colors.split          = spaceduck.purple
-config.colors.cursor_bg      = spaceduck.cursor
-config.colors.cursor_fg      = spaceduck.bg
-config.colors.cursor_border  = spaceduck.cursor
-config.colors.selection_bg   = spaceduck.selection
-config.colors.selection_fg   = spaceduck.fg
-config.colors.visual_bell    = spaceduck.bg_alt
+config.colors.split           = spaceduck.purple
+config.colors.cursor_bg       = spaceduck.cursor
+config.colors.cursor_fg       = spaceduck.bg
+config.colors.cursor_border   = spaceduck.cursor
+config.colors.selection_bg    = spaceduck.bg_sel
+config.colors.selection_fg    = spaceduck.fg
+config.colors.visual_bell     = spaceduck.bg_alt
 config.colors.scrollbar_thumb = spaceduck.fg_dim
 
 -- Spaceduck colors shaped like a wezterm builtin scheme entry; passed to
 -- tabline.wez (which accepts either a builtin name OR a full color table).
+-- Uses standard ANSI semantics so tabline picks the right accents:
+--   ansi[1] surface  | ansi[4] copy-mode  | ansi[5] normal-mode mode pill
 local spaceduck_scheme = {
-  foreground = spaceduck.fg,
-  background = spaceduck.bg,
-  cursor_bg = spaceduck.cursor,
-  cursor_fg = spaceduck.bg,
+  foreground    = spaceduck.fg,
+  background    = spaceduck.bg,
+  cursor_bg     = spaceduck.cursor,
+  cursor_fg     = spaceduck.bg,
   cursor_border = spaceduck.cursor,
-  selection_bg = spaceduck.selection,
-  selection_fg = spaceduck.fg,
+  selection_bg  = spaceduck.bg_sel,
+  selection_fg  = spaceduck.fg,
   ansi = {
-    "#000000", spaceduck.red, spaceduck.green, spaceduck.purple,
-    spaceduck.blue, spaceduck.yellow, "#7a5ccc", spaceduck.fg,
+    "#000000",       -- 0  black
+    spaceduck.red,   -- 1  red
+    spaceduck.green, -- 2  green
+    spaceduck.yellow,-- 3  yellow
+    spaceduck.cyan,  -- 4  blue (spaceduck's teal-blue) → tabline copy-mode accent
+    spaceduck.purple,-- 5  magenta (spaceduck purple) → tabline normal-mode accent
+    "#42b3c2",       -- 6  cyan (spaceduck teal)
+    spaceduck.fg,    -- 7  white
   },
   brights = {
-    "#686f9a", spaceduck.red, spaceduck.green, spaceduck.yellow,
-    spaceduck.blue, spaceduck.pink, spaceduck.cyan, "#f0f0f0",
+    "#686f9a",   -- 8  bright black
+    "#ff5733",   -- 9  bright red
+    "#6fe4a8",   -- 10 bright green
+    "#ffd942",   -- 11 bright yellow
+    "#2cc5e6",   -- 12 bright blue
+    "#ce6f8f",   -- 13 bright magenta (pink)
+    "#56c3d4",   -- 14 bright cyan
+    "#f0f1ce",   -- 15 bright white
   },
   tab_bar = {
-    background = spaceduck.bg,
-    active_tab = { bg_color = spaceduck.purple, fg_color = spaceduck.bg },
-    inactive_tab = { bg_color = spaceduck.bg_alt, fg_color = spaceduck.fg },
-    inactive_tab_hover = { bg_color = spaceduck.selection, fg_color = spaceduck.fg },
-    new_tab = { bg_color = spaceduck.bg_alt, fg_color = spaceduck.purple },
-    new_tab_hover = { bg_color = spaceduck.selection, fg_color = spaceduck.cursor },
+    background         = spaceduck.bg,
+    active_tab         = { bg_color = spaceduck.purple, fg_color = spaceduck.bg },
+    inactive_tab       = { bg_color = spaceduck.bg_alt, fg_color = spaceduck.fg },
+    inactive_tab_hover = { bg_color = spaceduck.bg_sel, fg_color = spaceduck.fg },
+    new_tab            = { bg_color = spaceduck.bg_alt, fg_color = spaceduck.purple },
+    new_tab_hover      = { bg_color = spaceduck.bg_sel, fg_color = spaceduck.cursor },
   },
 }
 
@@ -143,8 +158,10 @@ local spaceduck_scheme = {
 -- ─────────────────────────────────────────────────────────────────────────────
 config.font_dirs = { wezterm.home_dir .. "/.local/share/fonts" }
 config.font = wezterm.font_with_fallback({
-  -- Nerd Font variants bundle the symbols glyphs, so no separate symbols
-  -- fallback is needed. Installed via scoop nerd-fonts bucket on Windows.
+  -- v3+ Nerd Font patched variants include all icon ranges starship uses
+  -- (MDI, Codicons, Devicons, Octicons, Powerline, Weather, etc.) including
+  -- the plane-15 PUA codepoints. No separate symbols/emoji fallback needed.
+  -- Installed on Windows via scoop nerd-fonts bucket (Hack-NF, FiraCode-NF).
   { family = "Hack Nerd Font" },
   {
     family = "FiraCode Nerd Font",
@@ -154,21 +171,19 @@ config.font = wezterm.font_with_fallback({
     --   cv15 cv29      = & {}
     harfbuzz_features = { "ss02", "ss03", "ss04", "ss05", "ss08", "cv15", "cv24", "cv29" },
   },
-  { family = "Symbols Nerd Font Mono" },
-  { family = "Noto Color Emoji" },
-  { family = "Segoe UI Emoji" },
 })
 
 config.font_size = is_windows and 11.0 or 13.0
-config.line_height = 1.10
-config.cell_width = 1.0
 config.bold_brightens_ansi_colors = "BrightAndBold"
 config.warn_about_missing_glyphs = false
 config.custom_block_glyphs = true
 config.anti_alias_custom_block_glyphs = true
-config.use_cap_height_to_scale_fallback_fonts = true
----@diagnostic disable-next-line: assign-type-mismatch
-config.allow_square_glyphs_to_overflow_width = "Always"
+-- IMPORTANT: leave cell_width / line_height / allow_square_glyphs_to_overflow_width
+-- at their defaults. Nerd Font icons in starship and ListView-style
+-- PSReadLine predictions both rely on accurate column accounting; overriding
+-- these will offset the cursor and scatter prediction list items.
+-- Width handling for ambiguous-width glyphs (nerd-font icons, ▮, etc.):
+-- wezterm 20240203 defaults are correct for our prompt; do not change.
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Tab bar — tabline.wez plugin with rich status sections.
