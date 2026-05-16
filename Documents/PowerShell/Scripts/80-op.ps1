@@ -97,11 +97,18 @@ function Get-OpFailureKind {
 
 <#
 .SYNOPSIS
-    Wait up to $script:__OP_SETTLE_WINDOW for `op whoami` to succeed.
+    Wait up to $script:__OP_SETTLE_WINDOW for the desktop-integration
+    session to come up.
 .DESCRIPTION
     Used after a successful `op signin` to ride out the brief window
     where the desktop app has accepted the authorization but hasn't
-    fully wired the CLI session yet. Returns $true if whoami succeeded
+    fully wired the CLI session yet. Probes via `op vault list` rather
+    than `op whoami` because, with desktop-app CLI integration enabled,
+    whoami does NOT engage the auto-auth path on a cold subprocess and
+    returns "account is not signed in" even when every other op command
+    would succeed via biometric / Windows Hello unlock. `op vault list`
+    is the cheapest no-secret call that round-trips through the
+    integration's unlock path. Returns $true if the probe succeeded
     within the window, $false otherwise.
 #>
 function Wait-OpReady {
@@ -110,7 +117,7 @@ function Wait-OpReady {
     param()
     $deadline = (Get-Date).Add($script:__OP_SETTLE_WINDOW)
     do {
-        $r = Invoke-OpRaw -OpArgs @('whoami')
+        $r = Invoke-OpRaw -OpArgs @('vault', 'list')
         if ($r.ExitCode -eq 0) { return $true }
         Start-Sleep -Milliseconds $script:__OP_SETTLE_INTERVAL.TotalMilliseconds
     } while ((Get-Date) -lt $deadline)
@@ -134,19 +141,27 @@ function Wait-OpReady {
         process-permanent cache hid downstream failures when the
         desktop app silently invalidated the session.
       - **Settle wait**. After `op signin` exits 0, Wait-OpReady polls
-        whoami for up to 15 s, fixing the "succeed-but-no-session" race.
+        the integration-aware probe for up to 15 s, fixing the
+        "succeed-but-no-session" race.
       - **Stderr-aware errors**. On failure the warning carries the
         actual op error message ("cannot connect to 1Password app",
         "authorization timeout", etc.) plus a fix hint specific to that
         failure mode.
       - **-Force**. Bypass the cache and re-verify from scratch.
         Exposed via the `op-refresh` alias.
+      - **-AllowDesktopAuth**. Skip the non-interactive guard. Use this
+        when stdin is closed (pam hook, MCP connector, scheduled task)
+        but the desktop app's biometric / Windows Hello prompt can
+        still answer for the user — the prompt is system-modal and
+        does NOT consume stdin.
 
     Flow:
       1. Short-circuit if OP_SERVICE_ACCOUNT_TOKEN is set (headless).
       2. If cached within TTL and not -Force, return $true.
-      3. Probe `op whoami`. If it exits 0, cache and return.
-      4. If stdin is redirected (CI, scripts), bail without prompting.
+      3. Probe `op vault list`. If it exits 0, cache and return.
+      4. If stdin is redirected and -AllowDesktopAuth was NOT passed,
+         bail without prompting (CI / scripts that can't see a TTY
+         prompt).
       5. Otherwise run `op signin`; on exit 0, Wait-OpReady; on exit
          non-zero, surface stderr + fix hint.
 .PARAMETER Quiet
@@ -154,6 +169,12 @@ function Wait-OpReady {
     session. Used by shell-startup wiring.
 .PARAMETER Force
     Bypass the TTL cache and re-verify even if a recent probe succeeded.
+.PARAMETER AllowDesktopAuth
+    Allow the signin attempt even when stdin is redirected. Safe on
+    macOS / Windows where the 1Password desktop app delivers the unlock
+    prompt as a system-modal dialog rather than via stdin. The pam
+    [hooks].before_resolve entry passes this so the hook can actually
+    auto-authorize from a daemon spawned with stdin closed.
 .OUTPUTS
     [bool] $true when op is signed in (or assumed signed in via
     OP_SERVICE_ACCOUNT_TOKEN); $false otherwise.
@@ -161,7 +182,7 @@ function Wait-OpReady {
 function Invoke-OpEnsure {
     [CmdletBinding()]
     [OutputType([bool])]
-    param([switch] $Quiet, [switch] $Force)
+    param([switch] $Quiet, [switch] $Force, [switch] $AllowDesktopAuth)
 
     # Service-account flow needs no interactive sign-in.
     if ($env:OP_SERVICE_ACCOUNT_TOKEN) {
@@ -174,22 +195,34 @@ function Invoke-OpEnsure {
         return $false
     }
 
-    # TTL cache: a recent successful whoami counts as still-signed-in.
+    # TTL cache: a recent successful probe counts as still-signed-in.
     if (-not $Force -and $script:__OP_ENSURED_AT) {
         if ((Get-Date) - $script:__OP_ENSURED_AT -lt $script:__OP_ENSURE_TTL) {
             return $true
         }
     }
 
-    # Cheap probe first so the common already-signed-in case stays fast.
-    $probe = Invoke-OpRaw -OpArgs @('whoami')
+    # Cheap probe first so the common already-signed-in case stays
+    # fast. `op vault list` (not `op whoami`) because on Windows /
+    # macOS with desktop-app CLI integration enabled, whoami does NOT
+    # engage the auto-auth path on a cold subprocess and returns
+    # "account is not signed in" even when every other op command
+    # would succeed via biometric / Windows Hello unlock. `vault list`
+    # round-trips through the integration's unlock path on a warm
+    # session and is fast; same cost as whoami but actually
+    # representative of whether downstream `op read` calls will work.
+    $probe = Invoke-OpRaw -OpArgs @('vault', 'list')
     if ($probe.ExitCode -eq 0) {
         $script:__OP_ENSURED_AT = Get-Date
         return $true
     }
 
-    # Non-interactive: don't hang on a prompt the caller can't see.
-    if ([System.Console]::IsInputRedirected) {
+    # Non-interactive: don't hang on a TTY prompt the caller can't
+    # see. Skipped when -AllowDesktopAuth is passed because the
+    # desktop app's unlock prompt is system-modal (biometric / Windows
+    # Hello / Touch ID) and does not read stdin at all — a hook spawned
+    # with stdin closed can still answer the prompt successfully.
+    if (-not $AllowDesktopAuth -and [System.Console]::IsInputRedirected) {
         $kind = Get-OpFailureKind -ExitCode $probe.ExitCode -Stderr $probe.Stderr
         Write-Warning "op not signed in (non-interactive, kind=$kind). stderr: $($probe.Stderr.Trim())"
         return $false
@@ -246,9 +279,11 @@ Set-Alias -Name op-refresh -Value Invoke-OpRefresh -Scope Global
     Print a one-shot diagnostic of the current 1Password CLI state.
 .DESCRIPTION
     Helpful when opr fails and you want to know why before re-running.
-    Runs `op whoami` and reports: CLI installed?, account/email if
-    signed in, classified failure kind otherwise, the underlying stderr
-    line, and the cache freshness.
+    Runs `op vault list` (the integration-aware probe) and reports:
+    CLI installed?, signed-in state, account email if available via
+    `op whoami` (best-effort, doesn't influence the signed-in
+    determination), classified failure kind otherwise, the underlying
+    stderr line, and the cache freshness.
 #>
 function Get-OpStatus {
     [CmdletBinding()]
@@ -258,13 +293,22 @@ function Get-OpStatus {
         [pscustomobject]@{ State='not-installed'; OpPath=$null; Detail='op CLI not on PATH' }
         return
     }
-    $r = Invoke-OpRaw -OpArgs @('whoami')
+    $r = Invoke-OpRaw -OpArgs @('vault', 'list')
     if ($r.ExitCode -eq 0) {
         $cacheAge = if ($script:__OP_ENSURED_AT) { ((Get-Date) - $script:__OP_ENSURED_AT).ToString('mm\:ss') } else { 'uncached' }
+        # whoami is best-effort here: if the integration is wired but
+        # whoami still fails (the cold-CLI-handshake case we work
+        # around above), we still report signed-in based on the
+        # vault-list result. The account field becomes empty rather
+        # than blocking the diagnostic.
+        $w = Invoke-OpRaw -OpArgs @('whoami')
+        $acct = if ($w.ExitCode -eq 0) {
+            ($w.Stdout.Trim() -split "`n" | Where-Object { $_ -match 'URL|Email' }) -join '; '
+        } else { '<whoami unavailable; vault list succeeded>' }
         [pscustomobject]@{
             State    = 'signed-in'
             OpPath   = $opCmd.Source
-            Account  = ($r.Stdout.Trim() -split "`n" | Where-Object { $_ -match 'URL|Email' }) -join '; '
+            Account  = $acct
             CacheAge = $cacheAge
         }
         return
