@@ -1371,6 +1371,7 @@ always_install:
   mise:
     - aqua:jdx/usage
     - zig
+    - npm:perlnavigator-server
 
   mise_unix:
     - cargo-binstall
