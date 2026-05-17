@@ -60,7 +60,8 @@ $RECYCLE.BIN/
 Session.vim
 Sessionx.vim
 .netrwhist
-tags
+# `tags` removed from GLOBAL: too broad (any file named `tags` anywhere is hidden).
+# ctags users should add `tags` to their per-repo .gitignore instead.
 [._]*.un~
 
 # Emacs
@@ -121,9 +122,10 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
+# `build/`, `dist/`, `var/` removed from GLOBAL: words too generic and conflict
+# with non-Python uses (JS/CMake/Bazel `build/`, web bundler `dist/`, Unix `var/`).
+# Python projects: add to per-repo .gitignore.
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -131,7 +133,6 @@ eggs/
 /lib64/
 parts/
 sdist/
-var/
 wheels/
 *.egg-info/
 .installed.cfg
@@ -167,7 +168,9 @@ pip-wheel-metadata/
 # Ruby
 *.gem
 *.rbc
-/.config
+# `/.config` removed from GLOBAL: anchored to repo root but dotfiles repos often
+# have a literal `.config` at root (XDG conventions). Ruby projects rarely need
+# this; if they do, per-repo .gitignore.
 /coverage/
 /InstalledFiles
 /pkg/
@@ -201,13 +204,15 @@ target/
 Cargo.lock
 
 # JVM (Java / Kotlin / Scala)
+# No JVM work on this machine (as of 2026-05-17). Section kept for portability
+# of this dotfiles repo, but `out/` and `bin/` are removed from GLOBAL because
+# they are too generic and hide non-JVM content (e.g. chezmoi-managed `dot_local/bin/`).
+# Restore them in per-Java-repo .gitignore if needed.
 *.class
 *.war
 *.ear
 .gradle/
 .mvn/
-out/
-bin/
 hs_err_pid*.log
 replay_pid*.log
 # Scala
