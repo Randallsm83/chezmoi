@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "shell": {{- if eq .chezmoi.os "windows" }} "pwsh"{{- else }} "zsh"{{- end }},
+  "shell": {{- if eq .chezmoi.os "windows" }} {{ printf "%s/.local/bin/pwsh-profile.cmd" .chezmoi.homeDir | replace "/" "\\" | toJson }}{{- else }} "zsh"{{- end }},
   "username": "ranmil",
   "autoupdate": "notify",
   "share": "disabled",

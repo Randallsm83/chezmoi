@@ -1,7 +1,15 @@
 # Chezmoi repository .gitignore
 
-# Binaries (chezmoi downloads itself here during bootstrap)
-bin/
+# Bootstrap binary directory at repo root only (chezmoi.exe lands here during install).
+# Anchored with leading slash so we don't accidentally ignore subtree bin/ dirs
+# like dot_local/bin/ which ARE managed content.
+/bin/
+
+# Override global ~/.config/git/ignore which has an unanchored `bin/` rule
+# (intended for Java/Scala build output). Without this negation, our managed
+# dot_local/bin/ subtree would be invisible to git.
+!**/bin/
+!**/bin/**
 
 # Editor temp files
 *.swp
