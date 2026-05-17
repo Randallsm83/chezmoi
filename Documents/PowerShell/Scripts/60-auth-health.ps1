@@ -131,11 +131,15 @@ function Test-AuthHealth {
     }
 
     # ── DH GitLab PAT file (validate via API by default; cheap, ~200ms) ────────
-    # We do this BEFORE the glab check so we can tell the user the right fix:
-    #   - PAT alive but glab unaware  → "glab auth login --token ..."
-    #   - PAT dead                    → "rotate via scott gitlab-auth.ps1"
-    $patFile = "$env:USERPROFILE\.config\gitlab\token"
-    $patAlive = $false
+    # We do this BEFORE the glab check so we can tell the user the right fix.
+    # IMPORTANT: distinguish *why* the call failed before recommending rotation —
+    # a network/DNS/timeout failure is NOT evidence the token is bad, and telling
+    # the user to rotate in that case sends them down the wrong path.
+    #   auth (401/403)             → rotate via scott gitlab-auth.ps1
+    #   network/timeout/dns/5xx    → fix connectivity (VPN, DNS, upstream); DO NOT rotate
+    #   ok                         → register with glab if it's unaware
+    $patFile   = "$env:USERPROFILE\.config\gitlab\token"
+    $patStatus = 'missing'   # one of: ok | auth | network | upstream | other | missing
     if (Test-Path $patFile) {
         $age = [int]((New-TimeSpan -Start (Get-Item $patFile).LastWriteTime -End (Get-Date)).TotalDays)
         $tok = (Get-Content $patFile -Raw).Trim()
@@ -143,28 +147,60 @@ function Test-AuthHealth {
             $u = Invoke-RestMethod -Uri 'https://git.dreamhost.com/api/v4/user' `
                 -Headers @{ 'PRIVATE-TOKEN' = $tok } -ErrorAction Stop -TimeoutSec 4
             _emit 'DH PAT file' 'ok' "${age}d old, user=$($u.username)"
-            $patAlive = $true
+            $patStatus = 'ok'
         } catch {
-            $reason = if ($_.Exception.Response.StatusCode.value__ -eq 401) { '401 invalid' } else { 'network/timeout' }
-            _emit 'DH PAT file' 'fail' "$reason — rotate via scott/scripts/gitlab-auth.ps1"
+            $ex     = $_.Exception
+            $status = $null
+            if ($ex.Response -and $ex.Response.StatusCode) {
+                $status = [int]$ex.Response.StatusCode
+            }
+            if ($status) {
+                switch ($status) {
+                    401     { $patStatus = 'auth';     $detail = '401 unauthorized' }
+                    403     { $patStatus = 'auth';     $detail = '403 forbidden (scopes?)' }
+                    default {
+                        if ($status -ge 500) { $patStatus = 'upstream'; $detail = "$status upstream error" }
+                        else                 { $patStatus = 'other';    $detail = "HTTP $status" }
+                    }
+                }
+            } else {
+                $inner = $ex
+                while ($inner.InnerException) { $inner = $inner.InnerException }
+                $msg = "$($inner.GetType().Name): $($inner.Message)"
+                if     ($msg -match 'timed out|TaskCanceled|timeout')                { $patStatus = 'network'; $detail = 'request timed out' }
+                elseif ($msg -match 'No such host|name or service not known|resolve'){ $patStatus = 'network'; $detail = 'DNS lookup failed for git.dreamhost.com' }
+                elseif ($msg -match 'actively refused|refused|unreachable|connect') { $patStatus = 'network'; $detail = 'connection failed' }
+                else                                                                { $patStatus = 'network'; $detail = $msg }
+            }
+            $remedy = switch ($patStatus) {
+                'auth'     { 'rotate via scott/scripts/gitlab-auth.ps1' }
+                'upstream' { 'GitLab upstream issue — retry later (do NOT rotate)' }
+                'network'  { 'check VPN/network/DNS — do NOT rotate until reachable' }
+                default    { 'investigate — do NOT rotate until verified' }
+            }
+            _emit 'DH PAT file' 'fail' "$detail — $remedy"
         }
     } else {
         _emit 'DH PAT file' 'warn' "missing ($patFile)"
     }
 
     # ── GitLab via glab — per host ──────────────────────────────────────
+    # IMPORTANT: glab honors $env:GITLAB_TOKEN / $env:GITLAB_HOST regardless of
+    # --hostname, so a stray DH PAT in the calling shell will silently poison
+    # the gitlab.com check. We always sanitize both vars per iteration, only
+    # re-injecting the DH PAT for the dreamhost host.
     if (Get-Command glab -ErrorAction SilentlyContinue) {
-        foreach ($h in @('gitlab.com', 'git.dreamhost.com')) {
-            # For dreamhost, glab needs explicit host + token from the PAT file.
+        $hostsToCheck = @('gitlab.com', 'git.dreamhost.com')
+        $envKeys      = @('GITLAB_TOKEN', 'GITLAB_HOST')
+        foreach ($h in $hostsToCheck) {
             $envBackup = @{}
-            $envOverride = @{}
-            if ($h -eq 'git.dreamhost.com' -and (Test-Path $patFile)) {
-                $envOverride['GITLAB_TOKEN'] = (Get-Content $patFile -Raw).Trim()
-                $envOverride['GITLAB_HOST']  = $h
-            }
-            foreach ($k in $envOverride.Keys) {
+            foreach ($k in $envKeys) {
                 $envBackup[$k] = [Environment]::GetEnvironmentVariable($k, 'Process')
-                [Environment]::SetEnvironmentVariable($k, $envOverride[$k], 'Process')
+                [Environment]::SetEnvironmentVariable($k, $null, 'Process')
+            }
+            if ($h -eq 'git.dreamhost.com' -and (Test-Path $patFile)) {
+                [Environment]::SetEnvironmentVariable('GITLAB_TOKEN', (Get-Content $patFile -Raw).Trim(), 'Process')
+                [Environment]::SetEnvironmentVariable('GITLAB_HOST',  $h, 'Process')
             }
             try {
                 $glOut = & glab auth status --hostname $h 2>&1
@@ -172,10 +208,13 @@ function Test-AuthHealth {
                     _emit "glab ($h)" 'ok' 'authenticated'
                 } else {
                     $hint = if ($h -eq 'git.dreamhost.com') {
-                        if ($patAlive) {
-                            'register existing PAT: `glab auth login -h git.dreamhost.com --token (Get-Content ~/.config/gitlab/token -Raw).Trim() --stdin`'
-                        } else {
-                            'rotate PAT first (DH PAT file check above), then re-register with glab'
+                        switch ($patStatus) {
+                            'ok'       { 'register existing PAT: `glab auth login -h git.dreamhost.com --token (Get-Content ~/.config/gitlab/token -Raw).Trim() --stdin`' }
+                            'auth'     { 'rotate PAT first (DH PAT file check above), then re-register with glab' }
+                            'network'  { 'DH GitLab unreachable (see DH PAT file check) — fix network/VPN first' }
+                            'upstream' { 'DH GitLab upstream error (see DH PAT file check) — retry later' }
+                            'missing'  { 'no PAT on disk — run scott/scripts/gitlab-auth.ps1, then register with glab' }
+                            default    { 'see DH PAT file check above before changing anything' }
                         }
                     } else {
                         'glab auth login -h gitlab.com'
@@ -183,7 +222,7 @@ function Test-AuthHealth {
                     _emit "glab ($h)" 'fail' $hint
                 }
             } finally {
-                foreach ($k in $envBackup.Keys) {
+                foreach ($k in $envKeys) {
                     [Environment]::SetEnvironmentVariable($k, $envBackup[$k], 'Process')
                 }
             }
