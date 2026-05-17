@@ -1,0 +1,28 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# Inject pam's MCP pointer into ~/.claude.json after the #60 script finishes
+# reconciling Claude Code's direct mcpServers entries from this template tree.
+#
+# `pam sync --client claude-code` is an atomic, format-aware merge that
+# adds/refreshes ONLY the `pam` entry under mcpServers and leaves every other
+# server (github/gitlab/tavily on this OS, the full mcp.yaml inventory on
+# Windows) untouched. Once those servers move into pam's manifest the #60
+# script can be retired entirely.
+
+# claude-mcp-hash: {{ .mcp.servers | toJson | sha256sum }}
+
+set -euo pipefail
+
+if ! command -v pam >/dev/null 2>&1; then
+    echo "[claude-code_pam_sync] pam CLI not on PATH; skipping" >&2
+    exit 0
+fi
+
+if ! pam status >/dev/null 2>&1; then
+    echo "[claude-code_pam_sync] pam daemon not running; skipping ('pam start' to enable)" >&2
+    exit 0
+fi
+
+echo "[claude-code_pam_sync] running 'pam sync --client claude-code'..."
+pam sync --client claude-code
+{{- end }}

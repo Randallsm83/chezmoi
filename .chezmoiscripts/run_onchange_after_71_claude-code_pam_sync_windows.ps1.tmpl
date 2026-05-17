@@ -1,0 +1,41 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+    Inject pam's MCP pointer into ~/.claude.json after chezmoi reconciles the
+    file via run_onchange_after_60_claude_mcp_windows.ps1.
+
+.DESCRIPTION
+    The #60 script writes the full mcpServers block from .chezmoidata/mcp.yaml
+    into ~/.claude.json. Once Claude Code migrates fully to pam, that script
+    can be retired; until then this #71 hook simply guarantees an additional
+    `mcpServers.pam` pointer exists so Claude Code can talk to the gateway
+    in parallel with the legacy direct entries.
+
+    `pam sync --client claude-code` performs an atomic, format-aware merge —
+    it adds/refreshes only the `pam` entry and leaves every other server
+    written by the #60 script untouched.
+
+.NOTES
+    Trigger hash includes the rendered mcp.yaml so this re-runs whenever the
+    upstream inventory changes (same trigger surface as the #60 script).
+#>
+
+# claude-mcp-hash: {{ .mcp.servers | toJson | sha256sum }}
+
+$ErrorActionPreference = "Stop"
+
+if (-not (Get-Command pam -ErrorAction SilentlyContinue)) {
+    Write-Host "claude-code_pam_sync: 'pam' not on PATH; skipping."
+    exit 0
+}
+
+pam status *> $null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "claude-code_pam_sync: pam daemon not running; skipping ('pam start' to enable)."
+    exit 0
+}
+
+Write-Host "claude-code_pam_sync: running 'pam sync --client claude-code'..."
+pam sync --client claude-code
+{{- end }}

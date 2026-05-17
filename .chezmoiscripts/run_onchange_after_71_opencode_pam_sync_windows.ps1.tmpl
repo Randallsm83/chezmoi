@@ -1,0 +1,40 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+    Re-inject pam's MCP pointer into ~/.config/opencode/opencode.json after
+    chezmoi regenerates it.
+
+.DESCRIPTION
+    opencode.json is fully chezmoi-managed (template-rendered), and its `mcp`
+    block is intentionally empty there — MCP servers are owned by pam
+    (~/.config/pam/manifest.toml). After chezmoi rewrites the file, this
+    script runs `pam sync --client opencode` so pam re-adds the single
+    `mcp.pam` pointer entry (with its per-client auth token).
+
+    `pam sync` is atomic, format-aware, and leaves every other key in the
+    target file untouched. If the daemon isn't running we skip silently.
+
+.NOTES
+    Trigger hash includes both the template content and the pam manifest
+    so changes to either re-run this script.
+#>
+
+# opencode-template-hash: {{ include "dot_config/opencode/opencode.json.tmpl" | sha256sum }}
+
+$ErrorActionPreference = "Stop"
+
+if (-not (Get-Command pam -ErrorAction SilentlyContinue)) {
+    Write-Host "opencode_pam_sync: 'pam' not on PATH; skipping."
+    exit 0
+}
+
+pam status *> $null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "opencode_pam_sync: pam daemon not running; skipping ('pam start' to enable)."
+    exit 0
+}
+
+Write-Host "opencode_pam_sync: running 'pam sync --client opencode'..."
+pam sync --client opencode
+{{- end }}
