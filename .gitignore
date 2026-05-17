@@ -5,12 +5,6 @@
 # like dot_local/bin/ which ARE managed content.
 /bin/
 
-# Override global ~/.config/git/ignore which has an unanchored `bin/` rule
-# (intended for Java/Scala build output). Without this negation, our managed
-# dot_local/bin/ subtree would be invisible to git.
-!**/bin/
-!**/bin/**
-
 # Editor temp files
 *.swp
 *.swo
