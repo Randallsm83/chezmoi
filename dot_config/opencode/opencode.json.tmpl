@@ -175,49 +175,17 @@
   },
 
   {{- /*
-    MCP servers are rendered from .chezmoidata/mcp.yaml (single source of truth
-    shared with Claude Code). Translation rules for opencode shape:
-      stdio  -> type: "local",  args folded into command, env -> environment
-      http   -> type: "remote", oauth: false (suppresses 401-auto-OAuth)
-    Secret placeholders are rewritten ${VAR} -> {env:VAR} so opencode resolves
-    them against the env injected by the `opencode` op-run wrapper (see
-    SECRETS.md, ~/.config/op/opencode.env).
+    MCP servers are owned by pam (~/.config/pam/manifest.toml). Each enabled
+    client gets exactly one pointer entry named `pam`, injected by
+    `pam sync`. Do NOT render the .chezmoidata/mcp.yaml inventory here — that
+    file still drives Claude Code, but opencode talks to pam exclusively.
+
+    The `pam` entry below is intentionally left out: `pam sync` performs an
+    atomic, format-aware merge against this file after chezmoi apply and
+    writes the pointer with its per-client auth token. The chezmoi script
+    run_onchange_after_70_pam_sync.ps1 invokes that automatically.
   */ -}}
-  {{- $mcp := dict -}}
-  {{- $_ := set $mcp "filesystem" (dict
-      "type" "local"
-      "enabled" true
-      "command" (list "npx" "-y" "@modelcontextprotocol/server-filesystem"
-        (eq .chezmoi.os "windows" | ternary (printf "%s\\projects" .chezmoi.homeDir) (printf "%s/projects" .chezmoi.homeDir)))) -}}
-  {{- range $name, $cfg := .mcp.servers -}}
-    {{- $entry := dict "enabled" true -}}
-    {{- if eq $cfg.type "stdio" -}}
-      {{- $args := default (list) $cfg.args -}}
-      {{- $cmd := concat (list $cfg.command) $args -}}
-      {{- $_ := set $entry "type" "local" -}}
-      {{- $_ := set $entry "command" $cmd -}}
-      {{- if $cfg.env -}}
-        {{- $envMap := dict -}}
-        {{- range $k, $v := $cfg.env -}}
-          {{- $_ := set $envMap $k (regexReplaceAll "\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\}" $v "{env:${1}}") -}}
-        {{- end -}}
-        {{- $_ := set $entry "environment" $envMap -}}
-      {{- end -}}
-    {{- else if eq $cfg.type "http" -}}
-      {{- $_ := set $entry "type" "remote" -}}
-      {{- $_ := set $entry "url" $cfg.url -}}
-      {{- $_ := set $entry "oauth" false -}}
-      {{- if $cfg.headers -}}
-        {{- $headersMap := dict -}}
-        {{- range $k, $v := $cfg.headers -}}
-          {{- $_ := set $headersMap $k (regexReplaceAll "\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\}" $v "{env:${1}}") -}}
-        {{- end -}}
-        {{- $_ := set $entry "headers" $headersMap -}}
-      {{- end -}}
-    {{- end -}}
-    {{- $_ := set $mcp $name $entry -}}
-  {{- end }}
-  "mcp": {{ $mcp | toPrettyJson | indent 2 | trim }},
+  "mcp": {},
 
   "instructions": [
     "AGENTS.md",
@@ -231,5 +199,48 @@
       {{- if eq .chezmoi.os "windows" }} "{{ .chezmoi.homeDir }}\\.agents\\skills"
       {{- else }} "{{ .chezmoi.homeDir }}/.agents/skills"{{- end }}
     ]
+  },
+
+  "lsp": {
+    "typescript": {
+      "command": ["typescript-language-server", "--stdio"],
+      "extensions": [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
+    },
+    "python": {
+      "command": [
+        {{- if eq .chezmoi.os "windows" }} "{{ .chezmoi.homeDir }}\\.local\\share\\mise\\installs\\python\\3.14.5\\Scripts\\basedpyright-langserver.exe"
+        {{- else }} "basedpyright-langserver"{{- end }},
+        "--stdio"
+      ],
+      "extensions": [".py", ".pyi"]
+    },
+    "rust": {
+      "command": ["rust-analyzer"],
+      "extensions": [".rs"]
+    },
+    "go": {
+      "command": ["gopls", "serve"],
+      "extensions": [".go"]
+    },
+    "json": {
+      "command": ["vscode-json-language-server", "--stdio"],
+      "extensions": [".json", ".jsonc"]
+    },
+    "yaml": {
+      "command": ["yaml-language-server", "--stdio"],
+      "extensions": [".yaml", ".yml"]
+    },
+    "html": {
+      "command": ["vscode-html-language-server", "--stdio"],
+      "extensions": [".html", ".htm"]
+    },
+    "css": {
+      "command": ["vscode-css-language-server", "--stdio"],
+      "extensions": [".css", ".scss", ".less"]
+    },
+    "perl": {
+      "command": ["perlnavigator", "--stdio"],
+      "extensions": [".pl", ".pm", ".t"]
+    }
   }
 }
