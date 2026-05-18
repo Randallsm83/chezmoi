@@ -241,6 +241,22 @@
     "perl": {
       "command": ["perlnavigator", "--stdio"],
       "extensions": [".pl", ".pm", ".t"]
+    },
+    "lua": {
+      "command": ["lua-language-server"],
+      "extensions": [".lua"]
+    },
+    "bash": {
+      "command": ["bash-language-server", "start"],
+      "extensions": [".sh", ".bash", ".zsh", ".ksh"]
+    },
+    "zig": {
+      "command": ["zls"],
+      "extensions": [".zig", ".zon"]
+    },
+    "toml": {
+      "command": ["taplo", "lsp", "stdio"],
+      "extensions": [".toml"]
     }
   }
 }
