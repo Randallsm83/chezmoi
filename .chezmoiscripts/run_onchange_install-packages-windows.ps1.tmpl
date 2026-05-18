@@ -331,15 +331,18 @@ foreach (`$comp in `$desired) {
 }
 
 # Install pip packages (packages not available via scoop/winget/mise on Windows)
+# NOTE: mise shims `python` and `uv` but NOT `pip`. Always go through
+# `python -m pip` so this works regardless of whether a separate `pip.exe`
+# is on PATH.
 if ($pipPackages.Count -gt 0) {
-    if (Get-Command pip -ErrorAction SilentlyContinue) {
+    if (Get-Command python -ErrorAction SilentlyContinue) {
         $pipPackages = $pipPackages | Select-Object -Unique
         Write-Host "`nInstalling pip packages..." -ForegroundColor Cyan
         foreach ($pkg in $pipPackages) {
-            $installed = pip show $pkg 2>$null
+            $installed = python -m pip show $pkg 2>$null
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "  Installing: $pkg" -ForegroundColor Green
-                pip install --user $pkg
+                python -m pip install --user $pkg
             } else {
                 Write-Host "  Already installed: $pkg" -ForegroundColor Gray
             }
@@ -353,23 +356,24 @@ if ($pipPackages.Count -gt 0) {
             }
         }
     } else {
-        Write-Host "`npip not available, skipping pip package installation (mise python may not be on PATH yet)" -ForegroundColor Yellow
+        Write-Host "`npython not available, skipping pip package installation (mise python may not be on PATH yet)" -ForegroundColor Yellow
     }
 }
 
 {{- if and .package_features.nvim .package_features.python }}
-# pip pynvim package (for Python provider)
+# pynvim package (for Python provider)
+# Use `python -m pip` since mise doesn't shim `pip` directly.
 Write-Host "`nInstalling Neovim Python provider..." -ForegroundColor Cyan
-if (Get-Command pip -ErrorAction SilentlyContinue) {
-    $pipNvimCheck = pip show pynvim 2>$null
+if (Get-Command python -ErrorAction SilentlyContinue) {
+    $pipNvimCheck = python -m pip show pynvim 2>$null
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  Installing: pynvim (Python provider)" -ForegroundColor Green
-        pip install --user pynvim
+        python -m pip install --user pynvim
     } else {
         Write-Host "  Already installed: pynvim" -ForegroundColor Gray
     }
 } else {
-    Write-Host "  pip not available, skipping Python provider" -ForegroundColor Yellow
+    Write-Host "  python not available, skipping Python provider" -ForegroundColor Yellow
 }
 {{- end }}
 
