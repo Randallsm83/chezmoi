@@ -828,33 +828,33 @@ package_mapping:
 
   lua:
     windows:
-      scoop: [lua, luarocks, luajit]  # lua51 removed: its env_set (LUA_PATH/LUA_CPATH) breaks NVIDIA App OPS Lua runtime
+      scoop: [lua, luarocks, luajit, lua-language-server]  # lua51 removed: its env_set (LUA_PATH/LUA_CPATH) breaks NVIDIA App OPS Lua runtime
       winget: []
       mise: []
     linux:
       apt: []
       dnf: []
       pacman: []
-      brew: [luarocks]  # luarocks not available via mise
-      mise: [lua, luajit]
+      brew: [luarocks, lua-language-server]  # luarocks not available via mise
+      mise: [lua, luajit, "aqua:LuaLS/lua-language-server"]
     darwin:
-      brew: [luarocks]
-      mise: [lua, luajit]
+      brew: [luarocks, lua-language-server]
+      mise: [lua, luajit, "aqua:LuaLS/lua-language-server"]
 
   node:
     windows:
       scoop: []
       winget: []
-      mise: [node@lts, yarn, bun@latest, deno@latest]
+      mise: [node@lts, yarn, bun@latest, deno@latest, "npm:bash-language-server"]
     linux:
       apt: []
       dnf: []
       pacman: []
       brew: []
-      mise: [node@lts, yarn, bun@latest, deno@latest]
+      mise: [node@lts, yarn, bun@latest, deno@latest, "npm:bash-language-server"]
     darwin:
       brew: []
-      mise: [node@lts, yarn, bun@latest, deno@latest]
+      mise: [node@lts, yarn, bun@latest, deno@latest, "npm:bash-language-server"]
 
   perl:
     windows:
@@ -1350,6 +1350,8 @@ always_install:
     - make
     - unzip
     - gzip
+    - zls           # Zig LSP — pairs with `zig` in always_install.mise (CC/CXX toolchain)
+    - taplo         # TOML LSP/formatter — used by opencode lsp + chezmoi/Cargo configs
     # NOTE: `sudo` (scoop) conflicts with `gsudo` — only `gsudo` is kept.
 
   winget: []
@@ -1371,6 +1373,8 @@ always_install:
   mise:
     - aqua:jdx/usage
     - zig
+    - aqua:zigtools/zls
+    - aqua:tamasfe/taplo
     - npm:perlnavigator-server
 
   mise_unix:
