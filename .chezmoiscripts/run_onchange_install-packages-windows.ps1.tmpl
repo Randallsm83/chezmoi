@@ -32,21 +32,52 @@ function Update-SessionPath {
 }
 
 # Helper: import the abgox.PSCompletions module from its scoop install
-# directory. The scoop package does NOT place the module on PSModulePath, so
-# `Import-Module PSCompletions` won't find it. We resolve it explicitly.
+# directory and run its init routine.
+#
+# The scoop package does NOT place the module on PSModulePath, so
+# `Import-Module PSCompletions` by name won't find it. We resolve it
+# explicitly.
+#
+# IMPORTANT: The module exports a function named `PSCompletions` AND sets
+# up a global `$PSCompletions` state object. Internal commands like
+# `PSCompletions add` require `$PSCompletions.init_data()` to have been
+# called first (this normally happens in the user's pwsh profile). Without
+# init, calls fail with errors like "property '__need_update_data' cannot
+# be found". The `psc` alias is created during module load but its scope
+# is unreliable across non-interactive contexts (chezmoi's script runner);
+# callers should invoke `PSCompletions` directly.
 function Import-PSCompletionsModule {
     $candidates = @(
         "$env:USERPROFILE\scoop\apps\abgox.PSCompletions\current\PSCompletions.psd1",
         "$env:USERPROFILE\scoop\modules\PSCompletions\PSCompletions.psd1"
     )
+    $imported = $false
     foreach ($p in $candidates) {
         if (Test-Path $p) {
-            Import-Module $p -ErrorAction SilentlyContinue
-            return ($null -ne (Get-Command psc -ErrorAction SilentlyContinue))
+            Import-Module $p -Global -Force -ErrorAction SilentlyContinue
+            if (Get-Command PSCompletions -ErrorAction SilentlyContinue) {
+                $imported = $true
+                break
+            }
         }
     }
-    Import-Module PSCompletions -ErrorAction SilentlyContinue
-    return ($null -ne (Get-Command psc -ErrorAction SilentlyContinue))
+    if (-not $imported) {
+        Import-Module PSCompletions -Global -Force -ErrorAction SilentlyContinue
+        $imported = ($null -ne (Get-Command PSCompletions -ErrorAction SilentlyContinue))
+    }
+    if (-not $imported) { return $false }
+
+    # Initialize the module's global state object. Without this, downstream
+    # commands fail because $PSCompletions.data and friends are unpopulated.
+    try {
+        if ($global:PSCompletions -and $global:PSCompletions.init_data) {
+            $global:PSCompletions.init_data() | Out-Null
+        }
+    } catch {
+        Write-Host "  PSCompletions.init_data() failed: $($_.Exception.Message)" -ForegroundColor Yellow
+        return $false
+    }
+    return $true
 }
 
 # ------------------------------------------------------------------------
@@ -244,27 +275,58 @@ if ($pwshModules.Count -gt 0) {
 # Install PSCompletions (psc) completion definitions.
 # abgox.PSCompletions ships its module inside the scoop app dir, NOT on
 # PSModulePath, so Import-Module by name fails. Resolve it explicitly.
+#
+# We run the install loop in a fresh `pwsh -File` subprocess. The chezmoi
+# script runner's PowerShell context has subtle differences from a clean
+# pwsh session (likely around -Command vs -File semantics and global scope
+# propagation across nested Import-Module calls) that cause
+# `$PSCompletions.init_data()` to populate state imperfectly, leaving
+# `PSCompletions add` to emit non-fatal `__need_update_data` property
+# errors. A clean subprocess sidesteps the issue entirely.
 if ($pscCompletions.Count -gt 0) {
-    $pscReady = $false
-    if (Get-Command psc -ErrorAction SilentlyContinue) {
-        $pscReady = $true
-    } else {
-        $pscReady = Import-PSCompletionsModule
+    $pscModule = $null
+    foreach ($p in @(
+        "$env:USERPROFILE\scoop\apps\abgox.PSCompletions\current\PSCompletions.psd1",
+        "$env:USERPROFILE\scoop\modules\PSCompletions\PSCompletions.psd1"
+    )) {
+        if (Test-Path $p) { $pscModule = $p; break }
     }
-    if ($pscReady) {
-        $pscCompletions = $pscCompletions | Select-Object -Unique
-        $installed = @(psc list 2>$null | ForEach-Object { ($_ -split '\s+')[0] } | Where-Object { $_ -and $_ -ne 'Completion' -and $_ -ne '----------' })
-        Write-Host "`nInstalling PSCompletions definitions..." -ForegroundColor Cyan
-        foreach ($comp in $pscCompletions) {
-            if ($comp -notin $installed) {
-                Write-Host "  Adding: $comp" -ForegroundColor Green
-                psc add $comp
-            } else {
-                Write-Host "  Already added: $comp" -ForegroundColor Gray
-            }
-        }
+    if (-not $pscModule) {
+        Write-Host "`nPSCompletions module not found, skipping PSCompletions setup" -ForegroundColor Yellow
     } else {
-        Write-Host "`npsc not available (could not locate abgox.PSCompletions module), skipping PSCompletions setup" -ForegroundColor Yellow
+        $pscCompletions = $pscCompletions | Select-Object -Unique
+        $sidecar = Join-Path $env:TEMP "chezmoi-psc-install-$([guid]::NewGuid().ToString('N')).ps1"
+        $compsLiteral = ($pscCompletions | ForEach-Object { "'" + ($_ -replace "'", "''") + "'" }) -join ','
+        $sidecarBody = @"
+param([string]`$ModulePath)
+Import-Module `$ModulePath -Global -Force -ErrorAction Stop
+`$global:PSCompletions.init_data() | Out-Null
+`$installed = @()
+if (`$global:PSCompletions.data -and `$global:PSCompletions.data.list) {
+    `$installed = @(`$global:PSCompletions.data.list)
+}
+`$desired = @($compsLiteral)
+foreach (`$comp in `$desired) {
+    if (`$comp -in `$installed) {
+        Write-Host "  Already added: `$comp" -ForegroundColor Gray
+        continue
+    }
+    Write-Host "  Adding: `$comp" -ForegroundColor Green
+    try { PSCompletions add `$comp *>`$null } catch {
+        Write-Host "    PSCompletions add `$comp failed: `$(`$_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+"@
+        Set-Content -Path $sidecar -Value $sidecarBody -Encoding utf8
+        try {
+            Write-Host "`nInstalling PSCompletions definitions..." -ForegroundColor Cyan
+            pwsh -NoProfile -NoLogo -File $sidecar -ModulePath $pscModule
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "  PSCompletions sidecar exited with code $LASTEXITCODE" -ForegroundColor Yellow
+            }
+        } finally {
+            Remove-Item $sidecar -ErrorAction SilentlyContinue
+        }
     }
 }
 
