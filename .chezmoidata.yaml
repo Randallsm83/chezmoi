@@ -21,21 +21,22 @@
 theme:
   name: "spaceduck"  # Active theme
 
-  # Spaceduck - Visual colors from pineapplegiant/spaceduck extended palette
-  # NOTE: The official spaceduck ANSI slots are non-standard (magenta=#f2ce00,
-  # cyan=#7a5ccc, yellow=#b3a1e6). We use VISUAL color names here to match
-  # every other theme, since the bat/delta generator maps semantically:
-  #   purple → keywords, yellow → classes, cyan → comments (with alpha)
+  # Spaceduck - canonical pineapplegiant/spaceduck palette mapped to standard
+  # ANSI color names so every consumer (wezterm chrome, bat, delta, starship,
+  # opencode, eza) gets visually distinct hues. The previous mapping collapsed
+  # yellow==cyan and put an orange in the purple slot, which made every UI
+  # accent (mode pill, active tab, cursor, keyword highlight) look the same.
+  # Values match dot_config/wezterm/colors/Spaceduck.toml ANSI slots.
   spaceduck:
     background: "#0f111b"
     foreground: "#ecf0c1"
-    purple: "#e39400"       # Keywords — warm orange (avoids harsh #f2ce00 yellow)
-    pink: "#ce6f8f"         # Constants — spaceduck pink/rose
+    purple: "#b3a1e6"       # Keywords / accent — spaceduck lavender (canonical magenta slot)
+    pink: "#ce6f8f"         # Constants — spaceduck pink/rose (bright magenta)
     green: "#5ccc96"        # Strings — spaceduck green
-    orange: "#e33400"       # Numbers — spaceduck red
+    orange: "#e39400"       # Numbers / warnings — spaceduck warm orange
     blue: "#00a3cc"         # Functions — spaceduck blue
-    cyan: "#42b3c2"         # Comments (50% alpha) — spaceduck teal
-    yellow: "#42b3c2"       # Classes/types — spaceduck teal
+    cyan: "#42b3c2"         # Comments / search accent — spaceduck teal
+    yellow: "#f2ce00"       # Classes / cursor — spaceduck yellow (canonical)
 
   # OneDark - navarasu/onedark.nvim
   onedark:
