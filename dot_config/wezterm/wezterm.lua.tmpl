@@ -259,7 +259,8 @@ if ok_tabline then
       c = { fg = palette.bg, bg = palette.green  },  -- hostname
       x = { fg = palette.bg, bg = palette.cyan   },  -- left-most right section
       y = { fg = palette.bg, bg = palette.orange },  -- battery slot
-      z = { fg = palette.bg, bg = palette.yellow },  -- right-most (clock)
+      z = { fg = palette.bg, bg = palette.pink   },  -- right-most (clock) — pink is unique
+                                                     -- to z (no mode rotation lands here)
     }
   end
 
@@ -297,9 +298,15 @@ if ok_tabline then
         left  = wezterm.nerdfonts.pl_left_soft_divider,
         right = wezterm.nerdfonts.pl_right_soft_divider,
       },
+      -- Tabs render as flat rectangles (no chevron caps). The plugin doesn't
+      -- close section `c` with a trailing chevron, so a chevron on the tab's
+      -- left edge stacks visually after c's straight right edge with a sliver
+      -- of tab_bar bg between them — reads as "straight cliff then arrow."
+      -- Empty tab_separators makes tabs read as colored pills sitting in the
+      -- gap, with their hue alone signalling active vs. inactive.
       tab_separators = {
-        left  = wezterm.nerdfonts.pl_left_hard_divider,
-        right = wezterm.nerdfonts.pl_right_hard_divider,
+        left  = "",
+        right = "",
       },
     },
     sections = {
