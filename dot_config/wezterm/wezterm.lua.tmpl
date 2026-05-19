@@ -237,42 +237,49 @@ if ok_tabline then
     })
   end
 
-  -- Mode-aware tabline theme. Each editing mode swaps the `a` pill color
-  -- (and ripples through to component separators) so the active mode is
-  -- always visually obvious. Sections b/c/x/y/z get distinct hues so the
-  -- tabline reads as a sequence of accents instead of a wall of one color.
-  local mode_theme = function(accent)
+  -- Mode-aware tabline overrides. tabline.wez's `options.theme` MUST be a
+  -- wezterm colors table (or a builtin scheme name); the plugin computes a
+  -- default { normal_mode, copy_mode, search_mode, tab } map from that
+  -- colors table and then deep-extends `options.theme_overrides` on top.
+  -- Passing a per-mode table directly to `theme` crashes the plugin because
+  -- it dereferences `theme.ansi[1]` while computing surface colors.
+  --
+  -- The plugin hardcodes Bold intensity on sections a/z and Normal on b/y,
+  -- so we only specify fg/bg here. Per-mode `a` accent rotates by mode;
+  -- b/c/x/y/z stay constant so the right-side chrome reads as a stable
+  -- color sequence (green pane → orange battery → cyan clock) regardless
+  -- of which editing mode the active pane is in.
+  local mode_section = function(accent)
     return {
-      a = { fg = palette.bg,      bg = accent,         attribute = { intensity = "Bold" } },
-      b = { fg = palette.fg,      bg = palette.bg_alt },
-      c = { fg = palette.fg_dim,  bg = palette.bg     },
-      x = { fg = palette.bg,      bg = palette.green   },  -- right-c (e.g. pane info)
-      y = { fg = palette.bg,      bg = palette.orange  },  -- right-b (battery)
-      z = { fg = palette.bg,      bg = palette.cyan,   attribute = { intensity = "Bold" } },  -- right-a (clock)
+      a = { fg = palette.bg,     bg = accent          },
+      b = { fg = palette.fg,     bg = palette.bg_alt  },
+      c = { fg = palette.fg_dim, bg = palette.bg      },
+      x = { fg = palette.bg,     bg = palette.green   },  -- left-most right section
+      y = { fg = palette.bg,     bg = palette.orange  },  -- battery slot
+      z = { fg = palette.bg,     bg = palette.cyan    },  -- right-most (clock)
     }
   end
 
-  local tabline_theme = {
-    normal_mode = mode_theme(palette.accent),         -- purple
-    copy_mode   = mode_theme(palette.accent_copy),    -- blue
-    search_mode = mode_theme(palette.accent_search),  -- cyan
-    window_mode = mode_theme(palette.pink),
-    font_mode   = mode_theme(palette.yellow),
-    lock_mode   = mode_theme(palette.fg_mute),
+  local tabline_overrides = {
+    normal_mode = mode_section(palette.accent),         -- purple
+    copy_mode   = mode_section(palette.accent_copy),    -- blue
+    search_mode = mode_section(palette.accent_search),  -- cyan
+    window_mode = mode_section(palette.pink),
+    font_mode   = mode_section(palette.yellow),
+    lock_mode   = mode_section(palette.fg_mute),
     tab = {
-      active   = { fg = palette.bg,      bg = palette.accent,  attribute = { intensity = "Bold" } },
-      inactive = { fg = palette.fg_dim,  bg = palette.bg_alt,  attribute = { italic = true     } },
-      inactive_hover = { fg = palette.fg, bg = palette.bg_sel, attribute = { italic = true } },
+      active         = { fg = palette.bg,     bg = palette.accent },
+      inactive       = { fg = palette.fg_dim, bg = palette.bg_alt },
+      inactive_hover = { fg = palette.fg,     bg = palette.bg_sel },
     },
-    -- Background under any unmapped strip (rare; keeps strip flush w/ terminal bg).
-    background = palette.bg,
   }
 
   tabline.setup({
     options = {
       icons_enabled = true,
       tabs_enabled = true,
-      theme = tabline_theme,
+      theme = palette_scheme,
+      theme_overrides = tabline_overrides,
       color_overrides = {},
       -- Slanted dividers between sections give the tabline a bit of
       -- motion. Soft component separators stay thin so multi-component
