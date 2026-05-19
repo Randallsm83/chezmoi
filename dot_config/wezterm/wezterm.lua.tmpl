@@ -298,30 +298,38 @@ if ok_tabline then
     },
   }
 
-  -- Custom inline separator: a thin diagonal slash glyph drawn in fg_mute
-  -- on the strip bg. tabline.wez's util.extract_components treats raw
-  -- tables (i.e. anything that's not a { "component_name", ... }) as
-  -- verbatim wezterm.format records, so we can splice these triplets
-  -- straight into a section's components array and they render as
-  -- attribute changes + text alongside the named components.
+  -- Custom inline separators: thin single-line angle glyphs drawn in
+  -- fg_mute on the strip bg. Left side uses U+276F (❯) so chevrons
+  -- point right toward the active tab; right side uses U+276E (❮) so
+  -- chevrons point left back toward the active tab. tabline.wez's
+  -- util.extract_components treats raw tables (anything other than a
+  -- named { "component_name", ... } entry) as verbatim wezterm.format
+  -- records, so the attribute + Text triplets below splice cleanly into
+  -- each section's components array.
   --
-  -- The plugin's own section_separators are kept as the slash glyph too
-  -- so the a→b transition (mode_accent→bg_alt) renders one bright slash
-  -- in mode_accent color (the only naturally-visible plugin separator,
+  -- The plugin's own section_separators reuse the same glyphs so the
+  -- a→b transition (mode_accent→bg_alt) renders one bright ❯ in
+  -- mode_accent color (the only naturally-visible plugin separator,
   -- since b/c/x/y/z all share bg_alt and collapse to invisible).
-  local SEP_GLYPH = wezterm.nerdfonts.ple_forwardslash_separator
-  local sep_inline = {
+  local SEP_LEFT  = "\u{276f}"  -- ❯  HEAVY RIGHT-POINTING ANGLE QUOTATION MARK
+  local SEP_RIGHT = "\u{276e}"  -- ❮  HEAVY LEFT-POINTING ANGLE QUOTATION MARK
+  local sep_inline_left = {
     { Foreground = { Color = palette.fg_mute } },
     { Background = { Color = palette.bg_alt } },
-    { Text = " " .. SEP_GLYPH .. " " },
+    { Text = " " .. SEP_LEFT .. " " },
+  }
+  local sep_inline_right = {
+    { Foreground = { Color = palette.fg_mute } },
+    { Background = { Color = palette.bg_alt } },
+    { Text = " " .. SEP_RIGHT .. " " },
   }
 
-  -- Inject the inline separator at the end of tabline_y when battery is
-  -- present (so the slash sits between battery and clock too).
+  -- Inject a right-pointing-into-clock angle at the end of tabline_y
+  -- when battery is present, so a divider sits between battery and clock.
   if #tabline_y > 0 then
-    table.insert(tabline_y, sep_inline[1])
-    table.insert(tabline_y, sep_inline[2])
-    table.insert(tabline_y, sep_inline[3])
+    table.insert(tabline_y, sep_inline_right[1])
+    table.insert(tabline_y, sep_inline_right[2])
+    table.insert(tabline_y, sep_inline_right[3])
   end
 
   tabline.setup({
@@ -331,15 +339,16 @@ if ok_tabline then
       theme = palette_scheme,
       theme_overrides = tabline_overrides,
       color_overrides = {},
-      -- Section separators kept as the slash glyph. With most sections
-      -- sharing bg_alt the plugin-controlled instance collapses to
-      -- invisible (fg=bg=bg_alt), but between a (mode_accent) and b
-      -- (bg_alt) the slash renders bright in mode_accent on the strip.
-      -- All other section transitions get their visible slash from the
-      -- sep_inline triplets spliced into each section below.
+      -- Section separators use the same angle glyphs as the inline
+      -- separators. With most sections sharing bg_alt the plugin-controlled
+      -- instance collapses to invisible (fg=bg=bg_alt), but between a
+      -- (mode_accent) and b (bg_alt) the ❯ renders bright in mode_accent
+      -- on the strip. All other section transitions get their visible
+      -- divider from the sep_inline triplets spliced into each section
+      -- below.
       section_separators = {
-        left  = SEP_GLYPH,
-        right = SEP_GLYPH,
+        left  = SEP_LEFT,
+        right = SEP_RIGHT,
       },
       -- Empty component_separators so the plugin doesn't insert thin soft
       -- dividers between adjacent Text records (e.g. between a section's
@@ -357,16 +366,17 @@ if ok_tabline then
       },
     },
     sections = {
-      -- Left: mode pill → / → workspace → / → hostname → /
-      -- (mode pill→workspace slash comes from section_separators above)
+      -- Left: mode pill ❯ workspace ❯ hostname ❯
+      -- (mode pill→workspace ❯ comes from section_separators above;
+      -- workspace→hostname and hostname→tab from spliced sep_inline_left)
       tabline_a = { { "mode",      padding = { left = 1, right = 1 } } },
       tabline_b = {
         { "workspace", padding = { left = 1, right = 0 }, icon = wezterm.nerdfonts.cod_window },
-        sep_inline[1], sep_inline[2], sep_inline[3],
+        sep_inline_left[1], sep_inline_left[2], sep_inline_left[3],
       },
       tabline_c = {
         { "hostname",  padding = { left = 1, right = 0 }, icon = wezterm.nerdfonts.fa_desktop },
-        sep_inline[1], sep_inline[2], sep_inline[3],
+        sep_inline_left[1], sep_inline_left[2], sep_inline_left[3],
       },
       -- Active tab: index, parent/cwd, zoom indicator, running process.
       -- Explicit left+right padding on `index` so it doesn't collide with
@@ -385,13 +395,13 @@ if ok_tabline then
         { "index",   padding = { left = 1, right = 1 } },
         { "process", padding = { left = 0, right = 1 } },
       },
-      -- Right: / → battery (laptops only) → / → clock
-      -- tabline_x stays empty; clock gets a leading slash via the splice
-      -- so a divider always sits between the tab area and the clock.
+      -- Right: ❮ battery (laptops only) ❮ clock
+      -- tabline_x stays empty; clock gets a leading ❮ via the splice so a
+      -- divider always sits between the tab area and the clock.
       tabline_x = {},
       tabline_y = tabline_y,
       tabline_z = {
-        sep_inline[1], sep_inline[2], sep_inline[3],
+        sep_inline_right[1], sep_inline_right[2], sep_inline_right[3],
         { "datetime", padding = { left = 0, right = 1 }, style = "%a %b %-d  %H:%M" },
       },
     },
