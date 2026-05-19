@@ -124,37 +124,11 @@
                 "hidden": false,
                 "name": "Developer PowerShell for VS 2022",
                 "source": "Windows.Terminal.VisualStudio"
-            },
-            {
-                "guid": "{cc81aa7d-3d19-5e58-8254-b74274dace15}",
-                "hidden": false,
-                "name": "Ubuntu",
-                "source": "Microsoft.WSL"
-            },
-            {
-                "guid": "{a632ebb8-2211-5996-a783-0b995cc1a7c2}",
-                "hidden": false,
-                "name": "archlinux",
-                "source": "Microsoft.WSL"
-            },
-            {
-                "guid": "{1729e1a5-58a5-56d7-8774-a6512a9caedb}",
-                "hidden": false,
-                "name": "archlinux",
-                "source": "Microsoft.WSL"
-            },
-            {
-                "guid": "{36301901-3e70-570f-a0fd-3c5a660eed4b}",
-                "hidden": false,
-                "name": "archlinux",
-                "source": "Microsoft.WSL"
-            },
-            {
-                "guid": "{35dd4578-3e13-5579-98fe-89bf8137c216}",
-                "hidden": false,
-                "name": "CachyOS_Zen4",
-                "source": "Microsoft.WSL"
             }
+            // WSL profiles are auto-discovered by Windows Terminal via the
+            // "Microsoft.WSL" generator and surface through the
+            // "remainingProfiles" entry in newTabMenu above. Do NOT hardcode
+            // them here — GUIDs get stale across distro installs/resets.
         ]
     },
     "schemes": 
