@@ -311,8 +311,13 @@ if ok_tabline then
   -- a→b transition (mode_accent→bg_alt) renders one bright ❯ in
   -- mode_accent color (the only naturally-visible plugin separator,
   -- since b/c/x/y/z all share bg_alt and collapse to invisible).
-  local SEP_LEFT  = "\u{276f}"  -- ❯  HEAVY RIGHT-POINTING ANGLE QUOTATION MARK
-  local SEP_RIGHT = "\u{276e}"  -- ❮  HEAVY LEFT-POINTING ANGLE QUOTATION MARK
+  -- Mathematical angle brackets (U+27E9 / U+27E8) instead of the HEAVY
+  -- angle quotation marks (U+276F / U+276E). The heavy chars are bold by
+  -- design (HEAVY is in their Unicode name) which made the bar look
+  -- weighty; the mathematical brackets are thinner and taller and read
+  -- as clean directional cues without the bold-text vibe.
+  local SEP_LEFT  = "\u{27e9}"  -- ⟩  MATHEMATICAL RIGHT ANGLE BRACKET (thin, tall)
+  local SEP_RIGHT = "\u{27e8}"  -- ⟨  MATHEMATICAL LEFT ANGLE BRACKET (thin, tall)
   local sep_inline_left = {
     { Foreground = { Color = palette.fg_mute } },
     { Background = { Color = palette.bg_alt } },
