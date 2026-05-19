@@ -585,6 +585,10 @@ package_mapping:
       winget: []
       mise: []
     linux:
+      # neovim is handled by mise on Linux (core plugin pulls prebuilt GitHub
+      # release tarball — fast, current stable, no compile). Distro apt/dnf/
+      # pacman lists intentionally empty to avoid installing the older repo
+      # version on top of the mise-managed one.
       apt: []
       dnf: []
       pacman: []
@@ -600,14 +604,21 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
+      # Native distro packages only when sudo is available. mise's vim backend
+      # compiles from source (noisy + slow); using the distro binary is
+      # faster and identical. Fedora ships full vim in `vim-enhanced`.
+      # `mise_remote` is the no-sudo fallback used on remote hosts where
+      # apt/dnf/pacman are unavailable (mise installs to ~/.local, no root).
+      apt: [vim]
+      dnf: [vim-enhanced]
+      pacman: [vim]
       brew: []
-      mise: [vim]
+      mise: []
+      mise_remote: [vim]
     darwin:
-      brew: []
-      mise: [vim]
+      # macOS native pkg manager = brew. Same reasoning as Linux.
+      brew: [vim]
+      mise: []
 
   vscode:
     windows:
@@ -832,14 +843,26 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [luarocks, lua-language-server]  # luarocks not available via mise
-      mise: [lua, luajit, "aqua:LuaLS/lua-language-server"]
+      # ONE source per platform when sudo is available. lua/luajit/luarocks
+      # come from the native distro pkg manager (apt/dnf/pacman). mise's
+      # lua/luajit backends compile from source and mise has no luarocks
+      # backend at all, so there's nothing to gain from listing them in mise
+      # on hosts with root.
+      # lua-language-server is mise-owned everywhere via aqua's prebuilt
+      # GitHub release tarball (same pattern as neovim).
+      # `mise_remote` is the no-sudo fallback on remote hosts: lua/luajit
+      # via mise (compile to ~/.local, no root). luarocks has no mise
+      # backend so it can't be installed at all on a no-sudo remote.
+      apt: [lua5.4, luajit, luarocks]
+      dnf: [lua, luajit, luarocks]
+      pacman: [lua, luajit, luarocks]
+      brew: []
+      mise: ["aqua:LuaLS/lua-language-server"]
+      mise_remote: [lua, luajit]
     darwin:
-      brew: [luarocks, lua-language-server]
-      mise: [lua, luajit, "aqua:LuaLS/lua-language-server"]
+      # macOS native pkg manager = brew. Same reasoning as Linux.
+      brew: [lua, luajit, luarocks]
+      mise: ["aqua:LuaLS/lua-language-server"]
 
   node:
     windows:
