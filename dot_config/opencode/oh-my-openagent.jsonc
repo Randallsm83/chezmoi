@@ -64,8 +64,8 @@
   },
 
   "experimental": {
-    "aggressive_truncation": true,
-    "auto_resume": true
+    "aggressive_truncation": false,
+    "auto_resume": false
   }
 
   // Telemetry is controlled by env vars, not this file. Set in your shell
