@@ -110,18 +110,24 @@ local palette = {
   yellow = "{{ $p.yellow }}",
 }
 
--- Derived tones (no need to add per-theme entries to .chezmoidata.yaml).
+-- Derived tones (no per-theme entries needed). Bumped contrast vs. the
+-- previous 0.04/0.10 lighten so chrome (tab bar, titlebar, command palette)
+-- visibly separates from the terminal background instead of bleeding into it.
 local _bg = wezterm.color.parse(palette.bg)
 local _fg = wezterm.color.parse(palette.fg)
-palette.bg_alt = tostring(_bg:lighten(0.04))
-palette.bg_sel = tostring(_bg:lighten(0.10))
-palette.fg_dim = tostring(_fg:darken(0.20))
+palette.bg_alt  = tostring(_bg:lighten(0.07))
+palette.bg_sel  = tostring(_bg:lighten(0.16))
+palette.bg_pop  = tostring(_bg:lighten(0.22))  -- highest-contrast surface (command palette / hover)
+palette.fg_dim  = tostring(_fg:darken(0.20))
+palette.fg_mute = tostring(_fg:darken(0.40))
 
 -- Semantic accents (consistent meaning across themes).
 palette.cursor        = palette.yellow  -- caret
 palette.accent        = palette.purple  -- normal mode / active tab / split
 palette.accent_copy   = palette.blue    -- copy mode
 palette.accent_search = palette.cyan    -- search / resize / move modes
+palette.accent_warn   = palette.orange  -- warnings / battery low
+palette.accent_ok     = palette.green   -- success / git clean
 
 config.colors.split           = palette.accent
 config.colors.cursor_bg       = palette.cursor
@@ -220,55 +226,94 @@ config.switch_to_last_active_tab_when_closing_tab = true
 
 local ok_tabline, tabline = pcall(wezterm.plugin.require, "https://github.com/michaelbrusegard/tabline.wez")
 if ok_tabline then
-  -- Show battery only when one is actually present (laptops). Avoids a
-  -- "no battery" placeholder on desktops/servers.
+  -- Battery only on laptops. Desktops/servers skip the section entirely
+  -- so the right side doesn't render an empty placeholder.
   local tabline_y = {}
   if #wezterm.battery_info() > 0 then
-    table.insert(tabline_y, "battery")
+    table.insert(tabline_y, {
+      "battery",
+      padding = { left = 1, right = 1 },
+      icons_enabled = true,
+    })
   end
+
+  -- Mode-aware tabline theme. Each editing mode swaps the `a` pill color
+  -- (and ripples through to component separators) so the active mode is
+  -- always visually obvious. Sections b/c/x/y/z get distinct hues so the
+  -- tabline reads as a sequence of accents instead of a wall of one color.
+  local mode_theme = function(accent)
+    return {
+      a = { fg = palette.bg,      bg = accent,         attribute = { intensity = "Bold" } },
+      b = { fg = palette.fg,      bg = palette.bg_alt },
+      c = { fg = palette.fg_dim,  bg = palette.bg     },
+      x = { fg = palette.bg,      bg = palette.green   },  -- right-c (e.g. pane info)
+      y = { fg = palette.bg,      bg = palette.orange  },  -- right-b (battery)
+      z = { fg = palette.bg,      bg = palette.cyan,   attribute = { intensity = "Bold" } },  -- right-a (clock)
+    }
+  end
+
+  local tabline_theme = {
+    normal_mode = mode_theme(palette.accent),         -- purple
+    copy_mode   = mode_theme(palette.accent_copy),    -- blue
+    search_mode = mode_theme(palette.accent_search),  -- cyan
+    window_mode = mode_theme(palette.pink),
+    font_mode   = mode_theme(palette.yellow),
+    lock_mode   = mode_theme(palette.fg_mute),
+    tab = {
+      active   = { fg = palette.bg,      bg = palette.accent,  attribute = { intensity = "Bold" } },
+      inactive = { fg = palette.fg_dim,  bg = palette.bg_alt,  attribute = { italic = true     } },
+      inactive_hover = { fg = palette.fg, bg = palette.bg_sel, attribute = { italic = true } },
+    },
+    -- Background under any unmapped strip (rare; keeps strip flush w/ terminal bg).
+    background = palette.bg,
+  }
 
   tabline.setup({
     options = {
       icons_enabled = true,
       tabs_enabled = true,
-      -- Pass the colors table directly so the plugin doesn't try to
-      -- look up THEME_NAME in get_builtin_schemes() (custom scheme).
-      theme = palette_scheme,
+      theme = tabline_theme,
       color_overrides = {},
+      -- Slanted dividers between sections give the tabline a bit of
+      -- motion. Soft component separators stay thin so multi-component
+      -- sections don't read as a hard chevron stack.
       section_separators = {
-        left = wezterm.nerdfonts.pl_left_hard_divider,
-        right = wezterm.nerdfonts.pl_right_hard_divider,
+        left  = wezterm.nerdfonts.ple_left_half_circle_thick,
+        right = wezterm.nerdfonts.ple_right_half_circle_thick,
       },
       component_separators = {
-        left = wezterm.nerdfonts.pl_left_soft_divider,
+        left  = wezterm.nerdfonts.pl_left_soft_divider,
         right = wezterm.nerdfonts.pl_right_soft_divider,
       },
       tab_separators = {
-        left = wezterm.nerdfonts.pl_left_hard_divider,
-        right = wezterm.nerdfonts.pl_right_hard_divider,
+        left  = wezterm.nerdfonts.ple_left_half_circle_thick,
+        right = wezterm.nerdfonts.ple_right_half_circle_thick,
       },
     },
     sections = {
-      -- Left: mode pill (owns key-table indicator) → workspace → hostname.
-      tabline_a = { { "mode", padding = 1 } },
-      tabline_b = { { "workspace", padding = 1, icon = wezterm.nerdfonts.cod_window } },
-      tabline_c = { { "hostname", padding = 1, icon = wezterm.nerdfonts.fa_desktop } },
+      -- Left: mode pill → workspace → hostname.
+      tabline_a = { { "mode",      padding = { left = 1, right = 1 } } },
+      tabline_b = { { "workspace", padding = { left = 1, right = 1 }, icon = wezterm.nerdfonts.cod_window } },
+      tabline_c = { { "hostname",  padding = { left = 1, right = 1 }, icon = wezterm.nerdfonts.fa_desktop } },
+      -- Active tab: index, parent/cwd, zoom indicator, running process.
+      -- Bold via the tab.active theme entry above; no inline color here.
       tab_active = {
-        "index",
-        { "parent",  padding = 0 },
+        { "index",   padding = { left = 1, right = 0 } },
+        { "parent",  padding = 0, max_length = 12 },
         "/",
-        { "cwd",     padding = { left = 0, right = 1 } },
+        { "cwd",     padding = { left = 0, right = 1 }, max_length = 18 },
         { "zoomed",  padding = 0 },
-        { "process", padding = 1 },
+        { "process", padding = { left = 0, right = 1 } },
       },
+      -- Inactive tab: dim italic via theme; just index + process.
       tab_inactive = {
-        "index",
+        { "index",   padding = { left = 1, right = 0 } },
         { "process", padding = { left = 1, right = 1 } },
       },
-      -- Right: keep it minimal. No ram/cpu. Battery only when present.
+      -- Right: pane count (when split) → battery (laptops) → clock.
       tabline_x = {},
       tabline_y = tabline_y,
-      tabline_z = { { "datetime", style = "%a %b %-d  %H:%M" } },
+      tabline_z = { { "datetime", padding = { left = 1, right = 1 }, style = "%a %b %-d  %H:%M" } },
     },
     extensions = {},
   })
@@ -347,22 +392,26 @@ config.check_for_updates = true
 config.automatically_reload_config = true
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Command palette / char select / titlebar — palette-driven.
+-- Command palette / char select / titlebar — palette-driven. Use bg_pop so
+-- these overlay surfaces visibly lift off the terminal background instead
+-- of looking like a slightly-different shade of the same color.
 -- ─────────────────────────────────────────────────────────────────────────────
-config.command_palette_bg_color = palette.bg_alt
+config.command_palette_bg_color = palette.bg_pop
 config.command_palette_fg_color = palette.fg
 config.command_palette_font_size = 13
-config.char_select_bg_color = palette.bg_alt
+config.char_select_bg_color = palette.bg_pop
 config.char_select_fg_color = palette.fg
 config.char_select_font_size = 13
 
 config.window_frame = {
   font = wezterm.font({ family = "Hack Nerd Font", weight = "Bold" }),
   font_size = UI_FONT_SIZE,
-  active_titlebar_bg = palette.bg,
-  inactive_titlebar_bg = palette.bg_alt,
-  active_titlebar_fg = palette.fg,
-  inactive_titlebar_fg = palette.fg_dim,
+  -- bg_alt for active so the title bar reads as a distinct chrome band;
+  -- bg for inactive so an unfocused window recedes into the background.
+  active_titlebar_bg   = palette.bg_alt,
+  inactive_titlebar_bg = palette.bg,
+  active_titlebar_fg   = palette.fg,
+  inactive_titlebar_fg = palette.fg_mute,
 }
 
 -- Pretty tab titles when tabline plugin isn't loaded (fallback only).
