@@ -298,6 +298,32 @@ if ok_tabline then
     },
   }
 
+  -- Custom inline separator: a thin diagonal slash glyph drawn in fg_mute
+  -- on the strip bg. tabline.wez's util.extract_components treats raw
+  -- tables (i.e. anything that's not a { "component_name", ... }) as
+  -- verbatim wezterm.format records, so we can splice these triplets
+  -- straight into a section's components array and they render as
+  -- attribute changes + text alongside the named components.
+  --
+  -- The plugin's own section_separators are kept as the slash glyph too
+  -- so the a→b transition (mode_accent→bg_alt) renders one bright slash
+  -- in mode_accent color (the only naturally-visible plugin separator,
+  -- since b/c/x/y/z all share bg_alt and collapse to invisible).
+  local SEP_GLYPH = wezterm.nerdfonts.ple_forwardslash_separator
+  local sep_inline = {
+    { Foreground = { Color = palette.fg_mute } },
+    { Background = { Color = palette.bg_alt } },
+    { Text = " " .. SEP_GLYPH .. " " },
+  }
+
+  -- Inject the inline separator at the end of tabline_y when battery is
+  -- present (so the slash sits between battery and clock too).
+  if #tabline_y > 0 then
+    table.insert(tabline_y, sep_inline[1])
+    table.insert(tabline_y, sep_inline[2])
+    table.insert(tabline_y, sep_inline[3])
+  end
+
   tabline.setup({
     options = {
       icons_enabled = true,
@@ -305,39 +331,47 @@ if ok_tabline then
       theme = palette_scheme,
       theme_overrides = tabline_overrides,
       color_overrides = {},
-      -- Filled Powerline chevrons. With most sections sharing bg_alt, the
-      -- only chevron that actually renders is between a (mode pill,
-      -- mode_accent bg) and b (bg_alt) on the left — the rest collapse
-      -- because fg = bg makes the glyph invisible. That single visible
-      -- chevron is the entire "there's structure here" cue on the left;
-      -- everything else flows.
+      -- Section separators kept as the slash glyph. With most sections
+      -- sharing bg_alt the plugin-controlled instance collapses to
+      -- invisible (fg=bg=bg_alt), but between a (mode_accent) and b
+      -- (bg_alt) the slash renders bright in mode_accent on the strip.
+      -- All other section transitions get their visible slash from the
+      -- sep_inline triplets spliced into each section below.
       section_separators = {
-        left  = wezterm.nerdfonts.pl_left_hard_divider,
-        right = wezterm.nerdfonts.pl_right_hard_divider,
+        left  = SEP_GLYPH,
+        right = SEP_GLYPH,
       },
+      -- Empty component_separators so the plugin doesn't insert thin soft
+      -- dividers between adjacent Text records (e.g. between a section's
+      -- named component and the sep_inline records we splice in).
       component_separators = {
-        left  = wezterm.nerdfonts.pl_left_soft_divider,
-        right = wezterm.nerdfonts.pl_right_soft_divider,
+        left  = "",
+        right = "",
       },
-      -- Filled chevrons on tab edges, same as section separators. Because
-      -- config.colors.tab_bar.background and tab.inactive.bg are both
-      -- palette.bg_alt, the chevrons around the active tab transition
-      -- bg_alt → purple cleanly and the strip flows back to bg_alt between
-      -- tabs.
+      -- Filled chevrons on tab edges. Because config.colors.tab_bar.background
+      -- and tab.inactive.bg are both palette.bg_alt, the chevrons around
+      -- the active tab transition bg_alt → purple cleanly.
       tab_separators = {
         left  = wezterm.nerdfonts.pl_left_hard_divider,
         right = wezterm.nerdfonts.pl_right_hard_divider,
       },
     },
     sections = {
-      -- Left: mode pill → workspace → hostname.
+      -- Left: mode pill → / → workspace → / → hostname → /
+      -- (mode pill→workspace slash comes from section_separators above)
       tabline_a = { { "mode",      padding = { left = 1, right = 1 } } },
-      tabline_b = { { "workspace", padding = { left = 1, right = 1 }, icon = wezterm.nerdfonts.cod_window } },
-      tabline_c = { { "hostname",  padding = { left = 1, right = 1 }, icon = wezterm.nerdfonts.fa_desktop } },
+      tabline_b = {
+        { "workspace", padding = { left = 1, right = 0 }, icon = wezterm.nerdfonts.cod_window },
+        sep_inline[1], sep_inline[2], sep_inline[3],
+      },
+      tabline_c = {
+        { "hostname",  padding = { left = 1, right = 0 }, icon = wezterm.nerdfonts.fa_desktop },
+        sep_inline[1], sep_inline[2], sep_inline[3],
+      },
       -- Active tab: index, parent/cwd, zoom indicator, running process.
       -- Explicit left+right padding on `index` so it doesn't collide with
-      -- `parent` (tabline.wez inserts a near-invisible soft divider between
-      -- adjacent component tables; spaces are clearer).
+      -- `parent` (component_separators are now empty, so spaces are the
+      -- only thing keeping fields apart within the tab pill).
       tab_active = {
         { "index",   padding = { left = 1, right = 1 } },
         { "parent",  padding = 0, max_length = 12 },
@@ -346,15 +380,20 @@ if ok_tabline then
         { "zoomed",  padding = 0 },
         { "process", padding = { left = 0, right = 1 } },
       },
-      -- Inactive tab: dim via theme; just index + process.
+      -- Inactive tab: dim via theme; index + process with explicit space.
       tab_inactive = {
         { "index",   padding = { left = 1, right = 1 } },
         { "process", padding = { left = 0, right = 1 } },
       },
-      -- Right: pane count (when split) → battery (laptops) → clock.
+      -- Right: / → battery (laptops only) → / → clock
+      -- tabline_x stays empty; clock gets a leading slash via the splice
+      -- so a divider always sits between the tab area and the clock.
       tabline_x = {},
       tabline_y = tabline_y,
-      tabline_z = { { "datetime", padding = { left = 1, right = 1 }, style = "%a %b %-d  %H:%M" } },
+      tabline_z = {
+        sep_inline[1], sep_inline[2], sep_inline[3],
+        { "datetime", padding = { left = 0, right = 1 }, style = "%a %b %-d  %H:%M" },
+      },
     },
     extensions = {},
   })
@@ -447,12 +486,21 @@ config.char_select_font_size = 13
 config.window_frame = {
   font = wezterm.font({ family = "Hack Nerd Font", weight = "Bold" }),
   font_size = UI_FONT_SIZE,
-  -- bg_alt for active so the title bar reads as a distinct chrome band;
-  -- bg for inactive so an unfocused window recedes into the background.
+  -- All four states resolve to bg_alt so the title bar / integrated
+  -- window-control area always matches the tab bar strip (also bg_alt),
+  -- focused or not. The previous inactive_titlebar_bg = palette.bg was
+  -- the source of the "slightly different dark bg" behind the
+  -- min/max/close buttons on unfocused windows.
   active_titlebar_bg   = palette.bg_alt,
-  inactive_titlebar_bg = palette.bg,
+  inactive_titlebar_bg = palette.bg_alt,
   active_titlebar_fg   = palette.fg,
   inactive_titlebar_fg = palette.fg_mute,
+  -- Integrated window-control buttons: bg matches the strip; hover
+  -- pops a subtle bg_sel pill so the click target stays obvious.
+  button_fg            = palette.fg,
+  button_bg            = palette.bg_alt,
+  button_hover_fg      = palette.fg,
+  button_hover_bg      = palette.bg_sel,
 }
 
 -- Pretty tab titles when tabline plugin isn't loaded (fallback only).
