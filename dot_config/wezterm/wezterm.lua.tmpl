@@ -257,29 +257,23 @@ if ok_tabline then
   -- Passing a per-mode table directly to `theme` crashes the plugin because
   -- it dereferences `theme.ansi[1]` while computing surface colors.
   --
-  -- Every section gets a fully-saturated bg so the tabline reads as a
-  -- continuous color sequence instead of "pill → dead grey → dead grey →
-  -- pill." Left side flows cool: mode_accent → blue → green. Right side
-  -- flows warm: cyan → orange → yellow. The mode_accent on `a` rotates
-  -- per editing mode (normal=purple, copy=blue, search=cyan, etc.);
-  -- everything else stays put, so only the leftmost pill animates with
-  -- mode changes — still recognizable, but the bar stays cohesive.
-  -- All fg = palette.bg so colored text reads on every saturated bg.
+  -- Minimal design: only TWO bright pills in the entire bar — the mode
+  -- pill (a) on the left and the active tab in the middle (both share
+  -- mode_accent so they visually agree as "current state"). Every other
+  -- section sits on the strip bg and identifies itself via fg color:
+  -- workspace = blue text, hostname = dim text, battery = orange text,
+  -- clock = pink text. With all bgs equal to bg_alt, the chevrons between
+  -- these sections collapse to invisible (fg = bg = bg_alt), so the
+  -- middle of the bar reads as a clean strip with subtly-colored labels
+  -- floating on it.
   local mode_section = function(accent)
     return {
-      a = { fg = palette.bg, bg = accent         },  -- mode pill (rotates) — bright
-      b = { fg = palette.bg, bg = palette.blue   },  -- workspace — bright
-      -- c (hostname) sits on the strip bg so the left bright pills (a, b)
-      -- transition into a calm hostname label that blends into the strip.
-      -- fg = palette.fg keeps the text legible without competing with the
-      -- bright accents on either side. Matching c.bg to strip.bg means
-      -- there's no visible boundary between c content and the tab area.
-      c = { fg = palette.fg, bg = palette.bg_alt },
-      -- x.bg matches strip so when tabline_x is empty (desktop / no battery)
-      -- the chevron the plugin draws before z emerges from the strip cleanly.
-      x = { fg = palette.bg, bg = palette.bg_alt },
-      y = { fg = palette.bg, bg = palette.orange },  -- battery slot (laptops only)
-      z = { fg = palette.bg, bg = palette.pink   },  -- clock — pink is unique to z
+      a = { fg = palette.bg,     bg = accent         },  -- mode pill (rotates) — BRIGHT
+      b = { fg = palette.blue,   bg = palette.bg_alt },  -- workspace — subtle blue label
+      c = { fg = palette.fg_dim, bg = palette.bg_alt },  -- hostname — dim label
+      x = { fg = palette.cyan,   bg = palette.bg_alt },  -- pane info if populated
+      y = { fg = palette.orange, bg = palette.bg_alt },  -- battery (laptops only)
+      z = { fg = palette.pink,   bg = palette.bg_alt },  -- clock — subtle pink label
     }
   end
 
@@ -311,11 +305,12 @@ if ok_tabline then
       theme = palette_scheme,
       theme_overrides = tabline_overrides,
       color_overrides = {},
-      -- Filled Powerline chevrons bridge adjacent section colors cleanly
-      -- (fg = prev section bg, bg = next section bg → solid diagonal).
-      -- The half-circle thick glyphs read as disconnected bumps because
-      -- they leave a sliver of background between curves; chevrons keep
-      -- the tabline a continuous color sequence.
+      -- Filled Powerline chevrons. With most sections sharing bg_alt, the
+      -- only chevron that actually renders is between a (mode pill,
+      -- mode_accent bg) and b (bg_alt) on the left — the rest collapse
+      -- because fg = bg makes the glyph invisible. That single visible
+      -- chevron is the entire "there's structure here" cue on the left;
+      -- everything else flows.
       section_separators = {
         left  = wezterm.nerdfonts.pl_left_hard_divider,
         right = wezterm.nerdfonts.pl_right_hard_divider,
