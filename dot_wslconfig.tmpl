@@ -16,8 +16,9 @@ swap=0
 localhostForwarding=true
 
 [boot]
-# System init command
-# systemd=true
+# System init command (required on Ubuntu 24.04+ for systemd-managed
+# services like snapd, ssh, cron).
+systemd=true
 
 [experimental]
 # Enable experimental features
