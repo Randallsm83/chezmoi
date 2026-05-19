@@ -311,13 +311,14 @@ if ok_tabline then
   -- a→b transition (mode_accent→bg_alt) renders one bright ❯ in
   -- mode_accent color (the only naturally-visible plugin separator,
   -- since b/c/x/y/z all share bg_alt and collapse to invisible).
-  -- Mathematical angle brackets (U+27E9 / U+27E8) instead of the HEAVY
-  -- angle quotation marks (U+276F / U+276E). The heavy chars are bold by
-  -- design (HEAVY is in their Unicode name) which made the bar look
-  -- weighty; the mathematical brackets are thinner and taller and read
-  -- as clean directional cues without the bold-text vibe.
-  local SEP_LEFT  = "\u{27e9}"  -- ⟩  MATHEMATICAL RIGHT ANGLE BRACKET (thin, tall)
-  local SEP_RIGHT = "\u{27e8}"  -- ⟨  MATHEMATICAL LEFT ANGLE BRACKET (thin, tall)
+  -- Plain ASCII > and <. The Unicode angle alternatives (HEAVY U+276F/E,
+  -- MATHEMATICAL U+27E9/8, SINGLE QUOTE U+203A/9) all carry typographic
+  -- baggage and render inconsistently across fonts — some come out bold
+  -- by design, some get filled-triangle fallback glyphs from secondary
+  -- fonts. ASCII renders in Hack's regular weight at the natural cap
+  -- height, predictable everywhere.
+  local SEP_LEFT  = ">"
+  local SEP_RIGHT = "<"
   local sep_inline_left = {
     { Foreground = { Color = palette.fg_mute } },
     { Background = { Color = palette.bg_alt } },
@@ -344,16 +345,16 @@ if ok_tabline then
       theme = palette_scheme,
       theme_overrides = tabline_overrides,
       color_overrides = {},
-      -- Section separators use the same angle glyphs as the inline
-      -- separators. With most sections sharing bg_alt the plugin-controlled
-      -- instance collapses to invisible (fg=bg=bg_alt), but between a
-      -- (mode_accent) and b (bg_alt) the ❯ renders bright in mode_accent
-      -- on the strip. All other section transitions get their visible
-      -- divider from the sep_inline triplets spliced into each section
-      -- below.
+      -- Plugin section_separators disabled (empty strings) so the
+      -- mode pill→workspace divider gets the same dim treatment as every
+      -- other section transition. The plugin auto-renders its separator
+      -- with fg = prev_section.bg (mode_accent for a→b), which made the
+      -- mode pill's separator render bright purple while the rest were
+      -- dim. The dim sep_inline_left triplet spliced at the end of
+      -- tabline_a (below) provides the uniform-looking divider instead.
       section_separators = {
-        left  = SEP_LEFT,
-        right = SEP_RIGHT,
+        left  = "",
+        right = "",
       },
       -- Empty component_separators so the plugin doesn't insert thin soft
       -- dividers between adjacent Text records (e.g. between a section's
@@ -371,10 +372,15 @@ if ok_tabline then
       },
     },
     sections = {
-      -- Left: mode pill ❯ workspace ❯ hostname ❯
-      -- (mode pill→workspace ❯ comes from section_separators above;
-      -- workspace→hostname and hostname→tab from spliced sep_inline_left)
-      tabline_a = { { "mode",      padding = { left = 1, right = 1 } } },
+      -- Left: mode pill > workspace > hostname > (active tab)
+      -- All three > are the same dim splice; the mode pill's separator
+      -- needs the splice too because section_separators are disabled
+      -- above (otherwise the mode pill->workspace divider would be
+      -- bright purple, mismatching the other dim >s).
+      tabline_a = {
+        { "mode",      padding = { left = 1, right = 1 } },
+        sep_inline_left[1], sep_inline_left[2], sep_inline_left[3],
+      },
       tabline_b = {
         { "workspace", padding = { left = 1, right = 0 }, icon = wezterm.nerdfonts.cod_window },
         sep_inline_left[1], sep_inline_left[2], sep_inline_left[3],
