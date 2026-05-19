@@ -138,14 +138,15 @@ config.colors.selection_fg    = palette.fg
 config.colors.visual_bell     = palette.bg_alt
 config.colors.scrollbar_thumb = palette.fg_dim
 
--- Tab strip background matches section c (hostname / green). This makes
--- the left tabline_a→b→c sections flow directly into the tab area without
--- a visible dark gap, and the strip continues uninterrupted across the
--- right side until the x→y→z chevrons take over. Tab pills (active +
--- inactive) sit on top of this strip with chevron caps that transition
--- into/out of green cleanly.
+-- Tab strip background is a subtle bg_alt elevation (~7% lighter than the
+-- terminal bg). Bright section colors (mode pill, workspace, clock) sit at
+-- the edges of the bar; everything in the middle — hostname, the strip
+-- itself, inactive tabs, the empty space — shares this one calm tone so
+-- the bar reads as "bright bookmarks + quiet middle" instead of full
+-- rainbow. The active tab is the only pill in the middle, and it pops
+-- because mode_accent is the only saturated thing on the strip.
 config.colors.tab_bar = {
-  background = palette.green,
+  background = palette.bg_alt,
 }
 
 -- Scheme shape consumed by tabline.wez (accepts a builtin name OR a full
@@ -182,11 +183,11 @@ local palette_scheme = {
   -- Mirror config.colors.tab_bar (set above) so the wezterm-builtin scheme
   -- consumed by tabline.wez's get_colors() agrees with the global override.
   tab_bar = {
-    background         = palette.green,
-    active_tab         = { bg_color = palette.accent,  fg_color = palette.bg  },
-    inactive_tab       = { bg_color = palette.green,   fg_color = palette.bg  },
-    inactive_tab_hover = { bg_color = palette.bg_sel,  fg_color = palette.fg  },
-    new_tab            = { bg_color = palette.green,   fg_color = palette.bg  },
+    background         = palette.bg_alt,
+    active_tab         = { bg_color = palette.accent,  fg_color = palette.bg     },
+    inactive_tab       = { bg_color = palette.bg_alt,  fg_color = palette.fg_dim },
+    inactive_tab_hover = { bg_color = palette.bg_sel,  fg_color = palette.fg     },
+    new_tab            = { bg_color = palette.bg_alt,  fg_color = palette.accent },
     new_tab_hover      = { bg_color = palette.bg_sel,  fg_color = palette.cursor },
   },
 }
@@ -266,14 +267,17 @@ if ok_tabline then
   -- All fg = palette.bg so colored text reads on every saturated bg.
   local mode_section = function(accent)
     return {
-      a = { fg = palette.bg, bg = accent         },  -- mode pill (rotates)
-      b = { fg = palette.bg, bg = palette.blue   },  -- workspace
-      c = { fg = palette.bg, bg = palette.green  },  -- hostname (matches tab strip bg)
-      -- x.bg = palette.green so when tabline_x is empty (desktop / no battery),
-      -- the separator the plugin draws before z uses x.bg as its backdrop;
-      -- matching it to the tab strip means the pink z chevron emerges from
-      -- green cleanly instead of from an orphan cyan sliver.
-      x = { fg = palette.bg, bg = palette.green  },
+      a = { fg = palette.bg, bg = accent         },  -- mode pill (rotates) — bright
+      b = { fg = palette.bg, bg = palette.blue   },  -- workspace — bright
+      -- c (hostname) sits on the strip bg so the left bright pills (a, b)
+      -- transition into a calm hostname label that blends into the strip.
+      -- fg = palette.fg keeps the text legible without competing with the
+      -- bright accents on either side. Matching c.bg to strip.bg means
+      -- there's no visible boundary between c content and the tab area.
+      c = { fg = palette.fg, bg = palette.bg_alt },
+      -- x.bg matches strip so when tabline_x is empty (desktop / no battery)
+      -- the chevron the plugin draws before z emerges from the strip cleanly.
+      x = { fg = palette.bg, bg = palette.bg_alt },
       y = { fg = palette.bg, bg = palette.orange },  -- battery slot (laptops only)
       z = { fg = palette.bg, bg = palette.pink   },  -- clock — pink is unique to z
     }
@@ -287,17 +291,15 @@ if ok_tabline then
     font_mode   = mode_section(palette.yellow),
     lock_mode   = mode_section(palette.fg_mute),
     -- tabline.wez's tabs.lua hardcodes the tab chevron backdrop to
-    -- colors.inactive.bg (NOT to config.colors.tab_bar.background), so for
-    -- the chevrons around the active tab to render on the green strip we
-    -- have to make tab.inactive.bg match palette.green. This also has the
-    -- side effect that inactive tab pills blend into the strip (becoming
-    -- "ghost labels" — readable text floating on green, no visible pill
-    -- outline), while the active tab is the only visually distinguished
-    -- pill. inactive_hover stays on bg_sel so hovering an inactive tab
-    -- pops a clear focus pill.
+    -- colors.inactive.bg (NOT to config.colors.tab_bar.background), so
+    -- tab.inactive.bg must match the strip color for the chevrons around
+    -- the active tab to blend into the strip. With strip = bg_alt, inactive
+    -- tabs become ghost labels (dim fg on the strip, no visible pill
+    -- outline). inactive_hover pops a clear bg_sel pill on mouse-over so
+    -- click targets stay obvious.
     tab = {
       active         = { fg = palette.bg,     bg = palette.accent },
-      inactive       = { fg = palette.bg,     bg = palette.green  },
+      inactive       = { fg = palette.fg_dim, bg = palette.bg_alt },
       inactive_hover = { fg = palette.fg,     bg = palette.bg_sel },
     },
   }
@@ -323,10 +325,10 @@ if ok_tabline then
         right = wezterm.nerdfonts.pl_right_soft_divider,
       },
       -- Filled chevrons on tab edges, same as section separators. Because
-      -- config.colors.tab_bar.background is set to palette.green (matching
-      -- section c), there's no dark gap between c and the tabs — each tab
-      -- chevron transitions green → tab.bg (purple for active, bg_alt for
-      -- inactive) directly, and the strip flows back to green between tabs.
+      -- config.colors.tab_bar.background and tab.inactive.bg are both
+      -- palette.bg_alt, the chevrons around the active tab transition
+      -- bg_alt → purple cleanly and the strip flows back to bg_alt between
+      -- tabs.
       tab_separators = {
         left  = wezterm.nerdfonts.pl_left_hard_divider,
         right = wezterm.nerdfonts.pl_right_hard_divider,
