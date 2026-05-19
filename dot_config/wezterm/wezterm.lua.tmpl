@@ -179,12 +179,14 @@ local palette_scheme = {
     palette.cyan,           -- 14 bright cyan
     palette.fg,             -- 15 bright white
   },
+  -- Mirror config.colors.tab_bar (set above) so the wezterm-builtin scheme
+  -- consumed by tabline.wez's get_colors() agrees with the global override.
   tab_bar = {
-    background         = palette.bg,
-    active_tab         = { bg_color = palette.accent,  fg_color = palette.bg },
-    inactive_tab       = { bg_color = palette.bg_alt,  fg_color = palette.fg },
-    inactive_tab_hover = { bg_color = palette.bg_sel,  fg_color = palette.fg },
-    new_tab            = { bg_color = palette.bg_alt,  fg_color = palette.accent },
+    background         = palette.green,
+    active_tab         = { bg_color = palette.accent,  fg_color = palette.bg  },
+    inactive_tab       = { bg_color = palette.green,   fg_color = palette.bg  },
+    inactive_tab_hover = { bg_color = palette.bg_sel,  fg_color = palette.fg  },
+    new_tab            = { bg_color = palette.green,   fg_color = palette.bg  },
     new_tab_hover      = { bg_color = palette.bg_sel,  fg_color = palette.cursor },
   },
 }
@@ -284,9 +286,18 @@ if ok_tabline then
     window_mode = mode_section(palette.pink),
     font_mode   = mode_section(palette.yellow),
     lock_mode   = mode_section(palette.fg_mute),
+    -- tabline.wez's tabs.lua hardcodes the tab chevron backdrop to
+    -- colors.inactive.bg (NOT to config.colors.tab_bar.background), so for
+    -- the chevrons around the active tab to render on the green strip we
+    -- have to make tab.inactive.bg match palette.green. This also has the
+    -- side effect that inactive tab pills blend into the strip (becoming
+    -- "ghost labels" — readable text floating on green, no visible pill
+    -- outline), while the active tab is the only visually distinguished
+    -- pill. inactive_hover stays on bg_sel so hovering an inactive tab
+    -- pops a clear focus pill.
     tab = {
       active         = { fg = palette.bg,     bg = palette.accent },
-      inactive       = { fg = palette.fg_dim, bg = palette.bg_alt },
+      inactive       = { fg = palette.bg,     bg = palette.green  },
       inactive_hover = { fg = palette.fg,     bg = palette.bg_sel },
     },
   }
