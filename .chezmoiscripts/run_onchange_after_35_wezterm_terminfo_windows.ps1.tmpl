@@ -1,0 +1,107 @@
+{{- /*
+Windows wezterm terminfo installer.
+
+Why this exists:
+  wezterm.lua sets `config.term = "wezterm"`, which means every program
+  spawned inside wezterm (including git itself, plus its `less`/`tput`
+  helpers) sees TERM=wezterm. Git on Windows is built on MSYS2 ncurses,
+  which looks up terminfo only under its own install tree — NOT the user
+  tree at `~/.local/share/terminfo`. If the `wezterm` entry is missing
+  there, git emits `'wezterm': unknown terminal type.` on every invocation
+  and less aborts before printing anything, so commands like `git diff`
+  appear to produce no output.
+
+  Note that BOTH scoop's git AND a side-by-side Git-for-Windows install
+  each ship their own independent MSYS terminfo tree; fixing only one
+  leaves the other broken. This script installs into every tree it finds.
+
+What this does:
+  Compiles wezterm-terminfo/wezterm.terminfo (upstream source, bundled in
+  the chezmoi source tree) with each install's bundled `tic -x` and drops
+  the compiled entry into that install's terminfo tree. User-owned trees
+  (scoop, MSYS2 under $HOME) are installed without elevation; Program
+  Files trees are installed via gsudo.
+
+Trigger semantics: standard `run_onchange_` — the embedded sha256 below
+re-fires this script whenever the bundled terminfo source changes.
+
+Recovery: delete `<install>\usr\share\terminfo\77\wezterm`. The next
+`chezmoi apply` will re-compile and reinstall it for every detected tree.
+*/}}
+{{- if eq .chezmoi.os "windows" -}}
+# wezterm.terminfo sha256: {{ include "wezterm-terminfo/wezterm.terminfo" | sha256sum }}
+$ErrorActionPreference = 'Stop'
+
+# Bundled terminfo source content (LF line endings — tic is strict about CR).
+$src = @'
+{{ include "wezterm-terminfo/wezterm.terminfo" -}}
+'@
+$src = $src -replace "`r`n", "`n"
+
+# ── Candidate MSYS terminfo trees ────────────────────────────────────────────
+# Each entry: {Name, TicExe, TerminfoRoot, NeedsElevation}. Listed in order
+# of preference / commonality on this machine class.
+$candidates = @(
+    @{ Name = 'scoop-git';      TicExe = (Join-Path $env:USERPROFILE 'scoop\apps\git\current\usr\bin\tic.exe');       TerminfoRoot = (Join-Path $env:USERPROFILE 'scoop\apps\git\current\usr\share\terminfo');       NeedsElevation = $false }
+    @{ Name = 'git-for-windows'; TicExe = 'C:\Program Files\Git\usr\bin\tic.exe';                                        TerminfoRoot = 'C:\Program Files\Git\usr\share\terminfo';                                        NeedsElevation = $true  }
+    @{ Name = 'msys2-system';   TicExe = 'C:\msys64\usr\bin\tic.exe';                                                   TerminfoRoot = 'C:\msys64\usr\share\terminfo';                                                   NeedsElevation = $true  }
+    @{ Name = 'msys2-scoop';    TicExe = (Join-Path $env:USERPROFILE 'scoop\apps\msys2\current\usr\bin\tic.exe');      TerminfoRoot = (Join-Path $env:USERPROFILE 'scoop\apps\msys2\current\usr\share\terminfo');      NeedsElevation = $false }
+)
+
+$present = $candidates | Where-Object {
+    (Test-Path -LiteralPath $_.TicExe) -and (Test-Path -LiteralPath $_.TerminfoRoot)
+}
+
+if (-not $present) {
+    Write-Warning "[wezterm-terminfo] No MSYS-based git/msys2 install found on this machine; nothing to do."
+    exit 0
+}
+
+# Write the source to a temp file once; all installs consume the same file.
+$tmp = Join-Path $env:TEMP ("wezterm-{0}.terminfo" -f ([guid]::NewGuid().ToString('N')))
+try {
+    [System.IO.File]::WriteAllText($tmp, $src, [System.Text.UTF8Encoding]::new($false))
+
+    foreach ($c in $present) {
+        $installedAt = Join-Path $c.TerminfoRoot '77\wezterm'
+
+        if ($c.NeedsElevation) {
+            # gsudo + a one-shot pwsh script is the only reliable way to
+            # pass `Program Files`-style paths through quoting layers.
+            $installer = Join-Path $env:TEMP ("wezterm-terminfo-install-{0}.ps1" -f ([guid]::NewGuid().ToString('N')))
+            try {
+                @"
+`$ErrorActionPreference = 'Stop'
+& '$($c.TicExe)' -x -o '$($c.TerminfoRoot)' '$tmp'
+exit `$LASTEXITCODE
+"@ | Set-Content -LiteralPath $installer -Encoding UTF8
+
+                Write-Host "[wezterm-terminfo] ($($c.Name)) installing into $($c.TerminfoRoot) via gsudo..."
+                gsudo --loglevel none -- pwsh -NoProfile -ExecutionPolicy Bypass -File $installer
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Warning "[wezterm-terminfo] ($($c.Name)) tic returned exit $LASTEXITCODE; skipping this tree"
+                    continue
+                }
+            } finally {
+                Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
+            }
+        } else {
+            Write-Host "[wezterm-terminfo] ($($c.Name)) installing into $($c.TerminfoRoot)..."
+            & $c.TicExe -x -o $c.TerminfoRoot $tmp
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "[wezterm-terminfo] ($($c.Name)) tic returned exit $LASTEXITCODE; skipping this tree"
+                continue
+            }
+        }
+
+        if (Test-Path -LiteralPath $installedAt) {
+            $size = (Get-Item -LiteralPath $installedAt).Length
+            Write-Host "[wezterm-terminfo] ($($c.Name)) installed $installedAt ($size bytes)"
+        } else {
+            Write-Warning "[wezterm-terminfo] ($($c.Name)) tic finished but $installedAt is missing"
+        }
+    }
+} finally {
+    Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+}
+{{- end }}

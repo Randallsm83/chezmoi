@@ -82,6 +82,16 @@ librewolf/**
 unbound
 unbound/**
 
+# wezterm terminfo source-only tree (Windows). The single file we manage —
+#   wezterm-terminfo/wezterm.terminfo  (upstream terminfo source for TERM=wezterm)
+# — is compiled with `tic` and installed into Git for Windows' MSYS terminfo
+# tree (C:\Program Files\Git\usr\share\terminfo) by:
+#   .chezmoiscripts/run_onchange_after_35_wezterm_terminfo_windows.ps1.tmpl
+# so `less`, `git diff`, and other MSYS-linked pagers don't error with
+# `'wezterm': unknown terminal type.` when wezterm sets TERM=wezterm.
+wezterm-terminfo
+wezterm-terminfo/**
+
 # ============================================================================
 # Repository Files (Never Deployed to Home)
 # ============================================================================
