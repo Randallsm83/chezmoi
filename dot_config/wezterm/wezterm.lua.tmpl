@@ -138,6 +138,16 @@ config.colors.selection_fg    = palette.fg
 config.colors.visual_bell     = palette.bg_alt
 config.colors.scrollbar_thumb = palette.fg_dim
 
+-- Tab strip background matches section c (hostname / green). This makes
+-- the left tabline_a→b→c sections flow directly into the tab area without
+-- a visible dark gap, and the strip continues uninterrupted across the
+-- right side until the x→y→z chevrons take over. Tab pills (active +
+-- inactive) sit on top of this strip with chevron caps that transition
+-- into/out of green cleanly.
+config.colors.tab_bar = {
+  background = palette.green,
+}
+
 -- Scheme shape consumed by tabline.wez (accepts a builtin name OR a full
 -- color table). Standard ANSI semantics so the plugin picks the right
 -- accents: ansi[5] = normal mode pill, ansi[4] = copy mode.
@@ -256,11 +266,14 @@ if ok_tabline then
     return {
       a = { fg = palette.bg, bg = accent         },  -- mode pill (rotates)
       b = { fg = palette.bg, bg = palette.blue   },  -- workspace
-      c = { fg = palette.bg, bg = palette.green  },  -- hostname
-      x = { fg = palette.bg, bg = palette.cyan   },  -- left-most right section
-      y = { fg = palette.bg, bg = palette.orange },  -- battery slot
-      z = { fg = palette.bg, bg = palette.pink   },  -- right-most (clock) — pink is unique
-                                                     -- to z (no mode rotation lands here)
+      c = { fg = palette.bg, bg = palette.green  },  -- hostname (matches tab strip bg)
+      -- x.bg = palette.green so when tabline_x is empty (desktop / no battery),
+      -- the separator the plugin draws before z uses x.bg as its backdrop;
+      -- matching it to the tab strip means the pink z chevron emerges from
+      -- green cleanly instead of from an orphan cyan sliver.
+      x = { fg = palette.bg, bg = palette.green  },
+      y = { fg = palette.bg, bg = palette.orange },  -- battery slot (laptops only)
+      z = { fg = palette.bg, bg = palette.pink   },  -- clock — pink is unique to z
     }
   end
 
@@ -298,15 +311,14 @@ if ok_tabline then
         left  = wezterm.nerdfonts.pl_left_soft_divider,
         right = wezterm.nerdfonts.pl_right_soft_divider,
       },
-      -- Tabs render as flat rectangles (no chevron caps). The plugin doesn't
-      -- close section `c` with a trailing chevron, so a chevron on the tab's
-      -- left edge stacks visually after c's straight right edge with a sliver
-      -- of tab_bar bg between them — reads as "straight cliff then arrow."
-      -- Empty tab_separators makes tabs read as colored pills sitting in the
-      -- gap, with their hue alone signalling active vs. inactive.
+      -- Filled chevrons on tab edges, same as section separators. Because
+      -- config.colors.tab_bar.background is set to palette.green (matching
+      -- section c), there's no dark gap between c and the tabs — each tab
+      -- chevron transitions green → tab.bg (purple for active, bg_alt for
+      -- inactive) directly, and the strip flows back to green between tabs.
       tab_separators = {
-        left  = "",
-        right = "",
+        left  = wezterm.nerdfonts.pl_left_hard_divider,
+        right = wezterm.nerdfonts.pl_right_hard_divider,
       },
     },
     sections = {
