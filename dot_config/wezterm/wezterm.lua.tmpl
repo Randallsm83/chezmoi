@@ -21,6 +21,13 @@ local is_linux = triple:find("linux") ~= nil
 local is_mac = triple:find("apple") ~= nil
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Per-platform tunables (single source of truth for font/UI sizing)
+-- ─────────────────────────────────────────────────────────────────────────────
+local FONT_SIZE       = is_windows and 11.0 or 13.0
+local UI_FONT_SIZE    = is_windows and 10.0 or 12.0
+local WINDOW_OPACITY  = is_mac and 0.92 or 1.0
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Shell / environment
 -- ─────────────────────────────────────────────────────────────────────────────
 if is_windows then
@@ -67,10 +74,17 @@ if is_windows then
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Colorscheme — driven by chezmoi theme data, with explicit Spaceduck accent
--- overrides so UI chrome matches even if the builtin scheme changes name.
+-- Colorscheme — driven by chezmoi theme data. The base ANSI palette is
+-- resolved by name (theme_mappings.wezterm.<theme>); UI chrome accents are
+-- templated from .theme.<theme> so every supported theme re-skins cleanly.
 -- ─────────────────────────────────────────────────────────────────────────────
+{{- /* .theme is a string ("spaceduck") set in .chezmoi.toml.tmpl. The */ -}}
+{{- /* palette map lives at theme.<name> in .chezmoidata.yaml but the    */ -}}
+{{- /* string above shadows it at .theme, so we re-read the yaml file    */ -}}
+{{- /* directly (same pattern used by bat/opencode theme generators).    */ -}}
 {{- $wezterm_theme := index .theme_mappings.wezterm .theme }}
+{{- $themes := index (fromYaml (include ".chezmoidata.yaml")) "theme" }}
+{{- $p := index $themes .theme }}
 local THEME_NAME = "{{ $wezterm_theme }}"
 wezterm.GLOBAL.theme = THEME_NAME
 
@@ -83,73 +97,79 @@ config.color_scheme_dirs = { wezterm.home_dir .. "/.config/wezterm/colors" }
 config.color_scheme = THEME_NAME
 config.colors = {}
 
--- Spaceduck palette — matches starship's [palettes.spaceduck] and the
--- normalized ANSI mapping in dot_config/wezterm/colors/Spaceduck.toml.
-local spaceduck = {
-  bg        = "#0f111b",  -- color_bg0
-  bg_alt    = "#16192e",  -- color_bg1
-  bg_sel    = "#1e2340",  -- color_bg2
-  fg        = "#ecf0c1",
-  fg_dim    = "#b3a1e6",
-  cursor    = "#f2ce00",
-  red       = "#e33400",
-  orange    = "#e39400",
-  yellow    = "#f2ce00",
-  green     = "#5ccc96",
-  cyan      = "#00a3cc",  -- spaceduck's teal-blue (starship's color_cyan)
-  blue      = "#7a5ccc",  -- spaceduck's purple-blue (starship's color_blue)
-  purple    = "#b3a1e6",
-  pink      = "#ce6f8f",
+-- Templated palette from .chezmoidata.yaml `theme.<name>` (9-color schema).
+local palette = {
+  bg     = "{{ $p.background }}",
+  fg     = "{{ $p.foreground }}",
+  purple = "{{ $p.purple }}",
+  pink   = "{{ $p.pink }}",
+  green  = "{{ $p.green }}",
+  orange = "{{ $p.orange }}",
+  blue   = "{{ $p.blue }}",
+  cyan   = "{{ $p.cyan }}",
+  yellow = "{{ $p.yellow }}",
 }
 
-config.colors.split           = spaceduck.purple
-config.colors.cursor_bg       = spaceduck.cursor
-config.colors.cursor_fg       = spaceduck.bg
-config.colors.cursor_border   = spaceduck.cursor
-config.colors.selection_bg    = spaceduck.bg_sel
-config.colors.selection_fg    = spaceduck.fg
-config.colors.visual_bell     = spaceduck.bg_alt
-config.colors.scrollbar_thumb = spaceduck.fg_dim
+-- Derived tones (no need to add per-theme entries to .chezmoidata.yaml).
+local _bg = wezterm.color.parse(palette.bg)
+local _fg = wezterm.color.parse(palette.fg)
+palette.bg_alt = tostring(_bg:lighten(0.04))
+palette.bg_sel = tostring(_bg:lighten(0.10))
+palette.fg_dim = tostring(_fg:darken(0.20))
 
--- Spaceduck colors shaped like a wezterm builtin scheme entry; passed to
--- tabline.wez (which accepts either a builtin name OR a full color table).
--- Uses standard ANSI semantics so tabline picks the right accents:
---   ansi[1] surface  | ansi[4] copy-mode  | ansi[5] normal-mode mode pill
-local spaceduck_scheme = {
-  foreground    = spaceduck.fg,
-  background    = spaceduck.bg,
-  cursor_bg     = spaceduck.cursor,
-  cursor_fg     = spaceduck.bg,
-  cursor_border = spaceduck.cursor,
-  selection_bg  = spaceduck.bg_sel,
-  selection_fg  = spaceduck.fg,
+-- Semantic accents (consistent meaning across themes).
+palette.cursor        = palette.yellow  -- caret
+palette.accent        = palette.purple  -- normal mode / active tab / split
+palette.accent_copy   = palette.blue    -- copy mode
+palette.accent_search = palette.cyan    -- search / resize / move modes
+
+config.colors.split           = palette.accent
+config.colors.cursor_bg       = palette.cursor
+config.colors.cursor_fg       = palette.bg
+config.colors.cursor_border   = palette.cursor
+config.colors.selection_bg    = palette.bg_sel
+config.colors.selection_fg    = palette.fg
+config.colors.visual_bell     = palette.bg_alt
+config.colors.scrollbar_thumb = palette.fg_dim
+
+-- Scheme shape consumed by tabline.wez (accepts a builtin name OR a full
+-- color table). Standard ANSI semantics so the plugin picks the right
+-- accents: ansi[5] = normal mode pill, ansi[4] = copy mode.
+local palette_scheme = {
+  foreground    = palette.fg,
+  background    = palette.bg,
+  cursor_bg     = palette.cursor,
+  cursor_fg     = palette.bg,
+  cursor_border = palette.cursor,
+  selection_bg  = palette.bg_sel,
+  selection_fg  = palette.fg,
   ansi = {
-    "#000000",       -- 0  black
-    spaceduck.red,   -- 1  red
-    spaceduck.green, -- 2  green
-    spaceduck.yellow,-- 3  yellow
-    spaceduck.cyan,  -- 4  blue (spaceduck's teal-blue) → tabline copy-mode accent
-    spaceduck.purple,-- 5  magenta (spaceduck purple) → tabline normal-mode accent
-    "#42b3c2",       -- 6  cyan (spaceduck teal)
-    spaceduck.fg,    -- 7  white
+    palette.bg,            -- 0  black (surface)
+    palette.orange,        -- 1  red
+    palette.green,         -- 2  green
+    palette.yellow,        -- 3  yellow
+    palette.accent_copy,   -- 4  blue       → tabline copy-mode accent
+    palette.accent,        -- 5  magenta    → tabline normal-mode accent
+    palette.cyan,          -- 6  cyan       → search/resize accent
+    palette.fg,            -- 7  white
   },
   brights = {
-    "#686f9a",   -- 8  bright black
-    "#ff5733",   -- 9  bright red
-    "#6fe4a8",   -- 10 bright green
-    "#ffd942",   -- 11 bright yellow
-    "#2cc5e6",   -- 12 bright blue
-    "#ce6f8f",   -- 13 bright magenta (pink)
-    "#56c3d4",   -- 14 bright cyan
-    "#f0f1ce",   -- 15 bright white
+    palette.fg_dim,        -- 8  bright black
+    palette.pink,           -- 9  bright red
+    palette.green,          -- 10 bright green
+    palette.yellow,         -- 11 bright yellow
+    palette.blue,           -- 12 bright blue
+    palette.pink,           -- 13 bright magenta
+    palette.cyan,           -- 14 bright cyan
+    palette.fg,             -- 15 bright white
   },
   tab_bar = {
-    background         = spaceduck.bg,
-    active_tab         = { bg_color = spaceduck.purple, fg_color = spaceduck.bg },
-    inactive_tab       = { bg_color = spaceduck.bg_alt, fg_color = spaceduck.fg },
-    inactive_tab_hover = { bg_color = spaceduck.bg_sel, fg_color = spaceduck.fg },
-    new_tab            = { bg_color = spaceduck.bg_alt, fg_color = spaceduck.purple },
-    new_tab_hover      = { bg_color = spaceduck.bg_sel, fg_color = spaceduck.cursor },
+    background         = palette.bg,
+    active_tab         = { bg_color = palette.accent,  fg_color = palette.bg },
+    inactive_tab       = { bg_color = palette.bg_alt,  fg_color = palette.fg },
+    inactive_tab_hover = { bg_color = palette.bg_sel,  fg_color = palette.fg },
+    new_tab            = { bg_color = palette.bg_alt,  fg_color = palette.accent },
+    new_tab_hover      = { bg_color = palette.bg_sel,  fg_color = palette.cursor },
   },
 }
 
@@ -173,7 +193,7 @@ config.font = wezterm.font_with_fallback({
   },
 })
 
-config.font_size = is_windows and 11.0 or 13.0
+config.font_size = FONT_SIZE
 config.bold_brightens_ansi_colors = "BrightAndBold"
 config.warn_about_missing_glyphs = false
 config.custom_block_glyphs = true
@@ -200,13 +220,20 @@ config.switch_to_last_active_tab_when_closing_tab = true
 
 local ok_tabline, tabline = pcall(wezterm.plugin.require, "https://github.com/michaelbrusegard/tabline.wez")
 if ok_tabline then
+  -- Show battery only when one is actually present (laptops). Avoids a
+  -- "no battery" placeholder on desktops/servers.
+  local tabline_y = {}
+  if #wezterm.battery_info() > 0 then
+    table.insert(tabline_y, "battery")
+  end
+
   tabline.setup({
     options = {
       icons_enabled = true,
       tabs_enabled = true,
       -- Pass the colors table directly so the plugin doesn't try to
       -- look up THEME_NAME in get_builtin_schemes() (custom scheme).
-      theme = spaceduck_scheme,
+      theme = palette_scheme,
       color_overrides = {},
       section_separators = {
         left = wezterm.nerdfonts.pl_left_hard_divider,
@@ -222,6 +249,7 @@ if ok_tabline then
       },
     },
     sections = {
+      -- Left: mode pill (owns key-table indicator) → workspace → hostname.
       tabline_a = { { "mode", padding = 1 } },
       tabline_b = { { "workspace", padding = 1, icon = wezterm.nerdfonts.cod_window } },
       tabline_c = { { "hostname", padding = 1, icon = wezterm.nerdfonts.fa_desktop } },
@@ -237,8 +265,9 @@ if ok_tabline then
         "index",
         { "process", padding = { left = 1, right = 1 } },
       },
-      tabline_x = { "ram", "cpu" },
-      tabline_y = { "battery" },
+      -- Right: keep it minimal. No ram/cpu. Battery only when present.
+      tabline_x = {},
+      tabline_y = tabline_y,
       tabline_z = { { "datetime", style = "%a %b %-d  %H:%M" } },
     },
     extensions = {},
@@ -257,7 +286,7 @@ config.window_close_confirmation = "NeverPrompt"
 config.window_padding = { left = 6, right = 6, top = 4, bottom = 0 }
 
 -- Light opacity on macOS where blur looks native; opaque on Windows/Linux.
-config.window_background_opacity = is_mac and 0.92 or 1.0
+config.window_background_opacity = WINDOW_OPACITY
 config.macos_window_background_blur = 30
 config.win32_system_backdrop = "Auto"
 
@@ -318,46 +347,34 @@ config.check_for_updates = true
 config.automatically_reload_config = true
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Command palette / char select / titlebar — Spaceduck themed.
+-- Command palette / char select / titlebar — palette-driven.
 -- ─────────────────────────────────────────────────────────────────────────────
-config.command_palette_bg_color = spaceduck.bg_alt
-config.command_palette_fg_color = spaceduck.fg
+config.command_palette_bg_color = palette.bg_alt
+config.command_palette_fg_color = palette.fg
 config.command_palette_font_size = 13
-config.char_select_bg_color = spaceduck.bg_alt
-config.char_select_fg_color = spaceduck.fg
+config.char_select_bg_color = palette.bg_alt
+config.char_select_fg_color = palette.fg
 config.char_select_font_size = 13
 
 config.window_frame = {
   font = wezterm.font({ family = "Hack Nerd Font", weight = "Bold" }),
-  font_size = is_windows and 10.0 or 12.0,
-  active_titlebar_bg = spaceduck.bg,
-  inactive_titlebar_bg = spaceduck.bg_alt,
-  active_titlebar_fg = spaceduck.fg,
-  inactive_titlebar_fg = spaceduck.fg_dim,
+  font_size = UI_FONT_SIZE,
+  active_titlebar_bg = palette.bg,
+  inactive_titlebar_bg = palette.bg_alt,
+  active_titlebar_fg = palette.fg,
+  inactive_titlebar_fg = palette.fg_dim,
 }
 
--- ─────────────────────────────────────────────────────────────────────────────
--- Status banner for active key tables (resize / copy / pane modes).
--- ─────────────────────────────────────────────────────────────────────────────
-wezterm.on("update-right-status", function(window, _)
-  local name = window:active_key_table()
-  if name then
-    window:set_right_status(wezterm.format({
-      { Background = { Color = spaceduck.purple } },
-      { Foreground = { Color = spaceduck.bg } },
-      { Attribute = { Intensity = "Bold" } },
-      { Text = " " .. name:upper() .. " " },
-    }))
-  end
-end)
-
 -- Pretty tab titles when tabline plugin isn't loaded (fallback only).
+-- The mode pill is provided by tabline's `mode` component in tabline_a,
+-- so we no longer paint a right-status banner here (it would clobber
+-- tabline's right sections).
 wezterm.on("format-tab-title", function(tab, _, _, _, hover)
   if ok_tabline then return nil end
   local idx = tab.tab_index + 1
   local title = tab.active_pane.title or ""
-  local bg = tab.is_active and spaceduck.purple or (hover and spaceduck.bg_alt or spaceduck.bg)
-  local fg = tab.is_active and spaceduck.bg or spaceduck.fg
+  local bg = tab.is_active and palette.accent or (hover and palette.bg_alt or palette.bg)
+  local fg = tab.is_active and palette.bg or palette.fg
   return {
     { Background = { Color = bg } },
     { Foreground = { Color = fg } },
