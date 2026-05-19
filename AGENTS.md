@@ -58,7 +58,7 @@ Tests cover `bootstrap.ps1.example` (Install-Chezmoi, Install-Scoop, Initialize-
 The system is built around a small set of files that drive everything else:
 
 1. **`.chezmoi.toml.tmpl`** — Detects platform/machine at `chezmoi init` time and sets boolean flags (`.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`, `.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`, `.is_raspi`, `.remote_tier` ∈ {`minimal`, `medium`, `full`}) plus user identity.
-2. **`.chezmoidata.yaml`** — Single source of truth for static data: `theme.name`, `fonts.*`, `ssh.*`, `package_features.*`, `package_mapping.*` (per-feature platform/manager packages, e.g. `package_mapping.<name>.darwin.cask`), `vpn_dns_routes.*`, `remote_packages.<tier>`, `claude_memory_projects`. Editing this drives most repo-wide behavior changes.
+2. **`.chezmoidata.yaml`** — Single source of truth for static data: `theme.name`, `fonts.*`, `ssh.*`, `package_features.*`, `package_mapping.*` (per-feature platform/manager packages, e.g. `package_mapping.<name>.darwin.cask`, `package_mapping.<name>.linux.<manager>`, `package_mapping.<name>.mise_remote` for no-sudo remote fallback), `vpn_dns_routes.*`, `remote_packages.<tier>`, `claude_memory_projects`. Editing this drives most repo-wide behavior changes.
 3. **`.chezmoiignore`** — A *template* that uses the flags from steps 1–2 to exclude platform-irrelevant or feature-disabled files (e.g., Unix-only configs on Windows, `70-rust.zsh` when `package_features.rust = false`).
 4. **`.chezmoitemplates/`** — Reusable template fragments (`platform-detect`, `platform-conditional`, `package-manager`, `detect-package-manager`, `xdg-paths`, `1password`, `op-read-safe`, `mise-tool-entry`, `common-header`). Include with `{{ template "name" . }}`.
 5. **`.chezmoiscripts/`** — Auto-run scripts in deterministic order:
@@ -102,7 +102,7 @@ The legacy `op-read-safe` partial in `.chezmoitemplates/` is retained for one-of
 - **Windows** — Bootstrap via `bootstrap.ps1` (PowerShell 7+). Packages: Scoop (CLI) + Winget (GUI) + Mise (language runtimes only).
 - **Unix/Linux/macOS** — Bootstrap via `setup.sh`. Packages: Mise (everything, no sudo) + Homebrew (build deps + platform formulae; cask list is generated from `package_mapping.<feature>.darwin.cask`) + apt/dnf/pacman (system bootstrap only when sudo is available).
 - **WSL** — Detected via `.chezmoi.kernel.osrelease` containing `microsoft`. Shares the 1Password SSH agent from the Windows host via named-pipe relay.
-- **Remote/SSH** — Auto-detected; respects `remote_tier` (`minimal` / `medium` / `full`) which selects a package set from `remote_packages.<tier>`.
+- **Remote/SSH** — Auto-detected; respects `remote_tier` (`minimal` / `medium` / `full`) which selects a package set from `remote_packages.<tier>`. When a tool would normally come from a root-required distro package (e.g. `lua`, `luajit`, `vim`), `package_mapping.<feature>.mise_remote` provides a no-sudo mise fallback that `dot_config/mise/config.toml.tmpl` emits when `is_remote` is true.
 - **Raspberry Pi** — `is_raspi` is set when hostname matches `raspi*`/`raspberrypi*`/`rpi*`, or when `RASPI=1 ./setup.sh` is run. Pi defaults to `remote_tier = "medium"`. SSH access uses Tailscale MagicDNS (no `.local` mDNS fallback). See `RASPI.md`.
 
 ### Zsh load order

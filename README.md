@@ -488,6 +488,6 @@ MIT License - Feel free to use and modify for your own dotfiles!
 
 **Made with ❤️ using [chezmoi](https://www.chezmoi.io/)**
 
-*Last updated*: 2026-05-07  
+*Last updated*: 2026-05-19  
 *Managed files*: 155+  
 *Platforms*: Windows, Linux, WSL, macOS
