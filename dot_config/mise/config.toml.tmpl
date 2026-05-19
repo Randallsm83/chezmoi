@@ -42,6 +42,13 @@
 {{- range $platform.mise }}
 {{- template "mise-tool-entry" . }}
 {{- end }}
+{{- /* On remote hosts (no sudo) the distro pkg manager can't run, so
+       fall through to mise. See package_mapping.lua.linux.mise_remote. */ -}}
+{{- if and $.is_remote (hasKey $platform "mise_remote") }}
+{{- range $platform.mise_remote }}
+{{- template "mise-tool-entry" . }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -58,6 +65,12 @@
 {{- $platform := index $mapping $.chezmoi.os }}
 {{- range $platform.mise }}
 {{- template "mise-tool-entry" . }}
+{{- end }}
+{{- /* Same remote fallback pattern as the lua block above. */ -}}
+{{- if and $.is_remote (hasKey $platform "mise_remote") }}
+{{- range $platform.mise_remote }}
+{{- template "mise-tool-entry" . }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -98,10 +111,11 @@ status = { missing_tools = "if_other_versions_installed", show_env = false, show
 # rust: mise can't detect its own junction on Windows (ln -sf fails with os error 183)
 #       rustup + cargo/bin in PATH (via 50-mise.ps1) works fine without mise
 disable_tools = ["lua", "luajit", "rust"]
-{{- else if .is_wsl }}
-# WSL/Arch: lua, luajit, neovim use conda/vfox backends causing noise - use pacman instead
-disable_tools = ["lua", "luajit", "neovim", "vim"]
 {{- else }}
+# No mise overrides needed on Unix. lua/luajit/vim are handled by the
+# native pkg manager (apt/dnf/pacman on Linux, brew on macOS) and aren't
+# in the mise lists for these platforms, so mise won't touch them.
+# Disabling here is redundant.
 disable_tools = []
 {{- end }}
 # NOTE: ignored_config_paths and ceiling_paths are early-init settings.
