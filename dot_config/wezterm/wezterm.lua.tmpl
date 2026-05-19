@@ -281,20 +281,22 @@ if ok_tabline then
       theme = palette_scheme,
       theme_overrides = tabline_overrides,
       color_overrides = {},
-      -- Slanted dividers between sections give the tabline a bit of
-      -- motion. Soft component separators stay thin so multi-component
-      -- sections don't read as a hard chevron stack.
+      -- Filled Powerline chevrons bridge adjacent section colors cleanly
+      -- (fg = prev section bg, bg = next section bg → solid diagonal).
+      -- The half-circle thick glyphs read as disconnected bumps because
+      -- they leave a sliver of background between curves; chevrons keep
+      -- the tabline a continuous color sequence.
       section_separators = {
-        left  = wezterm.nerdfonts.ple_left_half_circle_thick,
-        right = wezterm.nerdfonts.ple_right_half_circle_thick,
+        left  = wezterm.nerdfonts.pl_left_hard_divider,
+        right = wezterm.nerdfonts.pl_right_hard_divider,
       },
       component_separators = {
         left  = wezterm.nerdfonts.pl_left_soft_divider,
         right = wezterm.nerdfonts.pl_right_soft_divider,
       },
       tab_separators = {
-        left  = wezterm.nerdfonts.ple_left_half_circle_thick,
-        right = wezterm.nerdfonts.ple_right_half_circle_thick,
+        left  = wezterm.nerdfonts.pl_left_hard_divider,
+        right = wezterm.nerdfonts.pl_right_hard_divider,
       },
     },
     sections = {
