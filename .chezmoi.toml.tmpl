@@ -247,6 +247,27 @@ The pwsh helper:
 {{ printf "\n%s" (output "sh" "-c" (printf "T=$(cat <<'__OP_EOT__'\n%s\n__OP_EOT__\n); printf '%%s\\n' \"$T\" | op inject 2>/dev/null || printf '%%s\\n' \"$T\" | sed -E 's/\\{\\{ op:\\/\\/[^}]+ \\}\\}//g'" $secretsTpl)) }}
 {{- end -}}
 {{- else -}}
+{{- /*
+FAIL LOUDLY when setup_1password is true but `op` is missing. Without this,
+the template silently strips every op:// placeholder, leaving every
+.secrets.* value empty (SSH public keys, API tokens, PATs, etc.) and
+cascading into:
+  - .chezmoiignore excluding every ~/.ssh/*.pub hint
+  - dot_ssh/private_config.tmpl losing `IdentitiesOnly yes` bindings
+  - .chezmoitemplates/1password-agent.toml rendering empty vault entries
+  - Every Warp/GitLab/GitHub/Anthropic credential set to ""
+
+Surface the problem at init time so the user can install op (or set
+CHEZMOI_SKIP_1P=1 to opt out explicitly).
+*/ -}}
+{{- /* $setup_1password mirrors the inline computation on line ~188 above.
+       We cannot use .setup_1password here because the [data] block is
+       parsed by chezmoi only AFTER this template fully renders, so the
+       value is not yet available within this same template file. */ -}}
+{{- $setup_1password := and (not $is_remote) (not $is_raspi) -}}
+{{- if and $setup_1password (ne (env "CHEZMOI_SKIP_1P") "1") -}}
+{{- fail "1Password CLI (op) not found in PATH but setup_1password=true.\n\nWithout op, every .secrets.* value would be silently emptied (SSH pubkeys, PATs, API tokens). Refusing to apply.\n\nFix options:\n  - Arch:    paru -S 1password-cli  OR  yay -S 1password-cli\n  - Debian:  see https://1password.com/downloads/linux\n  - macOS:   brew install 1password-cli\n  - Bypass:  CHEZMOI_SKIP_1P=1 chezmoi apply (accepts empty secrets)" -}}
+{{- end -}}
 {{ printf "\n%s" (regexReplaceAll "\\{\\{ op://[^}]+ \\}\\}" $secretsTpl "") }}
 {{- end }}
 
