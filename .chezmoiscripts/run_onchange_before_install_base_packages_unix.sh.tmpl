@@ -315,6 +315,57 @@ if command_exists zsh && ! is_zsh_default_shell; then
 fi
 
 {{- if and .setup_1password (not .is_remote) }}
+# Bootstrap an AUR helper on Arch so 1Password CLI / 1Password desktop can be
+# installed below. We use paru-bin (prebuilt binary) rather than building paru
+# from source — it's an order of magnitude faster and avoids a Rust toolchain
+# bootstrap inside the WSL VM.
+install_aur_helper() {
+    if ! command_exists pacman; then
+        # Not Arch — nothing to do.
+        return 0
+    fi
+
+    if command_exists paru || command_exists yay; then
+        log_success "AUR helper already installed"
+        return 0
+    fi
+
+    # makepkg refuses to run as root; the chezmoi apply path normally runs as
+    # the regular user (reset-wsl-arch.ps1 grants NOPASSWD sudo). If we somehow
+    # land here as root, bail with a clear message rather than failing later in
+    # 1password-cli's install path.
+    if [ "$EUID" -eq 0 ]; then
+        log_warning "Cannot bootstrap AUR helper as root (makepkg refuses)."
+        log_warning "  Re-run \`chezmoi apply\` as the regular user with NOPASSWD sudo."
+        return 1
+    fi
+
+    if ! command_exists makepkg; then
+        log_warning "makepkg not found (base-devel not installed). Skipping AUR helper."
+        return 1
+    fi
+
+    log_info "Bootstrapping paru-bin from AUR (prebuilt binary)..."
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    trap 'rm -rf "$tmpdir"' RETURN
+
+    if ! git clone --depth=1 https://aur.archlinux.org/paru-bin.git "$tmpdir/paru-bin" 2>/dev/null; then
+        log_warning "Failed to clone paru-bin from AUR (network or DNS issue?)"
+        return 1
+    fi
+
+    # `-s` syncs dependencies, `-i` installs after build, `--noconfirm` for
+    # hands-off operation. Sudo is invoked under the hood for the install step.
+    if (cd "$tmpdir/paru-bin" && makepkg -si --noconfirm); then
+        log_success "paru installed from AUR"
+        return 0
+    fi
+
+    log_warning "Failed to build paru-bin from AUR"
+    return 1
+}
+
 # Install 1Password CLI (requires system package manager for setgid permissions)
 install_1password_cli() {
     if command_exists op; then
@@ -430,6 +481,9 @@ install_1password_desktop() {
     fi
 }
 
+# Bootstrap the AUR helper FIRST so install_1password_cli's pacman branch and
+# install_1password_desktop's pacman branch both have paru available.
+install_aur_helper || log_warning "AUR helper install failed; 1Password steps may fall through."
 install_1password_cli
 {{- if not .is_wsl }}
 # Desktop app only needed on native Linux (WSL uses Windows 1Password SSH agent)
