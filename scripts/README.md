@@ -19,8 +19,11 @@ Utility scripts for managing dotfiles, WSL instances, and development environmen
 **Usage:**
 
 ```powershell
-# Basic usage (reset 'archlinux' with all defaults)
+# Basic usage (reset 'archlinux' with all defaults; prompts for confirmation)
 pwsh .\reset-wsl-arch.ps1
+
+# Fully hands-off (skip confirmation; also auto-skipped when $env:CI = 'true')
+pwsh .\reset-wsl-arch.ps1 -Force
 
 # Specify different distribution name
 pwsh .\reset-wsl-arch.ps1 -DistroName "myarch"
@@ -28,18 +31,22 @@ pwsh .\reset-wsl-arch.ps1 -DistroName "myarch"
 # Skip chezmoi bootstrap (only reset WSL)
 pwsh .\reset-wsl-arch.ps1 -SkipBootstrap
 
-# Use different branch for chezmoi
-pwsh .\reset-wsl-arch.ps1 -ChezmoiBranch "dev"
+# Use different branch for chezmoi (branch reliably crosses the wsl.exe boundary)
+pwsh .\reset-wsl-arch.ps1 -ChezmoiBranch "dev" -Force
 
 # Custom repository
-pwsh .\reset-wsl-arch.ps1 -ChezmoisRepo "yourusername/your-dotfiles"
+pwsh .\reset-wsl-arch.ps1 -ChezmoiRepo "yourusername/your-dotfiles"
 ```
 
 **Parameters:**
 - `DistroName` - WSL distribution name (default: `archlinux`)
 - `SkipBootstrap` - Skip chezmoi bootstrap after WSL installation
-- `ChezmoisRepo` - GitHub repository for dotfiles (default: `Randallsm83/chezmoi`)
+- `ChezmoiRepo` - GitHub repository for dotfiles (default: `Randallsm83/chezmoi`)
 - `ChezmoiBranch` - Git branch to use (default: `main`)
+- `WslUser` - Linux username to create (default: `$env:USERNAME.ToLower()`)
+- `Force` / `-Yes` / `-Unattended` - Skip the destructive confirmation prompt
+
+A timestamped log is written to `$env:TEMP\wsl-reset-yyyyMMdd-HHmmss.log` on every run.
 
 **Duration:** ~10-15 minutes for complete setup
 
