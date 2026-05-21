@@ -1,0 +1,39 @@
+# ~/.bash_profile — managed by chezmoi
+#
+# Safety net: auto-exec zsh on interactive login if the login shell is still
+# bash. The reset script (scripts/reset-wsl-arch.ps1) creates the WSL user
+# with `-s /bin/zsh` directly, and the chezmoi base-package script also
+# runs `chsh -s zsh`. Both can fail in edge cases:
+#
+#   - PAM's `chsh` module on Arch may refuse if /usr/bin/zsh isn't in
+#     /etc/shells (we add it, but a distro-image change could remove it)
+#   - On older Arch WSL images the user gets created with /bin/bash and the
+#     reset script's wsl.conf [user] default kicks in only after a
+#     terminate/restart cycle
+#
+# Without this file the first interactive login lands in bash and the user
+# has to manually `exec zsh`. This block makes that automatic.
+
+# Only run for interactive shells (and skip non-login sub-shells).
+case $- in
+    *i*) ;;
+    *) return ;;
+esac
+
+# Avoid recursion if zsh ever sources this file via a shim.
+if [ -n "$BASH_EXECUTION_STRING" ]; then
+    return
+fi
+
+if command -v zsh >/dev/null 2>&1; then
+    ZSH_BIN="$(command -v zsh)"
+    SHELL="$ZSH_BIN"
+    export SHELL
+    exec "$ZSH_BIN" -l
+fi
+
+# Source ~/.bashrc as a last resort (matches conventional bash login behavior).
+if [ -f "$HOME/.bashrc" ]; then
+    # shellcheck source=/dev/null
+    . "$HOME/.bashrc"
+fi

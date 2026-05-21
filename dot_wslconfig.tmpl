@@ -15,10 +15,13 @@ swap=0
 # Networking
 localhostForwarding=true
 
-[boot]
-# System init command (required on Ubuntu 24.04+ for systemd-managed
-# services like snapd, ssh, cron).
-systemd=true
+# NOTE: systemd belongs in /etc/wsl.conf inside the distro, NOT here.
+# Per Microsoft's WSL docs, the .wslconfig [boot] section only accepts
+# `command=`; placing `systemd=true` here is a silent no-op. The Arch
+# WSL reset script (scripts/reset-wsl-arch.ps1) seeds /etc/wsl.conf
+# with [boot] systemd=true, [automount] metadata, [network]
+# generateResolvConf=false, and [interop] appendWindowsPath=false on
+# every reinstall.
 
 [experimental]
 # Enable experimental features
