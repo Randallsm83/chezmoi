@@ -16,8 +16,8 @@ Behavior:
   - No-op if the `code` CLI isn't on PATH
   - Installs only missing extensions (idempotent, additive only)
   - Case-insensitive ID comparison
-*/}}
-{{- if and (or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin")) .package_features.vscode }}
+*/ -}}
+{{ if and (or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin")) .package_features.vscode -}}
 #!/usr/bin/env bash
 set -euo pipefail
 
