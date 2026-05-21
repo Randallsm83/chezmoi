@@ -186,7 +186,12 @@ log_info "Installing base system packages..."
 # Detect package manager and install
 if command_exists pacman; then
     log_info "Using pacman (Arch Linux)"
-    packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi zsh"
+    # bzip2/xz/tk/sqlite/ncurses/gdbm are Python stdlib build deps. Without
+    # them `mise install python` produces a python binary missing `bz2`,
+    # `lzma`, `tkinter`, `sqlite3`, `curses`, and `dbm.gnu` modules — enough
+    # to break yt-dlp, jupyter, every package that imports lzma, etc.
+    # socat is the WSL→Windows 1Password SSH agent bridge endpoint.
+    packages="sudo base-devel git curl wget unzip zip openssl readline zlib libyaml libffi zsh bzip2 xz tk sqlite ncurses gdbm socat"
     if [ "$EUID" -eq 0 ]; then
         pacman -Syu --noconfirm $packages
     elif command_exists sudo; then
@@ -198,7 +203,8 @@ if command_exists pacman; then
     fi
 elif command_exists apt-get; then
     log_info "Using apt-get (Debian/Ubuntu)"
-    packages="git curl wget unzip zip build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev zsh"
+    # Python stdlib build deps + socat (1P SSH agent bridge).
+    packages="git curl wget unzip zip build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses-dev libgdbm-dev tk-dev zsh socat"
     if [ "$EUID" -eq 0 ]; then
         apt-get update && apt-get install -y $packages
     elif command_exists sudo; then
@@ -209,7 +215,8 @@ elif command_exists apt-get; then
     fi
 elif command_exists dnf; then
     log_info "Using dnf (Fedora/RHEL)"
-    packages="git curl wget unzip zip gcc gcc-c++ make openssl-devel readline-devel zlib-devel libyaml-devel libffi-devel zsh"
+    # Python stdlib build deps + socat (1P SSH agent bridge).
+    packages="git curl wget unzip zip gcc gcc-c++ make openssl-devel readline-devel zlib-devel libyaml-devel libffi-devel bzip2-devel xz-devel sqlite-devel ncurses-devel gdbm-devel tk-devel zsh socat"
     if [ "$EUID" -eq 0 ]; then
         dnf install -y $packages
     elif command_exists sudo; then

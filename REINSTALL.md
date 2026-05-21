@@ -222,10 +222,21 @@ names). Recreate any profiles you want from scratch in VS Code
 
 ### 4e. WSL (When Ready)
 
+Arch Linux is the canonical WSL distro for this dotfiles repo. The reset
+script installs the distro, refreshes the keyring, seeds `/etc/wsl.conf`
+with systemd + metadata mounts, creates the user with NOPASSWD sudo and
+zsh as the login shell, and bootstraps chezmoi over HTTPS.
+
 ```powershell
-wsl --install -d Ubuntu
-# After Ubuntu setup, chezmoi can bootstrap Linux side too
+# Hands-off (skips the destructive-confirmation prompt)
+pwsh -File "$HOME\.local\share\chezmoi\scripts\reset-wsl-arch.ps1" -Force
+
+# Default (interactive confirm)
+pwsh -File "$HOME\.local\share\chezmoi\scripts\reset-wsl-arch.ps1"
 ```
+
+Duration: ~10-15 minutes. A timestamped log lands in
+`$env:TEMP\wsl-reset-yyyyMMdd-HHmmss.log` for postmortem.
 
 ### 4f. Game Performance Optimizations
 
