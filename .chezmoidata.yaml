@@ -918,7 +918,10 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: []
+      # re2c is a PHP build dep — mirrors the brew_bundle.formulae_php list
+      # below. Previously lived in always_install.pacman which installed it
+      # unconditionally even when package_features.php was false.
+      pacman: [re2c]
       brew: []
       mise: [php@latest]
     darwin:
@@ -1376,6 +1379,7 @@ always_install:
     - gzip
     - zls           # Zig LSP — pairs with `zig` in always_install.mise (CC/CXX toolchain)
     - taplo         # TOML LSP/formatter — used by opencode lsp + chezmoi/Cargo configs
+    - npiperelay    # Bridges the 1Password SSH agent named-pipe from Windows into WSL via socat
     # NOTE: `sudo` (scoop) conflicts with `gsudo` — only `gsudo` is kept.
 
   winget: []
@@ -1389,7 +1393,8 @@ always_install:
     # lines in the rendered Brewfile.
 
   pacman:
-    - re2c
+    # re2c moved to package_mapping.php.linux.pacman (gated on package_features.php).
+    - socat         # WSL→Windows 1Password SSH agent bridge endpoint
 
   apt: []
   dnf: []
