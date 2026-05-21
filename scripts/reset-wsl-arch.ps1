@@ -99,6 +99,15 @@ $ErrorActionPreference = "Stop"
 # with a non-zero exit code that the next happy-path log line ignores.
 $PSNativeCommandUseErrorActionPreference = $true
 
+# Force wsl.exe to emit UTF-8 on stdout instead of UTF-16LE. Without this,
+# every captured `wsl --list --quiet` / `wsl --list --online` string has
+# null bytes between every character, which makes PowerShell's `-match`
+# and `-ieq` comparisons silently fail (e.g. "archlinux" never matches the
+# regex ^archlinux\b because the actual bytes are 'a\0r\0c\0h\0...').
+# Supported by wsl.exe since 2022 — see
+# https://devblogs.microsoft.com/commandline/windows-subsystem-for-linux-september-2022-update/
+$env:WSL_UTF8 = "1"
+
 $BootstrapUrl = "https://raw.githubusercontent.com/$ChezmoiRepo/$ChezmoiBranch/setup.sh"
 $LogFile = Join-Path $env:TEMP "wsl-reset-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 
@@ -185,11 +194,17 @@ function Invoke-WslRoot {
         Runs a bash one-liner inside the distro as root. Errors throw because
         $PSNativeCommandUseErrorActionPreference is enabled at the top of the
         script — callers should wrap in try/catch when they need to recover.
+
+        IMPORTANT: PowerShell here-strings (@" ... "@ / @' ... '@) use the
+        SOURCE FILE's line endings, which are CRLF on Windows. bash treats
+        the embedded CR as a literal character, so `set -euo pipefail\r`
+        parses as an invalid -o argument. Normalize to LF before handing off.
     #>
     param(
         [Parameter(Mandatory)] [string]$Distro,
         [Parameter(Mandatory)] [string]$Bash
     )
+    $Bash = $Bash -replace "`r`n", "`n"
     wsl.exe -d $Distro -u root -- bash -lc $Bash
 }
 
@@ -410,6 +425,7 @@ __WSL_CONF__
         # set on the Windows side do NOT cross the wsl.exe boundary without
         # an explicit $env:WSLENV mapping. Inline interpolation is simpler.
         $bootstrapBash = "REPO='$ChezmoiRepo' BRANCH='$ChezmoiBranch' curl -fsSL '$BootstrapUrl' | bash"
+        $bootstrapBash = $bootstrapBash -replace "`r`n", "`n"
         try {
             wsl.exe -d $DistroName -- bash -lc $bootstrapBash
             Write-Ok "Chezmoi bootstrap completed"
