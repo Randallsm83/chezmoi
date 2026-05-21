@@ -7,6 +7,13 @@
 # The Missing Package Manager for macOS (or Linux).
 #
 
+{{- /* Brewfile is macOS-only. On Linux/WSL all packages route through
+       pacman/paru (Arch) or apt/dnf (Debian/Fedora) via package_mapping.
+       Homebrew was dropped from the Linux flow because a user-prefix install
+       at ~/.local/share/homebrew can't use upstream bottles (those are
+       compiled for /home/linuxbrew/.linuxbrew) and source-building every
+       formula takes hours. See run_onchange_before_install_base_packages_unix.sh.tmpl. */ -}}
+{{- if eq .chezmoi.os "darwin" -}}
 {{- $b := .brew_bundle }}
 
 {{- /* ====================== TAPS ====================== */ -}}
@@ -129,5 +136,6 @@ cask "{{ . }}"
 # Mac App Store
 {{- range $b.mas_darwin }}
 mas "{{ .name }}", id: {{ .id }}
+{{- end }}
 {{- end }}
 {{- end }}
