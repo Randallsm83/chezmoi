@@ -447,8 +447,9 @@ package_mapping:
     linux:
       apt: [git]
       dnf: [git]
-      pacman: [git]
-      brew: [lazygit]
+      pacman: [git, lazygit]   # lazygit moved off brew (was failing on Arch user-prefix Homebrew)
+      paru: []
+      brew: []                  # Homebrew dropped on Linux; see Brewfile.tmpl + base-packages script
       mise: [github-cli]
     darwin:
       brew: [git, lazygit]
@@ -532,10 +533,14 @@ package_mapping:
       mise: []
 
   # Terminal Emulators (GUI apps - casks are macOS only)
+  # NOTE: wezterm-nightly (versions bucket) rather than wezterm (extras),
+  # because the last "stable" release is 20240203 (Feb 2024) and predates
+  # critical Nerd Font V3 PUA glyph rendering fixes. The maintainers ship
+  # nightlies only; "stable" is effectively abandoned.
   wezterm:
     windows:
-      scoop: []
-      winget: [wez.wezterm]
+      scoop: [wezterm-nightly]
+      winget: []
       mise: []
     linux:
       apt: []
@@ -675,10 +680,14 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [zsh]
+      # zsh is already installed by the base-packages script on every Linux
+      # distro (it's required for the login shell switch). Listing here is
+      # documentation only.
+      apt: [zsh]
+      dnf: [zsh]
+      pacman: [zsh]
+      paru: []
+      brew: []
       mise: []
     darwin:
       brew: [zsh]
@@ -722,10 +731,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: [curl]
-      dnf: [curl]
-      pacman: [curl]
-      brew: [wget]
+      apt: [wget, curl]
+      dnf: [wget, curl]
+      pacman: [wget, curl]    # wget also installed by base-packages script; idempotent
+      paru: []
+      brew: []
       mise: []
     darwin:
       brew: [wget]
@@ -737,10 +747,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [thefuck]
+      apt: [thefuck]
+      dnf: [thefuck]
+      pacman: []           # not in official repos
+      paru: [thefuck]      # AUR (Python-based command corrector)
+      brew: []
       mise: []
     darwin:
       brew: [thefuck]
@@ -752,10 +763,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [fastfetch]
+      apt: [fastfetch]
+      dnf: [fastfetch]
+      pacman: [fastfetch]
+      paru: []
+      brew: []
       mise: []
     darwin:
       brew: [fastfetch]
@@ -903,8 +915,9 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: []
-      brew: [juliaup]
+      pacman: []           # juliaup not in official repos
+      paru: [juliaup]      # AUR (Rust binary, fast install)
+      brew: []
       mise: []
     darwin:
       brew: [juliaup]
@@ -940,11 +953,13 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: []
-      brew: [tealdeer, coreutils]
-      # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
-      # the completions tarball instead of the binary release for eza.
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:denisidoro/navi, github:chmln/sd, github:bootandy/dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ouch-org/ouch, github:ducaale/xh]
+      # All Rust CLI alternatives are in Arch's extra repo and install in
+      # seconds, vs mise's github backend which hits 60 req/hr anonymous rate
+      # limit on a fresh box. Mise list cleared on Linux.
+      pacman: [bat, ripgrep, fd, eza, git-delta, zoxide, vivid, tealdeer, navi, sd, dust, procs, hyperfine, just, tokei]
+      paru: [xh, ouch]   # AUR-only Rust binaries (no Arch repo package)
+      brew: []           # Homebrew dropped on Linux
+      mise: []           # was rate-limited; pacman/paru cover this set entirely
     darwin:
       brew: [tealdeer, coreutils, navi, dust, ouch]
       # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
@@ -976,8 +991,9 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: []
-      brew: [arduino-cli]
+      pacman: []                 # arduino-cli not in official repos
+      paru: [arduino-cli]        # AUR (Go binary)
+      brew: []
       mise: []
     darwin:
       brew: []
@@ -989,10 +1005,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [vagrant]
+      apt: [vagrant]
+      dnf: [vagrant]
+      pacman: []                 # vagrant has multiple providers in AUR;
+      paru: [vagrant-bin]        # use -bin to dodge paru's interactive provider prompt
+      brew: []
       mise: []
     darwin:
       brew: []
@@ -1025,8 +1042,9 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: []
-      brew: [ollama]
+      pacman: [ollama]    # ollama is in extra repo on Arch
+      paru: []
+      brew: []
       mise: [claude, opencode]
     darwin:
       brew: [ollama]
@@ -1044,8 +1062,9 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: []
-      brew: [ludusavi]
+      pacman: []                 # ludusavi has multiple AUR providers — use -bin variant
+      paru: [ludusavi-bin]
+      brew: []
       mise: []
     darwin:
       brew: []
@@ -1058,10 +1077,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [docker-compose]
+      apt: [docker-compose]
+      dnf: [docker-compose]
+      pacman: [docker-compose]
+      paru: []
+      brew: []
       mise: []
     darwin:
       brew: [docker-compose]
@@ -1076,10 +1096,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [smartmontools]
+      apt: [smartmontools]
+      dnf: [smartmontools]
+      pacman: [smartmontools]
+      paru: []
+      brew: []
       mise: []
     darwin:
       brew: []
@@ -1130,10 +1151,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [rclone]
+      apt: [rclone, unbound]
+      dnf: [rclone, unbound]
+      pacman: [rclone, unbound]
+      paru: []
+      brew: []
       mise: []
     darwin:
       brew: []
@@ -1150,10 +1172,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
-      brew: [pandoc]
+      apt: [pandoc]
+      dnf: [pandoc]
+      pacman: [pandoc-cli]   # Arch renamed `pandoc` -> `pandoc-cli` in 2024
+      paru: []
+      brew: []
       mise: []
     darwin:
       brew: []
@@ -1395,6 +1418,15 @@ always_install:
   pacman:
     # re2c moved to package_mapping.php.linux.pacman (gated on package_features.php).
     - socat         # WSL→Windows 1Password SSH agent bridge endpoint
+    # jq + less previously lived in always_install.brew (cross-platform).
+    # On Linux they now come from pacman directly (brew dropped on Linux).
+    - jq
+    - less
+
+  paru:
+    # AUR packages installed via paru. paru is bootstrapped by the
+    # install_aur_helper function in run_onchange_before_install_base_packages_unix.sh.tmpl.
+    - yq            # YAML processor (AUR; pacman has go-yq which conflicts; stick with AUR yq)
 
   apt: []
   dnf: []

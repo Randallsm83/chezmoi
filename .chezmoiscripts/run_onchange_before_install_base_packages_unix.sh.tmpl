@@ -274,46 +274,20 @@ if [ -d /usr/bin/core_perl ] && [ -x /usr/bin/core_perl/pod2man ]; then
     log_success "Perl script symlinks created"
 fi
 
-# Install Homebrew (Linux/WSL - user install to ~/.local/share/homebrew)
-{{- if ne .chezmoi.os "darwin" }}
-install_homebrew() {
-    if command_exists brew; then
-        log_success "Homebrew already installed"
-        return 0
-    fi
-    
-    log_info "Installing Homebrew to ~/.local/share/homebrew..."
-    
-    # Set HOMEBREW_PREFIX for user install (not /home/linuxbrew)
-    export HOMEBREW_PREFIX="$HOME/.local/share/homebrew"
-    export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
-    export HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX"
-    export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
-    
-    # Create homebrew directory
-    mkdir -p "$HOMEBREW_PREFIX"
-    
-    # Clone homebrew
-    if [ ! -d "$HOMEBREW_PREFIX/.git" ]; then
-        git clone --depth=1 https://github.com/Homebrew/brew "$HOMEBREW_PREFIX" || {
-            log_warning "Failed to clone Homebrew"
-            return 1
-        }
-    fi
-    
-    # Verify brew works
-    if "$HOMEBREW_PREFIX/bin/brew" --version >/dev/null 2>&1; then
-        log_success "Homebrew installed to $HOMEBREW_PREFIX"
-        # Update homebrew
-        "$HOMEBREW_PREFIX/bin/brew" update --force --quiet || true
-    else
-        log_warning "Homebrew installation failed"
-        return 1
-    fi
-}
+{{- /*
+Homebrew is DISABLED on Linux/WSL.
 
-install_homebrew
-{{- end }}
+A user-prefix Homebrew install at ~/.local/share/homebrew cannot use
+upstream bottles (those are compiled for /home/linuxbrew/.linuxbrew) so
+every `brew install` falls back to source builds — gettext, glib,
+gnupg, powershell, etc. take hours apiece. The Linux package set is
+covered by pacman + paru (and apt/dnf for non-Arch distros) via
+package_mapping.*.linux.pacman / linux.paru. See
+run_onchange_install-packages-unix.sh.tmpl for the install flow.
+
+Kept here as a deleted block (not just gated to darwin) because macOS
+has its own Homebrew bootstrap path outside chezmoi.
+*/ -}}
 
 # Set zsh as default shell if available
 if command_exists zsh && ! is_zsh_default_shell; then
@@ -323,9 +297,13 @@ fi
 
 {{- if and .setup_1password (not .is_remote) }}
 # Bootstrap an AUR helper on Arch so 1Password CLI / 1Password desktop can be
-# installed below. We use paru-bin (prebuilt binary) rather than building paru
-# from source — it's an order of magnitude faster and avoids a Rust toolchain
-# bootstrap inside the WSL VM.
+# installed below. We use `paru` (source build via makepkg) rather than
+# `paru-bin`: the prebuilt binary is dynamically linked against a specific
+# libalpm soname (e.g. libalpm.so.15), and any subsequent `pacman -Syu` that
+# bumps libalpm (e.g. .15 -> .16) bricks paru with
+# `error while loading shared libraries: libalpm.so.15: cannot open shared
+# object file`. Source build links against whatever libalpm is installed at
+# build time, so a chezmoi-driven full-system upgrade can't brick the helper.
 install_aur_helper() {
     if ! command_exists pacman; then
         # Not Arch — nothing to do.
@@ -352,24 +330,24 @@ install_aur_helper() {
         return 1
     fi
 
-    log_info "Bootstrapping paru-bin from AUR (prebuilt binary)..."
+    log_info "Bootstrapping paru from AUR (source build, ~3-5 min)..."
     local tmpdir
     tmpdir=$(mktemp -d)
     trap 'rm -rf "$tmpdir"' RETURN
 
-    if ! git clone --depth=1 https://aur.archlinux.org/paru-bin.git "$tmpdir/paru-bin" 2>/dev/null; then
-        log_warning "Failed to clone paru-bin from AUR (network or DNS issue?)"
+    if ! git clone --depth=1 https://aur.archlinux.org/paru.git "$tmpdir/paru" 2>/dev/null; then
+        log_warning "Failed to clone paru from AUR (network or DNS issue?)"
         return 1
     fi
 
     # `-s` syncs dependencies, `-i` installs after build, `--noconfirm` for
     # hands-off operation. Sudo is invoked under the hood for the install step.
-    if (cd "$tmpdir/paru-bin" && makepkg -si --noconfirm); then
-        log_success "paru installed from AUR"
+    if (cd "$tmpdir/paru" && makepkg -si --noconfirm); then
+        log_success "paru installed from AUR (source build)"
         return 0
     fi
 
-    log_warning "Failed to build paru-bin from AUR"
+    log_warning "Failed to build paru from AUR"
     return 1
 }
 
