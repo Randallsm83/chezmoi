@@ -50,7 +50,7 @@ create_backup() {
     # Create metadata file
     cat > "${BACKUP_PATH}/metadata.txt" <<EOF
 Backup created: $(date)
-Hostname: $(hostname)
+Hostname: $(get_hostname 2>/dev/null || uname -n 2>/dev/null || echo unknown)
 User: $USER
 Files backed up: $backup_count
 Chezmoi version: $(chezmoi --version 2>/dev/null || echo "unknown")

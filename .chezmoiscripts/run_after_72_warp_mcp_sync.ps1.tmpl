@@ -1,0 +1,122 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+    Reconcile chezmoi-managed MCP servers into ~/.warp/.mcp.json on every
+    `chezmoi apply` without trampling Warp's runtime-managed entries.
+
+.DESCRIPTION
+    `~/.warp/.mcp.json` is the Warp-native MCP config file (see
+    https://docs.warp.dev — "Detected from Warp" appears in Settings →
+    Agents → MCP servers when this file is present).
+
+    Warp writes some entries itself at runtime (notably `pam`, which gets
+    a freshly-generated per-host bearer token via `pam sync --client warp`
+    when the daemon starts). We must NOT clobber those.
+
+    This script owns a small, fixed allow-list of chezmoi-managed entries
+    (currently just `1password`) and merges them into the file. Every key
+    NOT in that list is preserved verbatim from the live file. The
+    1Password Environments MCP server is rendered from
+    .chezmoidata/mcp.yaml's `mcp.servers["1password"]` entry to keep that
+    file the single source of truth.
+
+    Idempotent: short-circuits when the managed subset of keys already
+    matches what's on disk, so per-apply cost is trivial.
+
+.NOTES
+    Patterned after run_onchange_after_61_claude_settings_windows.ps1.tmpl
+    and run_after_71_claude-code_pam_sync_windows.ps1.tmpl.
+
+    Account shortname is read from $env:OP_ACCOUNT at apply time; if
+    unset, the entry omits --account and the MCP falls back to whichever
+    account `op` currently has signed in.
+#>
+
+$ErrorActionPreference = 'Stop'
+$mcpPath = Join-Path $HOME '.warp\.mcp.json'
+
+# --- Managed entries (chezmoi owns these names; everything else is preserved) ---
+# Rendered as compact JSON so PowerShell's ConvertFrom-Json handles it cleanly
+# without choking on YAML's quoted-key syntax in mcp.yaml.
+$opAccount = if ($env:OP_ACCOUNT) { $env:OP_ACCOUNT } else { 'my' }
+$managedJson = @"
+{
+  "1password": {
+    "command": "cmd",
+    "args": [
+      "/c",
+      "npx",
+      "-y",
+      "mcp-1password@beta",
+      "--auth-mode=desktop",
+      "--account=$opAccount"
+    ]
+  }
+}
+"@
+
+try {
+    $managed = $managedJson | ConvertFrom-Json -AsHashtable -Depth 100
+} catch {
+    Write-Error "warp_mcp_sync: failed to parse managed JSON: $_"
+    exit 1
+}
+
+# --- Load existing ~/.warp/.mcp.json (or start with empty mcpServers) ---
+if (Test-Path -LiteralPath $mcpPath) {
+    try {
+        $existing = Get-Content -LiteralPath $mcpPath -Raw -Encoding UTF8 |
+            ConvertFrom-Json -AsHashtable -Depth 100
+    } catch {
+        Write-Warning "warp_mcp_sync: ~/.warp/.mcp.json is not valid JSON; backing up and starting fresh."
+        Copy-Item -LiteralPath $mcpPath -Destination "$mcpPath.bak-$(Get-Date -Format 'yyyyMMddHHmmss')" -Force
+        $existing = [ordered]@{ mcpServers = [ordered]@{} }
+    }
+    if ($null -eq $existing) { $existing = [ordered]@{ mcpServers = [ordered]@{} } }
+} else {
+    $parent = Split-Path -Parent $mcpPath
+    if (-not (Test-Path -LiteralPath $parent)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
+    $existing = [ordered]@{ mcpServers = [ordered]@{} }
+}
+
+if (-not $existing.ContainsKey('mcpServers') -or $null -eq $existing['mcpServers']) {
+    $existing['mcpServers'] = [ordered]@{}
+}
+$servers = $existing['mcpServers']
+
+# --- No-op short-circuit: only rewrite if any managed entry differs ---
+$needsWrite = $false
+foreach ($name in $managed.Keys) {
+    if (-not $servers.ContainsKey($name)) { $needsWrite = $true; break }
+    $currentJson = $servers[$name] | ConvertTo-Json -Depth 100 -Compress
+    $managedKey  = $managed[$name]  | ConvertTo-Json -Depth 100 -Compress
+    if ($currentJson -ne $managedKey) { $needsWrite = $true; break }
+}
+
+if (-not $needsWrite) {
+    Write-Host "warp_mcp_sync: ~/.warp/.mcp.json managed entries already in sync."
+    exit 0
+}
+
+# --- Replace each managed entry, preserve everything else (pam etc.) ---
+foreach ($name in $managed.Keys) {
+    $servers[$name] = $managed[$name]
+}
+$existing['mcpServers'] = $servers
+
+# --- Atomic write ---
+$tmp = "$mcpPath.tmp-$(Get-Random)"
+try {
+    $existing | ConvertTo-Json -Depth 100 |
+        Set-Content -LiteralPath $tmp -Encoding UTF8 -NoNewline
+    Move-Item -LiteralPath $tmp -Destination $mcpPath -Force
+    $names = ($managed.Keys | Sort-Object) -join ', '
+    Write-Host "warp_mcp_sync: synced ~/.warp/.mcp.json entries -> [$names]"
+} catch {
+    if (Test-Path -LiteralPath $tmp) { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }
+    throw
+}
+{{- end }}

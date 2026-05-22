@@ -95,3 +95,26 @@ mcp:
         # 1Password — but is still kept out of this YAML so it stays
         # per-user.
         CLICKUP_TEAM_ID: "${CLICKUP_TEAM_ID}"
+
+    # 1Password Environments MCP server (desktop-app auth).
+    # Lets agents resolve `op://Vault/Item/field` references via the
+    # 1Password desktop app — biometric prompt per session, secrets
+    # never written to disk, no service-account token stored anywhere.
+    # Package: https://github.com/kefapps/onepassword-mcp-codex
+    # Requires: 1Password desktop app beta channel + Settings → Developer
+    # → "Connect with 1Password SDKs" enabled.
+    # Account name is read from $OP_ACCOUNT (e.g. "my" for my.1password.com)
+    # so it stays per-user and out of source control; pam/claude/opencode
+    # env-files set it on the wrapped process. If unset, the MCP falls back
+    # to whichever account `op` currently has signed in.
+    "1password":
+      type: stdio
+      command: cmd
+      args:
+        - "/c"
+        - "npx"
+        - "-y"
+        - "mcp-1password@beta"
+        - "--auth-mode=desktop"
+        - "--account=${OP_ACCOUNT}"
+      env: {}

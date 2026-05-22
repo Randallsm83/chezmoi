@@ -336,17 +336,27 @@ fi
 {{- end }}
 
 {{- if and .package_features.nvim .package_features.perl }}
-# cpan Neovim::Ext module (for Perl provider)
+# cpan Neovim::Ext module (for Perl provider).
+# Install into ~/.local via local::lib so modules land in XDG-aligned paths:
+#   ~/.local/lib/perl5    -- module .pm files (PERL5LIB)
+#   ~/.local/bin          -- module-installed scripts (already on PATH)
+#   ~/.local/share/man    -- module man pages (XDG_DATA_HOME-aligned)
+# Avoids needing root/sudo (no /usr/share/man permission errors) and keeps
+# the home directory clean (no ~/perl5 sprawl).
 echo ""
 echo "Installing Neovim Perl provider..."
+PERL5LIB="$HOME/.local/lib/perl5${PERL5LIB:+:$PERL5LIB}"
+export PERL5LIB
 # Only use Linux perl, not Windows Strawberry Perl via WSL interop
 if [ -x /usr/bin/perl ] || command_works perl; then
     if ! perl -MNeovim::Ext -e 1 >/dev/null 2>&1; then
-        echo "  Installing: Neovim::Ext (Perl provider)"
+        echo "  Installing: Neovim::Ext (Perl provider) into ~/.local"
         if command_works cpanm; then
-            cpanm -n Neovim::Ext || echo "  Warning: Failed to install Neovim::Ext"
+            cpanm -n --local-lib="$HOME/.local" Neovim::Ext || echo "  Warning: Failed to install Neovim::Ext"
         elif command -v cpan >/dev/null 2>&1; then
-            cpan -T Neovim::Ext || echo "  Warning: Failed to install Neovim::Ext"
+            PERL_MM_OPT="INSTALL_BASE=$HOME/.local" \
+            PERL_MB_OPT="--install_base $HOME/.local" \
+                cpan -T Neovim::Ext || echo "  Warning: Failed to install Neovim::Ext"
         else
             echo "  Neither cpanm nor cpan available, skipping Perl provider"
         fi
