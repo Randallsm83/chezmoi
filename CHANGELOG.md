@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`.chezmoiignore`** — excludes `.config/docker/config.json` on darwin. The template's `credsStore: "wincred"` is Windows-only, and OrbStack/Docker Desktop owns the file on macOS (writes `currentContext`, the correct `credsStore`, etc.). Letting the local file be authoritative on darwin stops the per-apply prompt loop.
 ### Removed
 - **`~/.claude.json` literal credentials** — Vercel `Authorization: Bearer <token>`, Neon `Authorization: Bearer <token>`, and `qdrant.env.QDRANT_API_KEY` literal values replaced with `${VERCEL_TOKEN}`, `${NEON_API_KEY}`, and `${QDRANT_API_KEY}` references resolved by `op run` at process spawn.
+### Fixed
+- **`.chezmoiscripts/run_onchange_before_install_base_packages_unix.sh.tmpl`** — closing of the dropped-Homebrew explanation comment used the right-trim form `*/ -}}`, which eats the newline between the perl-symlink block's `fi` and the next line's `# Set zsh as default shell` comment. Bash then parses `fi#` as a single word (not the `fi` keyword followed by a comment), leaving the `if [ -d /usr/bin/core_perl ] …; then` block unclosed and breaking `chezmoi apply` on every Linux host with `syntax error: unexpected end of file from \`if' command on line 242`. Changed to `*/}}` so the trailing newline is preserved.
 ---
 
 ## [2.0.0] - 2025-01-20
