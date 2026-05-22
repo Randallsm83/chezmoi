@@ -1,0 +1,60 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+#
+# Configure the chezmoi-source git remote with the documented dual-mirror
+# layout (canonical fetch=GitLab, dual pushurl=GitLab+GitHub, separate
+# `github` remote for recovery). See the matching Unix script and
+# CONTRIBUTING.md "Merging (mirrored remotes)" for rationale.
+#
+# Idempotent — exits silently when remote already matches.
+
+$ErrorActionPreference = 'Stop'
+
+$RepoDir        = {{ .chezmoi.sourceDir | quote }}
+$WantFetch      = 'git@gitlab.com:Randallsm83/chezmoi.git'
+$WantPushGitlab = 'git@gitlab.com:Randallsm83/chezmoi.git'
+$WantPushGithub = 'git@github.com:Randallsm83/chezmoi.git'
+$WantGithubUrl  = 'git@github.com:Randallsm83/chezmoi.git'
+
+if (-not (Test-Path (Join-Path $RepoDir '.git'))) { exit 0 }
+
+Push-Location $RepoDir
+try {
+    function Get-OriginPushUrls {
+        $raw = & git config --get-all remote.origin.pushurl 2>$null
+        if ([string]::IsNullOrEmpty($raw)) { return @() }
+        @($raw -split "`r?`n") | Where-Object { $_ -ne '' } | Sort-Object -Unique
+    }
+
+    $haveFetch  = (& git config --get remote.origin.url 2>$null)
+    $havePushes = Get-OriginPushUrls
+    $haveGithub = (& git config --get remote.github.url 2>$null)
+    $wantPushes = @($WantPushGitlab, $WantPushGithub) | Sort-Object -Unique
+
+    if ($haveFetch -eq $WantFetch -and `
+        -not (Compare-Object $havePushes $wantPushes) -and `
+        $haveGithub -eq $WantGithubUrl) {
+        exit 0
+    }
+
+    Write-Host "[chezmoi-repo-remotes] Configuring origin GitLab+GitHub mirror in $RepoDir"
+
+    & git remote set-url origin $WantFetch | Out-Null
+
+    & git config --unset-all remote.origin.pushurl 2>$null
+    & git remote set-url --add --push origin $WantPushGitlab | Out-Null
+    & git remote set-url --add --push origin $WantPushGithub | Out-Null
+
+    $existingGithub = & git remote get-url github 2>$null
+    if (-not [string]::IsNullOrEmpty($existingGithub)) {
+        & git remote set-url github $WantGithubUrl | Out-Null
+    } else {
+        & git remote add github $WantGithubUrl | Out-Null
+    }
+
+    Write-Host "[chezmoi-repo-remotes] Done. Verify with: git -C `"$RepoDir`" remote -v"
+}
+finally {
+    Pop-Location
+}
+{{- end -}}
