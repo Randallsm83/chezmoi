@@ -1,0 +1,69 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/bin/bash
+#
+# Configure the chezmoi-source git remote with the documented dual-mirror
+# layout:
+#
+#   origin   fetch    = git@gitlab.com:Randallsm83/chezmoi.git   (canonical)
+#   origin   pushurl  = git@gitlab.com:Randallsm83/chezmoi.git
+#   origin   pushurl  = git@github.com:Randallsm83/chezmoi.git
+#   github   fetch    = git@github.com:Randallsm83/chezmoi.git   (recovery)
+#
+# Why this exists: the README's bootstrap path uses GitHub URLs
+# (`raw.githubusercontent.com/Randallsm83/chezmoi/...`) and
+# `chezmoi init Randallsm83/chezmoi` defaults to GitHub, leaving a single-
+# URL `origin` pointed at GitHub on every fresh install. AGENTS.md and
+# CONTRIBUTING.md "Merging (mirrored remotes)" describe the dual-pushurl
+# layout, but nothing automated it — so the GitLab mirror silently drifted
+# behind (~11 commits in one observed case) until somebody noticed.
+#
+# Idempotent: detects current state and skips silently when already
+# canonical. Safe to re-run.
+
+set -euo pipefail
+
+REPO_DIR={{ .chezmoi.sourceDir | quote }}
+WANT_FETCH="git@gitlab.com:Randallsm83/chezmoi.git"
+WANT_PUSH_GITLAB="git@gitlab.com:Randallsm83/chezmoi.git"
+WANT_PUSH_GITHUB="git@github.com:Randallsm83/chezmoi.git"
+WANT_GITHUB_URL="git@github.com:Randallsm83/chezmoi.git"
+
+# Bail if the source dir isn't a git checkout (chezmoi was installed via
+# `chezmoi init --source=/some/extracted/tarball` or similar).
+if [ ! -d "$REPO_DIR/.git" ]; then
+    exit 0
+fi
+
+cd "$REPO_DIR"
+
+have_fetch=$(git config --get remote.origin.url 2>/dev/null || true)
+have_pushes=$(git config --get-all remote.origin.pushurl 2>/dev/null | sort -u | tr '\n' '|')
+want_pushes=$(printf '%s\n%s\n' "$WANT_PUSH_GITLAB" "$WANT_PUSH_GITHUB" | sort -u | tr '\n' '|')
+have_github=$(git config --get remote.github.url 2>/dev/null || true)
+
+if [ "$have_fetch" = "$WANT_FETCH" ] \
+    && [ "$have_pushes" = "$want_pushes" ] \
+    && [ "$have_github" = "$WANT_GITHUB_URL" ]; then
+    exit 0
+fi
+
+echo "[chezmoi-repo-remotes] Configuring origin GitLab+GitHub mirror in $REPO_DIR"
+
+# Canonical fetch URL = GitLab.
+git remote set-url origin "$WANT_FETCH"
+
+# Reset and re-add pushurls (--unset-all is a no-op if the section is empty).
+git config --unset-all remote.origin.pushurl 2>/dev/null || true
+git remote set-url --add --push origin "$WANT_PUSH_GITLAB"
+git remote set-url --add --push origin "$WANT_PUSH_GITHUB"
+
+# Separate `github` remote so `git push github main --force-with-lease`
+# is available for the divergence-recovery flow in CONTRIBUTING.md.
+if git remote get-url github >/dev/null 2>&1; then
+    git remote set-url github "$WANT_GITHUB_URL"
+else
+    git remote add github "$WANT_GITHUB_URL"
+fi
+
+echo "[chezmoi-repo-remotes] Done. Verify with: git -C \"$REPO_DIR\" remote -v"
+{{- end -}}
