@@ -140,9 +140,26 @@ is_container() {
     return 1
 }
 
-# Get hostname (short form)
+# Get hostname (short form).
+# Avoids depending on the `hostname` binary, which Arch doesn't ship by
+# default (it lives in the `inetutils` package). Falls back through:
+#   1. $HOSTNAME (POSIX, set by every modern shell)
+#   2. /etc/hostname (always present on systemd boxes)
+#   3. `uname -n` (POSIX, always available)
+#   4. `hostname -s` (last resort, may be missing)
 get_hostname() {
-    hostname -s 2>/dev/null || hostname | cut -d. -f1
+    local h=""
+    if [ -n "${HOSTNAME:-}" ]; then
+        h="${HOSTNAME}"
+    elif [ -r /etc/hostname ]; then
+        h="$(head -n1 /etc/hostname 2>/dev/null)"
+    elif command_exists uname; then
+        h="$(uname -n 2>/dev/null)"
+    elif command_exists hostname; then
+        h="$(hostname -s 2>/dev/null || hostname 2>/dev/null)"
+    fi
+    [ -z "$h" ] && h="unknown"
+    echo "${h%%.*}"   # short form
 }
 
 # Classify machine type based on hostname and environment
