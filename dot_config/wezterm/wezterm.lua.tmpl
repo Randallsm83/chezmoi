@@ -24,7 +24,11 @@ local is_mac = triple:find("apple") ~= nil
 -- Per-platform tunables (single source of truth for font/UI sizing)
 -- ─────────────────────────────────────────────────────────────────────────────
 local FONT_SIZE       = is_windows and 11.0 or 13.0
-local UI_FONT_SIZE    = is_windows and 10.0 or 12.0
+-- Tab bar height is driven entirely by this font's size — wezterm has
+-- no separate "tab bar height" or "tab bar inner padding" config knob.
+-- Bumped large so the bar gets visible vertical breathing room above
+-- and below the tab text.
+local UI_FONT_SIZE    = is_windows and 13.0 or 14.0
 local WINDOW_OPACITY  = is_mac and 0.92 or 1.0
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -123,11 +127,16 @@ palette.fg_mute = tostring(_fg:darken(0.40))
 
 -- Semantic accents (consistent meaning across themes).
 palette.cursor        = palette.yellow  -- caret
-palette.accent        = palette.purple  -- normal mode / active tab / split
+palette.accent        = palette.purple  -- normal mode / split
 palette.accent_copy   = palette.blue    -- copy mode
 palette.accent_search = palette.cyan    -- search / resize / move modes
 palette.accent_warn   = palette.orange  -- warnings / battery low
 palette.accent_ok     = palette.green   -- success / git clean
+
+-- Muted accent for the active tab pill. The mode pill keeps the full
+-- saturated accent; the tab pill uses this darkened+desaturated tone so
+-- it reads as "active" without dominating the bar visually.
+palette.accent_soft   = tostring(wezterm.color.parse(palette.accent):darken(0.55):desaturate(0.55))
 
 config.colors.split           = palette.accent
 config.colors.cursor_bg       = palette.cursor
@@ -182,13 +191,17 @@ local palette_scheme = {
   },
   -- Mirror config.colors.tab_bar (set above) so the wezterm-builtin scheme
   -- consumed by tabline.wez's get_colors() agrees with the global override.
+  -- Flat starship-like style: all tabs sit on the strip bg (no pill).
+  -- The active tab gets the FULL saturated accent color (matches the mode
+  -- pill on the left) so it's clearly readable. Inactive tabs use fg_dim
+  -- (slightly muted text) and inactive_hover lifts to full fg.
   tab_bar = {
     background         = palette.bg_alt,
-    active_tab         = { bg_color = palette.accent,  fg_color = palette.bg     },
-    inactive_tab       = { bg_color = palette.bg_alt,  fg_color = palette.fg_dim },
-    inactive_tab_hover = { bg_color = palette.bg_sel,  fg_color = palette.fg     },
-    new_tab            = { bg_color = palette.bg_alt,  fg_color = palette.accent },
-    new_tab_hover      = { bg_color = palette.bg_sel,  fg_color = palette.cursor },
+    active_tab         = { bg_color = palette.bg_alt, fg_color = palette.accent },
+    inactive_tab       = { bg_color = palette.bg_alt, fg_color = palette.fg_dim },
+    inactive_tab_hover = { bg_color = palette.bg_alt, fg_color = palette.fg     },
+    new_tab            = { bg_color = palette.bg_alt, fg_color = palette.accent },
+    new_tab_hover      = { bg_color = palette.bg_alt, fg_color = palette.cursor },
   },
 }
 
@@ -197,11 +210,14 @@ local palette_scheme = {
 -- ─────────────────────────────────────────────────────────────────────────────
 config.font_dirs = { wezterm.home_dir .. "/.local/share/fonts" }
 config.font = wezterm.font_with_fallback({
-  -- v3+ Nerd Font patched variants include all icon ranges starship uses
-  -- (MDI, Codicons, Devicons, Octicons, Powerline, Weather, etc.) including
-  -- the plane-15 PUA codepoints. No separate symbols/emoji fallback needed.
-  -- Installed on Windows via scoop nerd-fonts bucket (Hack-NF, FiraCode-NF).
+  -- Primary: Hack Nerd Font (scoop nerd-fonts bucket).
   { family = "Hack Nerd Font" },
+  -- Dedicated symbols font catches any nerd-font glyph the patched
+  -- Hack build is missing (starship icons in particular: branch, lock,
+  -- folder, host, language icons, etc.).
+  { family = "Symbols Nerd Font Mono" },
+  -- Emoji fallback so color emoji codepoints don't render as tofu.
+  { family = "Noto Color Emoji" },
   {
     family = "FiraCode Nerd Font",
     -- Curated Fira Code OpenType features:
@@ -214,6 +230,45 @@ config.font = wezterm.font_with_fallback({
 
 config.font_size = FONT_SIZE
 config.bold_brightens_ansi_colors = "BrightAndBold"
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Font rules for the Bold intensity (ANSI SGR `[1m`).
+--
+-- Hack Nerd Font's BOLD variant is patched with Powerline/devicons/FA glyphs
+-- but the high-MDI PUA range (U+F0000–U+FFFFD) is missing from the bold
+-- TTF — only the Regular variant has those glyphs. When starship renders
+-- e.g. `[os] style = "... bold"`, the bytes are correct (U+F0372 for the
+-- Windows icon) but wezterm asks DirectWrite for Hack-Bold's glyph for that
+-- codepoint, gets back .notdef, and draws a solid block.
+--
+-- The fallback chain below explicitly lists Symbols Nerd Font Mono and
+-- Regular-weight Hack as late entries; wezterm walks the chain when the
+-- requested weight is missing a glyph, so bold-styled MDI icons resolve via
+-- Symbols Nerd Font Mono (or regular Hack) instead of falling off the end.
+-- ─────────────────────────────────────────────────────────────────────────────
+config.font_rules = {
+  {
+    intensity = "Bold",
+    font = wezterm.font_with_fallback({
+      { family = "Hack Nerd Font",         weight = "Bold" },
+      { family = "Symbols Nerd Font Mono"                  },
+      { family = "Noto Color Emoji"                        },
+      { family = "Hack Nerd Font"                          },  -- regular as last-ditch for PUA
+      { family = "FiraCode Nerd Font",     weight = "Bold" },
+    }),
+  },
+  {
+    intensity = "Bold",
+    italic    = true,
+    font = wezterm.font_with_fallback({
+      { family = "Hack Nerd Font",         weight = "Bold", style = "Italic" },
+      { family = "Symbols Nerd Font Mono"                                     },
+      { family = "Noto Color Emoji"                                           },
+      { family = "Hack Nerd Font",                          style = "Italic" },
+      { family = "Hack Nerd Font"                                             },
+    }),
+  },
+}
 config.warn_about_missing_glyphs = false
 config.custom_block_glyphs = true
 config.anti_alias_custom_block_glyphs = true
@@ -234,8 +289,149 @@ config.tab_max_width = 32
 config.show_tab_index_in_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = false
 config.show_new_tab_button_in_tab_bar = false
-config.status_update_interval = 1000
+-- 2000ms (vs 1000) cuts the tabline-plugin status rebuild rate in half.
+-- The plugin re-renders mode pill, workspace, hostname, dynamic spacer,
+-- and clock every interval; the clock granularity isn't worth the work.
+config.status_update_interval = 2000
 config.switch_to_last_active_tab_when_closing_tab = true
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- format-tab-title — fully owns per-tab rendering.
+--
+-- Why this exists instead of letting tabline.wez render tabs:
+--   1. pwsh sets the pane title to `C:\Program Files\PowerShell\` (or
+--      `user@host`) via $Host.UI.RawUI.WindowTitle, so the plugin's `tab`
+--      / `cwd` components fall back to that ugly string when OSC 7 isn't
+--      emitted. We bypass pane.title entirely and read the cwd off the
+--      pane's working_dir URL ourselves.
+--   2. wezterm has NO per-tab padding setting; the only way to get visible
+--      horizontal breathing room inside each tab is to splice space text
+--      into the format records ourselves.
+--   3. Per-segment colors (index in one color, cwd in another, process in
+--      a third) only work via raw format records — plugin components share
+--      one fg per tab state.
+--
+-- This is registered BEFORE tabline.setup() so it sits early in the
+-- format-tab-title handler chain. wezterm runs every registered handler
+-- and uses the value of the last one that returned non-nil; our handler
+-- always returns a value, so it wins regardless of plugin handler order.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Per-tab accent rotation. Tab index N picks TAB_PALETTE[(N % #) + 1].
+local TAB_PALETTE = {
+  palette.cyan,
+  palette.pink,
+  palette.green,
+  palette.orange,
+  palette.blue,
+  palette.accent,   -- purple
+  palette.yellow,
+}
+
+local TAB_SHELLS = {
+  pwsh = true, powershell = true, bash = true, zsh = true,
+  fish = true, nu = true, sh = true, cmd = true,
+}
+
+local HOME_FWD_RAW = wezterm.home_dir or ""
+local HOME_FWD = HOME_FWD_RAW:gsub("\\", "/"):lower()
+
+local function _basename(path)
+  if not path or path == "" then return "" end
+  path = path:gsub("\\", "/"):gsub("/+$", "")
+  if path == "" then return "/" end
+  return path:match("([^/]+)$") or path
+end
+
+local function _strip_exe(name)
+  if not name then return "" end
+  return (name:gsub("%.[Ee][Xx][Ee]$", ""))
+end
+
+local function _pane_cwd(pane)
+  if not pane then return "" end
+  -- PaneInformation field is `current_working_dir` in newer wezterm and
+  -- `working_dir` in older builds; check both.
+  local cwd = pane.current_working_dir or pane.working_dir
+  if not cwd then return "" end
+  local path
+  if type(cwd) == "userdata" or type(cwd) == "table" then
+    path = cwd.file_path or tostring(cwd)
+  else
+    path = tostring(cwd)
+  end
+  if not path or path == "" then return "" end
+  path = path:gsub("^file:/+[^/]*", ""):gsub("\\", "/"):gsub("/+$", "")
+  if path == "" then return "/" end
+  if HOME_FWD ~= "" and path:lower() == HOME_FWD then return "~" end
+  return _basename(path)
+end
+
+local function _pane_proc(pane)
+  if not pane then return "" end
+  return _strip_exe(_basename(pane.foreground_process_name or ""))
+end
+
+local function _build_tab_items(tab, hover)
+  local idx     = (tab and tab.tab_index or 0) + 1
+  local active  = tab and tab.is_active
+  local accent  = TAB_PALETTE[((idx - 1) % #TAB_PALETTE) + 1]
+  local pane    = tab and tab.active_pane
+  local dir     = _pane_cwd(pane)
+  local proc    = _pane_proc(pane)
+  local show_proc = proc ~= "" and not TAB_SHELLS[proc:lower()]
+
+  -- Per-state palette. ALL text in the tab — index, cwd, process —
+  -- shares the rotating accent so the whole tab reads as one colored
+  -- label. Active tabs use the full saturated accent; inactive tabs use
+  -- a darkened+desaturated version of the same accent so they're still
+  -- recognizable as the same "slot" but recede visually.
+  local accent_dim = tostring(wezterm.color.parse(accent):darken(0.35):desaturate(0.45))
+  local idx_fg, dir_fg, proc_fg, sep_fg
+  if active or hover then
+    idx_fg  = accent
+    dir_fg  = accent
+    proc_fg = accent
+    sep_fg  = palette.fg_mute
+  else
+    idx_fg  = accent_dim
+    dir_fg  = accent_dim
+    proc_fg = accent_dim
+    sep_fg  = palette.fg_mute
+  end
+
+  local items = {
+    { Background = { Color = palette.bg_alt } },
+    { Foreground = { Color = sep_fg          } },
+    { Text       = "  "                       },
+    { Foreground = { Color = idx_fg          } },
+    { Text       = tostring(idx)              },
+    { Foreground = { Color = sep_fg          } },
+    { Text       = "  ·  "                    },
+    { Foreground = { Color = dir_fg          } },
+    { Text       = dir ~= "" and dir or "—"   },
+  }
+  if show_proc then
+    table.insert(items, { Foreground = { Color = sep_fg } })
+    table.insert(items, { Text       = "  ·  "           })
+    table.insert(items, { Foreground = { Color = proc_fg } })
+    table.insert(items, { Text       = proc                })
+  end
+  table.insert(items, { Text = "  " })
+  return items
+end
+
+wezterm.on("format-tab-title", function(tab, _tabs, _panes, _conf, hover, _max_width)
+  local ok, result = pcall(_build_tab_items, tab, hover)
+  if ok and result then return result end
+  -- Last-resort visible error marker so a broken handler is OBVIOUS
+  -- (vs. wezterm silently falling back to its built-in `<idx>: <title>`).
+  return {
+    { Background = { Color = palette.bg_alt } },
+    { Foreground = { Color = palette.orange } },
+    { Text       = "  ERR " .. tostring(result or "?") .. "  " },
+  }
+end)
 
 local ok_tabline, tabline = pcall(wezterm.plugin.require, "https://github.com/michaelbrusegard/tabline.wez")
 if ok_tabline then
@@ -268,9 +464,9 @@ if ok_tabline then
   -- floating on it.
   local mode_section = function(accent)
     return {
-      a = { fg = palette.bg,     bg = accent         },  -- mode pill (rotates) — BRIGHT
-      b = { fg = palette.blue,   bg = palette.bg_alt },  -- workspace — subtle blue label
-      c = { fg = palette.fg_dim, bg = palette.bg_alt },  -- hostname — dim label
+      a = { fg = palette.bg,    bg = accent         },  -- mode pill (rotates) — BRIGHT
+      b = { fg = palette.blue,  bg = palette.bg_alt },  -- workspace — subtle blue label
+      c = { fg = palette.green, bg = palette.bg_alt },  -- hostname — green label
       x = { fg = palette.cyan,   bg = palette.bg_alt },  -- pane info if populated
       y = { fg = palette.orange, bg = palette.bg_alt },  -- battery (laptops only)
       z = { fg = palette.pink,   bg = palette.bg_alt },  -- clock — subtle pink label
@@ -291,26 +487,26 @@ if ok_tabline then
     -- tabs become ghost labels (dim fg on the strip, no visible pill
     -- outline). inactive_hover pops a clear bg_sel pill on mouse-over so
     -- click targets stay obvious.
+    -- Flat starship-style tabs: all sit on the strip bg (bg_alt) with no
+    -- pill outline. The active tab uses the FULL accent color (matches the
+    -- mode pill on the left) so it's clearly readable. Inactive tabs use
+    -- dim fg; hover lifts inactive fg back to full fg.
     tab = {
-      active         = { fg = palette.bg,     bg = palette.accent },
+      active         = { fg = palette.accent, bg = palette.bg_alt },
       inactive       = { fg = palette.fg_dim, bg = palette.bg_alt },
-      inactive_hover = { fg = palette.fg,     bg = palette.bg_sel },
+      inactive_hover = { fg = palette.fg,     bg = palette.bg_alt },
     },
   }
 
-  -- Custom inline separators: thin single-line angle glyphs drawn in
-  -- fg_mute on the strip bg. Left side uses U+276F (❯) so chevrons
-  -- point right toward the active tab; right side uses U+276E (❮) so
-  -- chevrons point left back toward the active tab. tabline.wez's
+  -- Custom inline separators: thin single-line ASCII angle glyphs drawn
+  -- on the strip bg in the SECTION'S OWN ACCENT COLOR (workspace blue,
+  -- battery orange, clock pink) so each separator visually "belongs" to
+  -- its section instead of all rendering as dim fg_mute. tabline.wez's
   -- util.extract_components treats raw tables (anything other than a
   -- named { "component_name", ... } entry) as verbatim wezterm.format
-  -- records, so the attribute + Text triplets below splice cleanly into
-  -- each section's components array.
+  -- records, so the Foreground/Background/Text triplets returned by
+  -- make_sep_* splice cleanly into each section's components array.
   --
-  -- The plugin's own section_separators reuse the same glyphs so the
-  -- a→b transition (mode_accent→bg_alt) renders one bright ❯ in
-  -- mode_accent color (the only naturally-visible plugin separator,
-  -- since b/c/x/y/z all share bg_alt and collapse to invisible).
   -- Plain ASCII > and <. The Unicode angle alternatives (HEAVY U+276F/E,
   -- MATHEMATICAL U+27E9/8, SINGLE QUOTE U+203A/9) all carry typographic
   -- baggage and render inconsistently across fonts — some come out bold
@@ -319,46 +515,131 @@ if ok_tabline then
   -- height, predictable everywhere.
   local SEP_LEFT  = ">"
   local SEP_RIGHT = "<"
-  local sep_inline_left = {
-    { Foreground = { Color = palette.fg_mute } },
-    { Background = { Color = palette.bg_alt } },
-    { Text = " " .. SEP_LEFT .. " " },
-  }
-  local sep_inline_right = {
-    { Foreground = { Color = palette.fg_mute } },
-    { Background = { Color = palette.bg_alt } },
-    { Text = " " .. SEP_RIGHT .. " " },
-  }
+  local function make_sep_left(color)
+    return {
+      { Foreground = { Color = color } },
+      { Background = { Color = palette.bg_alt } },
+      { Text = " " .. SEP_LEFT .. " " },
+    }
+  end
+  local function make_sep_right(color)
+    return {
+      { Foreground = { Color = color } },
+      { Background = { Color = palette.bg_alt } },
+      { Text = " " .. SEP_RIGHT .. " " },
+    }
+  end
 
-  -- Inject a right-pointing-into-clock angle at the end of tabline_y
-  -- when battery is present, so a divider sits between battery and clock.
+  -- Pre-built section-colored separators. Each separator inherits the
+  -- fg color of the section it BELONGS to (workspace's trailing > is
+  -- workspace-blue; hostname's trailing > is hostname-dim; clock's
+  -- leading < is clock-pink; battery's leading < is battery-orange).
+  -- The mode pill has NO inline separator — the plugin's
+  -- section_separator auto-renders the a→b transition with
+  -- fg = prev_section.bg, which equals mode_accent (purple in normal
+  -- mode, blue in copy mode, cyan in search mode, etc.), giving a
+  -- naturally mode-aware FILLED CHEVRON tail on the mode pill (see
+  -- section_separators setting below).
+  local sep_workspace = make_sep_left(palette.blue)
+  local sep_hostname  = make_sep_left(palette.green)
+  local sep_battery   = make_sep_right(palette.orange)
+  local sep_clock     = make_sep_right(palette.pink)
+
+  -- Prepend a battery-colored < at the start of tabline_y so a divider
+  -- sits between the tab area and the battery section when present.
   if #tabline_y > 0 then
-    table.insert(tabline_y, sep_inline_right[1])
-    table.insert(tabline_y, sep_inline_right[2])
-    table.insert(tabline_y, sep_inline_right[3])
+    table.insert(tabline_y, 1, sep_battery[3])
+    table.insert(tabline_y, 1, sep_battery[2])
+    table.insert(tabline_y, 1, sep_battery[1])
+  end
+
+  -- Set of foreground-process names that count as "just the shell". When
+  -- the active pane's foreground process is one of these, the tab title
+  -- suppresses the process segment entirely (no icon, no name) so the tab
+  -- reads as e.g. `1  ~/chezmoi` instead of `1  ~/chezmoi  pwsh`.
+  -- Anything not in this set (nvim, lazygit, op, btop, ssh, etc.) still
+  -- renders its icon + name so the tab reflects what's actually running.
+  local SHELL_PROCESSES = {
+    ["pwsh"]       = true,
+    ["pwsh.exe"]   = true,
+    ["powershell"] = true,
+    ["powershell.exe"] = true,
+    ["bash"]       = true,
+    ["zsh"]        = true,
+    ["fish"]       = true,
+    ["nu"]         = true,
+    ["sh"]         = true,
+    ["cmd"]        = true,
+    ["cmd.exe"]    = true,
+  }
+  local function process_is_not_shell(tab)
+    local p = tab and tab.active_pane and tab.active_pane.foreground_process_name
+    if not p or p == "" then return false end
+    -- strip dir prefix on unix, drive+dir on windows, then lowercase
+    p = p:match("([^/\\]+)[/\\]?$") or p
+    return not SHELL_PROCESSES[p:lower()]
+  end
+
+  -- Dynamic spacer that pushes the tab strip toward the center of the
+  -- bar. tabline.wez calls function components with the WINDOW object
+  -- and concatenates their return into a Text record; we use the
+  -- active pane's dimensions to read the terminal column count, the
+  -- mux window to count tabs, then compute padding so the tabs end up
+  -- approximately centered between the left status (mode + workspace
+  -- + hostname) and the right status (clock).
+  local LEFT_SECTION_COLS  = 45   -- mode pill + chevron + workspace + > + hostname + >
+  local RIGHT_SECTION_COLS = 22   -- < + clock
+  local AVG_TAB_COLS       = 22   -- rough average tab width (index + cwd)
+  local function center_spacer(window)
+    if not window then return "" end
+    local ok_pane, pane = pcall(function() return window:active_pane() end)
+    if not ok_pane or not pane then return "" end
+    local ok_dims, dims = pcall(function() return pane:get_dimensions() end)
+    if not ok_dims or not dims or not dims.cols then return "" end
+    local cols = dims.cols
+    local tab_count = 1
+    local ok_mux, mux = pcall(function() return window:mux_window() end)
+    if ok_mux and mux then
+      local ok_tabs, tabs = pcall(function() return mux:tabs() end)
+      if ok_tabs and tabs then tab_count = math.max(1, #tabs) end
+    end
+    local used = LEFT_SECTION_COLS + RIGHT_SECTION_COLS + (tab_count * AVG_TAB_COLS)
+    local remaining = cols - used
+    if remaining <= 0 then return "" end
+    return string.rep(" ", math.floor(remaining / 2))
   end
 
   tabline.setup({
     options = {
       icons_enabled = true,
-      tabs_enabled = true,
+      -- Tab rendering is owned by the custom format-tab-title handler
+      -- registered after this setup() call. The plugin still owns the
+      -- LEFT/RIGHT status sections (mode pill, workspace, hostname,
+      -- battery, clock). With tabs_enabled=false the plugin does NOT
+      -- register its own format-tab-title, so our handler runs alone
+      -- and gets full control of each tab's colors and content.
+      tabs_enabled = false,
       theme = palette_scheme,
       theme_overrides = tabline_overrides,
       color_overrides = {},
-      -- Plugin section_separators disabled (empty strings) so the
-      -- mode pill→workspace divider gets the same dim treatment as every
-      -- other section transition. The plugin auto-renders its separator
-      -- with fg = prev_section.bg (mode_accent for a→b), which made the
-      -- mode pill's separator render bright purple while the rest were
-      -- dim. The dim sep_inline_left triplet spliced at the end of
-      -- tabline_a (below) provides the uniform-looking divider instead.
+      -- Plugin section_separators use FILLED Powerline chevrons. The
+      -- plugin renders these between adjacent sections with
+      -- fg = prev_section.bg, bg = curr_section.bg. The ONLY visible
+      -- auto-separator on the left is a→b (mode_accent on bg_alt),
+      -- which renders as a SOLID mode-colored wedge that visually
+      -- extends the mode pill — i.e. the > after the mode pill
+      -- literally uses the pill's own bg color, mode-aware (purple in
+      -- NORMAL, blue in COPY, cyan in SEARCH, pink in WINDOW, etc.).
+      -- All other section pairs share bg_alt on both sides, so the
+      -- plugin's auto-separators collapse to invisible there and the
+      -- per-section inline splices below take over.
       section_separators = {
-        left  = "",
-        right = "",
+        left  = wezterm.nerdfonts.pl_left_hard_divider,
+        right = wezterm.nerdfonts.pl_right_hard_divider,
       },
       -- Empty component_separators so the plugin doesn't insert thin soft
       -- dividers between adjacent Text records (e.g. between a section's
-      -- named component and the sep_inline records we splice in).
+      -- named component and the inline separator records we splice in).
       component_separators = {
         left  = "",
         right = "",
@@ -372,47 +653,86 @@ if ok_tabline then
       },
     },
     sections = {
-      -- Left: mode pill > workspace > hostname > (active tab)
-      -- All three > are the same dim splice; the mode pill's separator
-      -- needs the splice too because section_separators are disabled
-      -- above (otherwise the mode pill->workspace divider would be
-      -- bright purple, mismatching the other dim >s).
+      -- Left: [mode pill][filled chevron tail] workspace > hostname > [filled chevron] (active tab)
+      --   a→b separator: plugin auto-render filled chevron, mode-tinted
+      --                  (the mode pill's bg color extended as a wedge)
+      --   b→c separator: inline sep_workspace, workspace-blue
+      --   c→tabs:        inline sep_hostname (dim >) followed by
+      --                  tab_separators filled chevron (bg_alt → accent)
       tabline_a = {
         { "mode",      padding = { left = 1, right = 1 } },
-        sep_inline_left[1], sep_inline_left[2], sep_inline_left[3],
       },
+      -- Extra left padding (2) on workspace so the workspace text
+      -- doesn't sit right up against the mode pill's trailing chevron.
       tabline_b = {
-        { "workspace", padding = { left = 1, right = 0 }, icon = wezterm.nerdfonts.cod_window },
-        sep_inline_left[1], sep_inline_left[2], sep_inline_left[3],
+        { "workspace", padding = { left = 2, right = 0 }, icon = wezterm.nerdfonts.cod_window },
+        sep_workspace[1], sep_workspace[2], sep_workspace[3],
       },
+      -- Trailing center_spacer pushes the tab strip toward the middle
+      -- of the bar based on terminal width and tab count.
       tabline_c = {
         { "hostname",  padding = { left = 1, right = 0 }, icon = wezterm.nerdfonts.fa_desktop },
-        sep_inline_left[1], sep_inline_left[2], sep_inline_left[3],
+        sep_hostname[1], sep_hostname[2], sep_hostname[3],
+        center_spacer,
       },
-      -- Active tab: index, parent/cwd, zoom indicator, running process.
-      -- Explicit left+right padding on `index` so it doesn't collide with
-      -- `parent` (component_separators are now empty, so spaces are the
-      -- only thing keeping fields apart within the tab pill).
+      -- Active tab: index + cwd basename + process name (no .exe). The
+      -- process_to_icon overrides recolor shell icons away from yellow
+      -- (the plugin's defaults use colors.cursor_bg = palette.yellow,
+      -- which clashes with the yellow-tinted spaceduck fg). Shells now
+      -- use cyan; common dev tools get their semantic accent colors.
       tab_active = {
         { "index",   padding = { left = 1, right = 1 } },
-        { "parent",  padding = 0, max_length = 12 },
-        "/",
-        { "cwd",     padding = { left = 0, right = 1 }, max_length = 18 },
-        { "zoomed",  padding = 0 },
-        { "process", padding = { left = 0, right = 1 } },
+        { "cwd",     padding = { left = 0, right = 1 }, max_length = 16 },
+        { "process", padding = { left = 0, right = 1 },
+          cond = process_is_not_shell,
+          fmt = function(name) return (name:gsub("%.exe$", "")) end,
+          process_to_icon = {
+            ["pwsh.exe"]       = { wezterm.nerdfonts.md_console,         color = { fg = palette.cyan   } },
+            ["powershell.exe"] = { wezterm.nerdfonts.md_console,         color = { fg = palette.cyan   } },
+            ["bash"]           = { wezterm.nerdfonts.cod_terminal_bash,  color = { fg = palette.cyan   } },
+            ["zsh"]            = { wezterm.nerdfonts.dev_terminal,       color = { fg = palette.cyan   } },
+            ["fish"]           = { wezterm.nerdfonts.md_fish,            color = { fg = palette.cyan   } },
+            ["cmd.exe"]        = { wezterm.nerdfonts.md_console_line,    color = { fg = palette.cyan   } },
+            ["nvim"]           = { wezterm.nerdfonts.custom_neovim,      color = { fg = palette.green  } },
+            ["vim"]            = { wezterm.nerdfonts.dev_vim,            color = { fg = palette.green  } },
+            ["lazygit"]        = { wezterm.nerdfonts.cod_github,         color = { fg = palette.orange } },
+            ["btop"]           = { wezterm.nerdfonts.md_chart_areaspline,color = { fg = palette.pink   } },
+            ["op.exe"]         = { wezterm.nerdfonts.fa_key,             color = { fg = palette.accent } },
+          },
+        },
       },
-      -- Inactive tab: dim via theme; index + process with explicit space.
+      -- Inactive tab: same shape + overrides so tabs differ by content,
+      -- not just by color.
       tab_inactive = {
         { "index",   padding = { left = 1, right = 1 } },
-        { "process", padding = { left = 0, right = 1 } },
+        { "cwd",     padding = { left = 0, right = 1 }, max_length = 14 },
+        { "process", padding = { left = 0, right = 1 },
+          cond = process_is_not_shell,
+          fmt = function(name) return (name:gsub("%.exe$", "")) end,
+          process_to_icon = {
+            ["pwsh.exe"]       = { wezterm.nerdfonts.md_console,         color = { fg = palette.cyan   } },
+            ["powershell.exe"] = { wezterm.nerdfonts.md_console,         color = { fg = palette.cyan   } },
+            ["bash"]           = { wezterm.nerdfonts.cod_terminal_bash,  color = { fg = palette.cyan   } },
+            ["zsh"]            = { wezterm.nerdfonts.dev_terminal,       color = { fg = palette.cyan   } },
+            ["fish"]           = { wezterm.nerdfonts.md_fish,            color = { fg = palette.cyan   } },
+            ["cmd.exe"]        = { wezterm.nerdfonts.md_console_line,    color = { fg = palette.cyan   } },
+            ["nvim"]           = { wezterm.nerdfonts.custom_neovim,      color = { fg = palette.green  } },
+            ["vim"]            = { wezterm.nerdfonts.dev_vim,            color = { fg = palette.green  } },
+            ["lazygit"]        = { wezterm.nerdfonts.cod_github,         color = { fg = palette.orange } },
+            ["btop"]           = { wezterm.nerdfonts.md_chart_areaspline,color = { fg = palette.pink   } },
+            ["op.exe"]         = { wezterm.nerdfonts.fa_key,             color = { fg = palette.accent } },
+          },
+        },
       },
-      -- Right: ❮ battery (laptops only) ❮ clock
-      -- tabline_x stays empty; clock gets a leading ❮ via the splice so a
-      -- divider always sits between the tab area and the clock.
+      -- Right: (active tab) [filled chevron] < battery (laptops only) < clock
+      --   tabline_x stays empty.
+      --   tabline_y prepends a battery-orange < when battery is present.
+      --   tabline_z prepends a clock-pink < so a divider always sits
+      --   between the tab area (or battery) and the clock.
       tabline_x = {},
       tabline_y = tabline_y,
       tabline_z = {
-        sep_inline_right[1], sep_inline_right[2], sep_inline_right[3],
+        sep_clock[1], sep_clock[2], sep_clock[3],
         { "datetime", padding = { left = 0, right = 1 }, style = "%a %b %-d  %H:%M" },
       },
     },
@@ -429,7 +749,14 @@ config.native_macos_fullscreen_mode = true
 config.adjust_window_size_when_changing_font_size = false
 config.window_close_confirmation = "NeverPrompt"
 
-config.window_padding = { left = 6, right = 6, top = 4, bottom = 0 }
+-- Generous padding all around so the tab bar lifts off the window edges.
+-- top is between the OS chrome (or integrated buttons) and the terminal
+-- content; bottom is the gap between the tab bar (tab_bar_at_bottom=true)
+-- and the window's bottom edge. bottom is large so the tab bar isn't
+-- crammed against the screen edge — wezterm draws the tab bar inside the
+-- bottom padding region, so this is what actually creates breathing room
+-- below the tabs.
+config.window_padding = { left = 12, right = 12, top = 14, bottom = 60 }
 
 -- Light opacity on macOS where blur looks native; opaque on Windows/Linux.
 config.window_background_opacity = WINDOW_OPACITY
@@ -483,13 +810,21 @@ config.enable_kitty_graphics = true
 config.enable_kitty_keyboard = true
 config.allow_win32_input_mode = true
 
-config.front_end = "WebGpu"
+-- OpenGL is the battle-tested front-end on Windows. The WebGpu backend
+-- in wezterm has documented input-latency and frame-pacing issues on
+-- Windows builds and is the most likely cause of "feels slower than X".
+-- OpenGL with prefer_egl=true gives the lowest-latency software-presented
+-- path through DirectX on Windows while keeping GPU-accelerated text.
+config.front_end = "OpenGL"
 config.webgpu_power_preference = "HighPerformance"
-config.max_fps = 120
-config.animation_fps = 60
+-- 60/30 fps is plenty for a terminal; 120 wastes GPU cycles and can
+-- starve the shell on contended systems.
+config.max_fps = 60
+config.animation_fps = 30
 config.prefer_egl = true
 
-config.check_for_updates = true
+-- Background network fetch every few hours; not worth the wakeups.
+config.check_for_updates = false
 config.automatically_reload_config = true
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -504,41 +839,77 @@ config.char_select_bg_color = palette.bg_pop
 config.char_select_fg_color = palette.fg
 config.char_select_font_size = 13
 
+-- Color of the icon STROKES inside the OS-integrated min/max/close
+-- buttons (only applies when window_decorations contains
+-- INTEGRATED_BUTTONS). On Windows with INTEGRATED_BUTTONS, wezterm draws
+-- the buttons directly on the tab bar strip — they do NOT have their
+-- own background property. The only thing config can change is the
+-- icon stroke color via this setting. Static default = palette.accent
+-- so the icons themselves match the mode pill on the LEFT (purple in
+-- normal mode). The update-status hook below re-applies this per-window
+-- as the active key table changes.
+config.integrated_title_button_color = palette.accent
+
 config.window_frame = {
-  font = wezterm.font({ family = "Hack Nerd Font", weight = "Bold" }),
+  font = wezterm.font({ family = "Hack Nerd Font" }),
   font_size = UI_FONT_SIZE,
-  -- All four states resolve to bg_alt so the title bar / integrated
-  -- window-control area always matches the tab bar strip (also bg_alt),
-  -- focused or not. The previous inactive_titlebar_bg = palette.bg was
-  -- the source of the "slightly different dark bg" behind the
-  -- min/max/close buttons on unfocused windows.
+  -- Titlebar settings below ONLY apply when window_decorations excludes
+  -- INTEGRATED_BUTTONS (i.e. macOS / Linux with a real titlebar). On
+  -- Windows the integrated buttons sit directly on the tab bar strip
+  -- (config.colors.tab_bar.background), not on a separate titlebar bg.
   active_titlebar_bg   = palette.bg_alt,
   inactive_titlebar_bg = palette.bg_alt,
   active_titlebar_fg   = palette.fg,
   inactive_titlebar_fg = palette.fg_mute,
-  -- Integrated window-control buttons: bg matches the strip; hover
-  -- pops a subtle bg_sel pill so the click target stays obvious.
+  -- button_bg/fg below apply to the TAB BAR's own +/x buttons (new tab,
+  -- close tab) — NOT the OS-integrated min/max/close buttons.
   button_fg            = palette.fg,
   button_bg            = palette.bg_alt,
   button_hover_fg      = palette.fg,
   button_hover_bg      = palette.bg_sel,
 }
 
--- Pretty tab titles when tabline plugin isn't loaded (fallback only).
--- The mode pill is provided by tabline's `mode` component in tabline_a,
--- so we no longer paint a right-status banner here (it would clobber
--- tabline's right sections).
-wezterm.on("format-tab-title", function(tab, _, _, _, hover)
-  if ok_tabline then return nil end
-  local idx = tab.tab_index + 1
-  local title = tab.active_pane.title or ""
-  local bg = tab.is_active and palette.accent or (hover and palette.bg_alt or palette.bg)
-  local fg = tab.is_active and palette.bg or palette.fg
-  return {
-    { Background = { Color = bg } },
-    { Foreground = { Color = fg } },
-    { Text = string.format(" %d  %s ", idx, title) },
-  }
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Mode-aware integrated window-control button icon color.
+--
+-- On Windows with window_decorations=INTEGRATED_BUTTONS the min/max/
+-- close buttons draw directly on the tab bar strip and do NOT have a
+-- per-button background property in wezterm. The only knob wezterm
+-- exposes is `integrated_title_button_color` for the icon strokes.
+-- This handler swaps that color per active key table so the icons on
+-- the RIGHT side of the bar change color in sync with the mode pill on
+-- the LEFT. (A proper colored "pill" background isn't reachable via
+-- config; it would require a custom-rendered tabline_z component, or
+-- using a different window_decorations style.)
+--
+-- Implementation: register an update-status handler (wezterm runs all
+-- registered handlers; tabline.wez has its own for the status line).
+-- The handler reads window:active_key_table() to figure out the mode,
+-- maps it to a palette color, and applies a per-window override via
+-- window:set_config_overrides(). We cache the last-seen mode per window
+-- so we only call set_config_overrides() on actual transitions (not
+-- every 2s timer tick).
+-- ─────────────────────────────────────────────────────────────────────────────
+local MODE_ACCENT = {
+  copy_mode    = palette.accent_copy,    -- blue
+  search_mode  = palette.accent_search,  -- cyan
+  window_mode  = palette.pink,
+  font_mode    = palette.yellow,
+  lock_mode    = palette.fg_mute,
+  resize_pane  = palette.pink,           -- LEADER+R resize-pane mode from keymaps.lua
+}
+local _last_mode_per_window = {}
+wezterm.on("update-status", function(window, _pane)
+  local key_table = window:active_key_table()  -- nil when in normal mode
+  local mode_key  = key_table or "normal"
+  local win_id    = window:window_id()
+  if _last_mode_per_window[win_id] == mode_key then return end
+  _last_mode_per_window[win_id] = mode_key
+
+  local accent = MODE_ACCENT[key_table] or palette.accent
+  local overrides = window:get_config_overrides() or {}
+  overrides.integrated_title_button_color = accent
+  window:set_config_overrides(overrides)
 end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
