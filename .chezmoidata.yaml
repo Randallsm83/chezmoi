@@ -1099,9 +1099,13 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: [smartmontools]
-      dnf: [smartmontools]
-      pacman: [smartmontools]
+      # hardware_tools is conceptually Windows-only (see section comment
+      # above); WSL2 has no direct disk access for SMART queries, and
+      # the feature is otherwise GPU/driver tooling that has no Linux
+      # equivalents in this set. Linux side intentionally empty.
+      apt: []
+      dnf: []
+      pacman: []
       paru: []
       brew: []
       mise: []
