@@ -18,33 +18,11 @@
     "mcp": false
   },
 
-  // Heavy / orchestrator agents -> Opus 4.7 (max reasoning).
-  // Fast / research agents      -> Haiku 4.5.
-  "agents": {
-    "sisyphus":          { "model": "anthropic/claude-opus-4-7" },
-    "hephaestus":        { "model": "anthropic/claude-opus-4-7" },
-    "prometheus":        { "model": "anthropic/claude-opus-4-7" },
-    "oracle":            { "model": "anthropic/claude-opus-4-7" },
-    "atlas":             { "model": "anthropic/claude-opus-4-7" },
-    "metis":             { "model": "anthropic/claude-opus-4-7" },
-    "momus":             { "model": "anthropic/claude-opus-4-7" },
-
-    "librarian":         { "model": "anthropic/claude-haiku-4-5" },
-    "sisyphus-junior":   { "model": "anthropic/claude-haiku-4-5" },
-    "multimodal-looker": { "model": "anthropic/claude-haiku-4-5" },
-    "explore":           { "model": "anthropic/claude-haiku-4-5" }
-  },
-
-  // Category defaults used by OmO's delegate_task tool. Same tiering.
-  "categories": {
-    "quick":              { "model": "anthropic/claude-haiku-4-5" },
-    "unspecified-low":    { "model": "anthropic/claude-haiku-4-5" },
-    "writing":            { "model": "anthropic/claude-haiku-4-5" },
-    "unspecified-high":   { "model": "anthropic/claude-opus-4-7" },
-    "deep":               { "model": "anthropic/claude-opus-4-7" },
-    "ultrabrain":         { "model": "anthropic/claude-opus-4-7" },
-    "visual-engineering": { "model": "anthropic/claude-opus-4-7" }
-  },
+  // Agent and category models intentionally NOT overridden:
+  // OmO ships a provider-aware fallback chain per agent/category that picks
+  // the right model for the role given your authenticated providers
+  // (anthropic, openai, google). Defaults are codified in OmO's
+  // AGENT_MODEL_REQUIREMENTS / CATEGORY_MODEL_REQUIREMENTS tables.
 
   // Keep all built-in skills enabled (playwright, git-master, frontend-ui-ux).
   "disabled_skills": [],
