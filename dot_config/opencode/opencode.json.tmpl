@@ -6,9 +6,9 @@
   "share": "disabled",
   "snapshot": true,
 
-  "model": "anthropic/claude-sonnet-4-5",
-  "small_model": "anthropic/claude-haiku-4-5",
-  "default_agent": "main",
+  "model": "anthropic/claude-opus-4-7",
+  "small_model": "anthropic/claude-sonnet-4-5",
+  "default_agent": "sisyphus",
 
   "plugin": [
     "@warp-dot-dev/opencode-warp",
@@ -148,28 +148,14 @@
   "agent": {
     "plan": {
       "mode": "primary",
-      "model": "anthropic/claude-sonnet-4-5",
+      "model": "anthropic/claude-opus-4-7",
       "prompt": "You are in planning mode. Research thoroughly and produce a clear, concise plan. Do NOT modify any files.",
       "tools": { "write": false, "edit": false }
     },
     "main": {
       "mode": "primary",
       "description": "Primary build/dev agent.",
-      "model": "anthropic/claude-sonnet-4-5"
-    },
-    "code-reviewer": {
-      "description": "Reviews code for security, performance, maintainability, and style. Read-only.",
-      "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-5",
-      "prompt": "Review code for correctness, security, performance, and maintainability. Be specific and cite file paths and line numbers. Do not modify files.",
-      "tools": { "write": false, "edit": false, "bash": false }
-    },
-    "explore": {
-      "description": "Investigates and explains a codebase or topic without making changes.",
-      "mode": "subagent",
-      "model": "anthropic/claude-haiku-4-5",
-      "prompt": "Investigate the codebase and answer questions. Do not modify any files.",
-      "tools": { "write": false, "edit": false }
+      "model": "anthropic/claude-opus-4-7"
     }
   },
 
