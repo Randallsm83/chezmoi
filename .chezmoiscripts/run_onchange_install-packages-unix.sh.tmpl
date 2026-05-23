@@ -31,16 +31,18 @@ if ! command -v mise >/dev/null 2>&1; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-{{- if eq .chezmoi.os "darwin" }}
-# Set up Homebrew PATH (macOS only — Linux uses pacman/paru, see
-# run_onchange_before_install_base_packages_unix.sh.tmpl for rationale)
-if [ -d "/opt/homebrew" ]; then
+# Set up Homebrew on PATH for this script. Three possible prefixes:
+#   * /opt/homebrew                  (macOS, conventional)
+#   * /home/linuxbrew/.linuxbrew     (Linux non-remote, conventional)
+#   * $XDG_DATA_HOME/homebrew        (Linux remote, user-prefix shim)
+# See run_onchange_before_install_base_packages_unix.sh.tmpl for bootstrap.
+if [ -x /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || true
-elif [ -d "$HOME/.local/share/homebrew" ]; then
-    export HOMEBREW_PREFIX="$HOME/.local/share/homebrew"
-    export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+elif [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || true
+elif [ -x "${XDG_DATA_HOME:-$HOME/.local/share}/homebrew/bin/brew" ]; then
+    eval "$("${XDG_DATA_HOME:-$HOME/.local/share}/homebrew/bin/brew" shellenv)" 2>/dev/null || true
 fi
-{{- end }}
 
 # Collect system packages per manager (mise is declarative via config files;
 # paru is the AUR helper for Arch, only consumed when pacman is detected)
@@ -169,12 +171,12 @@ mise install --yes 2>&1 || echo "Warning: Some mise tools failed to install"
 # Ensure shims are in PATH for subsequent operations
 export PATH="$HOME/.local/share/mise/shims:$PATH"
 
-{{- if eq .chezmoi.os "darwin" }}
-# 2. Install brew packages via Brewfile (macOS only).
-# Brewfile renders to nothing on Linux (Brewfile.tmpl is darwin-gated) so
-# we don't even attempt to run brew bundle on Linux — see
-# run_onchange_before_install_base_packages_unix.sh.tmpl for why Homebrew
-# was removed from the Linux flow.
+{{- if or (eq .chezmoi.os "darwin") (and (eq .chezmoi.os "linux") (not .is_remote)) }}
+# 2. Install brew packages via Brewfile.
+# Runs on macOS and on non-remote Linux. On remote Linux the user-prefix
+# Homebrew shim is bootstrapped (see run_onchange_before_install_base_packages_unix.sh.tmpl)
+# but `brew bundle` is skipped there — source builds against a non-canonical
+# prefix take hours per formula since upstream bottles aren't available.
 BREWFILE="$HOME/.config/homebrew/Brewfile"
 # Regenerate Brewfile from chezmoi template before running brew bundle.
 # Scripts in .chezmoiscripts/ sort before dot_config/ alphabetically,

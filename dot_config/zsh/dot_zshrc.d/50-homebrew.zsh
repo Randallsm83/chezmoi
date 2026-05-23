@@ -15,7 +15,12 @@
 if (( ! $+commands[brew] )); then
   if [[ -x /opt/homebrew/bin/brew ]]; then
     BREW_LOCATION="/opt/homebrew/bin/brew"
+  elif [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+    # Conventional Linux Homebrew prefix (official installer). Used on
+    # non-remote hosts. See run_onchange_before_install_base_packages_unix.sh.tmpl.
+    BREW_LOCATION="/home/linuxbrew/.linuxbrew/bin/brew"
   elif [[ -x "${XDG_DATA_HOME:-$HOME/.local/share}/homebrew/bin/brew" ]]; then
+    # User-prefix shim (Linux remote hosts, no sudo available). No bottles.
 #   export HOMEBREW_PREFIX="${XDG_DATA_HOME:-$HOME/.local/share}/homebrew"
     BREW_LOCATION="${XDG_DATA_HOME:-$HOME/.local/share}/homebrew/bin/brew"
   else
@@ -41,7 +46,7 @@ if [[ -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]]; then
 fi
 
 export HOMEBREW_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/homebrew"
-export HOMEBREW_BUNDLE_FILE="${DOTFILES:-$HOME/.config/dotfiles}/homebrew/dot-config/homebrew/Brewfile"
+export HOMEBREW_BUNDLE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/homebrew/Brewfile"
 export HOMEBREW_BUNDLE_USER_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/homebrew"
 export HOMEBREW_LOGS="${XDG_CACHE_HOME:-$HOME/.cache}/homebrew/logs"
 export HOMEBREW_TEMP="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/homebrew"

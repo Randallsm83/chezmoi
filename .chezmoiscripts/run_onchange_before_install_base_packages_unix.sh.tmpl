@@ -274,20 +274,75 @@ if [ -d /usr/bin/core_perl ] && [ -x /usr/bin/core_perl/pod2man ]; then
     log_success "Perl script symlinks created"
 fi
 
-{{- /*
-Homebrew is DISABLED on Linux/WSL.
+{{- if .package_features.homebrew }}
+# ---------------------------------------------------------------------------
+# Homebrew bootstrap
+# ---------------------------------------------------------------------------
+# Profiles:
+#   * macOS               -> /opt/homebrew  (official installer, NONINTERACTIVE)
+#   * Linux non-remote    -> /home/linuxbrew/.linuxbrew (conventional, needs
+#                            passwordless sudo; bottles available)
+#   * Linux remote (SSH)  -> $XDG_DATA_HOME/homebrew (user-prefix git clone, no
+#                            sudo). Brewfile is NOT applied on remote — this is
+#                            only a shim so manual `brew install <x>` works.
+install_homebrew() {
+    if command_exists brew; then
+        log_success "Homebrew already installed ($(brew --prefix 2>/dev/null))"
+        return 0
+    fi
 
-A user-prefix Homebrew install at ~/.local/share/homebrew cannot use
-upstream bottles (those are compiled for /home/linuxbrew/.linuxbrew) so
-every `brew install` falls back to source builds — gettext, glib,
-gnupg, powershell, etc. take hours apiece. The Linux package set is
-covered by pacman + paru (and apt/dnf for non-Arch distros) via
-package_mapping.*.linux.pacman / linux.paru. See
-run_onchange_install-packages-unix.sh.tmpl for the install flow.
+{{- if eq .chezmoi.os "darwin" }}
+    if [ -x /opt/homebrew/bin/brew ]; then
+        log_success "Homebrew already present at /opt/homebrew"
+        eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || true
+        return 0
+    fi
+    log_info "Installing Homebrew (macOS, NONINTERACTIVE)..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+        || { log_warning "Homebrew install failed"; return 1; }
+    [ -x /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || true
+{{- else }}
+{{- if not .is_remote }}
+    # Conventional Linux install at /home/linuxbrew/.linuxbrew. Uses sudo to
+    # create the prefix; relies on NOPASSWD sudo (already a project precondition
+    # for WSL bootstrap via reset-wsl-arch.ps1).
+    if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+        log_success "Homebrew already present at /home/linuxbrew/.linuxbrew"
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || true
+        return 0
+    fi
+    log_info "Installing Homebrew (Linux, conventional /home/linuxbrew prefix, NONINTERACTIVE)..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+        || { log_warning "Homebrew install failed"; return 1; }
+    [ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || true
+{{- else }}
+    # Remote work server: no sudo available. Use the user-prefix install pattern
+    # documented at https://docs.brew.sh/Homebrew-on-Linux#unsupported-install.
+    # Bottles will NOT match this prefix so any `brew install` here will
+    # source-build — that's why the package install script skips `brew bundle`
+    # on remote and only configures the shim.
+    BREW_USER_PREFIX="${XDG_DATA_HOME:-$HOME/.local/share}/homebrew"
+    if [ -x "$BREW_USER_PREFIX/bin/brew" ]; then
+        log_success "Homebrew already present at $BREW_USER_PREFIX"
+        eval "$("$BREW_USER_PREFIX/bin/brew" shellenv)" 2>/dev/null || true
+        return 0
+    fi
+    log_info "Installing Homebrew (Linux remote, user-prefix $BREW_USER_PREFIX, no sudo)..."
+    mkdir -p "$BREW_USER_PREFIX"
+    if git clone --depth=1 https://github.com/Homebrew/brew "$BREW_USER_PREFIX" 2>/dev/null; then
+        eval "$("$BREW_USER_PREFIX/bin/brew" shellenv)" 2>/dev/null || true
+        log_success "Homebrew user-prefix shim installed (no bottles; manual installs will source-build)"
+    else
+        log_warning "Failed to clone Homebrew into $BREW_USER_PREFIX"
+        return 1
+    fi
+{{- end }}
+{{- end }}
+}
 
-Kept here as a deleted block (not just gated to darwin) because macOS
-has its own Homebrew bootstrap path outside chezmoi.
-*/}}
+install_homebrew || log_warning "Homebrew install failed; continuing without brew."
+{{- end }}
+
 
 # Set zsh as default shell if available
 if command_exists zsh && ! is_zsh_default_shell; then
