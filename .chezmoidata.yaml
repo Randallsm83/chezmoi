@@ -447,9 +447,9 @@ package_mapping:
     linux:
       apt: [git]
       dnf: [git]
-      pacman: [git, lazygit]   # lazygit moved off brew (was failing on Arch user-prefix Homebrew)
+      pacman: [git]
       paru: []
-      brew: []                  # Homebrew dropped on Linux; see Brewfile.tmpl + base-packages script
+      brew: [lazygit]
       mise: [github-cli]
     darwin:
       brew: [git, lazygit]
@@ -615,10 +615,10 @@ package_mapping:
       # faster and identical. Fedora ships full vim in `vim-enhanced`.
       # `mise_remote` is the no-sudo fallback used on remote hosts where
       # apt/dnf/pacman are unavailable (mise installs to ~/.local, no root).
-      apt: [vim]
-      dnf: [vim-enhanced]
-      pacman: [vim]
-      brew: []
+      apt: []
+      dnf: []
+      pacman: []
+      brew: [vim]
       mise: []
       mise_remote: [vim]
     darwin:
@@ -701,10 +701,14 @@ package_mapping:
       pwsh_modules: [Terminal-Icons, AudioDeviceCmdlets, Profiler, PSProfiler, Microsoft.WinGet.Client, Microsoft.WinGet.CommandNotFound]
       psc_completions: [7z, arch, bun, cargo, dirname, docker, env, gh, git, head, mise, node, npm, pip, powershell, psc, pwsh, python, scoop, uv, winget, wsl, yarn, zoxide, df, scoop-checkver]
     linux:
+      # PowerShell intentionally NOT installed on Linux. It is a Windows-only
+      # shell here; leaving all installers empty so the feature flag (which
+      # also covers Windows scoop/winget and macOS noop) is a no-op on Linux.
       apt: []
       dnf: []
       pacman: []
-      brew: [powershell]
+      paru: []
+      brew: []
       mise: []
     darwin:
       brew: []
@@ -731,11 +735,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: [wget, curl]
-      dnf: [wget, curl]
-      pacman: [wget, curl]    # wget also installed by base-packages script; idempotent
+      apt: [curl]
+      dnf: [curl]
+      pacman: [curl]          # curl kept for bootstrap; wget moved to brew
       paru: []
-      brew: []
+      brew: [wget]
       mise: []
     darwin:
       brew: [wget]
@@ -747,11 +751,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: [thefuck]
-      dnf: [thefuck]
-      pacman: []           # not in official repos
-      paru: [thefuck]      # AUR (Python-based command corrector)
-      brew: []
+      apt: []
+      dnf: []
+      pacman: []
+      paru: []
+      brew: [thefuck]
       mise: []
     darwin:
       brew: [thefuck]
@@ -763,11 +767,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: [fastfetch]
-      dnf: [fastfetch]
-      pacman: [fastfetch]
+      apt: []
+      dnf: []
+      pacman: []
       paru: []
-      brew: []
+      brew: [fastfetch]
       mise: []
     darwin:
       brew: [fastfetch]
@@ -953,13 +957,12 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      # All Rust CLI alternatives are in Arch's extra repo and install in
-      # seconds, vs mise's github backend which hits 60 req/hr anonymous rate
-      # limit on a fresh box. Mise list cleared on Linux.
-      pacman: [bat, ripgrep, fd, eza, git-delta, zoxide, vivid, tealdeer, navi, sd, dust, procs, hyperfine, just, tokei]
-      paru: [xh, ouch]   # AUR-only Rust binaries (no Arch repo package)
-      brew: []           # Homebrew dropped on Linux
-      mise: []           # was rate-limited; pacman/paru cover this set entirely
+      # Most rust alternatives come from mise (github:* backends, see
+      # ~/.config/mise/config.toml). brew covers the ones mise doesn't have.
+      pacman: []
+      paru: []
+      brew: [eza, tealdeer, xh, ouch]
+      mise: []
     darwin:
       brew: [tealdeer, coreutils, navi, dust, ouch]
       # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
@@ -991,8 +994,8 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: []                 # arduino-cli not in official repos
-      paru: [arduino-cli]        # AUR (Go binary)
+      pacman: []                 # arduino-cli removed; was unused on this host
+      paru: []                   # uncomment [arduino-cli] to reinstall from AUR
       brew: []
       mise: []
     darwin:
@@ -1042,12 +1045,12 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: [ollama]    # ollama is in extra repo on Arch
+      pacman: []          # ollama removed; was unused on this host
       paru: []
       brew: []
       mise: [claude, opencode]
     darwin:
-      brew: [ollama]
+      brew: []
       mise: [claude, opencode]
 
   # Gaming
@@ -1062,8 +1065,8 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      pacman: []                 # ludusavi has multiple AUR providers — use -bin variant
-      paru: [ludusavi-bin]
+      pacman: []                 # ludusavi removed; gaming feature not used on this host
+      paru: []                   # uncomment [ludusavi-bin] to reinstall game-save backup tool
       brew: []
       mise: []
     darwin:
@@ -1077,11 +1080,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: [docker-compose]
-      dnf: [docker-compose]
-      pacman: [docker-compose]
+      apt: []
+      dnf: []
+      pacman: []
       paru: []
-      brew: []
+      brew: [docker-compose]
       mise: []
     darwin:
       brew: [docker-compose]
@@ -1151,11 +1154,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: [rclone, unbound]
-      dnf: [rclone, unbound]
-      pacman: [rclone, unbound]
+      apt: []
+      dnf: []
+      pacman: []
       paru: []
-      brew: []
+      brew: [rclone]
       mise: []
     darwin:
       brew: []
@@ -1172,11 +1175,11 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: [pandoc]
-      dnf: [pandoc]
-      pacman: [pandoc-cli]   # Arch renamed `pandoc` -> `pandoc-cli` in 2024
+      apt: []
+      dnf: []
+      pacman: []             # pandoc moved off pacman; brew renders cleanly
       paru: []
-      brew: []
+      brew: [pandoc]
       mise: []
     darwin:
       brew: []
@@ -1249,6 +1252,12 @@ brew_bundle:
     - xz
     - libxml2
     - ca-certificates
+  # NOTE: formulae_build_deps_linux and formulae_toolchain_linux are reserved
+  # for future use. The Linux Brewfile currently renders only always_install.brew
+  # plus feature-gated package_mapping.<feature>.linux.brew entries. System
+  # build deps live in pacman/apt/dnf to keep `brew bundle` fast on Linux
+  # (bottles available for the small set we currently install). To enable these
+  # lists, extend dot_config/homebrew/Brewfile.tmpl.
   formulae_build_deps_linux:
     - zlib
   # Installed with args: ["HEAD"]
@@ -1411,6 +1420,11 @@ always_install:
     - jq
     - less
     - yq
+    # General-purpose tools not tied to any feature flag; moved from pacman as
+    # part of the Linux Homebrew migration (were previously manual installs).
+    - cmake
+    - htop
+    - tree
     # lazygit, wget, tealdeer are owned by their respective feature mappings
     # (git, wget, rust_alternatives). Removing here avoids double `brew "..."`
     # lines in the rendered Brewfile.
