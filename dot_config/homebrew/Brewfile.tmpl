@@ -7,13 +7,14 @@
 # The Missing Package Manager for macOS (or Linux).
 #
 
-{{- /* Brewfile is macOS-only. On Linux/WSL all packages route through
-       pacman/paru (Arch) or apt/dnf (Debian/Fedora) via package_mapping.
-       Homebrew was dropped from the Linux flow because a user-prefix install
-       at ~/.local/share/homebrew can't use upstream bottles (those are
-       compiled for /home/linuxbrew/.linuxbrew) and source-building every
-       formula takes hours. See run_onchange_before_install_base_packages_unix.sh.tmpl. */ -}}
-{{- if eq .chezmoi.os "darwin" -}}
+{{- /* Brewfile renders on macOS, and on Linux only when not is_remote.
+       Bootstrap profiles:
+         * macOS               -> /opt/homebrew              (bottles)
+         * Linux non-remote    -> /home/linuxbrew/.linuxbrew (bottles)
+         * Linux remote        -> $XDG_DATA_HOME/homebrew    (no bottles, no
+                                  bundle — see install-packages script)
+       Bootstrap lives in run_onchange_before_install_base_packages_unix.sh.tmpl. */ -}}
+{{- if or (eq .chezmoi.os "darwin") (and (eq .chezmoi.os "linux") (not .is_remote)) -}}
 {{- $b := .brew_bundle }}
 
 {{- /* ====================== TAPS ====================== */ -}}
@@ -40,8 +41,11 @@ brew "{{ . }}"
 {{- end }}
 {{- end }}
 
-{{- /* ============ LOCAL-ONLY FORMULAE (skipped on remote) ============ */ -}}
-{{- if not .is_remote }}
+{{- /* ============ LOCAL-ONLY FORMULAE (darwin, non-remote only) ============
+       On Linux, system build deps and toolchain come from pacman/apt/dnf;
+       the Linux Brewfile stays minimal (always_install.brew + feature-gated
+       package_mapping.<feature>.linux.brew entries). */ -}}
+{{- if and (eq .chezmoi.os "darwin") (not .is_remote) }}
 
 # Build deps for mise runtimes
 {{- range $b.formulae_build_deps }}
