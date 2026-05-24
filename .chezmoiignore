@@ -242,6 +242,12 @@ AppData/
 .config/mise/config.windows.toml
 .config/windows/**
 
+# Zed on Windows — AppData/Roaming/Zed/symlink_* source files link the live
+# files directly to dot_config/zed so app-side edits modify chezmoi source.
+# Ignore the Windows AppData target path on Unix.
+AppData/Roaming/Zed
+AppData/Roaming/Zed/**
+
 # Windows Terminal
 AppData/Local/Packages/Microsoft.WindowsTerminal_*/
 
