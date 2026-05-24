@@ -34,7 +34,7 @@
       "space g g": "git_panel::ToggleFocus",
       "space b d": "pane::CloseActiveItem",
       "space b n": "pane::ActivateNextItem",
-      "space b p": "pane::ActivatePrevItem",
+      "space b p": "pane::ActivatePreviousItem",
       "space c a": "editor::ToggleCodeActions",
       "space r n": "editor::Rename",
       "space q":   "pane::CloseActiveItem",

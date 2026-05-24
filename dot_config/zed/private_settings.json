@@ -226,14 +226,14 @@
       "enabled": true,
       "remote": false,
       "settings": {
-        "tavily_api_key": "{{ dig "secrets" "tavily_api_key" "" . }}"
+        "tavily_api_key": ""
       }
     },
     "mcp-server-gitlab": {
       "enabled": true,
       "remote": false,
       "settings": {
-        "gitlab_personal_access_token": "{{ dig "secrets" "dh_gitlab_pat" "" . }}",
+        "gitlab_personal_access_token": "",
         "gitlab_api_url": "https://git.dreamhost.com/api/v4"
       }
     },
@@ -241,7 +241,7 @@
       "enabled": true,
       "remote": false,
       "settings": {
-        "github_personal_access_token": "{{ dig "secrets" "github_pat" "" . }}"
+        "github_personal_access_token": ""
       }
     }
   },
