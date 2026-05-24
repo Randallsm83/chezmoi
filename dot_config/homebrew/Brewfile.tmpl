@@ -26,6 +26,14 @@ tap "{{ .name }}", "{{ .url }}"
 tap "{{ .name }}"
 {{- end }}
 {{- end }}
+{{- else if eq .chezmoi.os "linux" }}
+{{- range $b.taps_linux }}
+{{- if hasKey . "url" }}
+tap "{{ .name }}", "{{ .url }}"
+{{- else }}
+tap "{{ .name }}"
+{{- end }}
+{{- end }}
 {{- end }}
 
 {{- /* ============ ALWAYS-ON FORMULAE (all hosts) ============ */ -}}

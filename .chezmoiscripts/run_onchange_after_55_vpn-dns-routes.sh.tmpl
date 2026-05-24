@@ -90,20 +90,60 @@ nameserver $ns
             # interface is up. If none, queue the rules at /etc/systemd
             # /resolved.conf.d/ for next bring-up.
             iface="$(ip -o link show | awk -F': ' '/(pritunl|tun|wg)/{print $2; exit}')"
+            if [ -z "$iface" ] && grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
+                # WSL cannot see Windows-hosted VPN tunnel interfaces. If the
+                # VPN DNS server is reachable through the WSL default route,
+                # attach the route-only domains to the default WSL interface
+                # (usually eth0) so systemd-resolved sends only matching
+                # internal names to the VPN resolver.
+                first_ns=""
+                for r2 in "${routes[@]}"; do
+                    IFS='|' read -r probe_domain probe_ns _vpn <<< "$r2"
+                    if [ -n "$probe_domain" ] && [ "$probe_ns" != "127.0.0.1" ] && [ "$probe_ns" != "::1" ]; then
+                        first_ns="$probe_ns"
+                        break
+                    fi
+                done
+                default_iface="$(ip route show default 2>/dev/null | awk '{print $5; exit}')"
+                if [ -n "$default_iface" ] && [ -n "$first_ns" ] && timeout 2 bash -c ": > /dev/tcp/$first_ns/53" >/dev/null 2>&1; then
+                    iface="$default_iface"
+                    echo "[vpn-dns] WSL: using default interface $iface for reachable VPN DNS $first_ns"
+                fi
+            fi
             if [ -z "$iface" ]; then
                 echo "[vpn-dns] no VPN interface up; skipping (will reapply when one comes online)"
                 exit 0
             fi
             echo "[vpn-dns] using interface $iface for split-DNS routes"
 
+            declare -a dns_servers=()
+            declare -a route_domains=()
             for r in "${routes[@]}"; do
                 IFS='|' read -r domain ns vpn <<< "$r"
-                # ~domain syntax = "use this resolver only for queries
-                # matching this domain" (split-DNS, not search domain).
-                sudo resolvectl dns "$iface" "$ns"
-                sudo resolvectl domain "$iface" "~$domain"
-                printf '  set     %-25s -> %s on %s  [%s]\n' "$domain" "$ns" "$iface" "$vpn"
+                if [ -z "$domain" ]; then
+                    # Empty domain is Windows-only NRPT catch-all. Linux uses
+                    # encrypted_dns for catch-all DNS, and systemd-resolved
+                    # route-only domains below for VPN internals.
+                    continue
+                fi
+                if [[ ! " ${dns_servers[*]} " =~ " $ns " ]]; then
+                    dns_servers+=("$ns")
+                fi
+                route_domains+=("~$domain")
+                printf '  queue   %-25s -> %s on %s  [%s]\n' "$domain" "$ns" "$iface" "$vpn"
             done
+
+            if [ ${#route_domains[@]} -gt 0 ]; then
+                # resolvectl domain replaces the whole per-link domain list,
+                # so pass every route-only domain in a single call. Calling it
+                # once per domain leaves only the final domain active.
+                sudo resolvectl dns "$iface" "${dns_servers[@]}"
+                # VPN/internal resolvers are plain DNS. The global encrypted_dns
+                # drop-in owns catch-all DoT; do not inherit DoT for this link.
+                sudo resolvectl dnsovertls "$iface" no 2>/dev/null || true
+                sudo resolvectl domain "$iface" "${route_domains[@]}"
+                printf '  set     %d route-only domain(s) on %s via %s\n'                     "${#route_domains[@]}" "$iface" "${dns_servers[*]}"
+            fi
         elif command -v nmcli >/dev/null 2>&1; then
             # NetworkManager handles VPN profiles directly. Hint to user
             # since the right place is the connection profile, not a

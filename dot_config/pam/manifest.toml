@@ -1,0 +1,72 @@
+[servers]
+  [servers.1password]
+    transport = "stdio"
+    command = "npx"
+    args = ["-y", "mcp-1password@beta", "--auth-mode=desktop", "--account=my"]
+    idle_timeout_s = 300
+    quota_per_minute = 0
+  [servers.chrome-devtools]
+    transport = "stdio"
+    command = "npx"
+    args = ["-y", "chrome-devtools-mcp@latest", "--acceptInsecureCerts"]
+    idle_timeout_s = 300
+    quota_per_minute = 0
+  [servers.clickup]
+    transport = "stdio"
+    command = "npx"
+    args = ["-y", "clickup-mcp-server@latest"]
+    idle_timeout_s = 300
+    quota_per_minute = 0
+    [servers.clickup.env]
+      CLICKUP_API_TOKEN = "op://DH/fw4qmg4qxp4pjzatmwpcvkodym/credential"
+      CLICKUP_TEAM_ID = "9014072269"
+  [servers.context7]
+    transport = "stdio"
+    command = "npx"
+    args = ["-y", "@upstash/context7-mcp@latest"]
+    idle_timeout_s = 300
+    quota_per_minute = 0
+  [servers.mcp-deepwiki]
+    transport = "stdio"
+    command = "npx"
+    args = ["-y", "mcp-deepwiki"]
+    idle_timeout_s = 300
+    quota_per_minute = 0
+  [servers.memory]
+    transport = "stdio"
+    command = "npx"
+    args = ["-y", "@modelcontextprotocol/server-memory"]
+    idle_timeout_s = 300
+    quota_per_minute = 0
+  [servers.neon]
+    transport = "http"
+    url = "https://mcp.neon.tech/mcp"
+    idle_timeout_s = 300
+    quota_per_minute = 0
+    [servers.neon.headers]
+      Authorization = "Bearer ${op://Personal/3yw46z74dhivcxqbzzmomcw5v4/credential}"
+  [servers.qdrant]
+    transport = "stdio"
+    command = "uvx"
+    args = ["--managed-python", "--python", "3.12", "mcp-server-qdrant"]
+    idle_timeout_s = 300
+    quota_per_minute = 0
+    [servers.qdrant.env]
+      COLLECTION_NAME = "memories"
+      EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+      QDRANT_API_KEY = "op://Homelab/qz56qks54oy6p6l4rytgbjgjn4/credential"
+      QDRANT_URL = "http://raspi.tailf7fd34.ts.net:6333"
+  [servers.tavily]
+    transport = "http"
+    url = "https://mcp.tavily.com/mcp/"
+    idle_timeout_s = 300
+    quota_per_minute = 0
+    [servers.tavily.headers]
+      Authorization = "Bearer ${op://Personal/63ydj7e44lzuwzjr4fnjrvmqvu/credential}"
+  [servers.vercel]
+    transport = "http"
+    url = "https://mcp.vercel.com"
+    idle_timeout_s = 300
+    quota_per_minute = 0
+    [servers.vercel.headers]
+      Authorization = "Bearer ${op://Personal/Vercel/credential}"
