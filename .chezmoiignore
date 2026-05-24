@@ -137,11 +137,12 @@ chezmoi.local.toml.example
 
 # Claude Code static settings file. Claude rewrites it at runtime (theme
 # picks, plugin toggles, key reordering), so tracking the whole file as a
-# template causes perpetual drift. A fixed set of top-level keys
-# (permissions, model, enabledPlugins, etc.) is reconciled by
-# .chezmoiscripts/run_onchange_after_61_claude_settings_windows.ps1.tmpl;
-# every other key (theme, runtime additions) is preserved.
-.claude/settings.json
+# plain template causes perpetual drift. Managed via a chezmoi modify-
+# template at dot_claude/modify_settings.json: a fixed set of top-level
+# keys (permissions, model, enabledPlugins, env, defaultShell, etc.) is
+# rendered from the template and overlaid onto the live file on each
+# apply; every other key (theme, runtime additions) is preserved verbatim.
+# Only the timestamped backup files remain ignored.
 .claude/settings.json.bak-*
 
 # Bootstrap scripts
