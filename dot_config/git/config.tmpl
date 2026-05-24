@@ -52,21 +52,51 @@
 # ============================================================================
 # Aliases
 # ============================================================================
-# `git land <branch>` is the canonical "merge a feature branch into main"
-# flow when the repo is mirrored across multiple hosts (e.g. GitLab + GitHub).
+# `git pushall [<ref>]` — push the current branch (or the given ref) to every
+# mirror remote serially, retrying transient SSH-agent failures.
 #
-# Background: when a repo has dual push URLs (or you open MR+PR on each host)
-# and you click "Merge" in both web UIs, each side creates its own squash
-# commit with a different SHA. Local main then diverges from one of them and
-# subsequent pushes are rejected with `(fetch first)` until you force-push.
+# Background: on Windows the 1Password SSH agent runs as a named-pipe service
+# (\\.\pipe\openssh-ssh-agent). Issuing two signing requests in quick
+# succession through that pipe occasionally returns "communication with agent
+# failed" on the second one — most often when an upstream multi-pushurl on
+# `origin` fans out to two remotes in the same `git push` invocation. To make
+# multi-host pushes durable we (1) split `origin` so it points only at GitLab,
+# (2) keep a separate `github` remote, and (3) push to both via this alias so
+# each push is its own SSH session and individually retryable.
 #
-# `git land` keeps a single canonical SHA: merge locally, push once, both
-# remotes get the same commit. Never click Merge in the web UI; use this.
+# Environment knobs:
+#   GIT_PUSHALL_REMOTES   space-separated list (default: "origin github")
+#   GIT_PUSHALL_MAX       max attempts per remote (default: 4)
+#   GIT_PUSHALL_SLEEP     base sleep (s) for linear backoff (default: 2)
+#
+# `git land <branch>` — canonical "merge a feature branch into main" flow for
+# the mirrored repo: merge locally, then `pushall` so both remotes converge on
+# the same SHA. Never click "Merge" in the web UI; each host creates its own
+# squash commit with a different SHA and `main` diverges.
 #
 #   git land feature/foo            # default --no-ff merge
 #   GIT_LAND_FF=1 git land foo      # force --ff-only (rebased branches)
 #   GIT_LAND_KEEP=1 git land foo    # don't delete the local branch after
 [alias]
+	pushall = "!f() { \
+		set -e; \
+		ref=\"${1:-HEAD}\"; shift 2>/dev/null || true; \
+		remotes=\"${GIT_PUSHALL_REMOTES:-origin github}\"; \
+		max=\"${GIT_PUSHALL_MAX:-4}\"; \
+		base=\"${GIT_PUSHALL_SLEEP:-2}\"; \
+		for r in $remotes; do \
+			n=1; \
+			while :; do \
+				if git push \"$r\" \"$ref\" \"$@\"; then break; fi; \
+				if [ \"$n\" -ge \"$max\" ]; then \
+					echo \"[pushall] $r: failed after $n attempts\" >&2; exit 1; \
+				fi; \
+				sleep $((n*base)); \
+				echo \"[pushall] $r: retry $((n+1))/$max...\" >&2; \
+				n=$((n+1)); \
+			done; \
+		done; \
+	}; f"
 	land = "!f() { \
 		set -e; \
 		branch=\"$1\"; \
@@ -79,7 +109,7 @@
 		else \
 			git merge --no-ff --no-edit \"$branch\"; \
 		fi; \
-		git push origin main; \
+		git pushall main; \
 		if [ -z \"$GIT_LAND_KEEP\" ]; then git branch -d \"$branch\"; fi; \
 	}; f"
 

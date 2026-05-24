@@ -1,49 +1,46 @@
 {{- if eq .chezmoi.os "windows" -}}
 #!/usr/bin/env pwsh
 #
-# Configure the chezmoi-source git remote with the documented dual-mirror
-# layout (canonical fetch=GitLab, dual pushurl=GitLab+GitHub, separate
-# `github` remote for recovery). See the matching Unix script and
-# CONTRIBUTING.md "Merging (mirrored remotes)" for rationale.
+# Configure the chezmoi-source git remotes with the documented mirror layout:
 #
-# Idempotent — exits silently when remote already matches.
+#   origin   fetch/push = git@gitlab.com:Randallsm83/chezmoi.git  (canonical)
+#   github   fetch/push = git@github.com:Randallsm83/chezmoi.git  (mirror)
+#
+# Multi-host pushes go through the `git pushall` alias (see
+# dot_config/git/config.tmpl), which pushes origin then github serially with
+# bounded retry. The previous dual-pushurl-on-origin layout fanned out two SSH
+# signing requests over the Windows 1Password named-pipe agent in the same
+# `git push` invocation; the second sign occasionally returned
+# "communication with agent failed". Splitting the pushes makes each one
+# independent and individually retryable.
+#
+# Idempotent — exits silently when remotes already match. Strips any stale
+# `remote.origin.pushurl` left over from the old dual-pushurl layout.
 
 $ErrorActionPreference = 'Stop'
 
-$RepoDir        = {{ .chezmoi.sourceDir | quote }}
-$WantFetch      = 'git@gitlab.com:Randallsm83/chezmoi.git'
-$WantPushGitlab = 'git@gitlab.com:Randallsm83/chezmoi.git'
-$WantPushGithub = 'git@github.com:Randallsm83/chezmoi.git'
-$WantGithubUrl  = 'git@github.com:Randallsm83/chezmoi.git'
+$RepoDir       = {{ .chezmoi.sourceDir | quote }}
+$WantOriginUrl = 'git@gitlab.com:Randallsm83/chezmoi.git'
+$WantGithubUrl = 'git@github.com:Randallsm83/chezmoi.git'
 
 if (-not (Test-Path (Join-Path $RepoDir '.git'))) { exit 0 }
 
 Push-Location $RepoDir
 try {
-    function Get-OriginPushUrls {
-        $raw = & git config --get-all remote.origin.pushurl 2>$null
-        if ([string]::IsNullOrEmpty($raw)) { return @() }
-        @($raw -split "`r?`n") | Where-Object { $_ -ne '' } | Sort-Object -Unique
-    }
+    $haveOrigin     = (& git config --get remote.origin.url 2>$null)
+    $haveOriginPush = (& git config --get-all remote.origin.pushurl 2>$null)
+    $haveGithub     = (& git config --get remote.github.url 2>$null)
 
-    $haveFetch  = (& git config --get remote.origin.url 2>$null)
-    $havePushes = Get-OriginPushUrls
-    $haveGithub = (& git config --get remote.github.url 2>$null)
-    $wantPushes = @($WantPushGitlab, $WantPushGithub) | Sort-Object -Unique
-
-    if ($haveFetch -eq $WantFetch -and `
-        -not (Compare-Object $havePushes $wantPushes) -and `
+    if ($haveOrigin -eq $WantOriginUrl -and `
+        [string]::IsNullOrEmpty($haveOriginPush) -and `
         $haveGithub -eq $WantGithubUrl) {
         exit 0
     }
 
-    Write-Host "[chezmoi-repo-remotes] Configuring origin GitLab+GitHub mirror in $RepoDir"
+    Write-Host "[chezmoi-repo-remotes] Configuring origin (GitLab) + github (GitHub) remotes in $RepoDir"
 
-    & git remote set-url origin $WantFetch | Out-Null
-
+    & git remote set-url origin $WantOriginUrl | Out-Null
     & git config --unset-all remote.origin.pushurl 2>$null
-    & git remote set-url --add --push origin $WantPushGitlab | Out-Null
-    & git remote set-url --add --push origin $WantPushGithub | Out-Null
 
     $existingGithub = & git remote get-url github 2>$null
     if (-not [string]::IsNullOrEmpty($existingGithub)) {
@@ -51,8 +48,9 @@ try {
     } else {
         & git remote add github $WantGithubUrl | Out-Null
     }
+    & git config --unset-all remote.github.pushurl 2>$null
 
-    Write-Host "[chezmoi-repo-remotes] Done. Verify with: git -C `"$RepoDir`" remote -v"
+    Write-Host "[chezmoi-repo-remotes] Done. Push both with: git pushall (see CONTRIBUTING.md)"
 }
 finally {
     Pop-Location
