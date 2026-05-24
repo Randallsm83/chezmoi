@@ -70,7 +70,20 @@ if ($env:__UUTILS_COREUTILS) {
 
 # Global guard so the body file is dot-sourced at most once per session, even
 # if two stubs are called in quick succession or recursively.
+#
+# Reset the flag when the body cache was just rebuilt (or the previously loaded
+# cache no longer exists). Without this, a profile reload after editing the
+# body file leaves $global:__99_functions_loaded=true from the OLD body, the
+# newly-registered stubs skip dot-sourcing, and they call themselves
+# recursively — producing a "call depth overflow" the next time the user
+# invokes a function that was added in the new body.
 if (-not (Get-Variable '__99_functions_loaded' -Scope Global -ErrorAction SilentlyContinue)) {
+    $global:__99_functions_loaded = $false
+} elseif ($funcsRebuild) {
+    $global:__99_functions_loaded = $false
+} elseif ($global:__99_functions_body_cache -and
+          $global:__99_functions_body_cache -ne $funcsCacheFile) {
+    # Cache path changed (e.g. XDG_CACHE_HOME moved); force reload.
     $global:__99_functions_loaded = $false
 }
 $global:__99_functions_body_cache = $funcsCacheFile

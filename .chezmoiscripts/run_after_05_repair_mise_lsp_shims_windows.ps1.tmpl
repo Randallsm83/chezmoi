@@ -1,0 +1,29 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Repair recursive mise npm-global LSP shims after every chezmoi apply.
+#
+# mise's Windows .exe shims for npm-globals call `mise x -- <toolname>`, which
+# on Windows re-resolves through PATH and finds the shim again → infinite
+# recursion (observed: 17k+ processes from a single vscode-json-language-server
+# invocation). The shared lib swaps the broken .exe shims for tiny .cmd
+# wrappers that call the real npm-global directly.
+#
+# Order:
+#   _after_05_ runs after the _00_ scoop-shim repair and before the _50_
+#   dh-mise-toml writer, so it sees a settled shim layout but executes before
+#   anything that might invoke an LSP.
+#
+# Re-running mise reshim (or installing new npm globals) regenerates the
+# broken .exe shims, so this script must run after every reshim. Use the
+# `mise-reshim` PowerShell function to do both in one step.
+
+$ErrorActionPreference = 'Continue'
+
+$Lib = Join-Path $HOME 'Documents\PowerShell\Scripts\lib\Repair-MiseLspShims.ps1'
+if (-not (Test-Path -LiteralPath $Lib)) {
+    Write-Warning "[mise-lsp] Shared lib not found: $Lib (skipping)"
+    exit 0
+}
+
+& pwsh -NoProfile -File $Lib -Repair
+{{- end -}}

@@ -693,6 +693,27 @@ if (Test-CommandExists 'mise') {
         mise prune --yes
         Write-Host "Mise update complete!" -ForegroundColor Green
     }
+
+    <#
+    .SYNOPSIS
+        Run mise reshim, then repair the recursive npm-global LSP shims it
+        regenerates on Windows.
+    .DESCRIPTION
+        `mise reshim` (and `mise install`, `mise use`, `npm install -g`)
+        regenerates broken `.exe` shims for npm-globals that infinitely
+        recurse via `mise x`. Always pair the reshim with the repair lib.
+        Calls Repair-MiseLspShims which is dot-sourced from 50-mise.ps1.
+    #>
+    function mise-reshim {
+        Write-Host "[mise-reshim] mise reshim..." -ForegroundColor Cyan
+        mise reshim @args
+        if (Get-Command Repair-MiseLspShims -ErrorAction SilentlyContinue) {
+            Write-Host "[mise-reshim] Repairing npm-global shims..." -ForegroundColor Cyan
+            Repair-MiseLspShims
+        } else {
+            Write-Warning "[mise-reshim] Repair-MiseLspShims not loaded; reshim may have left recursive .exe shims behind."
+        }
+    }
 }
 
 function pwshup {

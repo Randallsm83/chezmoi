@@ -265,4 +265,16 @@ if ($env:TERM_PROGRAM -ne 'WarpTerminal' -and ($miseCommand = Get-Command mise -
 # (mise activate prepends tool dirs, pushing user PATH entries behind system ones)
 Add-ToPath "$HOME\.local\bin"
 
+# =================================================================================================
+# Mise LSP shim repair (Windows)
+# =================================================================================================
+# Dot-source the repair lib so `Repair-MiseLspShims` is callable from the shell.
+# Used together with the `mise-reshim` function (see 99-functions-body.ps1) to
+# undo the recursive shim regeneration that `mise reshim` produces for npm
+# globals. See lib/Repair-MiseLspShims.ps1 for full background.
+$miseLspLib = Join-Path $HOME 'Documents\PowerShell\Scripts\lib\Repair-MiseLspShims.ps1'
+if (Test-Path -LiteralPath $miseLspLib) {
+    . $miseLspLib
+}
+
 # vim: ts=2 sts=2 sw=2 et
