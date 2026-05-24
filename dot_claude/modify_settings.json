@@ -1,0 +1,111 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* chezmoi:template:line-endings=lf */ -}}
+{{- /*
+  ~/.claude/settings.json is partially chezmoi-managed via this modify-
+  template (no .tmpl extension; the directive comment above triggers
+  template processing). Claude Code rewrites the file at runtime (theme
+  picks, plugin toggles, key reordering), so a plain full-file template
+  caused perpetual drift. Instead:
+
+    - Managed keys (rendered below) are authoritative on every apply.
+      They overwrite whatever is in the live file.
+    - Every other key in the live file — most notably `theme` and any
+      future runtime additions Claude makes — is preserved verbatim.
+    - Output is alphabetical at every level (`toPrettyJson` sorts map
+      keys). Claude preserves the read-in key order, so after the first
+      apply the live file converges on this layout and subsequent
+      applies become byte-stable no-ops.
+
+  To stop managing a key: remove it from the JSON block below.
+  To start managing a new key: add it to the JSON block below.
+
+  Replaces the previous run_onchange_after_61_claude_settings script,
+  which did the same thing in PowerShell. The modify-template is the
+  chezmoi-native equivalent.
+*/ -}}
+{{- $current := dict -}}
+{{- if ne .chezmoi.stdin "" -}}
+{{-   $current = fromJson .chezmoi.stdin -}}
+{{- end -}}
+
+{{- /* Managed keys: rendered as a JSON literal, parsed, then OS-specific
+       keys overlaid before merging onto $current. */ -}}
+{{- $managed := `{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "LS",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git stash *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(npm run *)",
+      "Bash(yarn *)",
+      "Bash(pnpm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(pwd)",
+      "Bash(echo *)",
+      "WebSearch",
+      "Bash(chezmoi apply *)"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "model": "opus[1m]",
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "explanatory-output-style@claude-plugins-official": true,
+    "vercel@claude-plugins-official": false,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "lua-lsp@claude-plugins-official": true,
+    "neon@claude-plugins-official": false,
+    "warp@claude-code-warp": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    }
+  },
+  "fastMode": true
+}` | fromJson -}}
+
+{{- /* Windows-only managed keys (env vars + default shell). On other
+       platforms these keys are absent from the managed set, so whatever
+       Claude or the user has in the live file is preserved. */ -}}
+{{- if eq .chezmoi.os "windows" -}}
+{{-   $_ := set $managed "env" (dict "CLAUDE_CODE_USE_POWERSHELL_TOOL" "1") -}}
+{{-   $_ = set $managed "defaultShell" "powershell" -}}
+{{- end -}}
+
+{{- /* Overlay every managed key onto the live file. Any live-file keys
+       not in $managed (e.g. `theme`) are preserved verbatim. */ -}}
+{{- range $k, $v := $managed -}}
+{{-   $_ := set $current $k $v -}}
+{{- end -}}
+
+{{ $current | toPrettyJson }}
