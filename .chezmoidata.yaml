@@ -461,9 +461,9 @@ package_mapping:
       winget: []
       mise: []
     linux:
-      apt: []
-      dnf: []
-      pacman: []
+      apt: [openssh-client]
+      dnf: [openssh-clients]
+      pacman: [openssh]
       brew: []
       mise: []
     darwin:
@@ -957,12 +957,12 @@ package_mapping:
     linux:
       apt: []
       dnf: []
-      # Most rust alternatives come from mise (github:* backends, see
-      # ~/.config/mise/config.toml). brew covers the ones mise doesn't have.
+      # Linux/WSL policy: prefer mise for Rust CLI alternatives. Brew is
+      # reserved for true fallback cases where mise has no viable backend.
       pacman: []
       paru: []
-      brew: [eza, tealdeer, xh, ouch]
-      mise: []
+      brew: []
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, cargo:ouch, github:ducaale/xh]
     darwin:
       brew: [tealdeer, coreutils, navi, dust, ouch]
       # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
@@ -1047,7 +1047,7 @@ package_mapping:
       dnf: []
       pacman: []          # ollama removed; was unused on this host
       paru: []
-      brew: []
+      brew: [pam]
       mise: [claude, opencode]
     darwin:
       brew: []
@@ -1210,6 +1210,8 @@ brew_bundle:
   taps_darwin:
     - { name: "buo/cask-upgrade" }
     - { name: "dreamhost/homebrew", url: "git@git.dreamhost.com:dreamhost/homebrew-repo.git" }
+  taps_linux:
+    - { name: "dreamhost-public/pam", url: "git@git.dreamhost.com:dreamhost-public/homebrew-pam.git" }
 
   # --------------------------------------------------------------------------
   # Always-installed formulae (no feature flag, all hosts)
@@ -1557,6 +1559,7 @@ vpn_dns_routes:
     # catch-all (`.`) above is the shortest possible match, so any of these
     # work-domain rules win over it for matching queries.
     domains:
+      - git.dreamhost.com
       - dreamhostnetworks.com
       - dhcompute.net
       - dh-int.com

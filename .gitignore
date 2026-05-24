@@ -26,3 +26,6 @@ tmp/
 # Backup files
 *.bak
 *.backup
+
+# Agent/session runtime state
+.omo/
