@@ -125,7 +125,7 @@ Shell completions live in `dot_cache/zsh/completions/_<command>`.
 - **Commits**: conventional commits — `type(scope): subject` (`feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`).
 - **Changelog**: add user-visible changes to `CHANGELOG.md` under `Unreleased`.
 - **Adding files**: prefer `chezmoi add --template <path>` for anything that needs platform conditionals; otherwise plain `chezmoi add <path>`.
-- **Merging mirrored remotes**: this repo's `origin` pushes to GitLab and GitHub. **Never click "Merge" in the web UI** — each host creates its own squash commit with a different SHA and the two `main`s diverge. Use `git land <branch>` (alias defined in `dot_config/git/config.tmpl`): merges locally, pushes once, both remotes get the same SHA. See `CONTRIBUTING.md` § "Merging (mirrored remotes)".
+- **Merging mirrored remotes**: this repo is mirrored to GitLab (`origin`) and GitHub (`github`) as two single-URL remotes; multi-host pushes go through `git pushall` (serial push + bounded retry, defined in `dot_config/git/config.tmpl`). **Never click "Merge" in the web UI** — each host creates its own squash commit with a different SHA and the two `main`s diverge. Use `git land <branch>` (merge locally, then `pushall` so both remotes converge on the same SHA). See `CONTRIBUTING.md` § "Merging (mirrored remotes)".
 
 ## Pointers to deeper docs
 - `ARCHITECTURE.md` — design decisions, directory structure, security model

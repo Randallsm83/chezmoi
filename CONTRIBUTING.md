@@ -200,16 +200,18 @@ Brief description of what this PR does
 
 ### Merging (mirrored remotes)
 
-This repo is mirrored across **GitLab** (canonical `origin` fetch) and
-**GitHub** (additional push URL on `origin`, plus a `github` remote).
+This repo is mirrored across **GitLab** (canonical `origin`) and **GitHub**
+(separate `github` remote). Both remotes are single-URL: `origin` points at
+GitLab only, `github` points at GitHub only. There is **no** dual-pushurl
+fan-out on `origin` — see "Why two single-URL remotes" below.
 
 **Do not click "Merge" in either web UI.** Each host's Merge button creates
 its own squash/merge commit with a different SHA. The two `main` branches
 then diverge and subsequent pushes get rejected (`fetch first`) until
 someone force-pushes. The web UI is for review only.
 
-Use the `land` alias instead — it merges locally and pushes once, so both
-remotes get the same canonical commit:
+Use the `land` alias instead — it merges locally and pushes to both
+remotes serially, so they converge on the same canonical commit:
 
 ```bash
 git land feature/your-branch
@@ -219,8 +221,12 @@ The alias:
 1. Checks out `main` and `git pull --ff-only`
 2. Merges your branch with `--no-ff --no-edit` (or `--ff-only` if
    `GIT_LAND_FF=1` is set, useful for already-rebased branches)
-3. `git push origin main` — single push, both remotes get the same SHA
+3. `git pushall main` — pushes to `origin` then `github`, retrying transient
+   SSH-agent failures (see `GIT_PUSHALL_*` knobs in `dot_config/git/config.tmpl`)
 4. Deletes the local feature branch (skip with `GIT_LAND_KEEP=1`)
+
+To push a non-merge change to both remotes outside the land flow, use
+`git pushall [<ref>]` directly (default ref is `HEAD`).
 
 Close the MR/PR on each side after the push (`glab mr close <id>` /
 `gh pr close <id>`); the commit is already there.
@@ -234,6 +240,22 @@ git push github main --force-with-lease
 ```
 Force-with-lease is safe when the trees match — confirm first with
 `git diff origin/main github/main`.
+
+#### Why two single-URL remotes (and not a dual-pushurl on `origin`)
+
+An earlier layout put both URLs as `remote.origin.pushurl` so a single
+`git push origin` would fan out to both hosts. That works in theory but is
+fragile on Windows: the 1Password SSH agent runs as a named-pipe service
+(`\\.\pipe\openssh-ssh-agent`), and the two back-to-back signing requests
+in one `git push` invocation occasionally cause the second to fail with
+`sign_and_send_pubkey: signing failed ... communication with agent failed`.
+
+The `git pushall` alias splits the push into two independent `git push`
+invocations (one per remote), with bounded linear-backoff retry, so a
+transient agent hiccup affects only the one push that hit it and is
+recovered automatically. The `.chezmoiscripts/run_onchange_after_05_chezmoi_repo_remotes*`
+scripts enforce the single-URL layout on every `chezmoi apply` and strip
+stale dual-pushurl entries.
 
 ---
 
