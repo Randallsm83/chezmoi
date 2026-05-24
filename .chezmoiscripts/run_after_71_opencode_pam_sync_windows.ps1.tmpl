@@ -6,13 +6,18 @@
     every `chezmoi apply`.
 
 .DESCRIPTION
-    opencode.json is fully chezmoi-managed (template-rendered), and its `mcp`
-    block is intentionally empty there — MCP servers are owned by pam
-    (~/.config/pam/manifest.toml). Whenever chezmoi rewrites the file (even
-    when the template content hasn't changed), the live `mcp.pam` pointer
-    gets wiped, so this script runs `pam sync --client opencode` on every
-    apply to re-add the single `mcp.pam` pointer entry (with its per-client
-    auth token).
+    opencode.json is managed by a chezmoi modify-template at
+    `dot_config/opencode/modify_opencode.json` that preserves the live
+    `mcp` key verbatim from the existing file on every apply. The
+    per-machine pam auth token therefore never enters chezmoi source.
+
+    This script runs `pam sync --client opencode` after each apply so that:
+    1. On a fresh install (live file just created with `mcp: {}`), pam
+       injects the `mcp.pam` pointer with the per-client auth token.
+    2. If pam's manifest.toml changes (e.g. token rotation, new MCP server
+       added), the live `mcp.pam` block is updated to match.
+    3. The modify-template then preserves whatever pam wrote on subsequent
+       applies — no drift loop.
 
     `pam sync` is atomic, format-aware, idempotent, and leaves every other
     key in the target file untouched, so running it on every apply is safe
