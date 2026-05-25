@@ -729,6 +729,84 @@ function Initialize-Chezmoi {
 # Environment Configuration
 # ============================================================================
 
+function Get-BootstrapStatusPath {
+    <#
+    .SYNOPSIS
+        Return the canonical XDG path for the bootstrap status JSON artifact.
+    #>
+    [CmdletBinding()]
+    param()
+    $stateRoot = if ($env:XDG_STATE_HOME) { $env:XDG_STATE_HOME }
+    else { Join-Path $HOME '.local\state' }
+    Join-Path $stateRoot 'dotfiles\bootstrap-status.json'
+}
+
+function Write-BootstrapStatus {
+    <#
+    .SYNOPSIS
+        Emit a JSON status artifact at $env:XDG_STATE_HOME\dotfiles\bootstrap-status.json
+        capturing the result of this bootstrap run so `scripts\healthcheck.ps1`
+        can surface it under the 'Last Bootstrap' section.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $statusPath = Get-BootstrapStatusPath
+    try {
+        $dir = Split-Path -Parent $statusPath
+        if (-not (Test-Path -LiteralPath $dir)) {
+            New-Item -ItemType Directory -Path $dir -Force -ErrorAction Stop | Out-Null
+        }
+    } catch {
+        Write-Status "Could not create bootstrap status dir ($statusPath): $_" -Type Warning
+        return
+    }
+
+    $chezmoiVersion = $null
+    $sourceDir = $null
+    $hasUncommitted = $false
+    try {
+        if (Test-CommandExists chezmoi) {
+            $chezmoiVersion = (& chezmoi --version 2>$null | Select-Object -First 1)
+            $sourceDir = (& chezmoi source-path 2>$null)
+            if ($sourceDir -and (Test-Path -LiteralPath $sourceDir)) {
+                Push-Location $sourceDir
+                try {
+                    $changes = (& git status --porcelain 2>$null | Where-Object { $_ } | Measure-Object).Count
+                    $hasUncommitted = ($changes -gt 0)
+                } finally {
+                    Pop-Location
+                }
+            }
+        }
+    } catch { }
+
+    $elapsed = (Get-Date) - $Script:Stats.StartTime
+
+    $payload = [ordered]@{
+        timestamp        = (Get-Date).ToUniversalTime().ToString('o')
+        version          = '2.0.0'
+        host             = $env:COMPUTERNAME
+        platform         = 'windows'
+        chezmoi          = [ordered]@{
+            version              = $chezmoiVersion
+            sourceDir            = $sourceDir
+            hasUncommittedChanges = $hasUncommitted
+        }
+        stats            = $Script:Stats
+        durationSeconds  = [math]::Round($elapsed.TotalSeconds, 3)
+    }
+
+    try {
+        $json = $payload | ConvertTo-Json -Depth 6
+        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText($statusPath, $json + "`n", $utf8NoBom)
+        Write-Status "Wrote bootstrap status: $statusPath" -Type Info
+    } catch {
+        Write-Status "Failed to write bootstrap status ($statusPath): $_" -Type Warning
+    }
+}
+
 function Set-EnvironmentVariables {
     <#
     .SYNOPSIS
@@ -866,7 +944,10 @@ function Main {
         Write-Host "  scoop install 1password-cli"
         Write-Host "  Then run: op signin"
     }
-    
+
+    # Emit the JSON status artifact so healthcheck.ps1 can surface this run.
+    Write-BootstrapStatus
+
     Write-Host ""
 }
 

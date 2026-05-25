@@ -48,6 +48,9 @@ REPO="${REPO:-Randallsm83/chezmoi}"
 BRANCH="${BRANCH:-main}"
 CHEZMOI_VERSION="${CHEZMOI_VERSION:-latest}"
 
+# Track wall-clock duration for the bootstrap-status.json artifact.
+BOOTSTRAP_START_EPOCH="$(date +%s)"
+
 # Auto-detect Raspberry Pi if RASPI not explicitly set
 if [ -z "${RASPI:-}" ]; then
     if [ -f /proc/device-tree/model ] && grep -qi "raspberry pi" /proc/device-tree/model 2>/dev/null; then
@@ -610,6 +613,85 @@ install_and_apply_dotfiles() {
 }
 
 # ============================================================================
+# Bootstrap status artifact
+# ============================================================================
+
+bootstrap_status_path() {
+    local state_root="${XDG_STATE_HOME:-$HOME/.local/state}"
+    printf '%s' "$state_root/dotfiles/bootstrap-status.json"
+}
+
+# Emit a JSON status artifact at $XDG_STATE_HOME/dotfiles/bootstrap-status.json
+# so scripts/healthcheck.sh can surface it under the 'Last Bootstrap' section.
+write_bootstrap_status() {
+    local status_path platform host chezmoi_version source_dir has_uncommitted
+    local duration_seconds
+    status_path="$(bootstrap_status_path)"
+    mkdir -p "$(dirname "$status_path")" 2>/dev/null || {
+        log_warning "Could not create bootstrap status dir: $(dirname "$status_path")"
+        return 0
+    }
+
+    case "$(uname -s)" in
+        Darwin*) platform=darwin ;;
+        Linux*)  platform=linux ;;
+        *)       platform="$(uname -s | tr '[:upper:]' '[:lower:]')" ;;
+    esac
+    host="$(hostname 2>/dev/null || echo unknown)"
+
+    chezmoi_version=""
+    source_dir=""
+    has_uncommitted=false
+    if command_exists chezmoi; then
+        chezmoi_version="$(chezmoi --version 2>/dev/null | head -n1)"
+        source_dir="$(chezmoi source-path 2>/dev/null || true)"
+        if [ -n "$source_dir" ] && [ -d "$source_dir" ]; then
+            local changes
+            changes="$(cd "$source_dir" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+            if [ "${changes:-0}" -gt 0 ]; then
+                has_uncommitted=true
+            fi
+        fi
+    fi
+
+    local end_epoch
+    end_epoch="$(date +%s)"
+    duration_seconds=$(( end_epoch - BOOTSTRAP_START_EPOCH ))
+
+    local timestamp
+    timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+    # JSON-quote helper: escape backslashes and double-quotes, replace newlines with \n.
+    json_string() {
+        local s=$1
+        s=${s//\\/\\\\}
+        s=${s//\"/\\\"}
+        s=${s//$'\n'/\\n}
+        printf '"%s"' "$s"
+    }
+
+    {
+        printf '{\n'
+        printf '  "timestamp": %s,\n'  "$(json_string "$timestamp")"
+        printf '  "version": "2.0.0",\n'
+        printf '  "host": %s,\n'       "$(json_string "$host")"
+        printf '  "platform": %s,\n'   "$(json_string "$platform")"
+        printf '  "chezmoi": {\n'
+        printf '    "version": %s,\n'              "$(json_string "$chezmoi_version")"
+        printf '    "sourceDir": %s,\n'            "$(json_string "$source_dir")"
+        printf '    "hasUncommittedChanges": %s\n' "$has_uncommitted"
+        printf '  },\n'
+        printf '  "stats": {\n'
+        printf '    "RASPI": %s\n'                 "${RASPI:-0}"
+        printf '  },\n'
+        printf '  "durationSeconds": %s\n'         "$duration_seconds"
+        printf '}\n'
+    } > "$status_path"
+
+    log_info "Wrote bootstrap status: $status_path"
+}
+
+# ============================================================================
 # Main Execution
 # ============================================================================
 
@@ -696,7 +778,10 @@ main() {
             log_info "Linux: Run 'exec zsh' or restart your terminal"
             ;;
     esac
-    
+
+    # Emit the JSON status artifact so healthcheck.sh can surface this run.
+    write_bootstrap_status
+
     echo ""
 }
 
