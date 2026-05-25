@@ -4,6 +4,151 @@ Utility scripts for managing dotfiles, WSL instances, and development environmen
 
 ---
 
+## Health & Diagnostics
+
+### `healthcheck.sh`
+
+**Purpose:** Validate dotfiles configuration and tool availability on Linux/macOS.
+
+**Checks:** chezmoi version + source state, essential tools (`git`, `curl`, `wget`, `unzip`, `make`), `mise` doctor and outdated, shell/profile presence, git user.* config + SSH key count, mise + chezmoi backup disk usage.
+
+**Usage:**
+```bash
+bash ./scripts/healthcheck.sh
+```
+
+**Output:** Color-coded info/success/warning/error lines. Read-only — never mutates state.
+
+---
+
+### `healthcheck.ps1`
+
+**Purpose:** Windows counterpart to `healthcheck.sh`. Same section layout, expressed in PowerShell 7 idioms.
+
+**Checks (in addition to the Unix set):** scoop / winget / gsudo / op presence, Windows service state for Unbound, 1Password SSH agent named pipe (`\\.\pipe\openssh-ssh-agent`), Developer Mode registry key, Caddy root cert in `LocalMachine\Root`, disk usage of `~/scoop`, `~/.local/share/mise`, `~/.cache`, `%USERPROFILE%\.local\state\chezmoi\backups`, and the chezmoi source dir.
+
+**Usage:**
+```powershell
+pwsh -NoProfile -File .\scripts\healthcheck.ps1
+```
+
+**Status helper shape** matches `bootstrap.ps1:79-108` (`Write-Status -Type Info/Success/Warning/Error`) so output looks identical to bootstrap.
+
+---
+
+### `test.sh`
+
+**Purpose:** Lightweight pass/fail smoke-test suite for the Unix dotfiles install.
+
+**Tests:** chezmoi installation + source files, template syntax for the four canonical `.chezmoitemplates`, essential tools, Git user config, XDG directories, chezmoi state (managed files exist, `chezmoi diff` renders, `chezmoi data` accessible), platform-specific (zsh + `.zshrc` on Linux/macOS), mise integration (config file + `mise doctor` + `mise list`).
+
+**Usage:**
+```bash
+bash ./scripts/test.sh
+```
+
+Exit code is `0` on all-pass, `1` on any failure. Suitable for CI.
+
+---
+
+### `test.ps1`
+
+**Purpose:** Windows counterpart to `test.sh`.
+
+**Tests:** chezmoi installation + source files, essential tools (`scoop`, `git`, `curl`, `mise`, `op`, `gsudo`), XDG locations (env-var set in any scope or default dir exists), pwsh profile file, Git user config, mise config file, Developer Mode enabled, chezmoi state (`managed`, `diff`, `data`).
+
+**Usage:**
+```powershell
+pwsh -NoProfile -File .\scripts\test.ps1
+```
+
+Exit code is `0` on all-pass, `1` on any failure.
+
+---
+
+## Rollback
+
+### `rollback.sh`
+
+**Purpose:** Restore files from a timestamped backup created before `chezmoi apply` (Linux/macOS).
+
+Backups live under `${XDG_STATE_HOME:-$HOME/.local/state}/chezmoi/backups/` with one subdirectory per apply.
+
+**Usage:**
+```bash
+# List available backups (no args)
+bash ./scripts/rollback.sh
+
+# Restore a specific timestamp
+bash ./scripts/rollback.sh 20250120_143022
+
+# Restore most recent
+bash ./scripts/rollback.sh latest
+```
+
+Prompts for confirmation before overwriting current files.
+
+---
+
+### `rollback.ps1`
+
+**Purpose:** Windows counterpart to `rollback.sh`.
+
+Backups live under `$env:LOCALAPPDATA\chezmoi\backups\`. *(See follow-up issue: should be moved to `$env:USERPROFILE\.local\state\chezmoi\backups\` for XDG parity.)*
+
+**Usage:**
+```powershell
+# List available backups (no args)
+pwsh .\scripts\rollback.ps1
+
+# Restore a specific timestamp
+pwsh .\scripts\rollback.ps1 -Timestamp 20250120_143022
+
+# Restore most recent
+pwsh .\scripts\rollback.ps1 -Timestamp latest
+```
+
+---
+
+## Source Maintenance
+
+### `add-ascii-headers.ps1`
+
+**Purpose:** Add ANSI Shadow-style ASCII-art banner headers to config files in `dot_config/` (or any directory passed via `-ConfigDir`).
+
+**Parameters:**
+- `-DryRun` — preview changes without writing
+- `-Force`  — replace an existing ASCII header instead of skipping
+- `-ConfigDir <path>` — defaults to `$PSScriptRoot\..\dot_config`
+
+**Usage:**
+```powershell
+pwsh .\scripts\add-ascii-headers.ps1 -DryRun
+pwsh .\scripts\add-ascii-headers.ps1
+```
+
+Has a built-in map of art per known package name (bat, git, nvim, zsh, starship, wezterm, mise, eza, ripgrep, direnv, fzf, vivid, wget, sqlite3, npm, fd, warp, vim, asdf, homebrew, tinted-theming, ...).
+
+---
+
+## Homelab / Pi
+
+### `setup-pihole-dot.sh`
+
+**Purpose:** Install and configure `unbound` on the Pi as a DoT (DNS-over-TLS) terminator. Forwards plaintext DNS to a local Pi-hole at `127.0.0.1:53`. Run on the Pi, not the Mac.
+
+**What it does:** installs `unbound`, mints a TLS cert via `tailscale cert`, drops `/etc/unbound/unbound.conf.d/99-pihole-dot.conf`, validates with `unbound-checkconf`, restarts the unbound service, and smoke-tests via `kdig`/`openssl`.
+
+**Usage (from the Mac):**
+```bash
+scp ./scripts/setup-pihole-dot.sh raspi:/tmp/
+ssh raspi 'sudo bash /tmp/setup-pihole-dot.sh'
+```
+
+Idempotent. Tailscale certs expire after 90 days — schedule a weekly renew via cron/systemd.
+
+---
+
 ## WSL Management
 
 ### `reset-wsl-arch.ps1`
