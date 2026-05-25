@@ -5,7 +5,7 @@
 # This runs BEFORE other package installations
 # Checksum: {{ include ".chezmoidata.yaml" | sha256sum }}
 
-set -eo pipefail
+set -euo pipefail
 
 # Ensure Arch perl scripts are in PATH (for pod2man used by Homebrew)
 # This is normally set by /etc/profile.d/perlbin.sh but we may not be in a login shell
@@ -93,12 +93,12 @@ setup_locale() {
 
 is_zsh_default_shell() {
     local current_shell
-    if [ -n "$SUDO_USER" ]; then
+    if [ -n "${SUDO_USER:-}" ]; then
         current_shell=$(getent passwd "$SUDO_USER" | cut -d: -f7)
     else
-        current_shell=$(getent passwd "$USER" | cut -d: -f7)
+        current_shell=$(getent passwd "${USER:-$(id -un)}" | cut -d: -f7)
     fi
-    [ "$current_shell" = "$(command -v zsh)" ] || [ "$current_shell" = "/bin/zsh" ] || [ "$current_shell" = "/usr/bin/zsh" ]
+    [ "$current_shell" = "$(command -v zsh 2>/dev/null || echo)" ] || [ "$current_shell" = "/bin/zsh" ] || [ "$current_shell" = "/usr/bin/zsh" ]
 }
 
 set_zsh_as_default_shell() {
@@ -117,7 +117,7 @@ set_zsh_as_default_shell() {
     
     log_info "Setting zsh as default shell..."
     
-    if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+    if [ "$EUID" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
         # Running as root, change shell for the actual user
         if chsh -s "$zsh_path" "$SUDO_USER" 2>/dev/null; then
             log_success "Default shell changed to zsh for user $SUDO_USER"
@@ -135,7 +135,7 @@ set_zsh_as_default_shell() {
     # Fall back to sudo (for WSL and other environments where chsh needs root)
     if command_exists sudo; then
         log_warning "Trying with sudo..."
-        if sudo chsh -s "$zsh_path" "$USER" 2>/dev/null; then
+        if sudo chsh -s "$zsh_path" "${USER:-$(id -un)}" 2>/dev/null; then
             log_success "Default shell changed to zsh"
             return 0
         fi
