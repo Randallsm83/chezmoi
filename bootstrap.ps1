@@ -66,6 +66,24 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 # ============================================================================
+# Structured exit codes
+# ============================================================================
+# Canonical map used in place of bare `exit 1` so CI / wrappers can branch on
+# the failure mode. Mirrored in setup.sh as readonly shell variables and
+# documented in INSTALL-GUIDE.md § 'Exit codes'.
+$ExitCode = @{
+    Success      = 0
+    Preflight    = 10
+    ScoopInstall = 20
+    WingetImport = 21
+    ScoopImport  = 22
+    ChezmoiInit  = 30
+    ChezmoiApply = 40
+    NoSshKey     = 50
+    Unknown      = 99
+}
+
+# ============================================================================
 # Configuration
 # ============================================================================
 
@@ -761,7 +779,7 @@ function Main {
     if (-not (Invoke-PreflightChecks)) {
         Write-Status "Pre-flight checks failed - please fix the issues above" -Type Error
         Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
-        exit 1
+        exit $ExitCode.Preflight
     }
     
     # Step 1: Configure XDG environment (do this early)
@@ -791,7 +809,7 @@ function Main {
     if (-not (Install-Chezmoi)) {
         Write-Status "Bootstrap failed: Could not install chezmoi" -Type Error
         Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
-        exit 1
+        exit $ExitCode.ChezmoiInit
     }
     
     # Step 4: Initialize chezmoi and apply dotfiles
@@ -804,7 +822,7 @@ function Main {
     if (-not (Initialize-Chezmoi -Repo $Repository -Branch $Branch -UseSSH:$UseSSH)) {
         Write-Status "Bootstrap failed: Could not apply dotfiles" -Type Error
         Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
-        exit 1
+        exit $ExitCode.ChezmoiApply
     }
     
     # Step 5: Finalize
