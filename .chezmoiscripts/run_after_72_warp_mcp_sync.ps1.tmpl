@@ -37,24 +37,20 @@ $ErrorActionPreference = 'Stop'
 $mcpPath = Join-Path $HOME '.warp\.mcp.json'
 
 # --- Managed entries (chezmoi owns these names; everything else is preserved) ---
-# Rendered as compact JSON so PowerShell's ConvertFrom-Json handles it cleanly
-# without choking on YAML's quoted-key syntax in mcp.yaml.
+# Rendered from .chezmoidata/mcp.yaml so the same definition flows to every
+# MCP-aware tool. We strip the `type` field (Warp infers transport from the
+# command/url fields and the .warp/.mcp.json schema does not accept it) and
+# resolve the literal `${OP_ACCOUNT}` placeholder against $env:OP_ACCOUNT at
+# runtime so the entry stays per-user.
+{{- $opServer := index .mcp.servers "1password" -}}
+{{- $opEntry := dict "command" $opServer.command "args" $opServer.args "env" $opServer.env -}}
 $opAccount = if ($env:OP_ACCOUNT) { $env:OP_ACCOUNT } else { 'my' }
-$managedJson = @"
+$managedTemplate = @'
 {
-  "1password": {
-    "command": "cmd",
-    "args": [
-      "/c",
-      "npx",
-      "-y",
-      "mcp-1password@beta",
-      "--auth-mode=desktop",
-      "--account=$opAccount"
-    ]
-  }
+  "1password": {{ $opEntry | toJson }}
 }
-"@
+'@
+$managedJson = $managedTemplate.Replace('${OP_ACCOUNT}', $opAccount)
 
 try {
     $managed = $managedJson | ConvertFrom-Json -AsHashtable -Depth 100
