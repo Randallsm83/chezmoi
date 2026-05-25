@@ -164,9 +164,9 @@ theme_mappings:
     onedark: "one-dark"
     gruvbox-material: "gruvbox-dark"
     tokyonight: "tokyonight-night"
-    tokyonight-storm: "tokyonight-storm"
+    tokyonight-storm: "tokyonight-night"  # eza ships tokyonight-night but not tokyonight-storm
     dracula: "dracula"
-    kanagawa: "kanagawa"  # TODO: create eza kanagawa theme
+    kanagawa: "kanagawa"
 
   # Bat (cat with syntax highlighting) and Delta (git diff)
   # Use custom .tmTheme files generated from our color palettes
