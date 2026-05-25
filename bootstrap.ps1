@@ -19,7 +19,14 @@
     
 .PARAMETER WhatIf
     Show what would be done without making changes
-    
+
+.PARAMETER UseSSH
+    Clone the chezmoi source repository via SSH (git@github.com:Repo.git)
+    instead of the default HTTPS URL. SSH requires keys to already be loaded
+    in an agent (1Password SSH agent, etc.). When this switch is set and the
+    SSH clone fails, the script automatically retries via HTTPS so fresh
+    machines without keys still succeed.
+
 .EXAMPLE
     # One-command install from GitHub (production)
     iwr -useb https://raw.githubusercontent.com/Randallsm83/chezmoi/main/bootstrap.ps1 | iex
@@ -50,6 +57,7 @@ param(
     [string]$Repository = "Randallsm83/chezmoi",
     [string]$Branch = "main",
     [switch]$SkipPackages,
+    [switch]$UseSSH,
     [string]$ScoopExport,
     [string]$WingetExport
 )
@@ -504,38 +512,74 @@ function Initialize-Chezmoi {
     .DESCRIPTION
         Clones the repository to chezmoi's default source dir
         (~/.local/share/chezmoi) and applies all configs.
+
+        Defaults to HTTPS so fresh machines without an SSH key still work.
+        Pass -UseSSH to attempt SSH first (faster + uses the 1Password SSH
+        agent); on SSH failure, falls back to HTTPS automatically. This
+        mirrors the unix bootstrap pattern in setup.sh (USE_SSH=1).
     #>
     param(
         [string]$Repo,
-        [string]$Branch
+        [string]$Branch,
+        [switch]$UseSSH
     )
-    
+
     Write-Status "Initializing chezmoi from $Repo..." -Type Info
-    
-    # Convert shorthand to full GitHub SSH URL if needed
-    $repoUrl = if ($Repo -notmatch '^(https?://|git@)') {
-        "git@github.com:$Repo.git"
-    } else {
-        $Repo
+
+    # Build candidate URLs. If $Repo is already a full URL (http(s):// or
+    # git@), respect it as-is and skip the fallback dance — the user told us
+    # exactly what they want.
+    $hasExplicitUrl = $Repo -match '^(https?://|git@)'
+    $sshUrl   = if ($hasExplicitUrl) { $Repo } else { "git@github.com:$Repo.git" }
+    $httpsUrl = if ($hasExplicitUrl) { $Repo } else { "https://github.com/$Repo.git" }
+
+    # Try-clone helper. chezmoi exits non-zero on clone failure but doesn't
+    # throw a PowerShell terminating error, so we inspect $LASTEXITCODE
+    # rather than relying on try/catch alone.
+    function Invoke-ChezmoiInit {
+        param([string]$Url, [string]$BranchName, [string]$Label)
+        Write-Status "Cloning via $Label ($Url)..." -Type Info
+        try {
+            $global:LASTEXITCODE = 0
+            chezmoi init --apply --branch $BranchName $Url
+            return ($LASTEXITCODE -eq 0)
+        } catch {
+            Write-Status "chezmoi init via $Label threw: $_" -Type Warning
+            return $false
+        }
     }
-    
-    try {
-        # Initialize chezmoi from repository and apply all configs
-        # This will:
-        # 1. Clone repository to chezmoi's default source dir (~/.local/share/chezmoi)
-        # 2. Run any run_once_before scripts
-        # 3. Apply all dotfiles
-        # 4. Run any run_once scripts (package installation)
-        # Using SSH URL for proper auth with 1Password SSH agent
-        chezmoi init --apply --branch $Branch $repoUrl
-        
+
+    # Initialize chezmoi from repository and apply all configs
+    # This will:
+    # 1. Clone repository to chezmoi's default source dir (~/.local/share/chezmoi)
+    # 2. Run any run_once_before scripts
+    # 3. Apply all dotfiles
+    # 4. Run any run_once scripts (package installation)
+    if ($UseSSH) {
+        if (Invoke-ChezmoiInit -Url $sshUrl -BranchName $Branch -Label 'SSH') {
+            $Script:Stats.ConfigsApplied = $true
+            Write-Status "Dotfiles applied successfully (SSH)" -Type Success
+            return $true
+        }
+        if ($hasExplicitUrl) {
+            # Caller passed an explicit URL — don't second-guess it.
+            Write-Status "chezmoi init failed for $sshUrl" -Type Error
+            return $false
+        }
+        Write-Status "SSH clone failed; falling back to HTTPS" -Type Warning
+    }
+
+    if (Invoke-ChezmoiInit -Url $httpsUrl -BranchName $Branch -Label 'HTTPS') {
         $Script:Stats.ConfigsApplied = $true
-        Write-Status "Dotfiles applied successfully" -Type Success
+        Write-Status "Dotfiles applied successfully (HTTPS)" -Type Success
+        if (-not $hasExplicitUrl) {
+            Write-Status "To switch the chezmoi source remote to SSH later: chezmoi git remote set-url origin $sshUrl" -Type Info
+        }
         return $true
-    } catch {
-        Write-Status "Failed to initialize chezmoi: $_" -Type Error
-        return $false
     }
+
+    Write-Status "chezmoi init failed for both SSH and HTTPS" -Type Error
+    return $false
 }
 
 # ============================================================================
@@ -632,7 +676,7 @@ function Main {
     Write-Status "Package installation scripts will run automatically" -Type Info
     Write-Host ""
     
-    if (-not (Initialize-Chezmoi -Repo $Repository -Branch $Branch)) {
+    if (-not (Initialize-Chezmoi -Repo $Repository -Branch $Branch -UseSSH:$UseSSH)) {
         Write-Status "Bootstrap failed: Could not apply dotfiles" -Type Error
         Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
         exit 1
