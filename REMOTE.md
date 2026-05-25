@@ -68,11 +68,16 @@ When remote is detected, these flags are set:
 # .chezmoi.toml.tmpl
 [data]
     is_remote = true              # Remote session detected
-    remote_minimal = true         # Use minimal package set
+    remote_tier = "minimal"       # Tier model: minimal | medium | full
     install_packages = false      # Skip system packages by default
     setup_1password = false       # Skip 1Password on remote
     has_sudo = false              # Estimated (verified at runtime)
 ```
+
+`remote_tier` is the canonical knob; everything else (excluded GUI configs,
+mise package set, etc.) keys off it. A `remote_minimal` boolean is still
+exposed as a compatibility alias (`true` iff `remote_tier == "minimal"`)
+for older templates, but new templates should branch on `remote_tier`.
 
 ### Override Detection
 
@@ -80,10 +85,10 @@ Create `~/.config/chezmoi/.chezmoi.local.toml` to override:
 
 ```toml
 [data]
-    is_remote = false          # Force treat as local
-    remote_minimal = false     # Use full package set
-    install_packages = true    # Enable package installation
-    has_sudo = true            # I have sudo access
+    is_remote = false             # Force treat as local
+    remote_tier = "full"          # Use full package set
+    install_packages = true       # Enable package installation
+    has_sudo = true               # I have sudo access
 ```
 
 ---
@@ -143,52 +148,44 @@ sudo dnf install -y git curl wget unzip zip gcc gcc-c++ make \
 
 ---
 
-## Minimal vs Full Installation
+## Remote tier matrix
 
-### Minimal Package Set (`remote_minimal = true`)
+Three tiers are defined in `.chezmoidata.yaml` under `remote_packages.<tier>`
+and consumed by `dot_config/mise/config.toml.tmpl` plus `.chezmoiignore`.
+Select the tier by setting `remote_tier` in `~/.config/chezmoi/.chezmoi.local.toml`
+or by letting hostname detection pick it (Raspberry Pi hosts default to
+`medium`).
 
-**Language Runtimes** (user space):
-- Node.js
-- Python
-- Go
+| Tier      | When to use                            | Runtimes                                | Extra CLI tools                                                |
+|-----------|----------------------------------------|-----------------------------------------|---------------------------------------------------------------|
+| `minimal` | SSH-only servers; CI; no-sudo hosts    | `node`, `python`, `go`                  | `direnv`, `fzf`, `bat`, `fd`, `ripgrep`, `delta`, `neovim`     |
+| `medium`  | ARM SBCs / dev VMs (Raspberry Pi)      | `node`, `python`                        | minimal set + `eza`, `zoxide`, `starship`, `lazygit`, `gh`     |
+| `full`    | Desktop parity (rare on remote)        | `node`, `python`, `ruby`, `go`, `rust`  | full Rust-CLI suite + `vim`, `sqlite`, `cargo-binstall`        |
 
-**CLI Tools** (user space via cargo):
-- direnv (environment management)
-- fzf (fuzzy finder)
-- bat (cat with syntax highlighting)
-- fd (fast find)
-- ripgrep (fast grep)
-- delta (git diff viewer)
-- neovim (text editor)
+GUI apps (`wezterm`, `warp`, `alacritty`, `kitty`) and heavy build
+dependencies are always skipped when `is_remote` is true. The compiler
+toolchains needed by no-sudo `mise` cargo builds are sourced from
+`package_mapping.<feature>.mise_remote`.
 
-**Excluded** (to save space/time):
-- GUI apps: wezterm, warp
-- Heavy runtimes: ruby, rust compiler, deno, bun
-- Optional tools: eza, starship, zoxide, sqlite
-- Development headers/libraries
+Cross-references:
+- Per-tier package list — `.chezmoidata.yaml` `remote_packages.<tier>`
+- No-sudo distro-package fallback — `package_mapping.<feature>.mise_remote`
+- Raspberry Pi profile — see `RASPI.md` for the canonical medium-tier inventory.
 
-### Full Package Set (`remote_minimal = false`)
+### Switching Between Tiers
 
-**All minimal tools plus**:
-- Additional runtimes: Ruby, Rust, Bun, Deno, Lua
-- Full CLI suite: eza, starship, zoxide, sqlite
-- Build tools: cargo-binstall, mise, gh
-- Editors: vim (in addition to neovim)
-
-### Switching Between Sets
-
-Change the flag in `~/.config/chezmoi/.chezmoi.local.toml`:
+Edit `~/.config/chezmoi/.chezmoi.local.toml`:
 
 ```toml
 [data]
-    remote_minimal = false  # Use full package set
+    remote_tier = "medium"   # minimal | medium | full
 ```
 
 Then reapply:
 
 ```bash
 chezmoi apply
-mise install  # Install additional tools
+mise install  # picks up the new tier's package list
 ```
 
 ---
@@ -310,7 +307,8 @@ Git config automatically adjusts for remote:
 # ~/.config/chezmoi/.chezmoi.local.toml
 [data]
     has_sudo = false
-    install_packages = true  # Mise will handle everything
+    install_packages = true   # mise will handle everything
+    remote_tier = "minimal"   # or "medium" if the host can support it
 ```
 
 **Solution 2**: Disable system packages
@@ -441,10 +439,10 @@ Always create `~/.config/chezmoi/.chezmoi.local.toml` for remote-specific settin
 
 ```toml
 [data]
-    # Disable features you don't need
-    remote_minimal = true
+    # Pick the right tier for this host (default for is_remote is "minimal")
+    remote_tier = "minimal"
     setup_1password = false
-    
+
     # Disable specific languages
     [data.package_features]
     ruby = false

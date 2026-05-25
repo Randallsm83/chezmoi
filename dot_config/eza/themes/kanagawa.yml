@@ -1,0 +1,116 @@
+# ██╗  ██╗ █████╗ ███╗   ██╗ █████╗  ██████╗  █████╗ ██╗    ██╗ █████╗
+# ██║ ██╔╝██╔══██╗████╗  ██║██╔══██╗██╔════╝ ██╔══██╗██║    ██║██╔══██╗
+# █████╔╝ ███████║██╔██╗ ██║███████║██║  ███╗███████║██║ █╗ ██║███████║
+# ██╔═██╗ ██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══██║██║███╗██║██╔══██║
+# ██║  ██╗██║  ██║██║ ╚████║██║  ██║╚██████╔╝██║  ██║╚███╔███╔╝██║  ██║
+# ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═╝
+# Kanagawa (wave) palette for eza, derived from the canonical hex set in
+# .chezmoidata.yaml `theme.kanagawa`. Slot mapping mirrors spaceduck.yml so
+# every accent (directory, executable, warning) lands in a visually distinct
+# hue under the unified theme system.
+
+colourful: true
+
+filekinds:
+  normal: {foreground: "#dcd7ba"}       # fujiWhite
+  directory: {foreground: "#7e9cd8"}    # crystalBlue
+  symlink: {foreground: "#957fb8"}      # oniViolet
+  pipe: {foreground: "#727169"}         # fujiGray
+  block_device: {foreground: "#ffa066"} # surimiOrange
+  char_device: {foreground: "#e6c384"}  # carpYellow
+  socket: {foreground: "#727169"}
+  special: {foreground: "#d27e99"}      # sakuraPink
+  executable: {foreground: "#98bb6c"}   # springGreen
+  mount_point: {foreground: "#7e9cd8"}
+
+perms:
+  user_read: {foreground: "#dcd7ba"}
+  user_write: {foreground: "#ffa066"}
+  user_execute_file: {foreground: "#98bb6c"}
+  user_execute_other: {foreground: "#98bb6c"}
+  group_read: {foreground: "#dcd7ba"}
+  group_write: {foreground: "#ffa066"}
+  group_execute: {foreground: "#98bb6c"}
+  other_read: {foreground: "#727169"}
+  other_write: {foreground: "#ffa066"}
+  other_execute: {foreground: "#98bb6c"}
+  special_user_file: {foreground: "#d27e99"}
+  special_other: {foreground: "#727169"}
+  attribute: {foreground: "#727169"}
+
+size:
+  major: {foreground: "#727169"}
+  minor: {foreground: "#7fb4ca"}        # springBlue
+  number_byte: {foreground: "#dcd7ba"}
+  number_kilo: {foreground: "#dcd7ba"}
+  number_mega: {foreground: "#7e9cd8"}
+  number_giga: {foreground: "#957fb8"}
+  number_huge: {foreground: "#d27e99"}
+  unit_byte: {foreground: "#727169"}
+  unit_kilo: {foreground: "#7fb4ca"}
+  unit_mega: {foreground: "#957fb8"}
+  unit_giga: {foreground: "#d27e99"}
+  unit_huge: {foreground: "#7e9cd8"}
+
+users:
+  user_you: {foreground: "#dcd7ba"}
+  user_root: {foreground: "#e82424"}    # samuraiRed
+  user_other: {foreground: "#957fb8"}
+  group_yours: {foreground: "#dcd7ba"}
+  group_other: {foreground: "#727169"}
+  group_root: {foreground: "#e82424"}
+
+links:
+  normal: {foreground: "#957fb8"}
+  multi_link_file: {foreground: "#7e9cd8"}
+
+git:
+  new: {foreground: "#98bb6c"}
+  modified: {foreground: "#e6c384"}
+  deleted: {foreground: "#e82424"}
+  renamed: {foreground: "#98bb6c"}
+  typechange: {foreground: "#d27e99"}
+  ignored: {foreground: "#727169"}
+  conflicted: {foreground: "#e82424"}
+
+git_repo:
+  branch_main: {foreground: "#dcd7ba"}
+  branch_other: {foreground: "#957fb8"}
+  git_clean: {foreground: "#98bb6c"}
+  git_dirty: {foreground: "#e82424"}
+
+security_context:
+  colon: {foreground: "#727169"}
+  user: {foreground: "#dcd7ba"}
+  role: {foreground: "#957fb8"}
+  typ: {foreground: "#727169"}
+  range: {foreground: "#d27e99"}
+
+file_type:
+  image: {foreground: "#957fb8"}
+  video: {foreground: "#d27e99"}
+  music: {foreground: "#7e9cd8"}
+  lossless: {foreground: "#7e9cd8"}
+  crypto: {foreground: "#727169"}
+  document: {foreground: "#957fb8"}
+  compressed: {foreground: "#e82424"}
+  temp: {foreground: "#727169"}
+  compiled: {foreground: "#7e9cd8"}
+  build: {foreground: "#727169"}
+  source: {foreground: "#7e9cd8"}
+
+punctuation: {foreground: "#727169"}
+date: {foreground: "#e6c384"}
+inode: {foreground: "#727169"}
+blocks: {foreground: "#727169"}
+header: {foreground: "#dcd7ba"}
+octal: {foreground: "#7fb4ca"}
+flags: {foreground: "#957fb8"}
+
+symlink_path: {foreground: "#957fb8"}
+control_char: {foreground: "#7fb4ca"}
+broken_symlink: {foreground: "#e82424"}
+broken_path_overlay: {foreground: "#727169"}
+
+
+# vim: ts=2 sts=2 sw=2 et

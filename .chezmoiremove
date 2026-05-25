@@ -50,13 +50,6 @@
 .config/zsh/.zshrc.d/70-php.zsh
 {{- end }}
 
-{{- if not .package_features.asdf }}
-.config/asdf/**
-.asdfrc
-.tool-versions
-.config/zsh/.zshrc.d/50-asdf.zsh
-{{- end }}
-
 {{- if not .package_features.nvm }}
 .config/nvm/**
 .config/zsh/.zshrc.d/70-nvm.zsh

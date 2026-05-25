@@ -148,13 +148,14 @@ plaintext secret never lands on disk and never lives in the parent shell.
 
 Three pieces, one per tool:
 
-1. **1Password item** — the actual credential.
-   Example: `op://Personal/Tavily MCP/credential`
+1. **1Password item** — the actual credential. Prefer item-UUID references
+   (stable across renames) over the human title. Example:
+   `op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential` (Tavily).
 2. **Env-reference file** — a non-secret file mapping env-var names to
    `op://` references. Lives at `~/.config/op/<tool>.env` (chezmoi-managed at
    `dot_config/op/<tool>.env`):
    ```dotenv
-   TAVILY_API_KEY=op://Personal/Tavily MCP/credential
+   TAVILY_API_KEY=op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential
    ANTHROPIC_API_KEY=op://Personal/Anthropic API/credential
    # ... only secrets the wrapped tool needs
    ```
@@ -264,336 +265,61 @@ pwsh -NoProfile -Command 'if ($env:ANTHROPIC_API_KEY) { "LEAK" } else { "clean" 
 
 ---
 
-## Option 1: 1Password CLI (Recommended)
+## Other secret stores (fallback options)
 
-### Why 1Password?
+The canonical paths above (Patterns A and B) are what this repo uses today.
+The rest of this section captures alternatives — use them only when you
+need to depart from the canonical setup.
 
-- ✅ No secrets in your dotfiles repository
-- ✅ Easy to update secrets (change in 1Password, re-apply dotfiles)
-- ✅ Cross-platform (Windows, macOS, Linux, WSL)
-- ✅ Works with existing 1Password subscription
-- ✅ Secure SSH agent integration
+### 1Password CLI direct (`onepassword*` template funcs)
 
-### Prerequisites
+Chezmoi exposes built-in helpers (`onepasswordItemFields`,
+`onepasswordDocument`, `onepasswordRead`). Each invocation triggers its
+own biometric prompt, so the batched `op inject` pattern in Architecture A
+is strictly preferred. Use the direct helpers only for one-off cases
+that can't fit into `$secretsTpl` — e.g. when you need to look up multiple
+items by name at apply time. See the
+[chezmoi 1Password docs](https://www.chezmoi.io/user-guide/password-managers/1password/)
+for the full API.
 
-- 1Password account (personal or family plan)
-- 1Password desktop app installed
-- 1Password CLI installed
+### age encryption (backup mechanism)
 
-### Installation
-
-**macOS/Linux:**
-```bash
-# Via mise (recommended)
-mise use -g 1password-cli
-
-# Via homebrew
-brew install --cask 1password/tap/1password-cli
-
-# Via curl
-curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
-  sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
-```
-
-**Windows:**
-```powershell
-# Via scoop (recommended)
-scoop install 1password-cli
-
-# Via winget
-winget install --id AgileBits.1PasswordCLI
-```
-
-### Setup
-
-1. **Enable 1Password CLI in desktop app:**
-   - Open 1Password desktop app
-   - Settings → Developer → Enable "Integrate with 1Password CLI"
-
-2. **Authenticate CLI:**
-   ```bash
-   # Sign in to your account
-   op signin
-   
-   # Verify authentication
-   op whoami
-   ```
-
-3. **Create required secrets in 1Password:**
-   
-   See [Required Secrets](#required-secrets-in-1password) section below.
-
-4. **Enable in dotfiles:**
-   
-   Create `.chezmoi.local.toml` (or edit `.chezmoi.toml.tmpl`):
-   ```toml
-   [data]
-       use_1password = true
-       onepassword_vault = "Personal"  # or your vault name
-   ```
-
-### Required Secrets in 1Password
-
-Create these items in your 1Password vault:
-
-#### 1. SSH Private Key
-
-- **Item Type**: Secure Note or SSH Key
-- **Title**: `SSH Private Key`
-- **Fields**:
-  - `private_key`: Your private key contents (ed25519 or RSA)
-  - `public_key`: Your public key contents
-  - `passphrase`: (optional) Key passphrase
-
-**Generate new key if needed:**
-```bash
-ssh-keygen -t ed25519 -C "your_email@example.com"
-# Copy contents to 1Password
-cat ~/.ssh/id_ed25519
-cat ~/.ssh/id_ed25519.pub
-```
-
-#### 2. GitHub Token
-
-- **Item Type**: Password or API Credential
-- **Title**: `GitHub Token`
-- **Fields**:
-  - `token`: Personal access token with repo scope
-  - `username`: Your GitHub username
-
-**Generate token:**
-1. Go to https://github.com/settings/tokens
-2. Generate new token (classic)
-3. Select scopes: `repo`, `workflow`, `read:org`
-4. Copy token to 1Password
-
-#### 3. Git Signing Key (Optional)
-
-- **Item Type**: Secure Note
-- **Title**: `Git Signing Key`
-- **Fields**:
-  - `key`: GPG private key
-  - `passphrase`: Key passphrase
-  - `key_id`: GPG key ID
-
-#### 4. Additional Secrets (Optional)
-
-Create as needed for your use cases:
-- `AWS Credentials`
-- `Azure Credentials`
-- `NPM Token`
-- `PyPI Token`
-
-### Usage in Templates
-
-Chezmoi provides built-in functions for accessing 1Password:
-
-**Get field value:**
-```
-{{ (onepasswordItemFields "GitHub Token").token.value }}
-```
-
-**Get document:**
-```
-{{ onepasswordDocument "SSH Private Key" }}
-```
-
-**Get entire item:**
-```
-{{ onepasswordRead "GitHub Token" }}
-```
-
-**With specific vault:**
-```
-{{ (onepasswordItemFields "GitHub Token" "Personal").token.value }}
-```
-
-### Example: `.ssh/config.tmpl`
-
-```ssh-config
-{{- if (onepasswordItemFields "SSH Private Key") }}
-# SSH configuration with key from 1Password
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_ed25519
-    AddKeysToAgent yes
-{{- end }}
-```
-
-Then create `private_dot_ssh/private_id_ed25519.tmpl`:
-```
-{{- onepasswordDocument "SSH Private Key" -}}
-```
-
-### Troubleshooting 1Password
-
-**"not authenticated" error:**
-```bash
-# Sign in again
-op signin
-
-# Or use session token
-eval $(op signin)
-```
-
-**"item not found" error:**
-- Verify item exists: `op item list`
-- Check item name (case-sensitive)
-- Verify vault name if specified
-- Try without vault parameter
-
-**Slow performance:**
-```bash
-# Use --vault flag to speed up lookups
-op item get "GitHub Token" --vault Personal
-```
-
-**Check status:**
-```bash
-# Run validation script manually
-chezmoi cd
-bash .chezmoiscripts/run_onchange_before_01_validate-secrets.sh.tmpl
-```
-
----
-
-## Option 2: age Encryption (Fallback)
-
-### Why age?
-
-- ✅ No external dependencies (except age binary)
-- ✅ Simple public key cryptography
-- ✅ Works offline
-- ✅ Portable across machines
-- ❌ Secrets stored (encrypted) in repository
-- ❌ Must re-encrypt when secrets change
-
-### Installation
+For secrets that must travel inside the repo (e.g. backups for an offline
+machine), age-encrypted `.age` files are the supported alternative.
 
 ```bash
-# Via mise (recommended)
-mise use -g age
-
-# Via homebrew
-brew install age
-
-# Via package manager
-sudo apt install age    # Debian/Ubuntu
-sudo dnf install age    # Fedora
-sudo pacman -S age      # Arch
+# Generate a key once and back it up to 1Password.
+age-keygen -o ~/.config/chezmoi/key.txt
+chmod 600 ~/.config/chezmoi/key.txt
 ```
 
-### Setup
+Wire age into `.chezmoi.toml.tmpl`:
 
-1. **Generate encryption key:**
-   ```bash
-   # Generate key
-   age-keygen -o ~/.config/chezmoi/key.txt
-   
-   # View public key
-   age-keygen -y ~/.config/chezmoi/key.txt
-   ```
-
-2. **Secure the private key:**
-   ```bash
-   chmod 600 ~/.config/chezmoi/key.txt
-   
-   # IMPORTANT: Backup this file somewhere safe!
-   # If you lose it, you cannot decrypt your secrets
-   ```
-
-3. **Add public key to chezmoi config:**
-   
-   Edit `.chezmoi.toml.tmpl`:
-   ```toml
-   encryption = "age"
-   [age]
-       identity = "~/.config/chezmoi/key.txt"
-       recipient = "age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p"
-   ```
-
-4. **Enable in dotfiles:**
-   ```toml
-   [data]
-       use_age = true
-   ```
-
-### Encrypting Secrets
-
-**Encrypt a file:**
-```bash
-# Method 1: Use chezmoi
-chezmoi add --encrypt ~/.ssh/id_ed25519
-
-# Method 2: Manual encryption
-age -r $(age-keygen -y ~/.config/chezmoi/key.txt) \
-    -o ~/.local/share/chezmoi/private_dot_ssh/private_id_ed25519.age \
-    ~/.ssh/id_ed25519
+```toml
+encryption = "age"
+[age]
+    identity = "~/.config/chezmoi/key.txt"
+    recipient = "age1..."   # output of `age-keygen -y key.txt`
 ```
 
-**Encrypt a string:**
-```bash
-# Encrypt GitHub token
-echo -n "ghp_your_token_here" | \
-    age -r $(age-keygen -y ~/.config/chezmoi/key.txt) \
-    > ~/.local/share/chezmoi/encrypted_github_token.age
-```
+Then add encrypted files with `chezmoi add --encrypt <path>` (chezmoi
+automatically handles encryption and decryption inside templates via
+the `decrypt` function). Keep the private key out of the repo and store
+it in 1Password so it's recoverable on a clean machine.
 
-### Usage in Templates
+If you need this, also see the
+[chezmoi encryption docs](https://www.chezmoi.io/user-guide/encryption/).
 
-**Decrypt file:**
-```
-{{ includeTemplate "decrypt-file" "encrypted_github_token.age" }}
-```
+### No secrets mode (CI / public machines)
 
-**Decrypt inline:**
-```
-{{ decrypt "age" (include "encrypted_github_token.age") }}
-```
+Set `CHEZMOI_SKIP_1P=1` (Architecture A respects this and resolves every
+`.secrets.*` value to an empty string). Templates that gate on a secret
+(`{{ if .secrets.warp_api_key }}...{{ end }}`) are skipped silently.
+This is the right mode for:
 
-### Example: `.gitconfig.tmpl` with age
-
-```gitconfig
-[user]
-    name = {{ .name }}
-    email = {{ .email }}
-{{- if (stat (joinPath .chezmoi.sourceDir "encrypted_github_token.age")) }}
-    signingkey = {{ include "encrypted_github_token.age" | decrypt "age" }}
-{{- end }}
-```
-
-### Troubleshooting age
-
-**"key not found" error:**
-```bash
-# Verify key exists
-ls -la ~/.config/chezmoi/key.txt
-
-# Verify key is valid
-age-keygen -y ~/.config/chezmoi/key.txt
-```
-
-**Cannot decrypt:**
-- Ensure you're using the correct private key
-- Verify file was encrypted with matching public key
-- Check file permissions: `chmod 600 ~/.config/chezmoi/key.txt`
-
----
-
-## Option 3: No Secrets (Limited Mode)
-
-If neither 1Password nor age is configured, your dotfiles will:
-
-- ✅ Still install and configure most tools
-- ❌ Skip SSH key configuration
-- ❌ Skip GitHub token integration
-- ❌ Skip any secret-dependent features
-
-This is useful for:
-- Testing on a new machine
-- Public/work computers where secrets aren't needed
-- Containers or CI/CD environments
+- Testing on a fresh VM/container without any vaults available.
+- CI/CD pipelines that don't have desktop integration.
+- Public/loaner machines where biometric prompts would block automation.
 
 ---
 
@@ -621,19 +347,23 @@ bash .chezmoiscripts/run_onchange_before_01_validate-secrets.sh.tmpl
 
 ## Per-Machine Configuration
 
-Use `.chezmoi.local.toml` to configure secrets per machine:
+Use `.chezmoi.local.toml` for machine-specific overrides. The chezmoi
+source template doesn't read a `use_1password` toggle — secret presence is
+decided by whether `op` is on PATH and whether `CHEZMOI_SKIP_1P` is set
+(see Architecture A). Per-machine knobs typically come down to the
+`setup_1password` flag and feature flags:
 
-**Personal laptop (use 1Password):**
+**Personal laptop (1Password CLI signed-in):**
 ```toml
 [data]
-    use_1password = true
-    onepassword_vault = "Personal"
+    setup_1password = true
 ```
 
-**Work laptop (use age with work keys):**
+**Work laptop using age instead of 1Password for repo-tracked secrets:**
 ```toml
-[data]
-    use_age = true
+# Re-render only when op is unavailable. Architecture A still wins when both
+# are configured; age is only consulted for explicitly-encrypted .age files.
+encryption = "age"
 [age]
     identity = "~/.config/chezmoi/work-key.txt"
     recipient = "age1work_public_key_here"
@@ -642,12 +372,13 @@ Use `.chezmoi.local.toml` to configure secrets per machine:
 **Remote server (no secrets):**
 ```toml
 [data]
-    use_1password = false
-    use_age = false
-[features]
-    setup_ssh = false
     setup_1password = false
+    setup_ssh = false
 ```
+
+Set `CHEZMOI_SKIP_1P=1` in the environment to make `chezmoi apply --init`
+resolve every `.secrets.*` value to an empty string, with no biometric
+prompt and no `op` invocation.
 
 ---
 
@@ -818,9 +549,9 @@ A: Run validation script or check `.chezmoiscripts/run_onchange_before_01_valida
 - [1Password CLI Documentation](https://developer.1password.com/docs/cli/)
 - [age Documentation](https://github.com/FiloSottile/age)
 - [chezmoi Secrets Documentation](https://www.chezmoi.io/user-guide/password-managers/)
-- [.chezmoi.local.toml.example](https://github.com/Randallsm83/chezmoi/blob/main/.chezmoi.local.toml.example)
+- [chezmoi.local.toml.example](https://github.com/Randallsm83/chezmoi/blob/main/chezmoi.local.toml.example)
 
 ---
 
-**Last Updated**: 2026-05-07  
+**Last Updated**: 2026-05-25  
 **Version**: 2.0.0 (in development)

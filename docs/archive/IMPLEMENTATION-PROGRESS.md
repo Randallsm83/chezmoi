@@ -1,4 +1,5 @@
 # Chezmoi Dotfiles Implementation Progress
+> Archived 2026-05-25 — historical planning doc; superseded by current docs (`ARCHITECTURE.md`, `INSTALL-GUIDE.md`, etc.) and `CHANGELOG.md`. Kept for provenance only.
 
 > **Status**: Phase 1 - **COMPLETE** (Started: 2025-01-19, Completed: 2025-01-19)  
 > **Current Version**: v1.0.0 → v2.0.0 (in development)  
