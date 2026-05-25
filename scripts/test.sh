@@ -153,7 +153,9 @@ test_chezmoi_state() {
     echo "════════════════════════════════════════"
     
     test_case "chezmoi managed files exist" "[ \$(chezmoi managed | wc -l) -gt 0 ]"
-    test_case "no chezmoi diff errors" "chezmoi diff --no-pager >/dev/null 2>&1 || true"
+    # `chezmoi diff` has no `--no-pager` flag; pager is already disabled in
+    # .chezmoi.toml.tmpl ([diff] pager=""). Discard output via stdout redirect.
+    test_case "no chezmoi diff errors" "chezmoi diff >/dev/null 2>&1 || true"
     test_case "chezmoi data accessible" "chezmoi data >/dev/null"
 }
 
