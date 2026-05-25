@@ -100,7 +100,9 @@ test_chezmoi_installation() {
     test_case "chezmoi command exists" "assert_command_exists chezmoi"
     test_case "chezmoi source directory exists" "assert_directory_exists \$(chezmoi source-path)"
     test_case ".chezmoi.toml.tmpl exists" "assert_file_exists \$(chezmoi source-path)/.chezmoi.toml.tmpl"
-    test_case ".chezmoidata.yaml exists" "assert_file_exists \$(chezmoi source-path)/.chezmoidata.yaml"
+    # wave-d split .chezmoidata.yaml into .chezmoidata/{theme,packages,ssh,dns,fonts,mcp}.yaml.
+    test_case ".chezmoidata/ directory exists with split data files" \
+        "assert_directory_exists \$(chezmoi source-path)/.chezmoidata && [ \$(ls \$(chezmoi source-path)/.chezmoidata/*.yaml 2>/dev/null | wc -l) -gt 0 ]"
 }
 
 test_templates() {
