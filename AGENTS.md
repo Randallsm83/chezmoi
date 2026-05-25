@@ -126,10 +126,10 @@ Files in `dot_config/zsh/dot_zshrc.d/` use numeric prefixes; lower numbers sourc
 Shell completions live in `dot_cache/zsh/completions/_<command>`.
 
 ## Line endings (CRITICAL)
-- **LF** for everything that runs under Unix/Linux/WSL: `*.sh`, `*.bash`, all `dot_zshrc*`, every file in `dot_config/zsh/`, and any `.tmpl` whose target is Unix (including those in `.chezmoiscripts/`).
-- **CRLF** for `*.ps1` / `*.ps1.tmpl` and Windows-only configs.
-
-`dot_editorconfig` and `.gitattributes` enforce this; verify when authoring new files.
+- **LF everywhere.** Every text file in this repo uses Unix line endings (LF).
+- `.gitattributes` enforces LF on every text file via `text eol=lf`; `dot_editorconfig` repeats the policy at editor level.
+- PowerShell 7+ reads LF natively. The previous CRLF-for-`*.ps1` rule was repo-wide drift documented but never actually enforced; the new policy makes the docs match disk reality.
+- Verify with `git ls-files --eol` or `[IO.File]::ReadAllBytes('<path>') | Where-Object { $_ -eq 13 }` (zero matches = pure LF).
 
 ## Conventions
 - **Branches**: `feature/<topic>`, `fix/<topic>`, `docs/<topic>`, `refactor/<topic>`.
