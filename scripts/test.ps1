@@ -113,9 +113,15 @@ function Test-ChezmoiInstallation {
         $src = chezmoi source-path 2>$null
         $src -and (Test-Path -LiteralPath $src)
     }
-    Invoke-TestCase '.chezmoidata.yaml exists' {
+    Invoke-TestCase '.chezmoidata/ directory exists with split data files' {
+        # wave-d split the monolithic .chezmoidata.yaml into
+        # .chezmoidata/{theme,packages,ssh,dns,fonts,mcp}.yaml so any one of
+        # them being present is sufficient (chezmoi merges every *.yaml in
+        # that directory into the same root data namespace at apply time).
         $src = chezmoi source-path 2>$null
-        $src -and (Test-Path -LiteralPath (Join-Path $src '.chezmoidata.yaml'))
+        if (-not $src) { return $false }
+        $dir = Join-Path $src '.chezmoidata'
+        (Test-Path -LiteralPath $dir) -and ((Get-ChildItem $dir -Filter '*.yaml' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0)
     }
     Invoke-TestCase '.chezmoi.toml.tmpl exists' {
         $src = chezmoi source-path 2>$null
