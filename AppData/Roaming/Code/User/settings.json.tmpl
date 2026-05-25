@@ -2,9 +2,10 @@
   // ============================================================================
   // THEME & APPEARANCE
   // ============================================================================
-  // Spaceduck
-  "workbench.colorTheme": "spaceduck",
-  "workbench.preferredDarkColorTheme": "spaceduck",
+  // Theme name is rendered from .chezmoidata/theme.yaml → theme_mappings.vscode[.theme].
+  // Change `.theme.name` in .chezmoidata/theme.yaml to flip every editor's theme in lockstep.
+  "workbench.colorTheme": "{{ index .theme_mappings.vscode .theme }}",
+  "workbench.preferredDarkColorTheme": "{{ index .theme_mappings.vscode .theme }}",
   "workbench.iconTheme": "a-file-icon-vscode",
   "workbench.productIconTheme": "a-file-icon-vscode-product-icon-theme",
   // One Dark Pro

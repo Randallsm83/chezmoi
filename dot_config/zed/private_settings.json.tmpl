@@ -10,11 +10,13 @@
 {
   "$schema": "https://zed.dev/schema/settings.json",
 
-  // ── Theme & UI ──────────────────────────────────
+  // ── Theme & UI ────────────────────────────────────
+  // Theme name is rendered from .chezmoidata/theme.yaml → theme_mappings.zed[.theme].
+  // Change `.theme.name` to flip every editor in lockstep.
   "theme": {
     "mode": "dark",
-    "light": "Spaceduck",
-    "dark": "Spaceduck"
+    "light": "{{ index .theme_mappings.zed .theme }}",
+    "dark": "{{ index .theme_mappings.zed .theme }}"
   },
   "icon_theme": "Material Icon Theme",
   "ui_font_family": "Hack Nerd Font",
