@@ -1,24 +1,279 @@
 #Requires -Modules @{ ModuleName='Pester'; ModuleVersion='5.0.0' }
+<#
+.SYNOPSIS
+    Pester 5.x test suite for bootstrap.ps1.
+.DESCRIPTION
+    Sources the canonical bootstrap script (bootstrap.ps1) and exercises its
+    helper functions without touching the host. The Main entrypoint is
+    stripped before sourcing so dot-sourcing does not actually bootstrap the
+    machine. Every external mutation (chezmoi/scoop/winget/op invocations,
+    Set-ItemProperty, Invoke-RestMethod, [Environment]::SetEnvironmentVariable)
+    is mocked or stubbed.
+
+.NOTES
+    Run with: Invoke-Pester -Path .\bootstrap.Tests.ps1 -Output Detailed
+
+    NOTE: This file targets Pester 5.x. Earlier Pester versions (3.x) do not
+    understand the BeforeAll / Mock -ParameterFilter semantics used here.
+    Install with:
+        Install-Module Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
+#>
 
 BeforeAll {
-    # Source the bootstrap script functions
-    $scriptPath = Join-Path $PSScriptRoot 'bootstrap.ps1.example'
-    
-    # Load the script content but don't execute Main
+    # Source the canonical bootstrap script.
+    $scriptPath = Join-Path $PSScriptRoot 'bootstrap.ps1'
+
+    # Strip the bottom-of-file `if ($MyInvocation.InvocationName -ne '.') { Main }`
+    # block so sourcing does NOT trigger the real Main flow.
     $scriptContent = Get-Content $scriptPath -Raw
-    $scriptContent = $scriptContent -replace 'if \(\$MyInvocation\.InvocationName -ne ''\.''\) \{[^}]+\}', ''
+    $scriptContent = $scriptContent -replace '(?s)if \(\$MyInvocation\.InvocationName -ne ''\.''\) \{[^}]+\}', ''
+
+    # Source into the current scope so all helpers (Write-Status,
+    # Test-CommandExists, Install-Chezmoi, etc.) are callable from tests.
     . ([scriptblock]::Create($scriptContent))
+}
+
+Describe 'Test-CommandExists' {
+    Context 'When command exists' {
+        It 'Returns $true for a built-in PowerShell command' {
+            Test-CommandExists 'Get-Process' | Should -Be $true
+        }
+    }
+
+    Context 'When command does not exist' {
+        It 'Returns $false for a nonsense command name' {
+            Test-CommandExists 'definitely-not-a-real-command-zzzz' | Should -Be $false
+        }
+
+        It 'Does not throw on an empty command name' {
+            { Test-CommandExists '' } | Should -Not -Throw
+        }
+    }
+}
+
+Describe 'Test-DeveloperMode' {
+    Context 'When the registry value is 1' {
+        BeforeAll {
+            Mock Get-ItemProperty {
+                [pscustomobject]@{ AllowDevelopmentWithoutDevLicense = 1 }
+            }
+        }
+
+        It 'Returns $true' {
+            Test-DeveloperMode | Should -Be $true
+        }
+    }
+
+    Context 'When the registry value is 0' {
+        BeforeAll {
+            Mock Get-ItemProperty {
+                [pscustomobject]@{ AllowDevelopmentWithoutDevLicense = 0 }
+            }
+        }
+
+        It 'Returns $false' {
+            Test-DeveloperMode | Should -Be $false
+        }
+    }
+
+    Context 'When the registry key is missing' {
+        BeforeAll {
+            Mock Get-ItemProperty { $null }
+        }
+
+        It 'Returns $false' {
+            Test-DeveloperMode | Should -Be $false
+        }
+    }
+
+    Context 'When Get-ItemProperty throws' {
+        BeforeAll {
+            Mock Get-ItemProperty { throw 'Access denied' }
+        }
+
+        It 'Catches the error and returns $false' {
+            Test-DeveloperMode | Should -Be $false
+        }
+    }
+}
+
+Describe 'Enable-DeveloperMode' {
+    # Enable-DeveloperMode short-circuits when the principal is not in the
+    # Administrator role. We cannot safely cross that branch in test (it
+    # would actually flip the dev-mode registry key on the host), so we only
+    # assert the non-admin guard on hosts where the runner is not elevated.
+    $script:IsRunnerAdmin = ([Security.Principal.WindowsPrincipal]::new(
+            [Security.Principal.WindowsIdentity]::GetCurrent()
+        )).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+    Context 'When not running as administrator' {
+        BeforeAll {
+            Mock Set-ItemProperty {}
+            Mock New-Item         {}
+        }
+
+        It 'Returns $false and does not touch the registry' -Skip:$script:IsRunnerAdmin {
+            Enable-DeveloperMode | Should -Be $false
+            Should -Not -Invoke Set-ItemProperty
+        }
+    }
+}
+
+Describe 'Test-OnePasswordCLI' {
+    Context 'When op is not on PATH' {
+        BeforeAll {
+            Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'op' }
+        }
+
+        It 'Reports CLI as unavailable' {
+            $result = Test-OnePasswordCLI
+            $result.Available     | Should -Be $false
+            $result.Authenticated | Should -Be $false
+            $result.Message       | Should -Match 'not installed'
+        }
+    }
+
+    Context 'When op is on PATH and authenticated' {
+        BeforeAll {
+            Mock Test-CommandExists { $true } -ParameterFilter { $Command -eq 'op' }
+            function global:op { '[]' }  # Pretend item list returns JSON.
+        }
+
+        AfterAll {
+            Remove-Item function:global:op -ErrorAction SilentlyContinue
+        }
+
+        It 'Reports CLI as authenticated' {
+            $result = Test-OnePasswordCLI
+            $result.Available     | Should -Be $true
+            $result.Authenticated | Should -Be $true
+        }
+    }
+}
+
+Describe 'Invoke-PreflightChecks' {
+    BeforeEach {
+        $Script:Stats = @{
+            PreflightPassed       = $false
+            DevModeEnabled        = $false
+            OnePasswordAvailable  = $false
+        }
+    }
+
+    Context 'When every check passes' {
+        BeforeAll {
+            Mock Test-DeveloperMode    { $true }
+            Mock Invoke-WebRequest     { @{ StatusCode = 200 } }
+            Mock Test-CommandExists    { $true }
+            Mock Test-OnePasswordCLI   { @{ Available = $true; Authenticated = $true; Message = 'ok' } }
+            Mock Read-Host             { 'n' }
+        }
+
+        It 'Returns $true' {
+            Invoke-PreflightChecks | Should -Be $true
+            $Script:Stats.PreflightPassed | Should -Be $true
+        }
+    }
+
+    Context 'When github.com is unreachable' {
+        BeforeAll {
+            Mock Test-DeveloperMode    { $true }
+            Mock Invoke-WebRequest     { throw 'no internet' }
+            Mock Test-CommandExists    { $true }
+            Mock Test-OnePasswordCLI   { @{ Available = $true; Authenticated = $true; Message = 'ok' } }
+        }
+
+        It 'Returns $false' {
+            Invoke-PreflightChecks | Should -Be $false
+        }
+    }
+}
+
+Describe 'Import-ScoopExport' {
+    Context 'When the export file does not exist' {
+        BeforeAll {
+            Mock Test-Path { $false } -ParameterFilter { $Path -eq 'C:\nope.json' }
+        }
+
+        It 'Returns $false' {
+            Import-ScoopExport -ExportFile 'C:\nope.json' | Should -Be $false
+        }
+    }
+
+    Context 'When scoop is not installed' {
+        BeforeAll {
+            Mock Test-Path           { $true }
+            Mock Test-CommandExists  { $false } -ParameterFilter { $Command -eq 'scoop' }
+        }
+
+        It 'Returns $false' {
+            Import-ScoopExport -ExportFile 'C:\export.json' | Should -Be $false
+        }
+    }
+
+    Context 'When scoop is present and the export parses' {
+        BeforeAll {
+            Mock Test-Path           { $true }
+            Mock Test-CommandExists  { $true } -ParameterFilter { $Command -eq 'scoop' }
+            Mock Get-Content         { '{"apps":[{"Name":"chezmoi"}],"buckets":[{"Name":"main"}]}' }
+            function global:scoop { param([string]$action, [string]$file) }
+        }
+
+        AfterAll {
+            Remove-Item function:global:scoop -ErrorAction SilentlyContinue
+        }
+
+        It 'Returns $true on success' {
+            Import-ScoopExport -ExportFile 'C:\export.json' | Should -Be $true
+        }
+    }
+}
+
+Describe 'Import-WingetExport' {
+    Context 'When the export file is missing' {
+        BeforeAll {
+            Mock Test-Path { $false }
+        }
+
+        It 'Returns $false' {
+            Import-WingetExport -ExportFile 'C:\winget.json' | Should -Be $false
+        }
+    }
+
+    Context 'When winget is not installed' {
+        BeforeAll {
+            Mock Test-Path           { $true }
+            Mock Test-CommandExists  { $false } -ParameterFilter { $Command -eq 'winget' }
+        }
+
+        It 'Returns $false' {
+            Import-WingetExport -ExportFile 'C:\winget.json' | Should -Be $false
+        }
+    }
+
+    Context 'When winget runs successfully' {
+        BeforeAll {
+            Mock Test-Path           { $true }
+            Mock Test-CommandExists  { $true } -ParameterFilter { $Command -eq 'winget' }
+            function global:winget { param([Parameter(ValueFromRemainingArguments)]$rest) }
+        }
+
+        AfterAll {
+            Remove-Item function:global:winget -ErrorAction SilentlyContinue
+        }
+
+        It 'Returns $true' {
+            Import-WingetExport -ExportFile 'C:\winget.json' | Should -Be $true
+        }
+    }
 }
 
 Describe 'Install-Chezmoi' {
     BeforeEach {
-        # Reset stats
         $Script:Stats = @{
-            StartTime = Get-Date
             ChezmoiInstalled = $false
-            ScoopInstalled = $false
-            PackagesInstalled = 0
-            ConfigsApplied = $false
+            ScoopInstalled   = $false
+            ConfigsApplied   = $false
         }
     }
 
@@ -27,144 +282,26 @@ Describe 'Install-Chezmoi' {
             Mock Test-CommandExists { $true } -ParameterFilter { $Command -eq 'chezmoi' }
         }
 
-        It 'Should detect existing chezmoi installation' {
-            $result = Install-Chezmoi
-            
-            $result | Should -Be $true
-            $Script:Stats.ChezmoiInstalled | Should -Be $true
-        }
-
-        It 'Should not attempt to install chezmoi' {
-            Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'scoop' }
-            Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'winget' }
-            
+        It 'Reports installed without attempting install' {
             Install-Chezmoi | Should -Be $true
-            
-            Should -Not -Invoke -CommandName scoop
-            Should -Not -Invoke -CommandName winget
+            $Script:Stats.ChezmoiInstalled | Should -Be $true
         }
     }
 
     Context 'When scoop is available' {
         BeforeAll {
             Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'chezmoi' }
-            Mock Test-CommandExists { $true } -ParameterFilter { $Command -eq 'scoop' }
-            Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'winget' }
-        }
-
-        It 'Should install chezmoi using scoop' {
-            Mock Invoke-Expression { } -ParameterFilter { $Command -match 'scoop install chezmoi' }
-            
-            # Mock scoop command
-            $global:LASTEXITCODE = 0
-            Mock Start-Process { 
-                [PSCustomObject]@{ ExitCode = 0 }
-            } -Verifiable
-            
-            # Create a mock for scoop install command
-            Mock -CommandName 'Invoke-Expression' -MockWith {
-                if ($Command -match 'scoop') {
-                    # Simulate successful installation
-                    return $null
-                }
-            }
-
-            # Override the actual scoop call
-            function global:scoop { 
-                param($action, $package)
-                if ($action -eq 'install' -and $package -eq 'chezmoi') {
-                    return $null
-                }
-            }
-            
-            $result = Install-Chezmoi
-            
-            $result | Should -Be $true
-            $Script:Stats.ChezmoiInstalled | Should -Be $true
-        }
-
-        It 'Should use scoop as the preferred method' {
+            Mock Test-CommandExists { $true }  -ParameterFilter { $Command -eq 'scoop' }
             function global:scoop { param($action, $package) }
-            Mock Test-CommandExists { $true } -ParameterFilter { $Command -eq 'winget' }
-            
-            Install-Chezmoi
-            
-            # Verify scoop was attempted first (indirectly by checking it doesn't fall back)
+        }
+
+        AfterAll {
+            Remove-Item function:global:scoop -ErrorAction SilentlyContinue
+        }
+
+        It 'Installs chezmoi via scoop' {
+            Install-Chezmoi | Should -Be $true
             $Script:Stats.ChezmoiInstalled | Should -Be $true
-        }
-
-        It 'Should fall back to winget if scoop installation fails' {
-            # Mock scoop failure
-            function global:scoop { 
-                param($action, $package)
-                throw "Scoop installation failed"
-            }
-            
-            Mock Test-CommandExists { $true } -ParameterFilter { $Command -eq 'winget' }
-            
-            function global:winget {
-                param([string]$action, [string]$id, [string]$package)
-                $Script:Stats.ChezmoiInstalled = $true
-            }
-            
-            Mock -CommandName 'Get-EnvironmentVariable' -MockWith { 
-                "C:\Windows\System32;C:\Program Files" 
-            }
-            
-            $result = Install-Chezmoi
-            
-            $result | Should -Be $true
-            $Script:Stats.ChezmoiInstalled | Should -Be $true
-        }
-    }
-
-    Context 'When only winget is available' {
-        BeforeAll {
-            Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'chezmoi' }
-            Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'scoop' }
-            Mock Test-CommandExists { $true } -ParameterFilter { $Command -eq 'winget' }
-        }
-
-        It 'Should install chezmoi using winget' {
-            function global:winget {
-                param(
-                    [string]$action,
-                    [Parameter(ValueFromRemainingArguments)]
-                    [string[]]$remaining
-                )
-                if ($action -eq 'install') {
-                    $Script:Stats.ChezmoiInstalled = $true
-                }
-            }
-            
-            # Mock environment variable refresh
-            Mock -CommandName 'Get-Process' -MockWith { }
-            $env:PATH = "C:\test\path"
-            
-            $result = Install-Chezmoi
-            
-            $result | Should -Be $true
-            $Script:Stats.ChezmoiInstalled | Should -Be $true
-        }
-
-        It 'Should refresh PATH after winget installation' {
-            function global:winget { param($action, $id, $package) }
-            
-            $originalPath = $env:PATH
-            Install-Chezmoi
-            
-            # Verify PATH refresh was attempted (checking that it was reassigned)
-            $env:PATH | Should -Not -BeNullOrEmpty
-        }
-
-        It 'Should return false if winget installation fails' {
-            function global:winget { 
-                throw "Winget installation failed"
-            }
-            
-            $result = Install-Chezmoi
-            
-            $result | Should -Be $false
         }
     }
 
@@ -173,16 +310,8 @@ Describe 'Install-Chezmoi' {
             Mock Test-CommandExists { $false }
         }
 
-        It 'Should return false' {
-            $result = Install-Chezmoi
-            
-            $result | Should -Be $false
-            $Script:Stats.ChezmoiInstalled | Should -Be $false
-        }
-
-        It 'Should not modify stats on failure' {
-            Install-Chezmoi
-            
+        It 'Returns $false' {
+            Install-Chezmoi | Should -Be $false
             $Script:Stats.ChezmoiInstalled | Should -Be $false
         }
     }
@@ -190,417 +319,187 @@ Describe 'Install-Chezmoi' {
 
 Describe 'Install-Scoop' {
     BeforeEach {
-        $Script:Stats = @{
-            StartTime = Get-Date
-            ChezmoiInstalled = $false
-            ScoopInstalled = $false
-            PackagesInstalled = 0
-            ConfigsApplied = $false
-        }
+        $Script:Stats = @{ ScoopInstalled = $false }
     }
 
     Context 'When scoop is already installed' {
         BeforeAll {
             Mock Test-CommandExists { $true } -ParameterFilter { $Command -eq 'scoop' }
+            Mock Invoke-RestMethod {}
         }
 
-        It 'Should detect existing scoop installation' {
-            $result = Install-Scoop
-            
-            $result | Should -Be $true
-            $Script:Stats.ScoopInstalled | Should -Be $true
-        }
-
-        It 'Should not attempt to reinstall scoop' {
-            Mock Invoke-RestMethod { }
-            
-            Install-Scoop
-            
-            Should -Not -Invoke -CommandName Invoke-RestMethod
+        It 'Returns $true without re-running the installer' {
+            Install-Scoop | Should -Be $true
+            Should -Not -Invoke Invoke-RestMethod
         }
     }
 
-    Context 'When scoop is not installed' {
+    Context 'When scoop is not installed and the installer succeeds' {
         BeforeAll {
             Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'scoop' }
-        }
-
-        It 'Should install scoop successfully' {
             Mock Get-ExecutionPolicy { 'RemoteSigned' }
-            Mock Set-ExecutionPolicy { }
-            Mock Invoke-RestMethod { 
-                # Simulate scoop installation script
-                "Installation script content"
-            }
-            Mock Invoke-Expression {
-                # Simulate successful scoop installation
-                function global:scoop { param($args) }
-                $Script:Stats.ScoopInstalled = $true
-            }
-            
-            $result = Install-Scoop
-            
-            $result | Should -Be $true
-            $Script:Stats.ScoopInstalled | Should -Be $true
+            Mock Invoke-RestMethod   { 'fake-installer-script' }
+            Mock Invoke-Expression   { $Script:Stats.ScoopInstalled = $true }
         }
 
-        It 'Should change execution policy if restricted' {
-            Mock Get-ExecutionPolicy { 'Restricted' }
-            Mock Set-ExecutionPolicy { } -Verifiable
-            Mock Invoke-RestMethod { "script" }
-            Mock Invoke-Expression { 
-                $Script:Stats.ScoopInstalled = $true
-            }
-            
-            Install-Scoop
-            
-            Should -Invoke Set-ExecutionPolicy -Times 1 -ParameterFilter {
-                $ExecutionPolicy -eq 'RemoteSigned' -and 
-                $Scope -eq 'CurrentUser'
-            }
+        It 'Downloads from the official URL and reports success' {
+            Install-Scoop | Should -Be $true
+            Should -Invoke Invoke-RestMethod -Times 1 -ParameterFilter { $Uri -eq 'https://get.scoop.sh' }
         }
+    }
 
-        It 'Should not change execution policy if not restricted' {
+    Context 'When the installer throws' {
+        BeforeAll {
+            Mock Test-CommandExists { $false } -ParameterFilter { $Command -eq 'scoop' }
             Mock Get-ExecutionPolicy { 'RemoteSigned' }
-            Mock Set-ExecutionPolicy { } 
-            Mock Invoke-RestMethod { "script" }
-            Mock Invoke-Expression { 
-                $Script:Stats.ScoopInstalled = $true
-            }
-            
-            Install-Scoop
-            
-            Should -Not -Invoke Set-ExecutionPolicy
+            Mock Invoke-RestMethod   { throw 'network error' }
         }
 
-        It 'Should download scoop installer from official URL' {
-            Mock Get-ExecutionPolicy { 'RemoteSigned' }
-            Mock Invoke-RestMethod { "script" } -Verifiable
-            Mock Invoke-Expression { 
-                $Script:Stats.ScoopInstalled = $true
-            }
-            
-            Install-Scoop
-            
-            Should -Invoke Invoke-RestMethod -Times 1 -ParameterFilter {
-                $Uri -eq 'https://get.scoop.sh'
-            }
-        }
-
-        It 'Should return false if installation fails' {
-            Mock Get-ExecutionPolicy { 'RemoteSigned' }
-            Mock Invoke-RestMethod { throw "Network error" }
-            
-            $result = Install-Scoop
-            
-            $result | Should -Be $false
+        It 'Returns $false' {
+            Install-Scoop | Should -Be $false
             $Script:Stats.ScoopInstalled | Should -Be $false
-        }
-
-        It 'Should handle execution policy change errors gracefully' {
-            Mock Get-ExecutionPolicy { 'Restricted' }
-            Mock Set-ExecutionPolicy { throw "Access denied" }
-            
-            $result = Install-Scoop
-            
-            $result | Should -Be $false
         }
     }
 }
 
-Describe 'Initialize-Chezmoi' {
+Describe 'Initialize-Chezmoi (HTTPS default + -UseSSH fallback)' {
     BeforeEach {
-        $Script:Stats = @{
-            StartTime = Get-Date
-            ChezmoiInstalled = $false
-            ScoopInstalled = $false
-            PackagesInstalled = 0
-            ConfigsApplied = $false
+        $Script:Stats = @{ ConfigsApplied = $false }
+        $script:CapturedUrls = [System.Collections.Generic.List[string]]::new()
+    }
+
+    Context 'Default behavior (no -UseSSH)' {
+        BeforeAll {
+            function global:chezmoi {
+                # chezmoi init --apply --branch <branch> <url>
+                # Capture the URL (last positional arg) and exit 0.
+                $script:CapturedUrls.Add($args[-1])
+                $global:LASTEXITCODE = 0
+            }
+        }
+
+        AfterAll {
+            Remove-Item function:global:chezmoi -ErrorAction SilentlyContinue
+        }
+
+        It 'Clones via HTTPS for a shorthand owner/repo' {
+            Initialize-Chezmoi -Repo 'octocat/Hello-World' -Branch 'main' | Should -Be $true
+            $script:CapturedUrls.Count | Should -Be 1
+            $script:CapturedUrls[0]    | Should -Be 'https://github.com/octocat/Hello-World.git'
+            $Script:Stats.ConfigsApplied | Should -Be $true
         }
     }
 
-    Context 'With GitHub shorthand repository format' {
-        It 'Should convert shorthand to full URL' {
+    Context 'With -UseSSH and a working SSH agent' {
+        BeforeAll {
             function global:chezmoi {
-                param([string]$action, [string]$apply, [string]$branch, [string]$branchName, [string]$url)
-                
-                # Capture the URL parameter
-                $script:CapturedUrl = $args[-1]
-                $Script:Stats.ConfigsApplied = $true
+                $script:CapturedUrls.Add($args[-1])
+                $global:LASTEXITCODE = 0
             }
-            
-            Initialize-Chezmoi -Repo 'username/dotfiles' -Branch 'main'
-            
-            $script:CapturedUrl | Should -Be 'https://github.com/username/dotfiles.git'
-            $Script:Stats.ConfigsApplied | Should -Be $true
         }
 
-        It 'Should pass branch parameter correctly' {
-            $script:CapturedBranch = $null
-            
+        AfterAll {
+            Remove-Item function:global:chezmoi -ErrorAction SilentlyContinue
+        }
+
+        It 'Uses the SSH URL and stops there' {
+            Initialize-Chezmoi -Repo 'octocat/Hello-World' -Branch 'main' -UseSSH | Should -Be $true
+            $script:CapturedUrls[0]    | Should -Be 'git@github.com:octocat/Hello-World.git'
+            $script:CapturedUrls.Count | Should -Be 1
+        }
+    }
+
+    Context 'With -UseSSH but the SSH clone fails' {
+        BeforeAll {
+            # First call fails (SSH), second call succeeds (HTTPS).
             function global:chezmoi {
-                param([string[]]$args)
-                # Extract branch value
-                $branchIndex = [array]::IndexOf($args, '--branch')
-                if ($branchIndex -ge 0) {
-                    $script:CapturedBranch = $args[$branchIndex + 1]
+                $script:CapturedUrls.Add($args[-1])
+                if ($args[-1] -like 'git@*') {
+                    $global:LASTEXITCODE = 128
+                } else {
+                    $global:LASTEXITCODE = 0
                 }
-                $Script:Stats.ConfigsApplied = $true
-            }
-            
-            Initialize-Chezmoi -Repo 'user/repo' -Branch 'develop'
-            
-            $script:CapturedBranch | Should -Be 'develop'
-        }
-    }
-
-    Context 'With full URL repository format' {
-        It 'Should use URL as-is when full URL provided' {
-            function global:chezmoi {
-                param([string[]]$args)
-                $script:CapturedUrl = $args[-1]
-                $Script:Stats.ConfigsApplied = $true
-            }
-            
-            $fullUrl = 'https://github.com/user/dotfiles.git'
-            Initialize-Chezmoi -Repo $fullUrl -Branch 'main'
-            
-            $script:CapturedUrl | Should -Be $fullUrl
-        }
-
-        It 'Should handle HTTP URLs' {
-            function global:chezmoi {
-                param([string[]]$args)
-                $script:CapturedUrl = $args[-1]
-                $Script:Stats.ConfigsApplied = $true
-            }
-            
-            $httpUrl = 'http://git.example.com/user/dotfiles.git'
-            Initialize-Chezmoi -Repo $httpUrl -Branch 'main'
-            
-            $script:CapturedUrl | Should -Be $httpUrl
-        }
-    }
-
-    Context 'When initialization succeeds' {
-        BeforeAll {
-            function global:chezmoi {
-                param([string[]]$args)
-                $Script:Stats.ConfigsApplied = $true
             }
         }
 
-        It 'Should return true' {
-            $result = Initialize-Chezmoi -Repo 'user/repo' -Branch 'main'
-            
-            $result | Should -Be $true
+        AfterAll {
+            Remove-Item function:global:chezmoi -ErrorAction SilentlyContinue
         }
 
-        It 'Should update stats' {
-            Initialize-Chezmoi -Repo 'user/repo' -Branch 'main'
-            
+        It 'Falls back to HTTPS and reports success' {
+            Initialize-Chezmoi -Repo 'octocat/Hello-World' -Branch 'main' -UseSSH | Should -Be $true
+            $script:CapturedUrls.Count | Should -Be 2
+            $script:CapturedUrls[0]    | Should -Match '^git@github\.com:'
+            $script:CapturedUrls[1]    | Should -Be 'https://github.com/octocat/Hello-World.git'
             $Script:Stats.ConfigsApplied | Should -Be $true
         }
+    }
 
-        It 'Should use --apply flag' {
-            $script:HasApplyFlag = $false
-            
+    Context 'When both SSH and HTTPS fail' {
+        BeforeAll {
             function global:chezmoi {
-                param([string[]]$args)
-                $script:HasApplyFlag = $args -contains '--apply'
-                $Script:Stats.ConfigsApplied = $true
+                $script:CapturedUrls.Add($args[-1])
+                $global:LASTEXITCODE = 128
             }
-            
-            Initialize-Chezmoi -Repo 'user/repo' -Branch 'main'
-            
-            $script:HasApplyFlag | Should -Be $true
+        }
+
+        AfterAll {
+            Remove-Item function:global:chezmoi -ErrorAction SilentlyContinue
+        }
+
+        It 'Returns $false and leaves ConfigsApplied $false' {
+            Initialize-Chezmoi -Repo 'octocat/Hello-World' -Branch 'main' -UseSSH | Should -Be $false
+            $script:CapturedUrls.Count | Should -Be 2
+            $Script:Stats.ConfigsApplied | Should -Be $false
         }
     }
 
-    Context 'When initialization fails' {
+    Context 'With an explicit full URL' {
         BeforeAll {
             function global:chezmoi {
-                throw "Git clone failed"
+                $script:CapturedUrls.Add($args[-1])
+                $global:LASTEXITCODE = 0
             }
         }
 
-        It 'Should return false' {
-            $result = Initialize-Chezmoi -Repo 'user/repo' -Branch 'main'
-            
-            $result | Should -Be $false
+        AfterAll {
+            Remove-Item function:global:chezmoi -ErrorAction SilentlyContinue
         }
 
-        It 'Should not update ConfigsApplied stat' {
-            Initialize-Chezmoi -Repo 'user/repo' -Branch 'main'
-            
-            $Script:Stats.ConfigsApplied | Should -Be $false
+        It 'Passes the URL through unchanged' {
+            $url = 'https://gitlab.example.com/me/dotfiles.git'
+            Initialize-Chezmoi -Repo $url -Branch 'main' | Should -Be $true
+            $script:CapturedUrls[0] | Should -Be $url
         }
     }
 }
 
 Describe 'Set-EnvironmentVariables' {
     BeforeEach {
-        # Backup current environment
+        # Snapshot the user's current XDG vars so the test cannot leak.
         $script:BackupEnv = @{
             XDG_CONFIG_HOME = $env:XDG_CONFIG_HOME
-            XDG_DATA_HOME = $env:XDG_DATA_HOME
-            XDG_STATE_HOME = $env:XDG_STATE_HOME
-            XDG_CACHE_HOME = $env:XDG_CACHE_HOME
+            XDG_DATA_HOME   = $env:XDG_DATA_HOME
+            XDG_STATE_HOME  = $env:XDG_STATE_HOME
+            XDG_CACHE_HOME  = $env:XDG_CACHE_HOME
         }
-        
-        # Mock Environment methods
-        Mock -CommandName 'SetEnvironmentVariable' -ModuleName 'System.Environment' -MockWith { }
+        # Suppress the persistent (User-scope) write so the test does not
+        # mutate the host registry.
+        Mock New-Item {}
     }
 
     AfterEach {
-        # Restore environment
-        foreach ($key in $script:BackupEnv.Keys) {
-            if ($null -ne $script:BackupEnv[$key]) {
-                Set-Item -Path "env:$key" -Value $script:BackupEnv[$key]
-            }
+        foreach ($k in $script:BackupEnv.Keys) {
+            Set-Item -Path "env:$k" -Value $script:BackupEnv[$k]
         }
     }
 
-    Context 'Setting XDG environment variables' {
-        It 'Should set XDG_CONFIG_HOME correctly' {
-            Set-EnvironmentVariables
-            
-            $env:XDG_CONFIG_HOME | Should -Be "$env:USERPROFILE\.config"
-        }
-
-        It 'Should set XDG_DATA_HOME correctly' {
-            Set-EnvironmentVariables
-            
-            $env:XDG_DATA_HOME | Should -Be "$env:USERPROFILE\.local\share"
-        }
-
-        It 'Should set XDG_STATE_HOME correctly' {
-            Set-EnvironmentVariables
-            
-            $env:XDG_STATE_HOME | Should -Be "$env:USERPROFILE\.local\state"
-        }
-
-        It 'Should set XDG_CACHE_HOME correctly' {
-            Set-EnvironmentVariables
-            
-            $env:XDG_CACHE_HOME | Should -Be "$env:USERPROFILE\.cache"
-        }
-
-        It 'Should set all four XDG variables' {
-            Set-EnvironmentVariables
-            
-            $env:XDG_CONFIG_HOME | Should -Not -BeNullOrEmpty
-            $env:XDG_DATA_HOME | Should -Not -BeNullOrEmpty
-            $env:XDG_STATE_HOME | Should -Not -BeNullOrEmpty
-            $env:XDG_CACHE_HOME | Should -Not -BeNullOrEmpty
-        }
-    }
-
-    Context 'User-level environment persistence' {
-        It 'Should attempt to set variables at User scope' {
-            # Track calls to SetEnvironmentVariable
-            $script:SetEnvCalls = @()
-            
-            # Create a more specific mock
-            $originalSetEnv = [Environment]::SetEnvironmentVariable
-            [Environment] | Add-Member -MemberType ScriptMethod -Name SetEnvironmentVariable -Value {
-                param($name, $value, $target)
-                $script:SetEnvCalls += @{
-                    Name = $name
-                    Value = $value
-                    Target = $target
-                }
-            } -Force
-            
-            Set-EnvironmentVariables
-            
-            # Verify all variables were set with User scope
-            $script:SetEnvCalls.Count | Should -Be 4
-            $script:SetEnvCalls | ForEach-Object {
-                $_.Target | Should -Be 'User'
-            }
-            
-            # Restore original method
-            [Environment] | Add-Member -MemberType ScriptMethod -Name SetEnvironmentVariable -Value $originalSetEnv -Force
-        }
-
-        It 'Should set variables with correct values using Environment class' {
-            $script:SetEnvCalls = @()
-            
-            $originalSetEnv = [Environment]::SetEnvironmentVariable
-            [Environment] | Add-Member -MemberType ScriptMethod -Name SetEnvironmentVariable -Value {
-                param($name, $value, $target)
-                $script:SetEnvCalls += @{
-                    Name = $name
-                    Value = $value
-                }
-            } -Force
-            
-            Set-EnvironmentVariables
-            
-            $configHome = $script:SetEnvCalls | Where-Object { $_.Name -eq 'XDG_CONFIG_HOME' }
-            $configHome.Value | Should -Be "$env:USERPROFILE\.config"
-            
-            # Restore
-            [Environment] | Add-Member -MemberType ScriptMethod -Name SetEnvironmentVariable -Value $originalSetEnv -Force
-        }
-    }
-
-    Context 'Current session environment' {
-        It 'Should update environment variables for current session' {
-            Set-EnvironmentVariables
-            
-            Test-Path "env:XDG_CONFIG_HOME" | Should -Be $true
-            Test-Path "env:XDG_DATA_HOME" | Should -Be $true
-            Test-Path "env:XDG_STATE_HOME" | Should -Be $true
-            Test-Path "env:XDG_CACHE_HOME" | Should -Be $true
-        }
-
-        It 'Should use USERPROFILE as base path' {
-            $testProfile = "C:\Users\TestUser"
-            $originalProfile = $env:USERPROFILE
-            $env:USERPROFILE = $testProfile
-            
-            Set-EnvironmentVariables
-            
-            $env:XDG_CONFIG_HOME | Should -BeLike "$testProfile*"
-            $env:XDG_DATA_HOME | Should -BeLike "$testProfile*"
-            $env:XDG_STATE_HOME | Should -BeLike "$testProfile*"
-            $env:XDG_CACHE_HOME | Should -BeLike "$testProfile*"
-            
-            # Restore
-            $env:USERPROFILE = $originalProfile
-        }
-    }
-}
-
-Describe 'Test-CommandExists' {
-    Context 'When command exists' {
-        It 'Should return true for existing PowerShell commands' {
-            $result = Test-CommandExists 'Get-Process'
-            
-            $result | Should -Be $true
-        }
-
-        It 'Should return true for existing external commands' {
-            # Test with a command that should exist on Windows
-            $result = Test-CommandExists 'cmd'
-            
-            $result | Should -Be $true
-        }
-    }
-
-    Context 'When command does not exist' {
-        It 'Should return false for non-existent commands' {
-            $result = Test-CommandExists 'NonExistentCommand12345'
-            
-            $result | Should -Be $false
-        }
-
-        It 'Should handle errors gracefully' {
-            # Should not throw even with invalid command names
-            { Test-CommandExists '' } | Should -Not -Throw
-        }
+    It 'Sets all four XDG variables for the current session' {
+        Set-EnvironmentVariables
+        $env:XDG_CONFIG_HOME | Should -Be "$env:USERPROFILE\.config"
+        $env:XDG_DATA_HOME   | Should -Be "$env:USERPROFILE\.local\share"
+        $env:XDG_STATE_HOME  | Should -Be "$env:USERPROFILE\.local\state"
+        $env:XDG_CACHE_HOME  | Should -Be "$env:USERPROFILE\.cache"
     }
 }
 

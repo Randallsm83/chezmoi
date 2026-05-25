@@ -41,7 +41,7 @@ bash scripts/test.sh
 Invoke-Pester -Path .\bootstrap.Tests.ps1 -Output Detailed
 Invoke-Pester -Path .\bootstrap.Tests.ps1 -FullNameFilter '*Install-Chezmoi*'  # single suite
 ```
-Tests cover `bootstrap.ps1.example` (Install-Chezmoi, Install-Scoop, Initialize-Chezmoi, Set-EnvironmentVariables, Test-CommandExists) using extensive mocking to avoid system modifications.
+Tests cover `bootstrap.ps1` (Install-Chezmoi, Install-Scoop, Initialize-Chezmoi incl. the HTTPS-first / -UseSSH fallback, Set-EnvironmentVariables, Test-CommandExists, Test-DeveloperMode, Enable-DeveloperMode, Test-OnePasswordCLI, Invoke-PreflightChecks, Import-ScoopExport, Import-WingetExport) using extensive mocking to avoid system modifications. Requires Pester 5.x (`Install-Module Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser -SkipPublisherCheck`).
 
 ## Chezmoi naming conventions
 | Prefix/suffix | Meaning |

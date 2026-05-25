@@ -15,7 +15,11 @@ function Write-ColorOutput {
     Write-Host $Message
 }
 
-$BackupDir = "$env:LOCALAPPDATA\chezmoi\backups"
+$BackupDir = if ($env:XDG_STATE_HOME) {
+    Join-Path $env:XDG_STATE_HOME 'chezmoi\backups'
+} else {
+    Join-Path $HOME '.local\state\chezmoi\backups'
+}
 
 function Get-LatestBackup {
     Get-ChildItem $BackupDir -Directory | Sort-Object CreationTime -Descending | Select-Object -First 1
