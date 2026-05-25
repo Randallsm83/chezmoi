@@ -404,6 +404,33 @@ package_features:
   dev_extras: true       # Document conversion, .NET tools, API testing, WordPress
 
   # ============================================================================
+  # Productivity Apps
+  # ============================================================================
+  productivity: true     # PowerToys, Obsidian, Notepad++, WizTree, AutoHotkey, OFGB
+
+  # ============================================================================
+  # Password Managers
+  # ============================================================================
+  # `1password` keeps its own dedicated flag (handles AgileBits.1Password + cli).
+  # This flag covers any *additional* password managers (e.g. bitwarden-cli).
+  password_managers: true
+
+  # ============================================================================
+  # Browsers
+  # ============================================================================
+  browsers: true         # Chrome, LibreWolf, Edge, Chromium (scoop)
+
+  # ============================================================================
+  # Media & Communications
+  # ============================================================================
+  media: true            # Spotify, Slack
+
+  # ============================================================================
+  # VPN Clients
+  # ============================================================================
+  vpn: true              # Tailscale, ProtonVPN, Pritunl
+
+  # ============================================================================
   # Legacy/Deprecated (disabled)
   # ============================================================================
   asdf: false           # DEPRECATED: Replaced by mise
@@ -645,7 +672,7 @@ package_mapping:
   zed:
     windows:
       scoop: [zed]
-      winget: []
+      winget: [ZedIndustries.Zed]  # codified to match installed-via-winget drift (P1)
       mise: []
     linux:
       apt: []
@@ -951,7 +978,10 @@ package_mapping:
   rust_alternatives:
     windows:
       # `less` is the pager `bat` shells out to (Scoop suggestion for bat)
-      scoop: [bat, ripgrep, fd, eza, delta, zoxide, vivid, uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine, just, tokei, ouch, xh, less]
+      # `rustup` is the Rust toolchain installer (Rust-native); `tree-sitter` is the parser
+      # CLI for Rust-heavy editor ecosystems (neovim/zed) — both grouped here per the
+      # rust_alternatives convention even though tree-sitter itself is C.
+      scoop: [bat, ripgrep, fd, eza, delta, zoxide, vivid, uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine, just, tokei, ouch, xh, less, rustup, tree-sitter]
       winget: []
       mise: []
     linux:
@@ -1038,8 +1068,12 @@ package_mapping:
   # AI & ML Tools
   ai_tools:
     windows:
-      # `ollama-full` is the Scoop-suggested companion that bundles GPU runtime extras
-      scoop: [ollama, ollama-full, claude-code, opencode]
+      # `ollama-full` is the Scoop-suggested companion that bundles GPU runtime extras.
+      # `pam` and `scott` are DH-internal scoop manifests installed via direct URL
+      # (https://git.dreamhost.com/dreamhost-public/homebrew-{pam,scott}/-/raw/master/scoop/<name>.json);
+      # they have no scoop bucket, so they are emitted into scoop-packages.json.tmpl
+      # but the install script must `scoop install <url>` them (see scoop_bucket_overrides).
+      scoop: [ollama, ollama-full, claude-code, opencode, pam, scott]
       winget: []
       mise: []
     linux:
@@ -1059,8 +1093,12 @@ package_mapping:
       # `msikombustor` and `furmark` are Scoop suggestions paired with msiafterburner.
       # `vcredist2022` (suggested for rtss) is intentionally omitted — vcredist-aio
       # in `windows_utilities` installs all VC++ redistributables.
-      scoop: [steam, ludusavi, rtss, msiafterburner, msikombustor, furmark]
-      winget: []
+      # `blender` codified from installed-not-declared drift (3D modeling / modding pipeline).
+      scoop: [steam, ludusavi, rtss, msiafterburner, msikombustor, furmark, blender]
+      # Modding tooling (Wabbajack/Vortex/r2modman), GPU OSD overlay (SpecialK),
+      # SoftFever's OrcaSlicer (Bambu P1S slicer; grouped with gaming per audit
+      # decision — adjacent hobby tooling), and Microsoft.GameInput runtime.
+      winget: [WabbajackTools.Wabbajack, NexusMods.Vortex, SoftFever.OrcaSlicer, ebkr.r2modman, SpecialK.SpecialK, Microsoft.GameInput]
       mise: []
     linux:
       apt: []
@@ -1076,7 +1114,7 @@ package_mapping:
   # Container Tools
   docker:
     windows:
-      scoop: [docker-compose]
+      scoop: [docker-compose, rancher-cli, rancher-desktop]
       winget: []
       mise: []
     linux:
@@ -1094,9 +1132,16 @@ package_mapping:
   # Hardware & Drivers (Windows-only)
   hardware_tools:
     windows:
-      # `windowsdesktop-runtime-10.0` is the .NET 10 runtime fancontrol depends on
-      scoop: [nvidia-profile-inspector, nvcleanstall, ddu, cpu-z, gpu-z, smartmontools, fancontrol, windowsdesktop-runtime-10.0]
-      winget: []
+      # `windowsdesktop-runtime-10.0` was removed: the scoop install failed repeatedly on
+      # this host and the runtime is installed transitively by winget apps anyway.
+      # `btop` (system monitor — C++, not Rust, so does NOT belong in rust_alternatives),
+      # `equalizer-apo-np` + `peace-np` (audio EQ/DSP via Equalizer APO + Peace GUI;
+      # `-np` = Nonportable bucket — they install Windows services),
+      # `openscad-dev` (CAD for 3D printing) and `raspberry-pi-imager` (Pi homelab imaging)
+      # codify installed-not-declared drift.
+      scoop: [nvidia-profile-inspector, nvcleanstall, ddu, cpu-z, gpu-z, smartmontools, fancontrol, btop, equalizer-apo-np, peace-np, openscad-dev, raspberry-pi-imager]
+      # Audio interface control (Focusrite Scarlett) + PawnIO low-level hardware driver runtime.
+      winget: [FocusriteAudioEngineeringLtd.FocusriteControl, namazso.PawnIO]
       mise: []
     linux:
       # hardware_tools is conceptually Windows-only (see section comment
@@ -1116,7 +1161,15 @@ package_mapping:
   # Windows System Utilities
   windows_utilities:
     windows:
-      scoop: [everything, flow-launcher, bulk-crap-uninstaller, ventoy, vcredist-aio, islc]
+      # `everything-cli` is the CLI companion to the Everything search GUI (user rule:
+      # Everything replaces Windows Search indexing).
+      # `restart-explorer`, `rufus` (bootable USB), `secureuxtheme` (theme patching)
+      # codify installed-not-declared drift.
+      # `sudo` is the unix-style scoop sudo. NOTE: a long-standing comment in
+      # always_install.scoop says it conflicts with `gsudo` — codifying it here
+      # because it IS installed on this host (drift). If reinstalls break, drop it
+      # and rely on gsudo exclusively.
+      scoop: [everything, everything-cli, flow-launcher, bulk-crap-uninstaller, ventoy, vcredist-aio, islc, restart-explorer, rufus, secureuxtheme, sudo]
       winget: []
       mise: []
     linux:
@@ -1154,7 +1207,10 @@ package_mapping:
       #   or Cloudflare/Quad9 (fallback). Installs a Windows service.
       # cacert: required by unbound's tls-cert-bundle setting (it's already
       #   in always_install.scoop, listed here for documentation only).
-      scoop: [bind, rclone, pritunl-client, unbound]
+      # nmap: codified from installed-not-declared drift (network probing).
+      # NOTE: `pritunl-client` moved to the new `vpn` feature (winget: Pritunl.PritunlClient).
+      # The scoop install failed repeatedly; winget ships the official Pritunl MSI.
+      scoop: [bind, rclone, unbound, nmap]
       winget: []
       mise: []
     linux:
@@ -1175,8 +1231,14 @@ package_mapping:
     windows:
       # `windowsdesktop-runtime-8.0` (ilspy) and `latex` (pandoc PDF output) are
       # Scoop-suggested companions for packages already in this feature.
-      scoop: [postman, ilspy, pandoc, wkhtmltopdf, cygwin, dd, wp-cli, windowsdesktop-runtime-8.0, latex]
-      winget: []
+      # `glow` (Go; markdown TUI renderer) codified from installed-not-declared drift —
+      # grouped here alongside pandoc/wkhtmltopdf as document-rendering tooling.
+      scoop: [postman, ilspy, pandoc, wkhtmltopdf, cygwin, dd, wp-cli, windowsdesktop-runtime-8.0, latex, glow]
+      # Dev runtimes/SDKs/build toolchains codified from installed-not-declared drift:
+      # WSL, usbipd-win (USB-over-IP for WSL), WinDbg (kernel debugger), VS Build Tools 2022,
+      # Windows SDK 10.0.26100, JDK 24 + JRE.
+      # NOTE: ZedIndustries.Zed is owned by the `zed` feature mapping above.
+      winget: [Microsoft.WSL, dorssel.usbipd-win, Microsoft.WinDbg, Microsoft.VisualStudio.2022.BuildTools, Microsoft.WindowsSDK.10.0.26100, Oracle.JDK.24, Oracle.JavaRuntimeEnvironment]
       mise: []
     linux:
       apt: []
@@ -1186,6 +1248,107 @@ package_mapping:
       brew: [pandoc]
       mise: []
     darwin:
+      brew: []
+      mise: []
+
+  # Productivity Apps (Windows GUI utilities)
+  productivity:
+    windows:
+      # `autohotkey` is the scoop-installed counterpart of winget AutoHotkey.AutoHotkey.
+      # Both were installed via drift; codified here on scoop ONLY to avoid double-install.
+      # See MR Risk section for the explicit decision rationale.
+      scoop: [autohotkey]
+      # PowerToys (Microsoft utility suite), Obsidian (notes — pairs with $NOTES under
+      # ~/projects/notes), Notepad++, WizTree (disk usage), OFGB ("Oh Frick Go Back" —
+      # removes Win11 ads). NOTE: AutoHotkey deliberately NOT listed here (scoop owns it).
+      winget: [Microsoft.PowerToys, Obsidian.Obsidian, Notepad++.Notepad++, AntibodySoftware.WizTree, xM4ddy.OFGB]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      paru: []
+      brew: []
+      mise: []
+    darwin:
+      brew: []
+      mise: []
+
+  # Password Managers (additional to 1Password, which has its own dedicated mapping)
+  password_managers:
+    windows:
+      scoop: [bitwarden-cli]
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      paru: []
+      brew: []
+      mise: []
+    darwin:
+      brew: []
+      mise: []
+
+  # Browsers
+  browsers:
+    windows:
+      # `chromium` is the upstream open-source build (scoop extras). Chrome/LibreWolf/Edge
+      # ship via winget. Edge is preinstalled on Windows but listing it here makes the
+      # winget-export reproducible.
+      scoop: [chromium]
+      winget: [Google.Chrome, LibreWolf.LibreWolf, Microsoft.Edge]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      paru: []
+      brew: []
+      mise: []
+    darwin:
+      brew: []
+      mise: []
+
+  # Media & Communications
+  media:
+    windows:
+      scoop: []
+      winget: [Spotify.Spotify, SlackTechnologies.Slack]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      paru: []
+      brew: []
+      mise: []
+    darwin:
+      # spotify + slack already shipped as casks under brew_bundle.casks_darwin_apps;
+      # left empty here to avoid double-install on macOS.
+      brew: []
+      mise: []
+
+  # VPN Clients
+  vpn:
+    windows:
+      scoop: []
+      # Tailscale (mesh VPN), Proton VPN, Pritunl client.
+      # Pritunl moved here from network_tools.windows.scoop — the scoop manifest
+      # install fails on this host; winget ships the official MSI.
+      winget: [Tailscale.Tailscale, Proton.ProtonVPN, Pritunl.PritunlClient]
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      paru: []
+      brew: []
+      mise: []
+    darwin:
+      # macOS Pritunl + Tailscale already shipped via existing macOS-only mappings
+      # (network_tools.darwin.cask = [pritunl]; Tailscale is typically a system extension).
       brew: []
       mise: []
 
@@ -1355,7 +1518,10 @@ scoop_buckets:
 scoop_bucket_overrides:
   extras:
     - arduino
+    - autohotkey
+    - blender
     - bulk-crap-uninstaller
+    - chromium
     - cpu-z
     - ddu
     - everything
@@ -1373,15 +1539,26 @@ scoop_bucket_overrides:
     - nvidia-profile-inspector
     - ollama-full
     - postman
-    - pritunl-client
+    - raspberry-pi-imager
+    - rancher-desktop
+    - restart-explorer
     - rtss
+    - rufus
+    - secureuxtheme
     - vcredist-aio
     - ventoy
     - zed
   versions:
+    - openscad-dev
     - steam
     - windowsdesktop-runtime-8.0
-    - windowsdesktop-runtime-10.0
+    # windowsdesktop-runtime-10.0 removed: scoop install fails repeatedly; the
+    # .NET 10 runtime is installed transitively by other winget apps.
+  nonportable:
+    # Scoop "Nonportable" bucket — apps that install Windows services or system
+    # state (cannot be cleanly uninstalled by removing the scoop dir).
+    - equalizer-apo-np   # Equalizer APO (audio DSP service)
+    - peace-np           # Peace GUI for Equalizer APO
   nerd-fonts:
     - CascadiaCode-NF
     - FiraCode-NF
