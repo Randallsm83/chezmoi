@@ -83,36 +83,93 @@ $Script:Stats = @{
 # ============================================================================
 # Helper Functions
 # ============================================================================
+# Canonical body lives in `.chezmoitemplates/ps-logging` and is included into
+# chezmoi-rendered .ps1.tmpl scripts via `{{ template "ps-logging" . }}`. We
+# keep an inlined verbatim copy here because bootstrap.ps1 is downloaded and
+# executed via `iwr | iex` BEFORE chezmoi exists on the machine, so it can't
+# rely on the template loader. Update both sites in lockstep.
+
+function Get-StatusLogFile {
+    <#
+    .SYNOPSIS
+        Resolve the per-script log file path under $env:XDG_STATE_HOME\dotfiles\logs\
+    #>
+    [CmdletBinding()]
+    param()
+
+    $stateRoot = if ($env:XDG_STATE_HOME) { $env:XDG_STATE_HOME }
+    else { Join-Path $HOME '.local\state' }
+
+    $logDir = Join-Path $stateRoot 'dotfiles\logs'
+    try {
+        if (-not (Test-Path -LiteralPath $logDir)) {
+            New-Item -ItemType Directory -Path $logDir -Force -ErrorAction Stop | Out-Null
+        }
+    } catch {
+        return $null
+    }
+
+    $scriptLeaf =
+        if ($PSCommandPath) { [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath) }
+        elseif ($MyInvocation -and $MyInvocation.ScriptName) { [System.IO.Path]::GetFileNameWithoutExtension($MyInvocation.ScriptName) }
+        else { 'bootstrap' }
+
+    Join-Path $logDir ("$scriptLeaf.log")
+}
 
 function Write-Status {
     <#
     .SYNOPSIS
-        Write formatted status message with colored icon
+        Write formatted status message with colored icon and mirror to script log file.
     #>
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string]$Message,
-        
+
         [ValidateSet('Info', 'Success', 'Warning', 'Error')]
-        [string]$Type = 'Info'
+        [string]$Type = 'Info',
+
+        [string]$LogFile
     )
-    
-    $colors = @{
-        Info = 'Cyan'
-        Success = 'Green'
-        Warning = 'Yellow'
-        Error = 'Red'
-    }
-    
-    $symbols = @{
-        Info = 'ℹ'
-        Success = '✓'
-        Warning = '⚠'
-        Error = '✗'
-    }
-    
+
+    $colors  = @{ Info = 'Cyan';  Success = 'Green';   Warning = 'Yellow'; Error = 'Red' }
+    $symbols = @{ Info = "$([char]0x2139)"; Success = "$([char]0x2713)"; Warning = "$([char]0x26A0)"; Error = "$([char]0x2717)" }
+
     Write-Host "$($symbols[$Type]) " -ForegroundColor $colors[$Type] -NoNewline
     Write-Host $Message
+
+    if (-not $LogFile) { $LogFile = Get-StatusLogFile }
+    if ($LogFile) {
+        $timestamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fff'
+        try { Add-Content -LiteralPath $LogFile -Value "[$timestamp] [$Type] $Message" -ErrorAction Stop }
+        catch { }
+    }
+}
+
+function Write-LogLine {
+    <#
+    .SYNOPSIS
+        Raw colored console line that ALSO mirrors to the script log file.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+
+        [string]$Color = 'White',
+
+        [string]$LogFile
+    )
+
+    Write-Host $Message -ForegroundColor $Color
+
+    if (-not $LogFile) { $LogFile = Get-StatusLogFile }
+    if ($LogFile) {
+        $timestamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fff'
+        try { Add-Content -LiteralPath $LogFile -Value "[$timestamp] $Message" -ErrorAction Stop }
+        catch { }
+    }
 }
 
 function Test-CommandExists {
