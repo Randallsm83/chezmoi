@@ -1,1 +1,38 @@
+# LF everywhere — see AGENTS.md § "Line endings" for the policy.
 * text=auto eol=lf
+
+# Explicit text overrides (LF on checkout, regardless of editor)
+*.sh        text eol=lf
+*.bash      text eol=lf
+*.zsh       text eol=lf
+*.fish      text eol=lf
+*.tmpl      text eol=lf
+*.ps1       text eol=lf
+*.psm1      text eol=lf
+*.psd1      text eol=lf
+*.bat       text eol=lf
+*.cmd       text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.toml      text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.lua       text eol=lf
+
+# Binary — never line-ending-convert
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.zip       binary
+*.gz        binary
+*.tar       binary
+*.7z        binary
+*.exe       binary
+*.dll       binary
+*.ttf       binary
+*.otf       binary
+*.woff      binary
+*.woff2     binary
