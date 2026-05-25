@@ -60,7 +60,7 @@ This module automates the process of adding security exclusions for games, which
 
 The module is already installed at:
 ```
-C:\Users\Randall\Documents\PowerShell\Modules\GamePerformanceOptimizer\
+$HOME\Documents\PowerShell\Modules\GamePerformanceOptimizer\
 ```
 
 ### Manual Installation
