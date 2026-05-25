@@ -2,7 +2,7 @@
 # Theme colors + per-application theme mappings.
 # Loaded by chezmoi automatically as part of the .chezmoidata/ directory.
 # All values merge into the same template namespace as the other .chezmoidata/*.yaml files.
-# Override active theme in .chezmoi.local.toml: [data] theme = ""onedark""
+# Override active theme in .chezmoi.local.toml: [data] theme = "onedark"
 # ============================================================================
 # Theme Colors
 # ============================================================================
@@ -148,7 +148,7 @@ theme_mappings:
     tokyonight: "tokyonight-night"
     tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
-    kanagawa: "molokai"  # fallback - vivid doesn't have kanagawa
+    kanagawa: "kanagawa"
 
   # Eza theme filenames (in ~/.config/eza/themes/)
   eza:
@@ -156,7 +156,7 @@ theme_mappings:
     onedark: "one-dark"
     gruvbox-material: "gruvbox-dark"
     tokyonight: "tokyonight-night"
-    tokyonight-storm: "tokyonight-night"  # eza ships tokyonight-night but not tokyonight-storm
+    tokyonight-storm: "tokyonight-storm"
     dracula: "dracula"
     kanagawa: "kanagawa"
 
