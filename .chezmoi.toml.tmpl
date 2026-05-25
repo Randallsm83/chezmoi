@@ -175,8 +175,13 @@
     shell_profile = {{ joinPath .chezmoi.homeDir ".config" "zsh" ".zshrc" | quote }}
 {{- end }}
 
-    # Theme and styling (can be overridden via .chezmoi.local.toml or .chezmoidata.yaml)
-    theme = "spaceduck"  # Primary: spaceduck, Secondary: onedark, gruvbox-material
+    # Theme and styling.
+    # `theme` is the SINGLE SOURCE OF TRUTH for the active theme name. Templates
+    # like `{{ index .theme_mappings.<app> .theme }}` consume this scalar.
+    # The value is rendered from `.chezmoidata/theme.yaml` -> theme.name so that
+    # editing that one file (and re-running `chezmoi apply --init`) flips every
+    # editor in lockstep. Override per-machine via `.chezmoi.local.toml`.
+    theme = {{ (index (fromYaml (include ".chezmoidata/theme.yaml")) "theme").name | quote }}
     font = "Hack"
     font_fallback = "FiraCode"
     nerd_font = "Hack Nerd Font"
