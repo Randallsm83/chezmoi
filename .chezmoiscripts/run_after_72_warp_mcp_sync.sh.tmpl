@@ -1,0 +1,109 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+#
+# Reconcile chezmoi-managed MCP servers into ~/.warp/.mcp.json on every
+# `chezmoi apply` without trampling Warp's runtime-managed entries.
+#
+# `~/.warp/.mcp.json` is the Warp-native MCP config file on every platform
+# (see https://docs.warp.dev/terminal/settings/file-locations — the file
+# lives under $HOME on macOS, Linux, and Windows; only the rest of Warp's
+# data follows XDG/AppData conventions).
+#
+# Warp writes some entries itself at runtime (notably `pam`, which gets a
+# freshly-generated per-host bearer token via `pam sync --client warp`
+# when the daemon starts). We must NOT clobber those.
+#
+# This script owns a small allow-list of chezmoi-managed entries (currently
+# just `1password`) and merges them into the file via jq. Every key NOT in
+# that list is preserved verbatim from the live file. The 1Password
+# Environments MCP server is rendered from .chezmoidata/mcp.yaml's
+# `mcp.servers["1password"]` entry so that file is the single source of
+# truth for every MCP-aware tool.
+#
+# Idempotent: short-circuits when the managed subset already matches what's
+# on disk.
+#
+# Mirrors run_after_72_warp_mcp_sync.ps1.tmpl on Windows.
+
+set -euo pipefail
+
+{{ if not .package_features.warp -}}
+# Warp not enabled on this host (package_features.warp = false). Skip.
+exit 0
+{{- end }}
+
+if ! command -v jq >/dev/null 2>&1; then
+    # jq is declared in always_install / shell_tools, but skip cleanly on
+    # very-first-bootstrap before install-packages-unix has run.
+    echo "warp_mcp_sync: jq not on PATH yet; skipping (will run again next apply)."
+    exit 0
+fi
+
+MCP_PATH="${HOME}/.warp/.mcp.json"
+MCP_DIR="$(dirname "${MCP_PATH}")"
+mkdir -p "${MCP_DIR}"
+
+# Resolve account shortname from $OP_ACCOUNT (e.g. "my" for my.1password.com).
+# Falls back to "my" if unset so the entry is still well-formed.
+OP_ACCOUNT="${OP_ACCOUNT:-my}"
+
+# Managed entries (rendered from .chezmoidata/mcp.yaml). We strip the
+# `type` field (Warp infers transport from command/url; the on-disk schema
+# doesn't accept it) and resolve the literal `${OP_ACCOUNT}` placeholder at
+# runtime so the entry stays per-user.
+{{- $opServer := index .mcp.servers "1password" -}}
+{{- $opEntry := dict "command" $opServer.command "args" $opServer.args "env" $opServer.env }}
+read -r -d '' MANAGED_JSON_TEMPLATE <<'__MCP_EOF__' || true
+{
+  "1password": {{ $opEntry | toJson }}
+}
+__MCP_EOF__
+
+# Substitute ${OP_ACCOUNT} literal -> resolved value.
+MANAGED_JSON="${MANAGED_JSON_TEMPLATE//\$\{OP_ACCOUNT\}/${OP_ACCOUNT}}"
+
+# Validate managed JSON before touching the live file.
+if ! echo "${MANAGED_JSON}" | jq -e '.' >/dev/null 2>&1; then
+    echo "warp_mcp_sync: managed JSON failed to parse; aborting." >&2
+    exit 1
+fi
+
+# Load existing file, or seed with empty mcpServers if missing/corrupt.
+if [ -f "${MCP_PATH}" ]; then
+    if ! EXISTING="$(jq -e '.' "${MCP_PATH}" 2>/dev/null)"; then
+        echo "warp_mcp_sync: ${MCP_PATH} is not valid JSON; backing up and starting fresh."
+        cp -- "${MCP_PATH}" "${MCP_PATH}.bak-$(date +%Y%m%d%H%M%S)"
+        EXISTING='{"mcpServers": {}}'
+    fi
+else
+    EXISTING='{"mcpServers": {}}'
+fi
+
+# Ensure .mcpServers exists.
+EXISTING="$(jq '. + {mcpServers: ((.mcpServers // {}))}' <<<"${EXISTING}")"
+
+# No-op short-circuit: if every managed key already matches, exit clean.
+DIFF="$(jq -n \
+    --argjson existing "${EXISTING}" \
+    --argjson managed "${MANAGED_JSON}" \
+    '[$managed | keys[] | select(($existing.mcpServers[.] // null) != $managed[.])]')"
+
+if [ "$(jq 'length' <<<"${DIFF}")" -eq 0 ]; then
+    echo "warp_mcp_sync: ${MCP_PATH} managed entries already in sync."
+    exit 0
+fi
+
+# Merge managed entries over existing; preserve everything else.
+MERGED="$(jq -n \
+    --argjson existing "${EXISTING}" \
+    --argjson managed "${MANAGED_JSON}" \
+    '$existing | .mcpServers = ((.mcpServers // {}) + $managed)')"
+
+# Atomic write.
+TMP="${MCP_PATH}.tmp.$$"
+printf '%s\n' "${MERGED}" | jq '.' > "${TMP}"
+mv -f -- "${TMP}" "${MCP_PATH}"
+
+NAMES="$(jq -r '. | keys | join(", ")' <<<"${MANAGED_JSON}")"
+echo "warp_mcp_sync: synced ${MCP_PATH} entries -> [${NAMES}]"
+{{- end }}
