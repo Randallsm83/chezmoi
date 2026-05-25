@@ -1,0 +1,149 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Generate opencode theme JSON files from color palettes in .chezmoidata.yaml.
+# Mirrors run_onchange_generate_opencode_themes.sh.tmpl (Unix) — same palette
+# extraction, same output JSON shape, just emitted via pwsh on Windows.
+# Re-runs when .chezmoidata.yaml's theme section changes (chezmoi tracks the
+# hash via the run_onchange_ prefix).
+
+$ErrorActionPreference = 'Stop'
+
+$ThemesDir = if ($env:XDG_CONFIG_HOME) {
+    Join-Path $env:XDG_CONFIG_HOME 'opencode\themes'
+} else {
+    Join-Path $HOME '.config\opencode\themes'
+}
+New-Item -ItemType Directory -Force -Path $ThemesDir | Out-Null
+
+function New-OpencodeTheme {
+    <#
+    .SYNOPSIS
+        Render a single opencode theme JSON file. Idempotent: skips the write
+        if the file already exists and hashes match the new content, so the
+        run_onchange wrapper isn't the only no-op guard.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$Background,
+        [Parameter(Mandatory)][string]$Foreground,
+        [Parameter(Mandatory)][string]$Purple,
+        [Parameter(Mandatory)][string]$Pink,
+        [Parameter(Mandatory)][string]$Green,
+        [Parameter(Mandatory)][string]$Orange,
+        [Parameter(Mandatory)][string]$Blue,
+        [Parameter(Mandatory)][string]$Cyan,
+        [Parameter(Mandatory)][string]$Yellow
+    )
+
+    # Mirrors the JSON shape emitted by the Unix script byte-for-byte; the
+    # only divergence is encoding/newlines (the .json files themselves are
+    # UTF-8 no BOM with LF terminators on both platforms).
+    $themeJson = @"
+{
+  "`$schema": "https://opencode.ai/theme.json",
+  "defs": {
+    "bg": "$Background",
+    "fg": "$Foreground",
+    "purple": "$Purple",
+    "pink": "$Pink",
+    "green": "$Green",
+    "orange": "$Orange",
+    "blue": "$Blue",
+    "cyan": "$Cyan",
+    "yellow": "$Yellow"
+  },
+  "theme": {
+    "primary": "blue",
+    "secondary": "cyan",
+    "accent": "pink",
+    "error": "orange",
+    "warning": "purple",
+    "success": "green",
+    "info": "blue",
+
+    "text": "fg",
+    "textMuted": "cyan",
+
+    "background": "bg",
+    "backgroundPanel": "bg",
+    "backgroundElement": "bg",
+
+    "border": "cyan",
+    "borderActive": "pink",
+    "borderSubtle": "cyan",
+
+    "diffAdded": "green",
+    "diffRemoved": "orange",
+    "diffContext": "cyan",
+    "diffHunkHeader": "blue",
+    "diffHighlightAdded": "green",
+    "diffHighlightRemoved": "orange",
+    "diffAddedBg": "bg",
+    "diffRemovedBg": "bg",
+    "diffContextBg": "bg",
+    "diffLineNumber": "cyan",
+    "diffAddedLineNumberBg": "bg",
+    "diffRemovedLineNumberBg": "bg",
+
+    "markdownText": "fg",
+    "markdownHeading": "purple",
+    "markdownLink": "blue",
+    "markdownLinkText": "cyan",
+    "markdownCode": "green",
+    "markdownBlockQuote": "cyan",
+    "markdownEmph": "pink",
+    "markdownStrong": "yellow",
+    "markdownHorizontalRule": "cyan",
+    "markdownListItem": "blue",
+    "markdownListEnumeration": "cyan",
+    "markdownImage": "pink",
+    "markdownImageText": "blue",
+    "markdownCodeBlock": "fg",
+
+    "syntaxComment": "cyan",
+    "syntaxKeyword": "purple",
+    "syntaxFunction": "blue",
+    "syntaxVariable": "fg",
+    "syntaxString": "green",
+    "syntaxNumber": "orange",
+    "syntaxType": "yellow",
+    "syntaxOperator": "pink",
+    "syntaxPunctuation": "fg"
+  }
+}
+"@
+    # Normalize to LF so the file is identical to the Unix sibling.
+    $themeJson = $themeJson -replace "`r`n", "`n"
+
+    $outPath = Join-Path $ThemesDir "$Name.json"
+    if (Test-Path -LiteralPath $outPath) {
+        $existing = [System.IO.File]::ReadAllText($outPath) -replace "`r`n", "`n"
+        if ($existing -eq $themeJson) {
+            return
+        }
+    }
+    [System.IO.File]::WriteAllText($outPath, $themeJson, [System.Text.UTF8Encoding]::new($false))
+}
+
+# Generate every theme defined under .chezmoidata.yaml's `theme:` block.
+# We mirror the Unix script's `range $themes` loop, skipping the `name` key
+# (active theme selector) and any non-map entries.
+{{- $themes := (index (fromYaml (include ".chezmoidata.yaml")) "theme") }}
+{{- range $theme_name, $colors := $themes }}
+{{- if and (ne $theme_name "name") (kindIs "map" $colors) }}
+New-OpencodeTheme `
+    -Name "{{ $theme_name }}" `
+    -Background "{{ $colors.background }}" `
+    -Foreground "{{ $colors.foreground }}" `
+    -Purple "{{ $colors.purple }}" `
+    -Pink "{{ $colors.pink }}" `
+    -Green "{{ $colors.green }}" `
+    -Orange "{{ $colors.orange }}" `
+    -Blue "{{ $colors.blue }}" `
+    -Cyan "{{ $colors.cyan }}" `
+    -Yellow "{{ $colors.yellow }}"
+{{- end }}
+{{- end }}
+
+Write-Host "[OK] Generated opencode themes in $ThemesDir" -ForegroundColor Green
+{{- end }}
