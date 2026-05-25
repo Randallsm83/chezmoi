@@ -953,7 +953,64 @@ $env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
 
 ---
 
+### Bootstrap exit codes
+
+Both bootstrap scripts use a structured exit code map so wrappers / CI can
+branch on the failure mode instead of having to parse stderr. The same
+numbers are emitted from `bootstrap.ps1` (`$ExitCode.<name>`) and `setup.sh`
+(`$E_<NAME>`):
+
+| Code | bootstrap.ps1 name | setup.sh name      | Meaning                                            |
+|-----:|--------------------|--------------------|-----------------------------------------------------|
+|  `0` | `Success`          | `E_SUCCESS`        | Bootstrap completed without errors                 |
+| `10` | `Preflight`        | `E_PREFLIGHT`      | Pre-flight checks failed (network/dev mode/etc.)   |
+| `20` | `ScoopInstall`     | `E_SCOOP_INSTALL`  | Scoop installer failed after all retries           |
+| `21` | `WingetImport`     | `E_WINGET_IMPORT`  | `winget import` of an export file failed          |
+| `22` | `ScoopImport`      | `E_SCOOP_IMPORT`   | `scoop import` of an export file failed           |
+| `30` | `ChezmoiInit`      | `E_CHEZMOI_INIT`   | `chezmoi init` could not clone the source repo    |
+| `40` | `ChezmoiApply`     | `E_CHEZMOI_APPLY`  | `chezmoi apply` failed after init succeeded       |
+| `50` | `NoSshKey`         | `E_NO_SSH_KEY`     | `-UseSSH`/`USE_SSH=1` but no SSH key in agent     |
+| `99` | `Unknown`          | `E_UNKNOWN`        | Fall-through for unanticipated failure paths      |
+
+Check a recent run on Unix:
+```bash
+./setup.sh; echo "exit=$?"
+```
+On Windows:
+```powershell
+.\bootstrap.ps1; "exit=$LASTEXITCODE"
+```
+
+---
+
 ### Troubleshooting
+
+#### Diagnostic decision tree
+
+Start with the diagnostic commands at the top of the tree and follow the
+branch that matches the symptom you're seeing. Each leaf links to the
+detailed Problem/Solution prose below. The tree is an index, not a
+replacement — once you've narrowed the failure, jump down to the
+matching section for the full fix.
+
+```mermaid
+graph TD
+  START(["Something's wrong"]) --> DOCTOR{"chezmoi doctor<br/>exit code?"}
+  DOCTOR -->|non-zero| FIX_DOCTOR["Fix the failing check<br/>(usually: missing op, git, or pwsh)"]
+  DOCTOR -->|0| DIFF{"chezmoi diff<br/>output?"}
+  DIFF -->|template error| TEMPLATE["Template / yaml error<br/>→ General Issues § 'apply fails with template errors'"]
+  DIFF -->|unexpected churn| RENORM["Drift on every apply<br/>→ General Issues § 'Configs not applied' + 'reset and start over'"]
+  DIFF -->|empty / expected| APPLY{"chezmoi apply<br/>fails?"}
+  APPLY -->|symlink errors| WIN_SYM["Windows § 'Symlinks not created'<br/>(enable Developer Mode)"]
+  APPLY -->|mise / runtime missing| MISE{"mise doctor<br/>says shims missing?"}
+  APPLY -->|scoop fail| SCOOP{"scoop status<br/>shows failed installs?"}
+  APPLY -->|op signin loop| OP["op signin prompts repeatedly<br/>→ SECRETS.md § troubleshooting + check 1P CLI integration"]
+  APPLY -->|other| GENERAL["General Issues<br/>(network, ignore rules, reset)"]
+  MISE -->|yes| RESHIM["mise reshim<br/>(re-create shims for newly installed tools)"]
+  MISE -->|no| RUNTIME["Linux/WSL/macOS § 'cargo installs fail'<br/>(missing build deps)"]
+  SCOOP -->|yes| SCOOP_FIX["Windows § 'Scoop installation fails'<br/>(execution policy + Set-ExecutionPolicy RemoteSigned)"]
+  SCOOP -->|no| WINGET["Windows § 'Winget requires admin'<br/>or 'Mise not found' (PATH refresh)"]
+```
 
 #### Windows Issues
 

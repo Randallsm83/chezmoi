@@ -1,0 +1,32 @@
+# .chezmoidata/fonts.yaml
+# Font families, Nerd Font variants, and ligature settings.
+# Loaded by chezmoi automatically as part of the .chezmoidata/ directory.
+# ============================================================================
+# Fonts
+# ============================================================================
+# Referenced in: wezterm, alacritty, Windows Terminal configs
+# Override in .chezmoi.local.toml: [data] font = "JetBrainsMono"
+
+fonts:
+  primary: "Hack"
+  fallback: "FiraCode"
+  nerd_fonts:
+    - "Hack Nerd Font"
+    - "FiraCode Nerd Font"
+    - "JetBrainsMono Nerd Font"
+    - "CascadiaCode Nerd Font"
+  emoji: "Noto Color Emoji"
+  symbols: "Symbols Nerd Font Mono"
+
+  # Fira Code ligature settings (OpenType features)
+  fira_code_stylistic_sets:
+    - ss02  # >= <= != == === !==
+    - ss03  # ->
+    - ss04  # >=
+    - ss05  # @
+    - ss08  # == === != !==
+  fira_code_character_variants:
+    - cv15  # &
+    - cv24  # >=
+    - cv29  # {}
+# vim: ts=2 sts=2 sw=2 et

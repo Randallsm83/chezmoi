@@ -1,0 +1,140 @@
+# ██╗  ██╗ █████╗ ███╗   ██╗ █████╗  ██████╗  █████╗ ██╗    ██╗ █████╗
+# ██║ ██╔╝██╔══██╗████╗  ██║██╔══██╗██╔════╝ ██╔══██╗██║    ██║██╔══██╗
+# █████╔╝ ███████║██╔██╗ ██║███████║██║  ███╗███████║██║ █╗ ██║███████║
+# ██╔═██╗ ██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══██║██║███╗██║██╔══██║
+# ██║  ██╗██║  ██║██║ ╚████║██║  ██║╚██████╔╝██║  ██║╚███╔███╔╝██║  ██║
+# ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝  ╚═╝
+# Kanagawa (wave) palette for vivid (LS_COLORS generator), derived from
+# `.chezmoidata/theme.yaml` `theme.kanagawa` and mapped onto the same slot
+# shape as `spaceduck.yml`. Replaces the previous `molokai` fallback used by
+# `theme_mappings.vivid.kanagawa` before this file existed.
+
+colors:
+  # Theme colors (ANSI palette)
+  background: '1f1f28'
+  black:   '000000'
+  red:     'e82424'
+  green:   '98bb6c'
+  yellow:  'e6c384'
+  blue:    '7e9cd8'
+  magenta: '957fb8'
+  cyan:    '7fb4ca'
+  white:   'dcd7ba'
+
+core:
+  regular_file: {}
+
+  directory:
+    foreground: blue
+    font-style: bold
+
+  executable_file:
+    foreground: green
+    font-style: bold
+
+  symlink:
+    foreground: magenta
+
+  broken_symlink:
+    foreground: yellow
+    background: red
+  missing_symlink_target:
+    foreground: yellow
+    background: red
+  fifo:
+    foreground: magenta
+
+  socket:
+    foreground: magenta
+
+  character_device:
+    foreground: cyan
+
+  block_device: {}
+
+  setuid: {}
+
+  setgid: {}
+
+  reset_to_normal: {}
+
+  multi_hard_link: {}
+
+  file_with_capability: {}
+
+  door: {}
+
+  normal_text:
+    {}
+
+  sticky:
+    {}
+
+  sticky_other_writable:
+    {}
+
+  other_writable:
+    {}
+
+text:
+  special:
+    foreground: yellow
+    font-style: underline
+
+  todo:
+    foreground: green
+
+  licenses:
+    foreground: green
+    font-style: italic
+
+  configuration:
+    foreground: green
+
+  other:
+    foreground: white
+
+markup:
+  foreground: yellow
+
+  other:
+    foreground: green
+
+programming:
+  source:
+    foreground: magenta
+
+  tooling:
+    foreground: green
+
+
+media:
+  foreground: green
+
+office:
+  foreground: cyan
+  document:
+    foreground: cyan
+  spreadsheet:
+    foreground: green
+  presentation:
+    foreground: cyan
+  calendar:
+    foreground: cyan
+    font-style: underline
+  ebook:
+    foreground: cyan
+
+archives:
+  foreground: red
+  font-style: underline
+
+executable:
+  foreground: green
+  font-style: bold
+
+unimportant:
+  foreground: white
+  font-style: italic
+
+# vim: ts=2 sts=2 sw=2 et

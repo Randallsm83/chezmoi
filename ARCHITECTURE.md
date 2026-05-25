@@ -41,7 +41,13 @@ This document describes the architecture and design decisions for these dotfiles
 ```
 ~/.local/share/chezmoi/           # Chezmoi source directory
 ├── .chezmoi.toml.tmpl            # Main config (machine detection)
-├── .chezmoidata.yaml             # Static data (packages, themes)
+├── .chezmoidata/                 # Static data (packages, themes, dns, fonts, ssh, mcp)
+│   ├── theme.yaml                # Theme colors + per-app theme mappings
+│   ├── fonts.yaml                # Font families + Fira Code ligature settings
+│   ├── ssh.yaml                  # SSH/1Password agent settings
+│   ├── packages.yaml             # Feature flags, package mapping, brew/scoop sources
+│   ├── dns.yaml                  # VPN/NRPT/DoT/DoH routing, Caddy CA trust
+│   └── mcp.yaml                  # MCP server definitions
 ├── chezmoi.local.toml.example    # Local overrides example (no leading dot)
 ├── .chezmoiignore                # Platform/feature exclusions
 │
@@ -122,7 +128,7 @@ The full inventory of template variables lives in `AGENTS.md`. In short:
   `.hostname`, `.remote_tier`) classify the host; `.remote_tier` is the
   active size (`minimal` | `medium` | `full`).
 - Feature flags (`.package_features.<name>`) are defined in
-  `.chezmoidata.yaml`. Refer to `INSTALL-GUIDE.md` § Feature Flags for the
+  `.chezmoidata/packages.yaml`. Refer to `INSTALL-GUIDE.md` § Feature Flags for the
   full list and defaults.
 
 ### Template Patterns
@@ -161,11 +167,17 @@ The full inventory of template variables lives in `AGENTS.md`. In short:
    - Feature flag defaults
    - Exposed as `.data` in templates
 
-2. **`.chezmoidata.yaml`** (Static, version-controlled)
-   - Package lists
-   - Theme colors
+2. **`.chezmoidata/*.yaml`** (Static, version-controlled)
+   - Split into focused files (`theme.yaml`, `fonts.yaml`, `ssh.yaml`,
+     `packages.yaml`, `dns.yaml`, `mcp.yaml`). Chezmoi merges every
+     `*.yaml` in `.chezmoidata/` into one template namespace at apply
+     time, so adding a new top-level key is as simple as dropping a new
+     file in this directory.
+   - Package lists, scoop buckets, brew bundle, always-install sets
+   - Theme colors + per-app theme name mappings
    - Font configuration
    - Feature flag definitions
+   - DNS routing rules / DoT / DoH policy / Caddy CA trust
 
 3. **`.chezmoi.local.toml`** (Per-machine overrides, gitignored)
    - Override any `.data` variable
@@ -176,7 +188,7 @@ The full inventory of template variables lives in `AGENTS.md`. In short:
 
 1. `.chezmoi.local.toml` (highest - machine-specific)
 2. `.chezmoi.toml.tmpl` (generated defaults)
-3. `.chezmoidata.yaml` (static defaults)
+3. `.chezmoidata/*.yaml` (static defaults; all files merged into one namespace)
 
 ### Machine Type Detection
 
@@ -264,7 +276,7 @@ has_sudo = {{ not is_remote && not is_container }}
 - `full` — desktop parity. All language runtimes, full CLI suite, GUI apps
   where they apply.
 
-The sets live in `remote_packages.<tier>` in `.chezmoidata.yaml` and are
+The sets live in `remote_packages.<tier>` in `.chezmoidata/packages.yaml` and are
 consumed by `dot_config/mise/config.toml.tmpl`. Toolchain fallbacks for
 no-sudo remote hosts (`lua`, `luajit`, `vim`) come from
 `package_mapping.<feature>.mise_remote`.
@@ -499,7 +511,7 @@ ls ~/.local/state/chezmoi/backups/
 
 - **Enhanced monitoring**: surface `scripts/healthcheck.sh` results in the
   shell prompt or a dashboard; track dependency drift between
-  `.chezmoidata.yaml` and what's actually installed.
+  `.chezmoidata/*.yaml` and what's actually installed.
 - **Community features**: this repo is personal; if it ever spins out a
   shareable variant, a plugin system and template marketplace would be
   the obvious extension points.

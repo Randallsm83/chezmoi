@@ -25,30 +25,18 @@ $MaxBackups = 10
 # ============================================================================
 # Helper Functions
 # ============================================================================
+# Canonical Write-Status / Write-LogLine helpers are sourced from
+# .chezmoitemplates/ps-logging.tmpl so every chezmoi-rendered .ps1 emits the
+# same UI symbols + XDG-state-dir log mirror.
 
-function Write-ColorOutput {
-    param(
-        [string]$Message,
-        [string]$Type = "Info"
-    )
-    
-    $symbol = switch ($Type) {
-        "Success" { "✓"; $color = "Green" }
-        "Warning" { "⚠"; $color = "Yellow" }
-        "Error" { "✗"; $color = "Red" }
-        default { "ℹ"; $color = "Cyan" }
-    }
-    
-    Write-Host "$symbol " -ForegroundColor $color -NoNewline
-    Write-Host $Message
-}
+{{ template "ps-logging" . }}
 
 # ============================================================================
 # Backup Functions
 # ============================================================================
 
 function New-Backup {
-    Write-ColorOutput "Creating backup before applying changes..." -Type Info
+    Write-Status "Creating backup before applying changes..." -Type Info
     
     # Create backup directory
     New-Item -ItemType Directory -Path $BackupPath -Force | Out-Null
@@ -56,7 +44,7 @@ function New-Backup {
     # Get list of managed files
     $managedFiles = chezmoi managed 2>$null
     if (-not $managedFiles) {
-        Write-ColorOutput "No managed files to backup" -Type Info
+        Write-Status "No managed files to backup" -Type Info
         return 0
     }
     
@@ -99,12 +87,12 @@ Chezmoi version: $chezmoiVersion
 "@
     $metadata | Out-File (Join-Path $BackupPath "metadata.txt") -Encoding utf8
     
-    Write-ColorOutput "Backed up $backupCount files to $BackupPath" -Type Success
+    Write-Status "Backed up $backupCount files to $BackupPath" -Type Success
     return $backupCount
 }
 
 function Remove-OldBackups {
-    Write-ColorOutput "Cleaning up old backups (keeping last $MaxBackups)..." -Type Info
+    Write-Status "Cleaning up old backups (keeping last $MaxBackups)..." -Type Info
     
     if (-not (Test-Path $BackupDir)) {
         return
@@ -114,13 +102,13 @@ function Remove-OldBackups {
     $backupCount = $backups.Count
     
     if ($backupCount -le $MaxBackups) {
-        Write-ColorOutput "Only $backupCount backups exist, no cleanup needed" -Type Info
+        Write-Status "Only $backupCount backups exist, no cleanup needed" -Type Info
         return
     }
     
     $toRemove = $backups | Select-Object -Skip $MaxBackups
     foreach ($backup in $toRemove) {
-        Write-ColorOutput "Removing old backup: $($backup.Name)" -Type Info
+        Write-Status "Removing old backup: $($backup.Name)" -Type Info
         Remove-Item $backup.FullName -Recurse -Force
     }
 }
@@ -138,14 +126,14 @@ try {
         Remove-OldBackups
         
         Write-Host ""
-        Write-ColorOutput "Backup complete! To rollback:" -Type Info
+        Write-Status "Backup complete! To rollback:" -Type Info
         Write-Host "  $BackupDir\rollback.ps1 $Timestamp"
         Write-Host ""
     } else {
-        Write-ColorOutput "First-time install detected, skipping backup" -Type Info
+        Write-Status "First-time install detected, skipping backup" -Type Info
     }
 } catch {
-    Write-ColorOutput "Backup failed: $_" -Type Error
+    Write-Status "Backup failed: $_" -Type Error
     # Don't fail the whole process, just warn
     exit 0
 }
