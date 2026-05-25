@@ -25,6 +25,22 @@
 set -euo pipefail
 
 # ============================================================================
+# Structured exit codes
+# ============================================================================
+# Mirrors the $ExitCode hashtable in bootstrap.ps1. Used in place of bare
+# `exit 1` so CI / wrappers can branch on the failure mode. See
+# INSTALL-GUIDE.md § 'Exit codes' for the full table.
+readonly E_SUCCESS=0
+readonly E_PREFLIGHT=10
+readonly E_SCOOP_INSTALL=20
+readonly E_WINGET_IMPORT=21
+readonly E_SCOOP_IMPORT=22
+readonly E_CHEZMOI_INIT=30
+readonly E_CHEZMOI_APPLY=40
+readonly E_NO_SSH_KEY=50
+readonly E_UNKNOWN=99
+
+# ============================================================================
 # Configuration
 # ============================================================================
 
@@ -617,7 +633,7 @@ main() {
     # Run pre-flight checks
     if ! run_preflight_checks; then
         log_error "Pre-flight checks failed"
-        exit 1
+        exit "$E_PREFLIGHT"
     fi
     echo ""
     
@@ -652,7 +668,7 @@ main() {
     echo ""
     if ! install_and_apply_dotfiles; then
         log_error "Bootstrap failed: Could not install chezmoi and apply dotfiles"
-        exit 1
+        exit "$E_CHEZMOI_APPLY"
     fi
     echo ""
     

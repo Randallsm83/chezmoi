@@ -953,6 +953,36 @@ $env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
 
 ---
 
+### Bootstrap exit codes
+
+Both bootstrap scripts use a structured exit code map so wrappers / CI can
+branch on the failure mode instead of having to parse stderr. The same
+numbers are emitted from `bootstrap.ps1` (`$ExitCode.<name>`) and `setup.sh`
+(`$E_<NAME>`):
+
+| Code | bootstrap.ps1 name | setup.sh name      | Meaning                                            |
+|-----:|--------------------|--------------------|-----------------------------------------------------|
+|  `0` | `Success`          | `E_SUCCESS`        | Bootstrap completed without errors                 |
+| `10` | `Preflight`        | `E_PREFLIGHT`      | Pre-flight checks failed (network/dev mode/etc.)   |
+| `20` | `ScoopInstall`     | `E_SCOOP_INSTALL`  | Scoop installer failed after all retries           |
+| `21` | `WingetImport`     | `E_WINGET_IMPORT`  | `winget import` of an export file failed          |
+| `22` | `ScoopImport`      | `E_SCOOP_IMPORT`   | `scoop import` of an export file failed           |
+| `30` | `ChezmoiInit`      | `E_CHEZMOI_INIT`   | `chezmoi init` could not clone the source repo    |
+| `40` | `ChezmoiApply`     | `E_CHEZMOI_APPLY`  | `chezmoi apply` failed after init succeeded       |
+| `50` | `NoSshKey`         | `E_NO_SSH_KEY`     | `-UseSSH`/`USE_SSH=1` but no SSH key in agent     |
+| `99` | `Unknown`          | `E_UNKNOWN`        | Fall-through for unanticipated failure paths      |
+
+Check a recent run on Unix:
+```bash
+./setup.sh; echo "exit=$?"
+```
+On Windows:
+```powershell
+.\bootstrap.ps1; "exit=$LASTEXITCODE"
+```
+
+---
+
 ### Troubleshooting
 
 #### Diagnostic decision tree
