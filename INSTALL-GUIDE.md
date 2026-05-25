@@ -955,6 +955,33 @@ $env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
 
 ### Troubleshooting
 
+#### Diagnostic decision tree
+
+Start with the diagnostic commands at the top of the tree and follow the
+branch that matches the symptom you're seeing. Each leaf links to the
+detailed Problem/Solution prose below. The tree is an index, not a
+replacement — once you've narrowed the failure, jump down to the
+matching section for the full fix.
+
+```mermaid
+graph TD
+  START(["Something's wrong"]) --> DOCTOR{"chezmoi doctor<br/>exit code?"}
+  DOCTOR -->|non-zero| FIX_DOCTOR["Fix the failing check<br/>(usually: missing op, git, or pwsh)"]
+  DOCTOR -->|0| DIFF{"chezmoi diff<br/>output?"}
+  DIFF -->|template error| TEMPLATE["Template / yaml error<br/>→ General Issues § 'apply fails with template errors'"]
+  DIFF -->|unexpected churn| RENORM["Drift on every apply<br/>→ General Issues § 'Configs not applied' + 'reset and start over'"]
+  DIFF -->|empty / expected| APPLY{"chezmoi apply<br/>fails?"}
+  APPLY -->|symlink errors| WIN_SYM["Windows § 'Symlinks not created'<br/>(enable Developer Mode)"]
+  APPLY -->|mise / runtime missing| MISE{"mise doctor<br/>says shims missing?"}
+  APPLY -->|scoop fail| SCOOP{"scoop status<br/>shows failed installs?"}
+  APPLY -->|op signin loop| OP["op signin prompts repeatedly<br/>→ SECRETS.md § troubleshooting + check 1P CLI integration"]
+  APPLY -->|other| GENERAL["General Issues<br/>(network, ignore rules, reset)"]
+  MISE -->|yes| RESHIM["mise reshim<br/>(re-create shims for newly installed tools)"]
+  MISE -->|no| RUNTIME["Linux/WSL/macOS § 'cargo installs fail'<br/>(missing build deps)"]
+  SCOOP -->|yes| SCOOP_FIX["Windows § 'Scoop installation fails'<br/>(execution policy + Set-ExecutionPolicy RemoteSigned)"]
+  SCOOP -->|no| WINGET["Windows § 'Winget requires admin'<br/>or 'Mise not found' (PATH refresh)"]
+```
+
 #### Windows Issues
 
 **Problem**: Symlinks not created (permission denied)
