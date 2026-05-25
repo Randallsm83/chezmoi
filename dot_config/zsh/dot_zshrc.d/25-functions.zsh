@@ -18,6 +18,20 @@ zstarttime() {
   for i in $(seq 1 10); do /usr/bin/time /bin/zsh -i -c exit; done
 }
 
+# Run a git command across every service repo under BACKEND/FRONTEND/HELPSERVICES.
+# Skips entries without a .git directory. Top-level repos under $DHSPACE
+# (ndn, ndn-audit, pam, scott, task-management) are intentionally excluded.
+dhgitall() {
+    for dir in "$BACKEND"/*/ "$FRONTEND"/*/ "$HELPSERVICES"/*/; do
+        [[ -d "$dir/.git" ]] || continue
+        (cd "$dir" && echo "=== $(basename $dir) ===" && git "$@")
+    done
+}
+
+# Nvim launchers (so `vi` / `vim` go through $EDITOR)
+vi()  { ${=EDITOR} "$@" }
+vim() { ${=EDITOR} "$@" }
+
 # Visualize the 16 ANSI colors
 16colors() {
   for i in {0..15}; do print -Pn "%K{$i}  %k%F{$i}${(l:3::0:)i}%f " ${${(M)$((i%6)):#3}:+$'\n'}; done

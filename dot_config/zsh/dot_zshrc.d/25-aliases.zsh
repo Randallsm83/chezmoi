@@ -35,14 +35,6 @@ alias cdtm='cd $DHSPACE/task-management'
 alias cdapi='cd $BACKEND/api-gateway'
 alias cdcdn='cd $BACKEND/cdn-service'
 
-# Run a git command across every service repo under BACKEND/FRONTEND/HELPSERVICES
-function dhgitall() {
-    for dir in "$BACKEND"/*/ "$FRONTEND"/*/ "$HELPSERVICES"/*/; do
-        [[ -d "$dir/.git" ]] || continue
-        (cd "$dir" && echo "=== $(basename $dir) ===" && git "$@")
-    done
-}
-
 # Has package
 alias has='curl -sL https://git.io/_has | bash -s '
 
@@ -72,7 +64,7 @@ alias zenv='${=EDITOR} $HOME/.zshenv'
 alias zpro='${=EDITOR} ${ZDOTDIR:-$HOME}/.zprofile'
 
 # Edit aliases
-alias aliasrc='${=EDITOR} $ZDOTDIR/.zshrc.d/aliases.zsh'
+alias aliasrc='${=EDITOR} $ZDOTDIR/.zshrc.d/25-aliases.zsh'
 
 # Mac
 alias macup='sudo softwareupdate -i -a'
@@ -107,10 +99,6 @@ alias norphans='obsidian orphans'                  # notes with no backlinks
 alias nunresolved='obsidian unresolved'            # broken wikilinks
 alias nhome='obsidian open file=HOME'              # open home dashboard
 alias ninbox='obsidian open file="00 Inbox"'       # open inbox
-
-# Nvim
-vi() { ${=EDITOR} "$@" }
-vim() { ${=EDITOR} "$@" }
 
 # Git
 alias gg='git grep -E'
