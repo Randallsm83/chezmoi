@@ -103,21 +103,10 @@ foreach ($name in $funcNames) {
     Set-Item -Path "Function:\$name" -Value $sb -Force
 }
 
-# Aliases that point at lazy functions. PowerShell allows aliases targeting
-# functions that don't exist yet — they resolve on call, at which point the
-# stub will load the real definitions. Setting them eagerly keeps them
-# discoverable via Get-Alias / tab-completion immediately at startup.
-Set-Alias -Name 16colors          -Value Show-AnsiColors16   -Scope Global -Force
-Set-Alias -Name 256colors         -Value Show-AnsiColors256  -Scope Global -Force
-Set-Alias -Name winjunk           -Value Remove-WinJunk      -Scope Global -Force
-Set-Alias -Name cleancaches       -Value Clear-DevCaches     -Scope Global -Force
-Set-Alias -Name cleantemp         -Value Clear-TempFiles     -Scope Global -Force
-Set-Alias -Name flushdns          -Value Flush-DNS           -Scope Global -Force
-Set-Alias -Name compactwsl        -Value Compact-WSL         -Scope Global -Force
-Set-Alias -Name gitclean          -Value Clear-GitBranches   -Scope Global -Force
-Set-Alias -Name cleandocker       -Value Clear-Docker        -Scope Global -Force
-Set-Alias -Name rebuildiconcache  -Value Rebuild-WinCache    -Scope Global -Force
-Set-Alias -Name fix-scoop         -Value Repair-ScoopJunctions -Scope Global -Force
-Set-Alias -Name housekeeping      -Value Invoke-Housekeeping -Scope Global -Force
+# Aliases for the lazy functions are declared inside lib/99-functions-body.ps1
+# (one Set-Alias per function definition). When a user calls e.g. `winjunk`,
+# the stub above for `winjunk` (or for `Remove-WinJunk`) fires, the body is
+# dot-sourced, the alias is registered, and the next invocation resolves
+# directly. Declaring the aliases here as well would just duplicate state.
 
 # vim: ts=2 sts=2 sw=2 et
