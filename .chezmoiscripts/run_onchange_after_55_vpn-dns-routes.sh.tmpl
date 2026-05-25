@@ -3,7 +3,7 @@
 # Install split-DNS resolver overrides for VPN-internal domains on
 # macOS / Linux. Renders from .chezmoidata.yaml -> vpn_dns_routes.
 # Reruns whenever the data hash changes.
-# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+# Hash: {{ printf "%s%s%s%s%s%s" (include ".chezmoidata/packages.yaml") (include ".chezmoidata/theme.yaml") (include ".chezmoidata/ssh.yaml") (include ".chezmoidata/dns.yaml") (include ".chezmoidata/fonts.yaml") (include ".chezmoidata/mcp.yaml") | sha256sum }}
 #
 # macOS: writes /etc/resolver/<domain> with `nameserver <ip>`.
 #        scutil --dns picks these up automatically; no service to restart.

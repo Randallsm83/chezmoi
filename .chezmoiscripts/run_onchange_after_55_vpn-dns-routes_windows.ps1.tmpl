@@ -2,7 +2,7 @@
 #!/usr/bin/env pwsh
 # Install DNS routing NRPT rules. Renders from .chezmoidata.yaml ->
 # vpn_dns_routes. Reruns whenever the data hash changes.
-# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+# Hash: {{ printf "%s%s%s%s%s%s" (include ".chezmoidata/packages.yaml") (include ".chezmoidata/theme.yaml") (include ".chezmoidata/ssh.yaml") (include ".chezmoidata/dns.yaml") (include ".chezmoidata/fonts.yaml") (include ".chezmoidata/mcp.yaml") | sha256sum }}
 #
 # What this does:
 #   For each (profile, domain) pair in vpn_dns_routes, ensures a Name

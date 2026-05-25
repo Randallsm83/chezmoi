@@ -128,7 +128,7 @@ function New-OpencodeTheme {
 # Generate every theme defined under .chezmoidata.yaml's `theme:` block.
 # We mirror the Unix script's `range $themes` loop, skipping the `name` key
 # (active theme selector) and any non-map entries.
-{{- $themes := (index (fromYaml (include ".chezmoidata.yaml")) "theme") }}
+{{- $themes := (index (fromYaml (include ".chezmoidata/theme.yaml")) "theme") }}
 {{- range $theme_name, $colors := $themes }}
 {{- if and (ne $theme_name "name") (kindIs "map" $colors) }}
 New-OpencodeTheme `

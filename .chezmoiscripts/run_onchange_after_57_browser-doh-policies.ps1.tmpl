@@ -21,7 +21,7 @@ script's `apply_firefox`.
 
 Rerun trigger: the .chezmoidata.yaml hash below changes whenever
 browser_doh.{enabled,browsers} is touched.
-# data hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+# data hash: {{ printf "%s%s%s%s%s%s" (include ".chezmoidata/packages.yaml") (include ".chezmoidata/theme.yaml") (include ".chezmoidata/ssh.yaml") (include ".chezmoidata/dns.yaml") (include ".chezmoidata/fonts.yaml") (include ".chezmoidata/mcp.yaml") | sha256sum }}
 */}}
 {{- if eq .chezmoi.os "windows" -}}
 {{- $cfg := .browser_doh -}}
