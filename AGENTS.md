@@ -106,11 +106,22 @@ The legacy `op-read-safe` partial in `.chezmoitemplates/` is retained for one-of
 - **Raspberry Pi** — `is_raspi` is set when hostname matches `raspi*`/`raspberrypi*`/`rpi*`, or when `RASPI=1 ./setup.sh` is run. Pi defaults to `remote_tier = "medium"`. SSH access uses Tailscale MagicDNS (no `.local` mDNS fallback). See `RASPI.md`.
 
 ### Zsh load order
-Files in `dot_config/zsh/dot_zshrc.d/` use numeric prefixes:
-- `50-*` package managers (homebrew)
-- `70-*` language environments (rust, golang, python, ruby, lua, node, php)
-- `80-*` tool integrations (eza, vivid)
-- `90-*` utility tools (thefuck)
+Files in `dot_config/zsh/dot_zshrc.d/` use numeric prefixes; lower numbers source first. The actual prefix ranges in use today:
+- `00-*` shell helpers shared by later files (e.g. `00-helpers.zsh`).
+- `01-*` early bootstrap (mise activation).
+- `05-*` early-setup helpers (LDE env, completion-helper plumbing).
+- `10-*` workspace state (dir vars, 1Password SSH agent socket).
+- `20-*` PATH manipulation (`20-paths.zsh`).
+- `25-*` aliases + functions (`25-aliases.zsh`, `25-functions.zsh`, `25-aliases-ndn.zsh`, `25-common-aliases.zsh`, `25-gnu-utils.zsh`, history widgets).
+- `30-*` miscellaneous shell options (`30-misc.zsh`).
+- `40-*` terminal integration (`40-wezterm.zsh`).
+- `50-*` package managers (homebrew, mise).
+- `60-*` standalone tool setup (vagrant).
+- `70-*` language environments (rust, golang, python, ruby, lua, node, perl, php, npm, nvm, bun, arduino).
+- `80-*` Rust/CLI tool integrations (bat, eza, fzf, ripgrep, zoxide, op, rust-alternatives, tinty, wget, completions, scott).
+- `85-*` higher-level integrations that depend on earlier sections (git, vscode).
+- `90-*` prompt and command-correction (`starship`, `thefuck`).
+- `99-*` last-resort consumers (`warp`).
 
 Shell completions live in `dot_cache/zsh/completions/_<command>`.
 
