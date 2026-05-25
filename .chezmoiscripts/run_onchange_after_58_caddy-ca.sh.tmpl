@@ -8,7 +8,7 @@
 # Reruns whenever this rendered script body changes. The cert itself is
 # fetched fresh on each run; idempotency is enforced by sha256-comparing
 # against whatever is currently in the platform trust store.
-# Hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+# Hash: {{ printf "%s%s%s%s%s%s" (include ".chezmoidata/packages.yaml") (include ".chezmoidata/theme.yaml") (include ".chezmoidata/ssh.yaml") (include ".chezmoidata/dns.yaml") (include ".chezmoidata/fonts.yaml") (include ".chezmoidata/mcp.yaml") | sha256sum }}
 
 set -euo pipefail
 

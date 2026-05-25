@@ -87,7 +87,7 @@ end
 {{- /* string above shadows it at .theme, so we re-read the yaml file    */ -}}
 {{- /* directly (same pattern used by bat/opencode theme generators).    */ -}}
 {{- $wezterm_theme := index .theme_mappings.wezterm .theme }}
-{{- $themes := index (fromYaml (include ".chezmoidata.yaml")) "theme" }}
+{{- $themes := index (fromYaml (include ".chezmoidata/theme.yaml")) "theme" }}
 {{- $p := index $themes .theme }}
 local THEME_NAME = "{{ $wezterm_theme }}"
 wezterm.GLOBAL.theme = THEME_NAME

@@ -17,7 +17,7 @@ Mechanism:
 Reruns when the rendered script body changes; the cert is fetched fresh
 on each run, idempotency is enforced by the sha256 cache + cert-store
 existence check.
-# data hash: {{ include ".chezmoidata.yaml" | sha256sum }}
+# data hash: {{ printf "%s%s%s%s%s%s" (include ".chezmoidata/packages.yaml") (include ".chezmoidata/theme.yaml") (include ".chezmoidata/ssh.yaml") (include ".chezmoidata/dns.yaml") (include ".chezmoidata/fonts.yaml") (include ".chezmoidata/mcp.yaml") | sha256sum }}
 */}}
 {{- if eq .chezmoi.os "windows" -}}
 {{- $cfg := .caddy_ca -}}

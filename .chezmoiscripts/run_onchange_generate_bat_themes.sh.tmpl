@@ -142,7 +142,7 @@ EOF
 }
 
 # Generate all themes from .chezmoidata.yaml
-{{- $themes := (index (fromYaml (include ".chezmoidata.yaml")) "theme") }}
+{{- $themes := (index (fromYaml (include ".chezmoidata/theme.yaml")) "theme") }}
 {{- range $theme_name, $colors := $themes }}
 {{- if and (ne $theme_name "name") (kindIs "map" $colors) }}
 generate_theme \
