@@ -133,9 +133,16 @@ if ((Get-Service unbound).StartType -ne 'Automatic') {
     gsudo --loglevel none -- cmd.exe /c "sc config unbound start= auto" | Out-Null
 }
 
-# Restart on every config change so the new conf takes effect.
-Write-Host "[unbound] (re)starting service to pick up service.conf..."
-gsudo --loglevel none -- cmd.exe /c "net stop unbound & net start unbound" 2>&1 | Out-Null
+# Restart only when the rendered service.conf actually changed. Skipping the
+# restart on no-op applies eliminates the brief DNS outage that used to fire on
+# every `chezmoi apply` even when no unbound settings had moved. `Restart-Service`
+# is a cleaner pwsh idiom than `net stop/start`; gsudo wraps it because this
+# script otherwise runs in the user context (per-command elevation pattern used
+# above for `sc config` / `net stop`).
+if ($needsWrite) {
+    Write-Host "[unbound] (re)starting service to pick up service.conf..."
+    gsudo --loglevel none -- powershell -NoProfile -Command "Restart-Service unbound" 2>&1 | Out-Null
+}
 
 # ── Verify the listener is actually up ─────────────────────────────────────
 $listening = $false
