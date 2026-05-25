@@ -148,13 +148,14 @@ plaintext secret never lands on disk and never lives in the parent shell.
 
 Three pieces, one per tool:
 
-1. **1Password item** — the actual credential.
-   Example: `op://Personal/Tavily MCP/credential`
+1. **1Password item** — the actual credential. Prefer item-UUID references
+   (stable across renames) over the human title. Example:
+   `op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential` (Tavily).
 2. **Env-reference file** — a non-secret file mapping env-var names to
    `op://` references. Lives at `~/.config/op/<tool>.env` (chezmoi-managed at
    `dot_config/op/<tool>.env`):
    ```dotenv
-   TAVILY_API_KEY=op://Personal/Tavily MCP/credential
+   TAVILY_API_KEY=op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential
    ANTHROPIC_API_KEY=op://Personal/Anthropic API/credential
    # ... only secrets the wrapped tool needs
    ```
