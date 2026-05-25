@@ -176,9 +176,9 @@
 {{- end }}
 
     # Theme and styling.
-    # `theme` is the SINGLE SOURCE OF TRUTH for the active theme name. Templates
-    # like `{{ index .theme_mappings.<app> .theme }}` consume this scalar.
-    # The value is rendered from `.chezmoidata/theme.yaml` -> theme.name so that
+    # `theme` is the SINGLE SOURCE OF TRUTH for the active theme name.
+    # Templates consume it via `index .theme_mappings.<app> .theme`.
+    # The value is rendered from .chezmoidata/theme.yaml -> theme.name so that
     # editing that one file (and re-running `chezmoi apply --init`) flips every
     # editor in lockstep. Override per-machine via `.chezmoi.local.toml`.
     theme = {{ (index (fromYaml (include ".chezmoidata/theme.yaml")) "theme").name | quote }}
