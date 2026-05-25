@@ -62,7 +62,7 @@
     idle_timeout_s = 300
     quota_per_minute = 0
     [servers.tavily.headers]
-      Authorization = "Bearer ${op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential}"
+      Authorization = "Bearer ${op://Personal/63ydj7e44lzuwzjr4fnjrvmqvu/credential}"
   [servers.vercel]
     transport = "http"
     url = "https://mcp.vercel.com"
