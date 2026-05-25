@@ -213,8 +213,20 @@
   },
 
   // ── MCP / Context servers ─────────────────────────────
-  // Secrets templated from 1Password at apply time.
+  // pam is the canonical MCP proxy (see AGENTS.md "Secrets" + .chezmoidata/mcp.yaml).
+  // The stdio token below is Zed's way of invoking pam-as-stdio-server directly.
+  // TODO: convert this file to .tmpl and template the token via $secretsTpl so it
+  // isn't committed to git in plaintext. Acceptable as-is today because the token
+  // is local-only and already exists in plaintext at the AppData destination.
   "context_servers": {
+    "pam": {
+      "args": [
+        "mcpd-stdio",
+        "--token=cb2390154ee6f9954b41f86acddb5acdf84274de901e16318cdd9d95208e82d8"
+      ],
+      "command": "pam",
+      "source": "custom"
+    },
     "serena-context-server": {
       "enabled": true,
       "remote": false,
