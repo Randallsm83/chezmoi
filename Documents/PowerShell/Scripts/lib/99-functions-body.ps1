@@ -272,7 +272,7 @@ function wrc {
 
 function aliasrc {
     $editor = Get-PreferredEditor
-    $aliasesFile = "$env:DOTFILES\windows\powershell\aliases.ps1"
+    $aliasesFile = "$env:DOTFILES\Documents\PowerShell\Scripts\99-aliases.ps1"
     & $editor $aliasesFile
 }
 
@@ -1367,7 +1367,8 @@ function Invoke-Housekeeping {
     Write-Host "╚══════════════════════════════╝`n" -ForegroundColor Magenta
 
     Remove-WinJunk
-    Clear-Cache      # temp, browsers, GPU, npm, yarn, pip, scoop, go, pnpm, mise, etc.
+    Clear-DevCaches  # npm, pnpm, yarn, pip, mise, scoop, go
+    Clear-TempFiles  # %TEMP%, %LOCALAPPDATA%\Temp, C:\Windows\Temp
     Flush-DNS
     Clear-Docker
     Compact-WSL
