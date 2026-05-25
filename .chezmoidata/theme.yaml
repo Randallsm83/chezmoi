@@ -191,6 +191,36 @@ theme_mappings:
     dracula: "dracula"
     kanagawa: "kanagawa"
 
+  # Zed editor theme names. Spaceduck is shipped as a user theme JSON at
+  # dot_config/zed/themes/spaceduck.json; the rest assume the corresponding
+  # Zed extension is installed (auto-installed via auto_install_extensions
+  # where available).
+  zed:
+    spaceduck: "Spaceduck"
+    onedark: "One Dark Pro"
+    gruvbox-material: "Gruvbox Material Dark"
+    tokyonight: "Tokyo Night"
+    tokyonight-storm: "Tokyo Night Storm"
+    dracula: "Dracula"
+    kanagawa: "Kanagawa Wave"
+
+  # VS Code workbench.colorTheme values. Match the extension's published
+  # display name. Most are installed via vscode/extensions.txt.
+  vscode:
+    spaceduck: "spaceduck"
+    onedark: "One Dark Pro"
+    gruvbox-material: "Gruvbox Material Dark"
+    tokyonight: "Tokyo Night"
+    tokyonight-storm: "Tokyo Night Storm"
+    dracula: "Dracula Theme Soft"
+    kanagawa: "Kanagawa"
+
+  # fzf doesn't have named themes — it consumes a flat color flag list. The
+  # active theme's palette is read directly from .theme.<active> in the
+  # consuming .tmpl files (80-fzf.zsh.tmpl, 10-fzf.ps1.tmpl). No mapping
+  # table needed here; the entry is documented so future contributors know
+  # where to look.
+
   # Vim colorscheme names (vim-plug plugin names)
   vim:
     spaceduck: "spaceduck"           # pineapplegiant/spaceduck

@@ -1,1 +1,8 @@
-{{ joinPath .chezmoi.sourceDir "dot_config" "zed" "private_settings.json" | replace "\\" "/" }}
+{{- /* Source was promoted to `private_settings.json.tmpl` so the active theme   */ -}}
+{{- /* name can be templated from theme_mappings.zed[.theme]. Templated source */ -}}
+{{- /* files can't accept app-side writes via a symlink-to-source (those would */ -}}
+{{- /* corrupt template directives), so this symlink now points at the rendered */ -}}
+{{- /* destination instead. Trade-off: theme flips automatically with the one  */ -}}
+{{- /* central knob; ad-hoc Zed-UI edits no longer flow back to chezmoi source */ -}}
+{{- /* — if you want a Zed-UI edit preserved, run `chezmoi re-add ~/.config/zed/settings.json`. */ -}}
+{{ joinPath .chezmoi.homeDir ".config" "zed" "settings.json" | replace "\\" "/" }}

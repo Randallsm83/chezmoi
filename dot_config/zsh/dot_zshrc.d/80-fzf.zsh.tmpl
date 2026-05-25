@@ -11,11 +11,17 @@
 
 (( $+commands[fzf] )) || return 1
 
-# Default options - spaceduck theme
+# Default options — colors rendered from .chezmoidata/theme.yaml → theme.<active>.
+# `.theme` at this scope is the active theme name string (set in .chezmoi.toml.tmpl);
+# the palette dict for that theme lives in .chezmoidata/theme.yaml under `theme.<name>`.
+# Same indirection used by wezterm.lua.tmpl and the bat/opencode generators.
+# Change `.theme.name` in .chezmoidata/theme.yaml to flip every editor (including fzf) in lockstep.
+{{- $themes := index (fromYaml (include ".chezmoidata/theme.yaml")) "theme" }}
+{{- $p := index $themes .theme }}
 export FZF_DEFAULT_OPTS="
-  --color=bg+:#1b1c36,bg:#0f111b,spinner:#00a3cc,hl:#b3a1e6
-  --color=fg:#f0f1ce,header:#00a3cc,info:#5ccc96,pointer:#e33400
-  --color=marker:#f2ce00,fg+:#f0f1ce,prompt:#00a3cc,hl+:#b3a1e6
+  --color=bg+:{{ $p.background }},bg:{{ $p.background }},spinner:{{ $p.blue }},hl:{{ $p.purple }}
+  --color=fg:{{ $p.foreground }},header:{{ $p.blue }},info:{{ $p.green }},pointer:{{ $p.orange }}
+  --color=marker:{{ $p.yellow }},fg+:{{ $p.foreground }},prompt:{{ $p.blue }},hl+:{{ $p.purple }}
   --border --height=40% --layout=reverse --info=inline
   --margin=1 --padding=1
 "
