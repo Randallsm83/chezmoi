@@ -197,14 +197,50 @@ check_disk_usage() {
     fi
 }
 
+check_last_bootstrap() {
+    echo ""
+    echo "════════════════════════════════════════"
+    echo "  Last Bootstrap"
+    echo "════════════════════════════════════════"
+
+    local status_path="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/bootstrap-status.json"
+    if [ ! -f "$status_path" ]; then
+        log_info "No bootstrap status file yet ($status_path) — has this host been bootstrapped under the new code?"
+        return 0
+    fi
+
+    log_success "Bootstrap status file: $status_path"
+
+    # Prefer jq when available for clean key extraction; fall back to sed.
+    if command -v jq >/dev/null 2>&1; then
+        log_info "  timestamp:        $(jq -r '.timestamp // ""' "$status_path")"
+        log_info "  version:          $(jq -r '.version // ""' "$status_path")"
+        log_info "  host:             $(jq -r '.host // ""' "$status_path")"
+        log_info "  platform:         $(jq -r '.platform // ""' "$status_path")"
+        log_info "  durationSeconds:  $(jq -r '.durationSeconds // ""' "$status_path")"
+        log_info "  chezmoi.version:  $(jq -r '.chezmoi.version // ""' "$status_path")"
+        log_info "  chezmoi.sourceDir: $(jq -r '.chezmoi.sourceDir // ""' "$status_path")"
+        local uncommitted
+        uncommitted="$(jq -r '.chezmoi.hasUncommittedChanges // false' "$status_path")"
+        if [ "$uncommitted" = "true" ]; then
+            log_warning "  chezmoi.hasUncommittedChanges: true"
+        else
+            log_info "  chezmoi.hasUncommittedChanges: false"
+        fi
+    else
+        log_warning "jq not installed — emitting raw JSON"
+        sed 's/^/    /' "$status_path"
+    fi
+}
+
 # ============================================================================
 # Main
 # ============================================================================
 
 echo ""
-echo "╔════════════════════════════════════════╗"
+echo "╔══════════════════════════════════════╗"
 echo "║   Dotfiles Health Check v2.0           ║"
-echo "╚════════════════════════════════════════╝"
+echo "╚═══════════════════════════════════════╝"
 
 check_chezmoi
 check_tools
@@ -212,6 +248,7 @@ check_mise
 check_shell
 check_git
 check_disk_usage
+check_last_bootstrap
 
 echo ""
 echo "════════════════════════════════════════"

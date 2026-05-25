@@ -50,6 +50,47 @@ This single command will:
 
 ---
 
+## 🔍 How it all fits together
+
+At a glance, this is the chain a chezmoi apply follows from machine
+detection through to the rendered files in `$HOME` and the lifecycle
+scripts that fire alongside them.
+
+```mermaid
+flowchart LR
+  TOML[".chezmoi.toml.tmpl<br/>(machine detection + [data])"] -->|.is_windows / .is_linux / .is_darwin<br/>.is_wsl / .is_remote / .is_raspi<br/>.remote_tier / .secrets.*| TPL
+  LOCAL[".chezmoi.local.toml<br/>(per-machine overrides)"] -->|wins over auto-detection| TOML
+  subgraph DATA[".chezmoidata/ (merged into one namespace)"]
+    DT["theme.yaml<br/>(palette + theme_mappings)"]
+    DF["fonts.yaml"]
+    DS["ssh.yaml"]
+    DP["packages.yaml<br/>(package_features, package_mapping,<br/>brew_bundle, scoop_*, always_install,<br/>remote_packages, claude_memory_projects)"]
+    DD["dns.yaml<br/>(vpn_dns_routes, encrypted_dns,<br/>browser_doh, caddy_ca)"]
+    DM["mcp.yaml"]
+  end
+  DATA -->|.theme.* .fonts.* .ssh.*<br/>.package_features.* .package_mapping.*<br/>.vpn_dns_routes.* .caddy_ca.*| TPL
+  PARTIALS[".chezmoitemplates/<br/>(ps-logging, 1password-agent.toml,<br/>op-read-safe, platform-detect, ...)"] -->|{{ template "name" . }}| TPL
+  TPL["Templates<br/>(dot_*, *.tmpl, .chezmoiscripts/*.tmpl)"] -->|chezmoi apply| HOME["$HOME / $XDG_CONFIG_HOME"]
+  IGN[".chezmoiignore<br/>(platform + feature-flag gating)"] -.->|skip| TPL
+  SCRIPTS[".chezmoiscripts/<br/>run_before_* / run_onchange_* / run_after_*"] -->|backup, validate, install,<br/>generate themes, sync pam/MCP| HOME
+  IGN -.->|skip| SCRIPTS
+```
+
+Key rules of the road:
+- Every `*.yaml` in `.chezmoidata/` is merged into the same template
+  namespace; the file boundary is documentation, not isolation.
+- `chezmoi.local.toml` overrides anything in the toml template;
+  `[data]` in the toml template overrides `chezmoi data` defaults
+  from `.chezmoidata/*.yaml`.
+- `.chezmoiignore` is itself a template, so feature flags (and
+  platform flags from `.chezmoi.toml.tmpl`) decide which files even
+  get rendered.
+- Reusable partials in `.chezmoitemplates/` (no `.tmpl` extension
+  on disk) are included via `{{ template "<name>" . }}` and share the
+  same data namespace.
+
+---
+
 ## 📦 What's Included
 
 ### Core Tools (Always Installed)

@@ -66,6 +66,24 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 # ============================================================================
+# Structured exit codes
+# ============================================================================
+# Canonical map used in place of bare `exit 1` so CI / wrappers can branch on
+# the failure mode. Mirrored in setup.sh as readonly shell variables and
+# documented in INSTALL-GUIDE.md § 'Exit codes'.
+$ExitCode = @{
+    Success      = 0
+    Preflight    = 10
+    ScoopInstall = 20
+    WingetImport = 21
+    ScoopImport  = 22
+    ChezmoiInit  = 30
+    ChezmoiApply = 40
+    NoSshKey     = 50
+    Unknown      = 99
+}
+
+# ============================================================================
 # Configuration
 # ============================================================================
 
@@ -83,36 +101,155 @@ $Script:Stats = @{
 # ============================================================================
 # Helper Functions
 # ============================================================================
+# Canonical body lives in `.chezmoitemplates/ps-logging` and is included into
+# chezmoi-rendered .ps1.tmpl scripts via `{{ template "ps-logging" . }}`. We
+# keep an inlined verbatim copy here because bootstrap.ps1 is downloaded and
+# executed via `iwr | iex` BEFORE chezmoi exists on the machine, so it can't
+# rely on the template loader. Update both sites in lockstep.
+
+function Get-StatusLogFile {
+    <#
+    .SYNOPSIS
+        Resolve the per-script log file path under $env:XDG_STATE_HOME\dotfiles\logs\
+    #>
+    [CmdletBinding()]
+    param()
+
+    $stateRoot = if ($env:XDG_STATE_HOME) { $env:XDG_STATE_HOME }
+    else { Join-Path $HOME '.local\state' }
+
+    $logDir = Join-Path $stateRoot 'dotfiles\logs'
+    try {
+        if (-not (Test-Path -LiteralPath $logDir)) {
+            New-Item -ItemType Directory -Path $logDir -Force -ErrorAction Stop | Out-Null
+        }
+    } catch {
+        return $null
+    }
+
+    $scriptLeaf =
+        if ($PSCommandPath) { [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath) }
+        elseif ($MyInvocation -and $MyInvocation.ScriptName) { [System.IO.Path]::GetFileNameWithoutExtension($MyInvocation.ScriptName) }
+        else { 'bootstrap' }
+
+    Join-Path $logDir ("$scriptLeaf.log")
+}
 
 function Write-Status {
     <#
     .SYNOPSIS
-        Write formatted status message with colored icon
+        Write formatted status message with colored icon and mirror to script log file.
     #>
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [string]$Message,
-        
+
         [ValidateSet('Info', 'Success', 'Warning', 'Error')]
-        [string]$Type = 'Info'
+        [string]$Type = 'Info',
+
+        [string]$LogFile
     )
-    
-    $colors = @{
-        Info = 'Cyan'
-        Success = 'Green'
-        Warning = 'Yellow'
-        Error = 'Red'
-    }
-    
-    $symbols = @{
-        Info = 'ℹ'
-        Success = '✓'
-        Warning = '⚠'
-        Error = '✗'
-    }
-    
+
+    $colors  = @{ Info = 'Cyan';  Success = 'Green';   Warning = 'Yellow'; Error = 'Red' }
+    $symbols = @{ Info = "$([char]0x2139)"; Success = "$([char]0x2713)"; Warning = "$([char]0x26A0)"; Error = "$([char]0x2717)" }
+
     Write-Host "$($symbols[$Type]) " -ForegroundColor $colors[$Type] -NoNewline
     Write-Host $Message
+
+    if (-not $LogFile) { $LogFile = Get-StatusLogFile }
+    if ($LogFile) {
+        $timestamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fff'
+        try { Add-Content -LiteralPath $LogFile -Value "[$timestamp] [$Type] $Message" -ErrorAction Stop }
+        catch { }
+    }
+}
+
+function Write-LogLine {
+    <#
+    .SYNOPSIS
+        Raw colored console line that ALSO mirrors to the script log file.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+
+        [string]$Color = 'White',
+
+        [string]$LogFile
+    )
+
+    Write-Host $Message -ForegroundColor $Color
+
+    if (-not $LogFile) { $LogFile = Get-StatusLogFile }
+    if ($LogFile) {
+        $timestamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss.fff'
+        try { Add-Content -LiteralPath $LogFile -Value "[$timestamp] $Message" -ErrorAction Stop }
+        catch { }
+    }
+}
+
+function Try-WithBackoff {
+    <#
+    .SYNOPSIS
+        Run a script block with bounded exponential backoff and structured failure.
+    .DESCRIPTION
+        Used to wrap any flaky network call in this bootstrap script
+        (Invoke-WebRequest, Invoke-RestMethod, iwr | iex, etc.). Logs every
+        retry through Write-Status so the file mirror under
+        $env:XDG_STATE_HOME\dotfiles\logs\ records the full attempt history.
+
+        Returns the script block's value on success. Throws on final failure
+        with an error message that names the operation so callers can map it
+        to the structured exit code map.
+    .PARAMETER ScriptBlock
+        Block to execute. Treat any thrown exception OR a non-zero
+        $LASTEXITCODE as a failure that should trigger a retry.
+    .PARAMETER MaxAttempts
+        Total number of attempts (including the first). Default 4.
+    .PARAMETER BaseSeconds
+        Base delay for backoff. Sleep between attempt N and N+1 is
+        BaseSeconds * 2^(N-1) seconds (capped at 60s). Default 2.
+    .PARAMETER Operation
+        Human-readable label used in the retry log lines and the final
+        failure exception message.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [scriptblock]$ScriptBlock,
+
+        [int]$MaxAttempts = 4,
+
+        [int]$BaseSeconds = 2,
+
+        [Parameter(Mandatory)]
+        [string]$Operation
+    )
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        try {
+            $global:LASTEXITCODE = 0
+            $result = & $ScriptBlock
+            if ($LASTEXITCODE -ne 0) {
+                throw "Operation '$Operation' exited with non-zero status ($LASTEXITCODE) on attempt $attempt"
+            }
+            if ($attempt -gt 1) {
+                Write-Status "'$Operation' succeeded on attempt $attempt/$MaxAttempts" -Type Success
+            }
+            return $result
+        } catch {
+            $err = $_.Exception.Message
+            if ($attempt -eq $MaxAttempts) {
+                Write-Status "'$Operation' failed after $MaxAttempts attempts: $err" -Type Error
+                throw "Try-WithBackoff: '$Operation' failed after $MaxAttempts attempts. Last error: $err"
+            }
+            $delay = [Math]::Min(60, $BaseSeconds * [Math]::Pow(2, $attempt - 1))
+            Write-Status "'$Operation' failed on attempt $attempt/$MaxAttempts (retrying in ${delay}s): $err" -Type Warning
+            Start-Sleep -Seconds $delay
+        }
+    }
 }
 
 function Test-CommandExists {
@@ -282,10 +419,12 @@ function Invoke-PreflightChecks {
         }
     }
     
-    # Check 3: Internet connectivity
+    # Check 3: Internet connectivity (wrapped with backoff to ride out transient DNS/TLS flakes)
     Write-Host "  [3/5] Internet connectivity..." -NoNewline
     try {
-        $null = Invoke-WebRequest -Uri "https://github.com" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+        Try-WithBackoff -Operation 'github.com reachability probe' -MaxAttempts 3 -BaseSeconds 2 -ScriptBlock {
+            $null = Invoke-WebRequest -Uri 'https://github.com' -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+        } | Out-Null
         Write-Host " ✓" -ForegroundColor Green
     } catch {
         Write-Host " ✗" -ForegroundColor Red
@@ -488,10 +627,14 @@ function Install-Scoop {
             Write-Status "Setting execution policy to RemoteSigned..." -Type Info
             Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
         }
-        
-        # Install scoop from official source
-        Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
-        
+
+        # Install scoop from official source. Wrapped in Try-WithBackoff so
+        # transient TLS/DNS hiccups don't fail the whole bootstrap.
+        Try-WithBackoff -Operation 'install scoop' -MaxAttempts 4 -BaseSeconds 2 -ScriptBlock {
+            $installer = Invoke-RestMethod -Uri 'https://get.scoop.sh' -ErrorAction Stop
+            $installer | Invoke-Expression
+        } | Out-Null
+
         $Script:Stats.ScoopInstalled = $true
         Write-Status "scoop installed successfully" -Type Success
         return $true
@@ -586,6 +729,84 @@ function Initialize-Chezmoi {
 # Environment Configuration
 # ============================================================================
 
+function Get-BootstrapStatusPath {
+    <#
+    .SYNOPSIS
+        Return the canonical XDG path for the bootstrap status JSON artifact.
+    #>
+    [CmdletBinding()]
+    param()
+    $stateRoot = if ($env:XDG_STATE_HOME) { $env:XDG_STATE_HOME }
+    else { Join-Path $HOME '.local\state' }
+    Join-Path $stateRoot 'dotfiles\bootstrap-status.json'
+}
+
+function Write-BootstrapStatus {
+    <#
+    .SYNOPSIS
+        Emit a JSON status artifact at $env:XDG_STATE_HOME\dotfiles\bootstrap-status.json
+        capturing the result of this bootstrap run so `scripts\healthcheck.ps1`
+        can surface it under the 'Last Bootstrap' section.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $statusPath = Get-BootstrapStatusPath
+    try {
+        $dir = Split-Path -Parent $statusPath
+        if (-not (Test-Path -LiteralPath $dir)) {
+            New-Item -ItemType Directory -Path $dir -Force -ErrorAction Stop | Out-Null
+        }
+    } catch {
+        Write-Status "Could not create bootstrap status dir ($statusPath): $_" -Type Warning
+        return
+    }
+
+    $chezmoiVersion = $null
+    $sourceDir = $null
+    $hasUncommitted = $false
+    try {
+        if (Test-CommandExists chezmoi) {
+            $chezmoiVersion = (& chezmoi --version 2>$null | Select-Object -First 1)
+            $sourceDir = (& chezmoi source-path 2>$null)
+            if ($sourceDir -and (Test-Path -LiteralPath $sourceDir)) {
+                Push-Location $sourceDir
+                try {
+                    $changes = (& git status --porcelain 2>$null | Where-Object { $_ } | Measure-Object).Count
+                    $hasUncommitted = ($changes -gt 0)
+                } finally {
+                    Pop-Location
+                }
+            }
+        }
+    } catch { }
+
+    $elapsed = (Get-Date) - $Script:Stats.StartTime
+
+    $payload = [ordered]@{
+        timestamp        = (Get-Date).ToUniversalTime().ToString('o')
+        version          = '2.0.0'
+        host             = $env:COMPUTERNAME
+        platform         = 'windows'
+        chezmoi          = [ordered]@{
+            version              = $chezmoiVersion
+            sourceDir            = $sourceDir
+            hasUncommittedChanges = $hasUncommitted
+        }
+        stats            = $Script:Stats
+        durationSeconds  = [math]::Round($elapsed.TotalSeconds, 3)
+    }
+
+    try {
+        $json = $payload | ConvertTo-Json -Depth 6
+        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText($statusPath, $json + "`n", $utf8NoBom)
+        Write-Status "Wrote bootstrap status: $statusPath" -Type Info
+    } catch {
+        Write-Status "Failed to write bootstrap status ($statusPath): $_" -Type Warning
+    }
+}
+
 function Set-EnvironmentVariables {
     <#
     .SYNOPSIS
@@ -636,7 +857,7 @@ function Main {
     if (-not (Invoke-PreflightChecks)) {
         Write-Status "Pre-flight checks failed - please fix the issues above" -Type Error
         Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
-        exit 1
+        exit $ExitCode.Preflight
     }
     
     # Step 1: Configure XDG environment (do this early)
@@ -666,7 +887,7 @@ function Main {
     if (-not (Install-Chezmoi)) {
         Write-Status "Bootstrap failed: Could not install chezmoi" -Type Error
         Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
-        exit 1
+        exit $ExitCode.ChezmoiInit
     }
     
     # Step 4: Initialize chezmoi and apply dotfiles
@@ -679,7 +900,7 @@ function Main {
     if (-not (Initialize-Chezmoi -Repo $Repository -Branch $Branch -UseSSH:$UseSSH)) {
         Write-Status "Bootstrap failed: Could not apply dotfiles" -Type Error
         Microsoft.PowerShell.Utility\Write-Progress -Activity "Bootstrap" -Completed
-        exit 1
+        exit $ExitCode.ChezmoiApply
     }
     
     # Step 5: Finalize
@@ -723,7 +944,10 @@ function Main {
         Write-Host "  scoop install 1password-cli"
         Write-Host "  Then run: op signin"
     }
-    
+
+    # Emit the JSON status artifact so healthcheck.ps1 can surface this run.
+    Write-BootstrapStatus
+
     Write-Host ""
 }
 

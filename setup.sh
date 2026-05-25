@@ -25,12 +25,31 @@
 set -euo pipefail
 
 # ============================================================================
+# Structured exit codes
+# ============================================================================
+# Mirrors the $ExitCode hashtable in bootstrap.ps1. Used in place of bare
+# `exit 1` so CI / wrappers can branch on the failure mode. See
+# INSTALL-GUIDE.md § 'Exit codes' for the full table.
+readonly E_SUCCESS=0
+readonly E_PREFLIGHT=10
+readonly E_SCOOP_INSTALL=20
+readonly E_WINGET_IMPORT=21
+readonly E_SCOOP_IMPORT=22
+readonly E_CHEZMOI_INIT=30
+readonly E_CHEZMOI_APPLY=40
+readonly E_NO_SSH_KEY=50
+readonly E_UNKNOWN=99
+
+# ============================================================================
 # Configuration
 # ============================================================================
 
 REPO="${REPO:-Randallsm83/chezmoi}"
 BRANCH="${BRANCH:-main}"
 CHEZMOI_VERSION="${CHEZMOI_VERSION:-latest}"
+
+# Track wall-clock duration for the bootstrap-status.json artifact.
+BOOTSTRAP_START_EPOCH="$(date +%s)"
 
 # Auto-detect Raspberry Pi if RASPI not explicitly set
 if [ -z "${RASPI:-}" ]; then
@@ -75,6 +94,58 @@ log_error() {
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
+}
+
+# ---------------------------------------------------------------------------
+# retry_with_backoff <operation_label> <max_attempts> <base_seconds> -- <cmd...>
+#
+# Run a command with bounded exponential backoff. Treat any non-zero exit
+# status as a retryable failure. Sleep BASE_SECONDS * 2^(N-1) (capped at 60s)
+# between attempts. Logs each retry through log_warning so the user can see
+# what's happening on slow links.
+#
+# Used to wrap flaky network calls (curl-pipe-to-sh, downloader bootstraps).
+# Returns the underlying command's exit code on success; on final failure
+# returns the last non-zero exit code.
+# ---------------------------------------------------------------------------
+retry_with_backoff() {
+    local label="$1"
+    local max_attempts="$2"
+    local base="$3"
+    shift 3
+    # Skip the explicit "--" separator if the caller used the readable form.
+    if [ "${1:-}" = "--" ]; then
+        shift
+    fi
+
+    if [ "$#" -eq 0 ]; then
+        log_error "retry_with_backoff: no command supplied for '$label'"
+        return 64  # EX_USAGE
+    fi
+
+    local attempt=1
+    local exit_code=0
+    local delay=0
+    while [ "$attempt" -le "$max_attempts" ]; do
+        if "$@"; then
+            if [ "$attempt" -gt 1 ]; then
+                log_success "'$label' succeeded on attempt $attempt/$max_attempts"
+            fi
+            return 0
+        fi
+        exit_code=$?
+        if [ "$attempt" -eq "$max_attempts" ]; then
+            log_error "'$label' failed after $max_attempts attempts (exit $exit_code)"
+            return "$exit_code"
+        fi
+        # Exponential backoff, capped at 60s.
+        delay=$(( base * (1 << (attempt - 1)) ))
+        if [ "$delay" -gt 60 ]; then delay=60; fi
+        log_warning "'$label' failed on attempt $attempt/$max_attempts (exit $exit_code) — retrying in ${delay}s"
+        sleep "$delay"
+        attempt=$(( attempt + 1 ))
+    done
+    return "$exit_code"
 }
 
 # Check if user has sudo access
@@ -198,9 +269,10 @@ run_preflight_checks() {
     
     local all_passed=true
     
-    # Check 1: Internet connectivity
+    # Check 1: Internet connectivity (wrapped with backoff to ride out transient DNS/TLS flakes)
     printf "  [1/4] Internet connectivity..."
-    if curl -fsSL --connect-timeout 5 https://github.com >/dev/null 2>&1; then
+    if retry_with_backoff 'github.com reachability probe' 3 2 -- \
+        curl -fsSL --connect-timeout 5 https://github.com >/dev/null 2>&1; then
         echo " ✓"
     else
         echo " ✗"
@@ -501,8 +573,19 @@ install_and_apply_dotfiles() {
 
     # Try SSH first (fast, uses 1Password agent), fall back to HTTPS.
     # SSH will fail on fresh machines without keys — HTTPS always works.
+    # The installer download itself is wrapped in retry_with_backoff so a
+    # transient TLS/DNS hiccup doesn't fail the whole bootstrap.
     local chezmoi_installer
-    chezmoi_installer="$(curl -fsLS get.chezmoi.io)"
+    local _installer_tmp
+    _installer_tmp="$(mktemp -t chezmoi-installer.XXXXXX)"
+    # shellcheck disable=SC2064
+    trap "rm -f '$_installer_tmp'" EXIT INT TERM
+    if ! retry_with_backoff 'fetch chezmoi installer (get.chezmoi.io)' 4 2 -- \
+            sh -c "curl -fsLS 'get.chezmoi.io' > '$_installer_tmp'"; then
+        log_error 'Could not download chezmoi installer after retries'
+        return 1
+    fi
+    chezmoi_installer="$(cat "$_installer_tmp")"
 
     # Installer flags (-b BINDIR) go BEFORE the `--` separator; everything
     # after `--` is forwarded as chezmoi's own args.
@@ -530,6 +613,85 @@ install_and_apply_dotfiles() {
 }
 
 # ============================================================================
+# Bootstrap status artifact
+# ============================================================================
+
+bootstrap_status_path() {
+    local state_root="${XDG_STATE_HOME:-$HOME/.local/state}"
+    printf '%s' "$state_root/dotfiles/bootstrap-status.json"
+}
+
+# Emit a JSON status artifact at $XDG_STATE_HOME/dotfiles/bootstrap-status.json
+# so scripts/healthcheck.sh can surface it under the 'Last Bootstrap' section.
+write_bootstrap_status() {
+    local status_path platform host chezmoi_version source_dir has_uncommitted
+    local duration_seconds
+    status_path="$(bootstrap_status_path)"
+    mkdir -p "$(dirname "$status_path")" 2>/dev/null || {
+        log_warning "Could not create bootstrap status dir: $(dirname "$status_path")"
+        return 0
+    }
+
+    case "$(uname -s)" in
+        Darwin*) platform=darwin ;;
+        Linux*)  platform=linux ;;
+        *)       platform="$(uname -s | tr '[:upper:]' '[:lower:]')" ;;
+    esac
+    host="$(hostname 2>/dev/null || echo unknown)"
+
+    chezmoi_version=""
+    source_dir=""
+    has_uncommitted=false
+    if command_exists chezmoi; then
+        chezmoi_version="$(chezmoi --version 2>/dev/null | head -n1)"
+        source_dir="$(chezmoi source-path 2>/dev/null || true)"
+        if [ -n "$source_dir" ] && [ -d "$source_dir" ]; then
+            local changes
+            changes="$(cd "$source_dir" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+            if [ "${changes:-0}" -gt 0 ]; then
+                has_uncommitted=true
+            fi
+        fi
+    fi
+
+    local end_epoch
+    end_epoch="$(date +%s)"
+    duration_seconds=$(( end_epoch - BOOTSTRAP_START_EPOCH ))
+
+    local timestamp
+    timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+    # JSON-quote helper: escape backslashes and double-quotes, replace newlines with \n.
+    json_string() {
+        local s=$1
+        s=${s//\\/\\\\}
+        s=${s//\"/\\\"}
+        s=${s//$'\n'/\\n}
+        printf '"%s"' "$s"
+    }
+
+    {
+        printf '{\n'
+        printf '  "timestamp": %s,\n'  "$(json_string "$timestamp")"
+        printf '  "version": "2.0.0",\n'
+        printf '  "host": %s,\n'       "$(json_string "$host")"
+        printf '  "platform": %s,\n'   "$(json_string "$platform")"
+        printf '  "chezmoi": {\n'
+        printf '    "version": %s,\n'              "$(json_string "$chezmoi_version")"
+        printf '    "sourceDir": %s,\n'            "$(json_string "$source_dir")"
+        printf '    "hasUncommittedChanges": %s\n' "$has_uncommitted"
+        printf '  },\n'
+        printf '  "stats": {\n'
+        printf '    "RASPI": %s\n'                 "${RASPI:-0}"
+        printf '  },\n'
+        printf '  "durationSeconds": %s\n'         "$duration_seconds"
+        printf '}\n'
+    } > "$status_path"
+
+    log_info "Wrote bootstrap status: $status_path"
+}
+
+# ============================================================================
 # Main Execution
 # ============================================================================
 
@@ -553,7 +715,7 @@ main() {
     # Run pre-flight checks
     if ! run_preflight_checks; then
         log_error "Pre-flight checks failed"
-        exit 1
+        exit "$E_PREFLIGHT"
     fi
     echo ""
     
@@ -588,7 +750,7 @@ main() {
     echo ""
     if ! install_and_apply_dotfiles; then
         log_error "Bootstrap failed: Could not install chezmoi and apply dotfiles"
-        exit 1
+        exit "$E_CHEZMOI_APPLY"
     fi
     echo ""
     
@@ -616,7 +778,10 @@ main() {
             log_info "Linux: Run 'exec zsh' or restart your terminal"
             ;;
     esac
-    
+
+    # Emit the JSON status artifact so healthcheck.sh can surface this run.
+    write_bootstrap_status
+
     echo ""
 }
 

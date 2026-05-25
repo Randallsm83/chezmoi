@@ -1,0 +1,118 @@
+# ████████╗ ██████╗ ██╗  ██╗██╗   ██╗ ██████╗ ███╗   ██╗██╗ ██████╗ ██╗  ██╗████████╗
+# ╚══██╔══╝██╔═══██╗██║ ██╔╝╚██╗ ██╔╝██╔═══██╗████╗  ██║██║██╔════╝ ██║  ██║╚══██╔══╝
+#    ██║   ██║   ██║█████╔╝  ╚████╔╝ ██║   ██║██╔██╗ ██║██║██║  ███╗███████║   ██║
+#    ██║   ██║   ██║██╔═██╗   ╚██╔╝  ██║   ██║██║╚██╗██║██║██║   ██║██╔══██║   ██║
+#    ██║   ╚██████╔╝██║  ██╗   ██║   ╚██████╔╝██║ ╚████║██║╚██████╔╝██║  ██║   ██║
+#    ╚═╝    ╚═════╝ ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+# Tokyo Night Storm palette for eza, derived from the canonical hex set in
+# `.chezmoidata/theme.yaml` `theme.tokyonight-storm` and mapped onto the same
+# slot layout as kanagawa.yml / spaceduck.yml so every accent (directory,
+# executable, warning) lands in a visually distinct hue under the unified
+# theme system. Replaces the previous `tokyonight-night` fallback used by
+# `theme_mappings.eza.tokyonight-storm` before this file existed.
+
+colourful: true
+
+filekinds:
+  normal: {foreground: "#c0caf5"}       # foreground
+  directory: {foreground: "#7aa2f7"}    # blue
+  symlink: {foreground: "#bb9af7"}      # purple
+  pipe: {foreground: "#414868"}         # storm gutter
+  block_device: {foreground: "#ff9e64"} # orange
+  char_device: {foreground: "#e0af68"}  # yellow
+  socket: {foreground: "#414868"}
+  special: {foreground: "#f7768e"}      # pink
+  executable: {foreground: "#9ece6a"}   # green
+  mount_point: {foreground: "#7aa2f7"}
+
+perms:
+  user_read: {foreground: "#c0caf5"}
+  user_write: {foreground: "#ff9e64"}
+  user_execute_file: {foreground: "#9ece6a"}
+  user_execute_other: {foreground: "#9ece6a"}
+  group_read: {foreground: "#c0caf5"}
+  group_write: {foreground: "#ff9e64"}
+  group_execute: {foreground: "#9ece6a"}
+  other_read: {foreground: "#414868"}
+  other_write: {foreground: "#ff9e64"}
+  other_execute: {foreground: "#9ece6a"}
+  special_user_file: {foreground: "#f7768e"}
+  special_other: {foreground: "#414868"}
+  attribute: {foreground: "#414868"}
+
+size:
+  major: {foreground: "#414868"}
+  minor: {foreground: "#7dcfff"}        # cyan
+  number_byte: {foreground: "#c0caf5"}
+  number_kilo: {foreground: "#c0caf5"}
+  number_mega: {foreground: "#7aa2f7"}
+  number_giga: {foreground: "#bb9af7"}
+  number_huge: {foreground: "#f7768e"}
+  unit_byte: {foreground: "#414868"}
+  unit_kilo: {foreground: "#7dcfff"}
+  unit_mega: {foreground: "#bb9af7"}
+  unit_giga: {foreground: "#f7768e"}
+  unit_huge: {foreground: "#7aa2f7"}
+
+users:
+  user_you: {foreground: "#c0caf5"}
+  user_root: {foreground: "#db4b4b"}    # red
+  user_other: {foreground: "#bb9af7"}
+  group_yours: {foreground: "#c0caf5"}
+  group_other: {foreground: "#414868"}
+  group_root: {foreground: "#db4b4b"}
+
+links:
+  normal: {foreground: "#bb9af7"}
+  multi_link_file: {foreground: "#7aa2f7"}
+
+git:
+  new: {foreground: "#9ece6a"}
+  modified: {foreground: "#e0af68"}
+  deleted: {foreground: "#db4b4b"}
+  renamed: {foreground: "#9ece6a"}
+  typechange: {foreground: "#f7768e"}
+  ignored: {foreground: "#414868"}
+  conflicted: {foreground: "#db4b4b"}
+
+git_repo:
+  branch_main: {foreground: "#c0caf5"}
+  branch_other: {foreground: "#bb9af7"}
+  git_clean: {foreground: "#9ece6a"}
+  git_dirty: {foreground: "#db4b4b"}
+
+security_context:
+  colon: {foreground: "#414868"}
+  user: {foreground: "#c0caf5"}
+  role: {foreground: "#bb9af7"}
+  typ: {foreground: "#414868"}
+  range: {foreground: "#f7768e"}
+
+file_type:
+  image: {foreground: "#bb9af7"}
+  video: {foreground: "#f7768e"}
+  music: {foreground: "#7aa2f7"}
+  lossless: {foreground: "#7aa2f7"}
+  crypto: {foreground: "#414868"}
+  document: {foreground: "#bb9af7"}
+  compressed: {foreground: "#db4b4b"}
+  temp: {foreground: "#414868"}
+  compiled: {foreground: "#7aa2f7"}
+  build: {foreground: "#414868"}
+  source: {foreground: "#7aa2f7"}
+
+punctuation: {foreground: "#414868"}
+date: {foreground: "#e0af68"}
+inode: {foreground: "#414868"}
+blocks: {foreground: "#414868"}
+header: {foreground: "#c0caf5"}
+octal: {foreground: "#7dcfff"}
+flags: {foreground: "#bb9af7"}
+
+symlink_path: {foreground: "#bb9af7"}
+control_char: {foreground: "#7dcfff"}
+broken_symlink: {foreground: "#db4b4b"}
+broken_path_overlay: {foreground: "#414868"}
+
+
+# vim: ts=2 sts=2 sw=2 et
