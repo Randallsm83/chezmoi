@@ -6,9 +6,6 @@
 $global:ErrorActionPreference = 'SilentlyContinue'
 
 # XDG Base Directory specification
-$global:ErrorActionPreference = 'SilentlyContinue'
-
-# XDG Base Directory specification
 # Ensure these are always set (even if bootstrap didn't run)
 if (-not $env:XDG_CONFIG_HOME) { $env:XDG_CONFIG_HOME = "$HOME\.config" }
 if (-not $env:XDG_DATA_HOME) { $env:XDG_DATA_HOME = "$HOME\.local\share" }
