@@ -77,6 +77,58 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# ---------------------------------------------------------------------------
+# retry_with_backoff <operation_label> <max_attempts> <base_seconds> -- <cmd...>
+#
+# Run a command with bounded exponential backoff. Treat any non-zero exit
+# status as a retryable failure. Sleep BASE_SECONDS * 2^(N-1) (capped at 60s)
+# between attempts. Logs each retry through log_warning so the user can see
+# what's happening on slow links.
+#
+# Used to wrap flaky network calls (curl-pipe-to-sh, downloader bootstraps).
+# Returns the underlying command's exit code on success; on final failure
+# returns the last non-zero exit code.
+# ---------------------------------------------------------------------------
+retry_with_backoff() {
+    local label="$1"
+    local max_attempts="$2"
+    local base="$3"
+    shift 3
+    # Skip the explicit "--" separator if the caller used the readable form.
+    if [ "${1:-}" = "--" ]; then
+        shift
+    fi
+
+    if [ "$#" -eq 0 ]; then
+        log_error "retry_with_backoff: no command supplied for '$label'"
+        return 64  # EX_USAGE
+    fi
+
+    local attempt=1
+    local exit_code=0
+    local delay=0
+    while [ "$attempt" -le "$max_attempts" ]; do
+        if "$@"; then
+            if [ "$attempt" -gt 1 ]; then
+                log_success "'$label' succeeded on attempt $attempt/$max_attempts"
+            fi
+            return 0
+        fi
+        exit_code=$?
+        if [ "$attempt" -eq "$max_attempts" ]; then
+            log_error "'$label' failed after $max_attempts attempts (exit $exit_code)"
+            return "$exit_code"
+        fi
+        # Exponential backoff, capped at 60s.
+        delay=$(( base * (1 << (attempt - 1)) ))
+        if [ "$delay" -gt 60 ]; then delay=60; fi
+        log_warning "'$label' failed on attempt $attempt/$max_attempts (exit $exit_code) — retrying in ${delay}s"
+        sleep "$delay"
+        attempt=$(( attempt + 1 ))
+    done
+    return "$exit_code"
+}
+
 # Check if user has sudo access
 has_sudo() {
     # If running as root, always return true
@@ -198,9 +250,10 @@ run_preflight_checks() {
     
     local all_passed=true
     
-    # Check 1: Internet connectivity
+    # Check 1: Internet connectivity (wrapped with backoff to ride out transient DNS/TLS flakes)
     printf "  [1/4] Internet connectivity..."
-    if curl -fsSL --connect-timeout 5 https://github.com >/dev/null 2>&1; then
+    if retry_with_backoff 'github.com reachability probe' 3 2 -- \
+        curl -fsSL --connect-timeout 5 https://github.com >/dev/null 2>&1; then
         echo " ✓"
     else
         echo " ✗"
@@ -501,8 +554,19 @@ install_and_apply_dotfiles() {
 
     # Try SSH first (fast, uses 1Password agent), fall back to HTTPS.
     # SSH will fail on fresh machines without keys — HTTPS always works.
+    # The installer download itself is wrapped in retry_with_backoff so a
+    # transient TLS/DNS hiccup doesn't fail the whole bootstrap.
     local chezmoi_installer
-    chezmoi_installer="$(curl -fsLS get.chezmoi.io)"
+    local _installer_tmp
+    _installer_tmp="$(mktemp -t chezmoi-installer.XXXXXX)"
+    # shellcheck disable=SC2064
+    trap "rm -f '$_installer_tmp'" EXIT INT TERM
+    if ! retry_with_backoff 'fetch chezmoi installer (get.chezmoi.io)' 4 2 -- \
+            sh -c "curl -fsLS 'get.chezmoi.io' > '$_installer_tmp'"; then
+        log_error 'Could not download chezmoi installer after retries'
+        return 1
+    fi
+    chezmoi_installer="$(cat "$_installer_tmp")"
 
     # Installer flags (-b BINDIR) go BEFORE the `--` separator; everything
     # after `--` is forwarded as chezmoi's own args.
