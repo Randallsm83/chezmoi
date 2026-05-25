@@ -33,10 +33,10 @@ end_of_line = lf
 
 [*.{ps1,psm1,psd1}]
 indent_size = 4
-end_of_line = crlf
+end_of_line = lf
 
 [*.bat]
-end_of_line = crlf
+end_of_line = lf
 
 [*.lua]
 indent_size = 2
