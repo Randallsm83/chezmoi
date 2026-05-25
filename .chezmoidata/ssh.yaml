@@ -1,0 +1,21 @@
+# .chezmoidata/ssh.yaml
+# SSH agent + 1Password integration settings.
+# Loaded by chezmoi automatically as part of the .chezmoidata/ directory.
+# ============================================================================
+# SSH and Authentication
+# ============================================================================
+# 1Password SSH agent configuration
+# See SECRETS.md for setup instructions
+
+ssh:
+  agent: "1password"  # Use 1Password SSH agent
+  windows_pipe: "\\\\.\\pipe\\openssh-ssh-agent"
+  unix_socket: "~/.1password/agent.sock"
+  # 1Password SSH agent vaults to expose (order = key offer order).
+  # Rendered into agent.toml via .chezmoitemplates/1password-agent.toml
+  # Override in .chezmoi.local.toml: [data.ssh] onepassword_vaults = ["Personal"]
+  onepassword_vaults:
+    - Personal
+    - DH
+    - Homelab
+# vim: ts=2 sts=2 sw=2 et

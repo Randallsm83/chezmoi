@@ -58,9 +58,16 @@ Tests cover `bootstrap.ps1` (Install-Chezmoi, Install-Scoop, Initialize-Chezmoi 
 The system is built around a small set of files that drive everything else:
 
 1. **`.chezmoi.toml.tmpl`** — Detects platform/machine at `chezmoi init` time and sets boolean flags (`.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`, `.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`, `.is_raspi`, `.remote_tier` ∈ {`minimal`, `medium`, `full`}) plus user identity.
-2. **`.chezmoidata.yaml`** — Single source of truth for static data: `theme.name`, `fonts.*`, `ssh.*`, `package_features.*`, `package_mapping.*` (per-feature platform/manager packages, e.g. `package_mapping.<name>.darwin.cask`, `package_mapping.<name>.linux.<manager>`, `package_mapping.<name>.mise_remote` for no-sudo remote fallback), `vpn_dns_routes.*`, `remote_packages.<tier>`, `claude_memory_projects`. Editing this drives most repo-wide behavior changes.
+2. **`.chezmoidata/*.yaml`** — Single source of truth for static data, split into focused files that chezmoi merges into one namespace at template time. Editing any of these drives most repo-wide behavior changes:
+   - `.chezmoidata/theme.yaml` — `theme.*` palettes, `theme_mappings.*` per-application theme identifiers.
+   - `.chezmoidata/fonts.yaml` — `fonts.*` (primary, fallback, Nerd Font variants, Fira Code ligature settings).
+   - `.chezmoidata/ssh.yaml` — `ssh.*` agent settings (1Password vaults, pipe/socket paths).
+   - `.chezmoidata/packages.yaml` — `package_features.*` (feature flags), `package_mapping.*` (per-feature platform/manager packages, e.g. `package_mapping.<name>.darwin.cask`, `package_mapping.<name>.linux.<manager>`, `package_mapping.<name>.mise_remote` for no-sudo remote fallback), `brew_bundle.*`, `scoop_buckets`, `scoop_bucket_overrides`, `always_install.*`, `remote_packages.<tier>`, `claude_memory_projects`.
+   - `.chezmoidata/dns.yaml` — `vpn_dns_routes.*`, `encrypted_dns.*`, `browser_doh.*`, `caddy_ca.*`.
+   - `.chezmoidata/mcp.yaml` — `mcp.*` server definitions.
+   The old monolithic `.chezmoidata.yaml` was split per wave-d-innovation; chezmoi treats every `*.yaml` in `.chezmoidata/` as if it were merged into the same top-level data namespace.
 3. **`.chezmoiignore`** — A *template* that uses the flags from steps 1–2 to exclude platform-irrelevant or feature-disabled files (e.g., Unix-only configs on Windows, `70-rust.zsh` when `package_features.rust = false`).
-4. **`.chezmoitemplates/`** — Reusable template fragments. The actively-called ones are `platform-detect`, `1password-agent.toml`, `op-read-safe`, `mise-tool-entry`, `ssh-pub-resolve`, and `common-header`. Include with `{{ template "name" . }}`. (Earlier `package-manager`/`detect-package-manager`/`platform-conditional`/`xdg-paths` partials were never wired up and have been removed; XDG paths come from `.chezmoi.toml.tmpl` `[data]` and package routing lives in `.chezmoidata.yaml` `package_mapping`.)
+4. **`.chezmoitemplates/`** — Reusable template fragments. The actively-called ones are `platform-detect`, `1password-agent.toml`, `op-read-safe`, `mise-tool-entry`, `ssh-pub-resolve`, and `common-header`. Include with `{{ template "name" . }}`. (Earlier `package-manager`/`detect-package-manager`/`platform-conditional`/`xdg-paths` partials were never wired up and have been removed; XDG paths come from `.chezmoi.toml.tmpl` `[data]` and package routing lives in `.chezmoidata/packages.yaml` `package_mapping`.)
 5. **`.chezmoiscripts/`** — Auto-run scripts in deterministic order:
    - `run_before_00_backup.{sh,ps1}.tmpl` — backup before changes
    - `run_onchange_before_01_validate-secrets.sh.tmpl` — secrets sanity check
@@ -82,14 +89,14 @@ The system is built around a small set of files that drive everything else:
 - Built-ins: `.chezmoi.os`, `.chezmoi.arch`, `.chezmoi.hostname`, `.chezmoi.username`, `.chezmoi.kernel.osrelease`
 
 ### Feature flags
-Defined in `.chezmoidata.yaml` under `package_features`. Two layers:
+Defined in `.chezmoidata/packages.yaml` under `package_features`. Two layers:
 - **Group flags** (convenience shortcuts): `essentials`, `shell_tools`, `languages`, `editors`, `terminals`, `rust_alternatives`, `ai_tools`, `gaming`, `docker`, `hardware_tools`, `windows_utilities`, `sysinternals`, `network_tools`, `dev_extras`, `nerd_fonts`.
 - **Individual flags**: `git`, `ssh`, `1password`, `mise`, `direnv`, `homebrew`, `wezterm`, `warp`, `windows_terminal`, `nvim`, `vim`, `vscode`, `starship`, `zsh`, `powershell`, `fzf`, `wget`, `thefuck`, `fastfetch`, `topgrade`, `rust`, `golang`, `python`, `ruby`, `lua`, `node`, `perl`, `julia`, `php`, `sqlite3`, `arduino`, `vagrant`. Deprecated/off: `asdf`, `nvm`, `tinted_theming`.
 
 **`1password` access caveat**: the flag name starts with a digit, which is invalid Go-template identifier syntax. Always access it as `{{ index .package_features "1password" }}`, **never** `.package_features.1password`.
 
 ### Theme system
-A single `theme.name` in `.chezmoidata.yaml` propagates to neovim, starship, wezterm, eza, vivid, bat, and delta via templates. Available themes: `spaceduck` (default), `onedark`, `gruvbox-material`, `tokyonight`, `tokyonight-storm`, `dracula`, `kanagawa`. Change theme → `chezmoi apply`.
+A single `theme.name` in `.chezmoidata/theme.yaml` (overridable as `[data] theme = "..."` in `.chezmoi.toml.tmpl` / `.chezmoi.local.toml`) propagates to neovim, starship, wezterm, eza, vivid, bat, and delta via templates. Available themes: `spaceduck` (default), `onedark`, `gruvbox-material`, `tokyonight`, `tokyonight-storm`, `dracula`, `kanagawa`. Change theme → `chezmoi apply`.
 
 ### Secrets
 1Password CLI (`op`) is the primary provider, but templates do **not** call `op` directly. Instead, all `op://` references are batched into a single `op inject` invocation in `.chezmoi.toml.tmpl` ($secretsTpl), exposed as the `.secrets.*` template namespace. This means **one biometric prompt per `chezmoi apply --init`** and **zero prompts per `chezmoi apply`**.
