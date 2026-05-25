@@ -1,0 +1,213 @@
+# .chezmoidata/theme.yaml
+# Theme colors + per-application theme mappings.
+# Loaded by chezmoi automatically as part of the .chezmoidata/ directory.
+# All values merge into the same template namespace as the other .chezmoidata/*.yaml files.
+# Override active theme in .chezmoi.local.toml: [data] theme = ""onedark""
+# ============================================================================
+# Theme Colors
+# ============================================================================
+# Referenced in: neovim, starship, wezterm, eza/vivid configs
+# Override active theme in .chezmoi.local.toml: [data] theme = "onedark"
+# Available themes: spaceduck, onedark, gruvbox-material, tokyonight, tokyonight-storm, dracula, kanagawa
+
+theme:
+  name: "spaceduck"  # Active theme
+
+  # Spaceduck - canonical pineapplegiant/spaceduck palette mapped to standard
+  # ANSI color names so every consumer (wezterm chrome, bat, delta, starship,
+  # opencode, eza) gets visually distinct hues. The previous mapping collapsed
+  # yellow==cyan and put an orange in the purple slot, which made every UI
+  # accent (mode pill, active tab, cursor, keyword highlight) look the same.
+  # Values match dot_config/wezterm/colors/Spaceduck.toml ANSI slots.
+  spaceduck:
+    background: "#0f111b"
+    foreground: "#ecf0c1"
+    purple: "#b3a1e6"       # Keywords / accent — spaceduck lavender (canonical magenta slot)
+    pink: "#ce6f8f"         # Constants — spaceduck pink/rose (bright magenta)
+    green: "#5ccc96"        # Strings — spaceduck green
+    orange: "#e39400"       # Numbers / warnings — spaceduck warm orange
+    blue: "#00a3cc"         # Functions — spaceduck blue
+    cyan: "#42b3c2"         # Comments / search accent — spaceduck teal
+    yellow: "#f2ce00"       # Classes / cursor — spaceduck yellow (canonical)
+
+  # OneDark - navarasu/onedark.nvim
+  onedark:
+    background: "#282c34"
+    foreground: "#abb2bf"
+    purple: "#c678dd"
+    pink: "#e06c75"
+    green: "#98c379"
+    orange: "#d19965"
+    blue: "#61afef"
+    cyan: "#56b6c2"
+    yellow: "#e5c07b"
+
+  # Gruvbox Material - sainnhe/gruvbox-material
+  gruvbox-material:
+    background: "#1d2021"
+    foreground: "#d4be98"
+    purple: "#d3869b"
+    pink: "#ea6962"
+    green: "#a9b665"
+    orange: "#e78a4e"
+    blue: "#7daea3"
+    cyan: "#89b482"
+    yellow: "#d8a657"
+
+  # Tokyo Night - folke/tokyonight.nvim (night variant)
+  tokyonight:
+    background: "#1a1b26"
+    foreground: "#c0caf5"
+    purple: "#bb9af7"
+    pink: "#f7768e"
+    green: "#9ece6a"
+    orange: "#ff9e64"
+    blue: "#7aa2f7"
+    cyan: "#7dcfff"
+    yellow: "#e0af68"
+
+  # Tokyo Night Storm - folke/tokyonight.nvim (storm variant)
+  tokyonight-storm:
+    background: "#24283b"
+    foreground: "#c0caf5"
+    purple: "#bb9af7"
+    pink: "#f7768e"
+    green: "#9ece6a"
+    orange: "#ff9e64"
+    blue: "#7aa2f7"
+    cyan: "#7dcfff"
+    yellow: "#e0af68"
+
+  # Dracula - Official spec from draculatheme.com/spec
+  dracula:
+    background: "#282a36"
+    foreground: "#f8f8f2"
+    purple: "#bd93f9"
+    pink: "#ff79c6"
+    green: "#50fa7b"
+    orange: "#ffb86c"
+    blue: "#8be9fd"       # cyan in official spec
+    cyan: "#8be9fd"
+    yellow: "#f1fa8c"
+
+  # Kanagawa - rebelot/kanagawa.nvim (wave variant)
+  kanagawa:
+    background: "#1f1f28"  # sumiInk3
+    foreground: "#dcd7ba"  # fujiWhite
+    purple: "#957fb8"      # oniViolet
+    pink: "#d27e99"        # sakuraPink
+    green: "#98bb6c"       # springGreen
+    orange: "#ffa066"      # surimiOrange
+    blue: "#7e9cd8"        # crystalBlue
+    cyan: "#7fb4ca"        # springBlue
+    yellow: "#e6c384"      # carpYellow
+
+# ============================================================================
+# Theme Mappings
+# ============================================================================
+# Maps chezmoi theme names to application-specific theme identifiers
+
+theme_mappings:
+  # Neovim colorscheme plugin/command names
+  neovim:
+    spaceduck: "spaceduck"                   # pineapplegiant/spaceduck
+    onedark: "onedark"                       # navarasu/onedark.nvim
+    gruvbox-material: "gruvbox-material"     # sainnhe/gruvbox-material
+    tokyonight: "tokyonight"                 # folke/tokyonight.nvim
+    tokyonight-storm: "tokyonight-storm"     # folke/tokyonight.nvim
+    dracula: "dracula"                       # dracula/vim
+    kanagawa: "kanagawa"                     # rebelot/kanagawa.nvim
+
+  # WezTerm colorscheme names
+  # NOTE: "Spaceduck" is a custom scheme shipped in dot_config/wezterm/colors/Spaceduck.toml
+  # (wezterm has no builtin Spaceduck scheme as of 20240203).
+  wezterm:
+    spaceduck: "Spaceduck"
+    onedark: "OneDark (base16)"
+    gruvbox-material: "Gruvbox Material (Gogh)"
+    tokyonight: "Tokyo Night"
+    tokyonight-storm: "Tokyo Night Storm"
+    dracula: "Dracula (Official)"
+    kanagawa: "Kanagawa (Gogh)"
+
+  # Starship palette names (defined in starship.toml)
+  starship:
+    spaceduck: "spaceduck"
+    onedark: "onedark"
+    gruvbox-material: "gruvbox_dark_material"
+    tokyonight: "tokyonight"
+    tokyonight-storm: "tokyonight_storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"
+
+  # Vivid theme names (for LS_COLORS generation)
+  vivid:
+    spaceduck: "spaceduck"
+    onedark: "one-dark"
+    gruvbox-material: "gruvbox-dark"
+    tokyonight: "tokyonight-night"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "molokai"  # fallback - vivid doesn't have kanagawa
+
+  # Eza theme filenames (in ~/.config/eza/themes/)
+  eza:
+    spaceduck: "spaceduck"
+    onedark: "one-dark"
+    gruvbox-material: "gruvbox-dark"
+    tokyonight: "tokyonight-night"
+    tokyonight-storm: "tokyonight-night"  # eza ships tokyonight-night but not tokyonight-storm
+    dracula: "dracula"
+    kanagawa: "kanagawa"
+
+  # Bat (cat with syntax highlighting) and Delta (git diff)
+  # Use custom .tmTheme files generated from our color palettes
+  bat:
+    spaceduck: "spaceduck"
+    onedark: "onedark"
+    gruvbox-material: "gruvbox-material"
+    tokyonight: "tokyonight"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"
+
+  # Delta uses same theme names as bat
+  delta:
+    spaceduck: "spaceduck"
+    onedark: "onedark"
+    gruvbox-material: "gruvbox-material"
+    tokyonight: "tokyonight"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"
+
+  # OpenCode TUI theme names (custom JSONs generated from our palette)
+  opencode:
+    spaceduck: "spaceduck"
+    onedark: "onedark"
+    gruvbox-material: "gruvbox-material"
+    tokyonight: "tokyonight"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"
+
+  # Vim colorscheme names (vim-plug plugin names)
+  vim:
+    spaceduck: "spaceduck"           # pineapplegiant/spaceduck
+    onedark: "onedark"               # joshdick/onedark.vim
+    gruvbox-material: "gruvbox"      # morhetz/gruvbox (no gruvbox-material for vim)
+    tokyonight: "tokyonight"         # ghifarit53/tokyonight-vim
+    tokyonight-storm: "tokyonight"   # ghifarit53/tokyonight-vim
+    dracula: "dracula"               # dracula/vim
+    kanagawa: "kanagawa"             # rebelot/kanagawa.nvim (works in vim)
+
+  # Vim airline theme names
+  vim_airline:
+    spaceduck: "spaceduck"           # comes with spaceduck plugin
+    onedark: "onedark"               # comes with onedark plugin
+    gruvbox-material: "gruvbox"      # comes with gruvbox plugin
+    tokyonight: "tokyonight"         # comes with tokyonight plugin
+    tokyonight-storm: "tokyonight"   # comes with tokyonight plugin
+    dracula: "dracula"               # comes with dracula plugin
+    kanagawa: "kanagawa"             # comes with kanagawa plugin
+# vim: ts=2 sts=2 sw=2 et
