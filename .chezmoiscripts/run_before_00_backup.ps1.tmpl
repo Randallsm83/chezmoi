@@ -5,14 +5,19 @@
     Pre-apply backup script for chezmoi on Windows
 .DESCRIPTION
     Creates backups before applying changes for easy rollback
-    Backups stored in: $env:LOCALAPPDATA\chezmoi\backups\
+    Backups stored in: $env:XDG_STATE_HOME\chezmoi\backups\
+    (falls back to $HOME\.local\state\chezmoi\backups when XDG_STATE_HOME is unset)
 #>
 
 # ============================================================================
 # Configuration
 # ============================================================================
 
-$BackupDir = "$env:LOCALAPPDATA\chezmoi\backups"
+$BackupDir = if ($env:XDG_STATE_HOME) {
+    Join-Path $env:XDG_STATE_HOME 'chezmoi\backups'
+} else {
+    Join-Path $HOME '.local\state\chezmoi\backups'
+}
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $BackupPath = Join-Path $BackupDir $Timestamp
 $MaxBackups = 10
@@ -134,7 +139,7 @@ try {
         
         Write-Host ""
         Write-ColorOutput "Backup complete! To rollback:" -Type Info
-        Write-Host "  $env:LOCALAPPDATA\chezmoi\backups\rollback.ps1 $Timestamp"
+        Write-Host "  $BackupDir\rollback.ps1 $Timestamp"
         Write-Host ""
     } else {
         Write-ColorOutput "First-time install detected, skipping backup" -Type Info
