@@ -10,7 +10,6 @@ This document serves as a reference for maintaining this dotfiles repository acc
 5. [Package Management](#package-management)
 6. [Scripts and Hooks](#scripts-and-hooks)
 7. [Configuration](#configuration)
-8. [Implementation Checklist](#implementation-checklist)
 
 ---
 
@@ -36,20 +35,26 @@ This document serves as a reference for maintaining this dotfiles repository acc
 ## File Management
 
 ### Externally Modified Files
-For config files that are modified by applications (like VS Code settings):
+For config files that applications rewrite at runtime (theme picks, recent
+files, OAuth tokens, etc.) chezmoi has a few stable patterns. The two we
+use in this repo:
 
-**WRONG**: Manage as regular files (edits lost on apply)
-**WRONG**: Use `symlink_` with JSON content (not how symlinks work)
+1. **`modify_` template** — chezmoi renders the template, then runs the
+   template against the live file so a fixed set of keys is overlaid while
+   everything else is preserved. Used for `dot_claude/modify_settings.json`
+   (Claude Code rewrites the file constantly; we only want to assert
+   `permissions`, `model`, `enabledPlugins`, etc.).
+2. **`symlink_*` source pointing at a chezmoi-managed file** — the live
+   file in $HOME is a symlink back into the chezmoi source so app edits
+   modify the tracked source directly. Used by VS Code on Windows:
+   `AppData/Roaming/Code/User/symlink_keybindings.json` resolves to
+   `vscode/keybindings.json`, and the same pattern applies to
+   `mcp.json`/`tasks.json`/`extensions.json`. See `README.md` § VS Code
+   for the canonical table.
 
-**RIGHT**: Create symlink from target → source directory
-```bash
-# 1. Store actual file in source directory (not managed by chezmoi)
-echo "settings.json" >> .chezmoiignore
-
-# 2. Create symlink template pointing back to source
-# In source: AppData/Roaming/Code/User/symlink_settings.json.tmpl
-{{ .chezmoi.sourceDir }}/settings.json
-```
+For JSON files that the app rewrites without a stable schema, prefer
+`modify_*`. For files the app reads but never rewrites, the symlink
+pattern is simpler.
 
 **Source**: https://www.chezmoi.io/user-guide/manage-different-types-of-file/#handle-configuration-files-which-are-externally-modified
 
@@ -254,45 +259,7 @@ The `run_onchange_` prefix means script only runs when:
 
 ---
 
-## Implementation Checklist
-
-### Required Fixes for This Repo
-
-- [ ] **Password Manager Hook**
-  - [ ] Create `.install-1password.ps1` and `.install-1password.sh`
-  - [ ] Add `[hooks.read-source-state.pre]` to `.chezmoi.toml.tmpl`
-  - [ ] Add `[onepassword] prompt = false` to config
-
-- [ ] **Declarative Package Management**
-  - [ ] Move package lists to `.chezmoidata.yaml`
-  - [ ] Create `run_onchange_install-packages-windows.ps1.tmpl`
-  - [ ] Create `run_onchange_install-packages-unix.sh.tmpl`
-  - [ ] Include package hash in scripts to trigger on changes
-
-- [ ] **Template All Hardcoded Paths**
-  - [x] VS Code `extensions.json` files (use `{{ .chezmoi.homeDir }}`)
-  - [x] `settings.json` (use `{{ .chezmoi.homeDir }}`)
-  - [x] Warp SSH connections (use `{{ .chezmoi.homeDir }}`)
-  - [x] Zsh aliases (use `{{ .chezmoi.homeDir }}`)
-  - [x] `.p10k.zsh` (use `{{ .chezmoi.homeDir }}`)
-  - [x] `direnv.toml` (use `{{ .chezmoi.homeDir }}`)
-  - [ ] Any remaining hardcoded paths
-
-- [ ] **Conditional Compilation**
-  - [x] Lua in mise config (exclude on Windows)
-  - [ ] Review all tools for platform compatibility
-  - [ ] Add platform conditionals where needed
-
-- [ ] **Externally Modified Files**
-  - [x] VS Code settings (symlink pattern implemented)
-  - [ ] Verify all application-modified configs use correct pattern
-
-- [ ] **Documentation**
-  - [ ] Update README with proper chezmoi workflow
-  - [ ] Document local overrides via `.chezmoi.local.toml`
-  - [ ] Add examples for common operations
-
-### Testing Strategy
+## Testing Strategy
 
 1. Test on fresh VM/container:
    ```bash

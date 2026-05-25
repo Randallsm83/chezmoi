@@ -42,19 +42,22 @@ This document describes the architecture and design decisions for these dotfiles
 ~/.local/share/chezmoi/           # Chezmoi source directory
 ├── .chezmoi.toml.tmpl            # Main config (machine detection)
 ├── .chezmoidata.yaml             # Static data (packages, themes)
-├── .chezmoi.local.toml.example   # Local overrides example
+├── chezmoi.local.toml.example    # Local overrides example (no leading dot)
 ├── .chezmoiignore                # Platform/feature exclusions
 │
 ├── .chezmoitemplates/            # Reusable templates
 │   ├── common-header.tmpl        # Shell setup, error handling
 │   ├── platform-detect.tmpl      # OS/distro/machine detection
-│   ├── package-manager.tmpl      # Cross-platform package abstraction
-│   └── 1password.tmpl            # 1Password integration
+│   ├── 1password-agent.toml      # 1Password SSH-agent vault list
+│   ├── op-read-safe              # Legacy single-secret resolver
+│   ├── mise-tool-entry           # Reusable mise [tools] entry builder
+│   ├── ssh-pub-resolve           # SSH public-key resolver (secrets + agent fallback)
+│   └── common-header             # Shell setup, error handling, logging
 │
 ├── .chezmoiscripts/              # Lifecycle scripts
 │   ├── run_before_00_backup.*    # Pre-apply backup
 │   ├── run_onchange_before_01_validate-secrets.sh.tmpl
-│   └── run_once_install_packages_*.tmpl
+│   └── run_onchange_install-packages-{unix,windows}.{sh,ps1}.tmpl
 │
 ├── dot_config/                   # ~/.config/
 │   ├── git/                      # Git configuration
@@ -109,42 +112,18 @@ This document describes the architecture and design decisions for these dotfiles
 
 ### Template Variables
 
-Variables available in all templates (from `.chezmoi.toml.tmpl` and `.chezmoidata.yaml`):
+<!-- For the canonical list, see AGENTS.md "Template variables you will encounter in .tmpl files" -->
 
-```go
-// User information
-.name               // User's full name
-.email              // Email address
-.github_username    // GitHub username
+The full inventory of template variables lives in `AGENTS.md`. In short:
 
-// Platform detection
-.chezmoi.os         // "windows", "linux", "darwin"
-.is_windows         // Boolean
-.is_linux           // Boolean
-.is_darwin          // Boolean
-.is_wsl             // Boolean (Windows Subsystem for Linux)
-.is_container       // Boolean (Docker/LXC)
-
-// Machine classification
-.is_remote          // Boolean (SSH/VSCode Remote)
-.is_personal        // Boolean (personal machine)
-.is_work            // Boolean (work machine)
-.has_sudo           // Boolean (estimated, verify at runtime)
-.hostname           // Machine hostname
-
-// Feature flags
-.install_packages   // Install system packages
-.install_runtimes   // Install language runtimes
-.setup_git_ssh      // Configure Git SSH
-.setup_1password    // Setup 1Password integration
-.remote_minimal     // Use minimal package set
-
-// Package features (per-language configs)
-.package_features.rust
-.package_features.golang
-.package_features.python
-// ... etc
-```
+- Platform flags (`.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`,
+  `.is_container`, `.is_raspi`) come from `.chezmoi.toml.tmpl` at init time.
+- Machine flags (`.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`,
+  `.hostname`, `.remote_tier`) classify the host; `.remote_tier` is the
+  active size (`minimal` | `medium` | `full`).
+- Feature flags (`.package_features.<name>`) are defined in
+  `.chezmoidata.yaml`. Refer to `INSTALL-GUIDE.md` § Feature Flags for the
+  full list and defaults.
 
 ### Template Patterns
 
@@ -214,7 +193,7 @@ has_sudo = {{ not is_remote && not is_container }}
 [data]
     is_remote = true
     has_sudo = false
-    remote_minimal = true
+    remote_tier = "minimal"   # minimal | medium | full
     install_packages = false
 ```
 
@@ -275,16 +254,20 @@ has_sudo = {{ not is_remote && not is_container }}
 
 **Detection**: SSH session, VS Code Remote, or container
 
-**Minimal Mode** (`remote_minimal = true`):
-- Skip GUI applications
-- Minimal tool set (node, python, go, neovim, fzf, ripgrep)
-- No system packages (mise only)
-- Reduced disk usage
+**Tier model** (`remote_tier`):
+- `minimal` — SSH-only servers. Skip GUI apps, ship only `node`, `python`,
+  `go` + a few CLI tools (`fzf`, `ripgrep`, `fd`, `bat`, `delta`, `neovim`,
+  `direnv`). No system packages; mise-only.
+- `medium` — ARM SBCs / dev VMs (default for Raspberry Pi). Adds Rust CLI
+  alternatives (`eza`, `zoxide`, `starship`), `lazygit`, and `gh`. See
+  `RASPI.md` for the canonical inventory.
+- `full` — desktop parity. All language runtimes, full CLI suite, GUI apps
+  where they apply.
 
-**Full Mode** (`remote_minimal = false`):
-- All language runtimes
-- Full CLI tool suite
-- System packages (if sudo)
+The sets live in `remote_packages.<tier>` in `.chezmoidata.yaml` and are
+consumed by `dot_config/mise/config.toml.tmpl`. Toolchain fallbacks for
+no-sudo remote hosts (`lua`, `luajit`, `vim`) come from
+`package_mapping.<feature>.mise_remote`.
 
 ---
 
@@ -306,7 +289,8 @@ has_sudo = {{ not is_remote && not is_container }}
 ├── config.windows.toml         # Windows overrides
 ├── config.linux.toml           # Linux additions
 ├── config.darwin.toml          # macOS additions
-└── config.remote.toml          # Remote minimal set
+├── config.medium.toml          # Medium-tier remote set (Raspberry Pi default)
+└── config.remote.toml          # Minimal-tier remote set
 ```
 
 **Tool Categories**:
@@ -416,12 +400,16 @@ op_check_cli                          # Verify op CLI
 - Key stored in 1Password
 - Encrypted files: `.age` extension
 
-**Git Filtering**:
-```gitattributes
-# Prevent secrets from being committed
-**/*secret* filter=secret
-**/*password* filter=secret
-```
+**Posture for committed secrets**:
+This repo does not ship a `filter=secret` driver in `.gitattributes`.
+Protection comes from two cheaper conventions:
+- `private_` prefix — chezmoi sets 0600 on the deployed file; combined
+  with placing all 1Password env-references under
+  `dot_config/private_op/private_*.env`, the live file inherits user-only
+  ACLs even on Windows.
+- Batched `op inject` in `.chezmoi.toml.tmpl` — actual secret material is
+  resolved at apply time and never lives in the chezmoi source tree.
+  See `SECRETS.md` for the full pattern.
 
 ### Permission Model
 
@@ -440,7 +428,10 @@ op_check_cli                          # Verify op CLI
 
 **Automatic Backups**:
 - Before every `chezmoi apply`
-- Stored in `~/.local/state/chezmoi/backups/`
+- Stored in `$XDG_STATE_HOME/chezmoi/backups/`:
+  - Unix: `~/.local/state/chezmoi/backups/`
+  - Windows: `%USERPROFILE%\.local\state\chezmoi\backups\` (XDG layout
+    preserved on Windows; `%LOCALAPPDATA%` is **not** used)
 - Keep last 10 backups
 - Includes metadata (timestamp, user, file count)
 
@@ -506,25 +497,16 @@ ls ~/.local/state/chezmoi/backups/
 
 ### Planned Features
 
-1. **Testing Infrastructure**
-   - Automated platform testing (Docker)
-   - CI/CD validation
-   - Integration tests
+- **Enhanced monitoring**: surface `scripts/healthcheck.sh` results in the
+  shell prompt or a dashboard; track dependency drift between
+  `.chezmoidata.yaml` and what's actually installed.
+- **Community features**: this repo is personal; if it ever spins out a
+  shareable variant, a plugin system and template marketplace would be
+  the obvious extension points.
 
-2. **Advanced Secrets**
-   - SOPS support
-   - Bitwarden integration
-   - Vault backend
-
-3. **Enhanced Monitoring**
-   - Update notifications
-   - Health check dashboard
-   - Dependency tracking
-
-4. **Community Features**
-   - Plugin system
-   - Shared templates
-   - Configuration marketplace
+Testing infrastructure and secrets management are now shipped (Pester
+tests for `bootstrap.ps1`, the batched `op inject` pattern, validation
+scripts in `.chezmoiscripts/run_onchange_before_01_validate-secrets`).
 
 ---
 

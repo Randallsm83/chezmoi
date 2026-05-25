@@ -106,7 +106,6 @@ INSTALL*.md
 *.Tests.ps1
 *.example
 AGENTS.md
-IMPLEMENTATION-PROGRESS.md
 INSTALL-GUIDE.md
 SECRETS.md
 REMOTE.md
@@ -377,13 +376,6 @@ Library/**
 .config/zsh/.zshrc.d/70-php.zsh
 {{- end }}
 
-{{- if not .package_features.asdf }}
-# ASDF package files (deprecated - replaced by mise)
-.config/asdf/**
-.asdfrc
-.tool-versions
-.config/zsh/.zshrc.d/50-asdf.zsh
-{{- end }}
 
 {{- if not .package_features.nvm }}
 # NVM package files (deprecated - replaced by mise)
