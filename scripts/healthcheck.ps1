@@ -244,6 +244,42 @@ function Test-DiskUsage {
     }
 }
 
+function Test-LastBootstrap {
+    Write-SectionHeader 'Last Bootstrap'
+
+    $stateRoot = if ($env:XDG_STATE_HOME) { $env:XDG_STATE_HOME }
+                 else { Join-Path $HOME '.local\state' }
+    $statusPath = Join-Path $stateRoot 'dotfiles\bootstrap-status.json'
+
+    if (-not (Test-Path -LiteralPath $statusPath)) {
+        Write-Status "No bootstrap status file yet ($statusPath) — has this host been bootstrapped under the new code?" -Type Info
+        return
+    }
+
+    try {
+        $status = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+    } catch {
+        Write-Status "Could not parse $statusPath" -Type Warning
+        return
+    }
+
+    Write-Status "Bootstrap status file: $statusPath" -Type Success
+    Write-Status "  timestamp:       $($status.timestamp)" -Type Info
+    Write-Status "  version:         $($status.version)" -Type Info
+    Write-Status "  host:            $($status.host)" -Type Info
+    Write-Status "  platform:        $($status.platform)" -Type Info
+    Write-Status "  durationSeconds: $($status.durationSeconds)" -Type Info
+    if ($status.chezmoi) {
+        Write-Status "  chezmoi.version: $($status.chezmoi.version)" -Type Info
+        Write-Status "  chezmoi.sourceDir: $($status.chezmoi.sourceDir)" -Type Info
+        if ($status.chezmoi.hasUncommittedChanges) {
+            Write-Status "  chezmoi.hasUncommittedChanges: true" -Type Warning
+        } else {
+            Write-Status "  chezmoi.hasUncommittedChanges: false" -Type Info
+        }
+    }
+}
+
 function Test-ServiceState {
     Write-SectionHeader 'Service State'
 
@@ -314,6 +350,7 @@ Test-Shell
 Test-Git
 Test-DiskUsage
 Test-ServiceState
+Test-LastBootstrap
 
 Write-SectionHeader 'Summary'
 Write-Status 'Health check complete!' -Type Info
