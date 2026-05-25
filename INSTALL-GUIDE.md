@@ -72,7 +72,7 @@ graph TD
     
     RunBefore --> ApplyConfigs[Apply dotfiles<br/>Process templates<br/>Create directories]
     
-    ApplyConfigs --> RunOnce[Run run_once scripts<br/>run_once_install_packages_windows.ps1]
+    ApplyConfigs --> RunOnce[Run run_onchange scripts<br/>run_onchange_install-packages-windows.ps1.tmpl]
     
     RunOnce --> InstallScoopPkgs[Install scoop packages<br/>git, gh, neovim, starship, etc.]
     
@@ -117,7 +117,7 @@ graph TD
 
 **Scripts executed**:
 - `bootstrap.ps1` - Main bootstrap script
-- `.chezmoiscripts/run_once_install_packages_windows.ps1.tmpl` - Package installation
+- `.chezmoiscripts/run_onchange_install-packages-windows.ps1.tmpl` - Package installation (re-runs when the manifest hash changes)
 
 ---
 
@@ -156,7 +156,7 @@ graph TD
     
     RunBeforeUnix --> ApplyConfigsUnix[Apply dotfiles<br/>Process templates<br/>Create symlinks]
     
-    ApplyConfigsUnix --> RunOnceUnix[Run run_once scripts<br/>run_once_install_packages_unix.sh]
+    ApplyConfigsUnix --> RunOnceUnix[Run run_onchange scripts<br/>run_onchange_install-packages-unix.sh.tmpl]
     
     RunOnceUnix --> InstallMiseUnix{Mise<br/>installed?}
     
@@ -198,7 +198,7 @@ graph TD
 **Scripts executed**:
 - `setup.sh` - Main bootstrap script
 - `.chezmoiscripts/run_onchange_before_install_base_packages_unix.sh.tmpl` - Base packages
-- `.chezmoiscripts/run_once_install_packages_unix.sh.tmpl` - Mise packages
+- `.chezmoiscripts/run_onchange_install-packages-unix.sh.tmpl` - Mise + brew packages (re-runs on manifest hash change)
 
 ---
 
@@ -233,7 +233,7 @@ graph TD
     
     RunBeforeMac --> ApplyConfigsMac[Apply dotfiles<br/>Process templates<br/>Create symlinks]
     
-    ApplyConfigsMac --> RunOnceMac[Run run_once scripts<br/>run_once_install_packages_unix.sh]
+    ApplyConfigsMac --> RunOnceMac[Run run_onchange scripts<br/>run_onchange_install-packages-unix.sh.tmpl]
     
     RunOnceMac --> InstallMiseMac{Mise<br/>installed?}
     
@@ -279,7 +279,7 @@ graph TD
 **Scripts executed**:
 - `setup.sh` - Main bootstrap script
 - `.chezmoiscripts/run_onchange_before_install_base_packages_unix.sh.tmpl` - Base packages
-- `.chezmoiscripts/run_once_install_packages_unix.sh.tmpl` - Mise packages
+- `.chezmoiscripts/run_onchange_install-packages-unix.sh.tmpl` - Mise + brew packages (re-runs on manifest hash change)
 
 ---
 
@@ -406,8 +406,8 @@ sequenceDiagram
     Chezmoi->>System: Apply dotfiles<br/>(symlinks/copies)
     Chezmoi->>System: Set permissions<br/>(executable, private)
     
-    Note over Chezmoi,Scripts: Phase 3: Once Scripts
-    Chezmoi->>Scripts: run_once_*<br/>(Install packages)
+    Note over Chezmoi,Scripts: Phase 3: Onchange Scripts
+    Chezmoi->>Scripts: run_onchange_*<br/>(Install packages when manifest hash changes)
     activate Scripts
     Scripts->>PackageManager: Install scoop packages (Windows)
     Scripts->>PackageManager: Install winget packages (Windows)
@@ -435,13 +435,13 @@ Chezmoi executes scripts in the following order:
 
 2. **File application**: Chezmoi applies all dotfiles (templates, symlinks, copies)
 
-3. **`run_once_*`**: Run once after file application
-   - Example: `run_once_install_packages_windows.ps1.tmpl`, `run_once_install_packages_unix.sh.tmpl`
-   - Used for: Installing packages via scoop/winget/mise
+3. **`run_onchange_*`**: Re-runs after file application whenever its hash changes
+   - Example: `run_onchange_install-packages-windows.ps1.tmpl`, `run_onchange_install-packages-unix.sh.tmpl`
+   - Used for: Installing packages via scoop/winget/mise; the script's hash includes the package manifest so adding/removing a package re-triggers it
 
 **Script naming conventions**:
-- `run_once_*`: Runs once (tracked in `~/.local/share/chezmoi/chezmoistate.boltdb`)
-- `run_onchange_*`: Runs when file or data changes (checksum-based)
+- `run_onchange_*`: Re-runs when its content/hash changes (checksum-based)
+- `run_once_*`: Runs exactly once per machine (tracked in `~/.local/share/chezmoi/chezmoistate.boltdb`) — used for the backup script only
 - `run_after_*`: Runs after all other scripts
 - `*.tmpl`: Template files (processed by chezmoi)
 - `*.ps1`: PowerShell scripts (Windows only via `.chezmoiignore`)
@@ -578,34 +578,78 @@ See [Feature Flags](#feature-flags) for complete list.
 
 ## Feature Flags
 
-Feature flags control which optional packages and configurations are applied. Defined in `.chezmoidata.yaml`:
+Feature flags control which optional packages and configurations are applied. Defined in `.chezmoidata.yaml`.
+<!-- Source of truth: .chezmoidata.yaml package_features -->
+
+There are two layers:
+- **Group flags** (`essentials`, `shell_tools`, `languages`, `editors`,
+  `terminals`, `rust_alternatives`, `ai_tools`, `gaming`, `docker`,
+  `hardware_tools`, `windows_utilities`, `sysinternals`, `network_tools`,
+  `dev_extras`, `nerd_fonts`) gate bulk package lists in
+  `package_mapping` / `always_install`. They are convenience switches; turning
+  a group off does not by itself force the individual flags off.
+- **Individual flags** (below) control per-package config deployment and
+  routing through `package_mapping`.
 
 ### Available Flags
 
-| Flag | Default | Description | Controls |
-|------|---------|-------------|----------|
-| **Language Packages** | | | |
-| `rust` | ✅ `true` | Rust environment | `.config/zsh/.zshrc.d/70-rust.zsh`, cargo completions |
-| `golang` | ✅ `true` | Go environment | `.config/zsh/.zshrc.d/70-golang.zsh`, GOPATH setup |
-| `python` | ✅ `true` | Python environment | `.config/zsh/.zshrc.d/70-python.zsh`, virtual env config |
-| `ruby` | ✅ `true` | Ruby environment | `.config/zsh/.zshrc.d/70-ruby.zsh`, gem config |
-| `lua` | ✅ `true` | Lua environment | `.config/zsh/.zshrc.d/70-lua.zsh` |
-| `node` | ✅ `true` | Node.js environment | `.config/zsh/.zshrc.d/70-node.zsh` |
-| `perl` | ✅ `true` | Perl environment | `.config/zsh/.zshrc.d/70-perl.zsh` (future) |
-| `php` | ❌ `false` | PHP environment | `.config/zsh/.zshrc.d/70-php.zsh` (future) |
-| **Development Tools** | | | |
-| `arduino` | ❌ `false` | Arduino IDE config | `.config/arduino/**` (future) |
-| `tinted_theming` | ✅ `true` | Base16/Base24 themes | `.config/tinted-theming/**`, `.local/share/tinted-theming/**` |
-| `thefuck` | ✅ `true` | Command corrector | `.config/zsh/.zshrc.d/thefuck.zsh` (future) |
-| `sqlite3` | ✅ `true` | SQLite CLI config | `.config/sqlite3/**` |
-| `vim` | ❌ `false` | Vim config | `.vimrc`, `.config/vim/**` (using neovim) |
-| `vivid` | ✅ `true` | LS_COLORS generator | `.config/vivid/**` |
-| `warp` | ✅ `true` | Warp terminal | `.config/warp/**` |
-| **Deprecated** | | | |
-| `asdf` | ❌ `false` | ASDF version manager | Replaced by mise |
-| `nvm` | ❌ `false` | NVM (Node Version Manager) | Replaced by mise |
-| `homebrew` | ❌ `false` | Homebrew configs | Bootstrap only, not managed |
-| `vagrant` | ❌ `false` | Vagrant configs | Not actively used |
+| Flag | Default | Notes |
+|------|---------|-------|
+| **Version control / auth** | | |
+| `git` | ✅ `true` | git + lazygit + gh/glab |
+| `ssh` | ✅ `true` | OpenSSH client |
+| `1password` | ✅ `true` | 1Password CLI + SSH agent (access via `index .package_features "1password"`) |
+| **Tool/runtime managers** | | |
+| `mise` | ✅ `true` | mise CLI + global tools |
+| `direnv` | ✅ `true` | `.envrc` evaluator |
+| `homebrew` | ✅ `true` | actively used as Linux/macOS brew-bundle source (not deprecated) |
+| **Terminals** | | |
+| `wezterm` | ✅ `true` | wezterm + Spaceduck colorscheme |
+| `warp` | ✅ `true` | Warp terminal |
+| `windows_terminal` | ✅ `true` | Windows Terminal settings |
+| **Editors** | | |
+| `nvim` | ✅ `true` | neovim + LazyVim configs |
+| `vim` | ✅ `true` | vim + `.vimrc` |
+| `vscode` | ✅ `true` | VS Code settings + extension installer |
+| `zed` | ✅ `true` | Zed editor + settings |
+| **Shell tools** | | |
+| `starship` | ✅ `true` | prompt |
+| `zsh` | ✅ `true` | zsh + `.zshrc.d` |
+| `powershell` | ✅ `true` | pwsh + PSReadLine/PSFzf modules |
+| `fzf` | ✅ `true` | fuzzy finder |
+| `wget` | ✅ `true` | wget + curl |
+| `thefuck` | ✅ `true` | command corrector (ships today; deploys `90-thefuck.zsh`) |
+| `fastfetch` | ✅ `true` | system info display |
+| `topgrade` | ✅ `true` | cross-platform updater |
+| `rust_alternatives` | ✅ `true` | bat, ripgrep, fd, eza, delta, zoxide, vivid, sd, dust, procs, hyperfine, tealdeer, navi, just, tokei, ouch, xh, uutils-coreutils |
+| **Language runtimes** | | |
+| `rust` | ✅ `true` | rustup + cargo |
+| `golang` | ✅ `true` | go toolchain |
+| `python` | ✅ `true` | python + uv + pipx |
+| `ruby` | ✅ `true` | ruby + gem |
+| `lua` | ✅ `true` | lua/luajit/luarocks + lua-language-server |
+| `node` | ✅ `true` | node@lts + yarn/bun/deno |
+| `perl` | ✅ `true` | Perl runtime + LSP (ships; deploys `70-perl.zsh`) |
+| `julia` | ✅ `true` | juliaup |
+| `php` | ❌ `false` | heavy build deps; enable manually |
+| **Dev tools / fonts** | | |
+| `sqlite3` | ✅ `true` | sqlite CLI |
+| `arduino` | ✅ `true` | arduino-cli + IDE config |
+| `vagrant` | ❌ `false` | off by default (not deprecated; just optional) |
+| `nerd_fonts` | ✅ `true` | Hack/FiraCode/JetBrainsMono/CascadiaCode NF |
+| **AI / containers / hardware / networking** | | |
+| `ai_tools` | ✅ `true` | ollama, claude-code, opencode, pam |
+| `docker` | ✅ `true` | docker-compose + (darwin) OrbStack |
+| `gaming` | ✅ `true` | Steam + RTSS/MSI Afterburner + ludusavi |
+| `hardware_tools` | ✅ `true` | (Windows) cpu-z, gpu-z, smartmontools, fancontrol |
+| `windows_utilities` | ✅ `true` | (Windows) Everything, Flow Launcher, Ventoy |
+| `sysinternals` | ✅ `true` | (Windows) Sysinternals Suite |
+| `network_tools` | ✅ `true` | bind, rclone, pritunl, unbound |
+| `dev_extras` | ✅ `true` | postman, ilspy, pandoc, cygwin |
+| **Deprecated (off)** | | |
+| `asdf` | ❌ `false` | replaced by mise |
+| `nvm` | ❌ `false` | replaced by mise |
+| `tinted_theming` | ❌ `false` | replaced by the unified theme system |
 
 ### Core Packages (Always Enabled)
 
@@ -1036,6 +1080,6 @@ $env:XDG_CACHE_HOME = "$env:USERPROFILE\.cache"
 
 ---
 
-**Last updated**: 2025-01-19  
+**Last updated**: 2026-05-25  
 **Version**: 1.0.0  
 **Platforms**: Windows 11, Linux (Arch/Debian/Fedora), WSL2, macOS 10.15+

@@ -62,27 +62,80 @@ This single command will:
 - **Languages**: Managed by mise (node, python, ruby, go, rust, lua, bun)
 
 ### Optional Packages (Feature Flag Controlled)
-Languages and tools are controlled by feature flags in `.chezmoidata.yaml`:
+Languages and tools are controlled by feature flags in `.chezmoidata.yaml`.
+The live values in that file are authoritative — the table below is a
+snapshot for orientation.
+<!-- Source of truth: .chezmoidata.yaml package_features -->
 
-| Package | Default | Description |
-|---------|---------|-------------|
-| `rust` | ✅ Enabled | Cargo, rustup, completions |
-| `golang` | ✅ Enabled | Go environment setup |
-| `python` | ✅ Enabled | Python environment variables |
-| `ruby` | ✅ Enabled | Ruby environment |
-| `lua` | ✅ Enabled | Lua environment |
-| `node` | ✅ Enabled | Node.js environment |
-| `vivid` | ✅ Enabled | LS_COLORS generator (follows theme setting) |
-| `sqlite3` | ✅ Enabled | SQLite CLI config |
-| `warp` | ✅ Enabled | Warp terminal configurations |
-| `vim` | ✅ Enabled | Vim config |
-| `thefuck` | ✅ Enabled | Command correction tool |
-| `perl` | ✅ Enabled | Perl environment |
-| `tinted_theming` | ❌ Disabled | Base16/Base24 theme manager (replaced by unified theme system) |
-| `php` | ❌ Disabled | PHP environment |
-| `arduino` | ❌ Disabled | Arduino IDE config |
+**Group flags** (convenience shortcuts) currently enabled by default:
+`essentials`, `shell_tools`, `languages`, `editors`, `terminals`,
+`rust_alternatives`, `ai_tools`, `gaming`, `docker`, `hardware_tools`,
+`windows_utilities`, `sysinternals`, `network_tools`, `dev_extras`,
+`nerd_fonts`. Group flags do not force individual flags on; they are
+mostly used by `package_mapping`/`always_install` to gate bulk package
+lists. Individual flags below override per-package routing.
 
-**Total managed files**: 155+ configurations
+| Flag | Default | What it gates |
+|------|---------|---------------|
+| **Version control / auth** | | |
+| `git` | ✅ | git + lazygit, glab, gh |
+| `ssh` | ✅ | OpenSSH client packages |
+| `1password` | ✅ | 1Password CLI/desktop + agent.toml |
+| **Tool/runtime managers** | | |
+| `mise` | ✅ | mise CLI + global tools |
+| `direnv` | ✅ | `.envrc` evaluator (mise plugin) |
+| `homebrew` | ✅ | active on Linux/macOS as a brew-bundle source |
+| **Terminals** | | |
+| `wezterm` | ✅ | wezterm + colorscheme |
+| `warp` | ✅ | Warp terminal config |
+| `windows_terminal` | ✅ | Windows Terminal settings |
+| **Editors** | | |
+| `nvim` | ✅ | neovim + LazyVim plugins |
+| `vim` | ✅ | vim binary + `.vimrc` |
+| `vscode` | ✅ | settings.json + extension installer |
+| `zed` | ✅ | Zed editor + settings |
+| **Shell tools** | | |
+| `starship` | ✅ | prompt |
+| `zsh` | ✅ | zsh + zshrc.d |
+| `powershell` | ✅ | pwsh + PSReadLine/PSFzf modules |
+| `fzf` | ✅ | fuzzy finder |
+| `wget` | ✅ | wget + curl |
+| `thefuck` | ✅ | command-corrector |
+| `fastfetch` | ✅ | system info display |
+| `topgrade` | ✅ | cross-platform updater |
+| `rust_alternatives` | ✅ | bat, rg, fd, eza, delta, zoxide, vivid, sd, dust, procs, hyperfine, tealdeer, navi, just, tokei, ouch, xh, uutils-coreutils |
+| **Language runtimes** | | |
+| `rust` | ✅ | rustup + cargo |
+| `golang` | ✅ | go toolchain |
+| `python` | ✅ | python + uv + pipx |
+| `ruby` | ✅ | ruby + gem |
+| `lua` | ✅ | lua/luajit/luarocks + lua-language-server |
+| `node` | ✅ | node@lts + yarn/bun/deno |
+| `perl` | ✅ | Perl + perlnavigator-server |
+| `julia` | ✅ | juliaup |
+| `php` | ❌ | PHP runtime (heavy build deps) |
+| **Dev tools / fonts** | | |
+| `sqlite3` | ✅ | sqlite CLI |
+| `arduino` | ✅ | arduino-cli + IDE config |
+| `vagrant` | ❌ | off by default; enable per machine if needed |
+| `nerd_fonts` | ✅ | Hack/FiraCode/JetBrainsMono/CascadiaCode NF |
+| **AI / containers / hardware / networking** | | |
+| `ai_tools` | ✅ | ollama, claude-code, opencode, pam |
+| `docker` | ✅ | docker-compose + (darwin) OrbStack |
+| `gaming` | ✅ | Steam, rtss, msiafterburner, ludusavi |
+| `hardware_tools` | ✅ | (Windows) cpu-z, gpu-z, smartmontools, fancontrol, etc. |
+| `windows_utilities` | ✅ | (Windows) Everything, Flow Launcher, Ventoy |
+| `sysinternals` | ✅ | (Windows) Sysinternals Suite |
+| `network_tools` | ✅ | bind, rclone, pritunl, unbound |
+| `dev_extras` | ✅ | postman, ilspy, pandoc, cygwin |
+| **Deprecated (off)** | | |
+| `asdf` | ❌ | replaced by mise |
+| `nvm` | ❌ | replaced by mise |
+| `tinted_theming` | ❌ | replaced by the unified theme system |
+
+**Total managed files**: ~200 in `dot_config/`, ~370 managed across all
+platforms (varies by feature flag set). Counts include both regular files
+and chezmoi-managed symlinks/scripts.
 
 ---
 
@@ -368,7 +421,7 @@ dhgitall checkout main
 ```
 
 Defined in:
-- `dot_config/zsh/dot_zshrc.d/25-aliases.zsh` (zsh)
+- `dot_config/zsh/dot_zshrc.d/25-functions.zsh` (zsh)
 - `Documents/PowerShell/Scripts/lib/99-functions-body.ps1` (pwsh)
 
 ---
@@ -488,6 +541,6 @@ MIT License - Feel free to use and modify for your own dotfiles!
 
 **Made with ❤️ using [chezmoi](https://www.chezmoi.io/)**
 
-*Last updated*: 2026-05-19  
-*Managed files*: 155+  
+*Last updated*: 2026-05-25  
+*Managed files*: ~200 in `dot_config/`, ~370 managed total (varies per platform)  
 *Platforms*: Windows, Linux, WSL, macOS
