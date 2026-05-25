@@ -213,11 +213,12 @@
   },
 
   // ── MCP / Context servers ─────────────────────────────
-  // pam is the canonical MCP proxy (see AGENTS.md "Secrets" + .chezmoidata/mcp.yaml).
-  // The stdio token below is Zed's way of invoking pam-as-stdio-server directly.
-  // TODO: convert this file to .tmpl and template the token via $secretsTpl so it
-  // isn't committed to git in plaintext. Acceptable as-is today because the token
-  // is local-only and already exists in plaintext at the AppData destination.
+  // pam is the SOLE source of MCP servers — every tool (tavily, context7,
+  // sequential-thinking, etc.) is exposed through the single pam stdio proxy.
+  // Do NOT add additional context_servers entries here. To add or remove an
+  // MCP backend, edit .chezmoidata/mcp.yaml and `pam sync --client zed`.
+  // TODO: convert this file to .tmpl and template the --token=... via $secretsTpl
+  // so it isn't committed to git in plaintext.
   "context_servers": {
     "pam": {
       "args": [
@@ -226,13 +227,6 @@
       ],
       "command": "pam",
       "source": "custom"
-    },
-    "serena-context-server": {
-      "enabled": true,
-      "remote": false,
-      "settings": {
-        "python_executable": null
-      }
     }
   },
 
@@ -295,28 +289,9 @@
           "create_directory": true,
           "copy_path": true
         },
-        "enable_all_context_servers": false,
-        "context_servers": {
-          "mcp-server-tavily": {
-            "tools": {
-              "tavily-search": true,
-              "tavily-map": true,
-              "tavily-extract": true,
-              "tavily-crawl": true
-            }
-          },
-          "mcp-server-sequential-thinking": {
-            "tools": {
-              "sequentialthinking": true
-            }
-          },
-          "mcp-server-context7": {
-            "tools": {
-              "resolve-library-id": true,
-              "query-docs": true
-            }
-          }
-        }
+        // pam exposes every MCP backend in .chezmoidata/mcp.yaml — enable them
+        // all here instead of pinning a per-server allow-list that drifts.
+        "enable_all_context_servers": true
       }
     }
   },
