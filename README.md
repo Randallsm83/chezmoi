@@ -40,10 +40,10 @@ curl -fsSL https://raw.githubusercontent.com/Randallsm83/chezmoi/main/setup.sh |
 ```
 
 This single command will:
-1. Install chezmoi (via scoop/mise)
+1. Install chezmoi (via the platform's package manager — scoop on Windows, the official `get.chezmoi.io` installer on Unix)
 2. Clone this repository
 3. Apply all configurations (with platform-specific templates)
-4. Install package managers (scoop/mise if missing)
+4. Install the remaining package managers as needed — **Windows**: Scoop + Winget + Mise; **Linux/macOS**: Mise + Homebrew + system pkg manager (apt/dnf/pacman) for bootstrap essentials
 5. Configure shell environments
 6. Set up 1Password SSH agent integration
 7. Ready to work 🎉
@@ -58,21 +58,25 @@ scripts that fire alongside them.
 
 ```mermaid
 flowchart LR
-  TOML[".chezmoi.toml.tmpl<br/>(machine detection + [data])"] -->|.is_windows / .is_linux / .is_darwin<br/>.is_wsl / .is_remote / .is_raspi<br/>.remote_tier / .secrets.*| TPL
   LOCAL[".chezmoi.local.toml<br/>(per-machine overrides)"] -->|wins over auto-detection| TOML
+  TOML[".chezmoi.toml.tmpl<br/>machine detection + [data] + .secrets.*"] -->|.is_windows .is_linux .is_darwin<br/>.is_wsl .is_remote .is_raspi<br/>.remote_tier .secrets.*| TPL
+
   subgraph DATA[".chezmoidata/ (merged into one namespace)"]
-    DT["theme.yaml<br/>(palette + theme_mappings)"]
+    DT["theme.yaml<br/>palette + theme_mappings"]
     DF["fonts.yaml"]
     DS["ssh.yaml"]
-    DP["packages.yaml<br/>(package_features, package_mapping,<br/>brew_bundle, scoop_*, always_install,<br/>remote_packages, claude_memory_projects)"]
-    DD["dns.yaml<br/>(vpn_dns_routes, encrypted_dns,<br/>browser_doh, caddy_ca)"]
+    DP["packages.yaml<br/>package_features, package_mapping,<br/>brew_bundle, scoop_*, always_install,<br/>remote_packages, claude_memory_projects"]
+    DD["dns.yaml<br/>vpn_dns_routes, encrypted_dns,<br/>browser_doh, caddy_ca"]
     DM["mcp.yaml"]
   end
   DATA -->|.theme.* .fonts.* .ssh.*<br/>.package_features.* .package_mapping.*<br/>.vpn_dns_routes.* .caddy_ca.*| TPL
-  PARTIALS[".chezmoitemplates/<br/>(ps-logging, 1password-agent.toml,<br/>op-read-safe, platform-detect, ...)"] -->|{{ template "name" . }}| TPL
-  TPL["Templates<br/>(dot_*, *.tmpl, .chezmoiscripts/*.tmpl)"] -->|chezmoi apply| HOME["$HOME / $XDG_CONFIG_HOME"]
-  IGN[".chezmoiignore<br/>(platform + feature-flag gating)"] -.->|skip| TPL
-  SCRIPTS[".chezmoiscripts/<br/>run_before_* / run_onchange_* / run_after_*"] -->|backup, validate, install,<br/>generate themes, sync pam/MCP| HOME
+
+  PARTIALS[".chezmoitemplates/<br/>platform-detect, 1password-agent.toml,<br/>op-read-safe, mise-tool-entry,<br/>ssh-pub-resolve, common-header, ps-logging"] -->|included via template directive| TPL
+
+  TPL["Templates<br/>dot_*, *.tmpl, .chezmoiscripts/*.tmpl"] -->|chezmoi apply| HOME["$HOME / $XDG_CONFIG_HOME"]
+  IGN[".chezmoiignore<br/>platform + feature-flag gating"] -.->|skip| TPL
+
+  SCRIPTS[".chezmoiscripts/<br/>run_before_* / run_onchange_* / run_after_*"] -->|backup, validate, install,<br/>generate themes, sync claude/opencode memories| HOME
   IGN -.->|skip| SCRIPTS
 ```
 
@@ -103,15 +107,16 @@ Key rules of the road:
 - **Languages**: Managed by mise (node, python, ruby, go, rust, lua, bun)
 
 ### Optional Packages (Feature Flag Controlled)
-Languages and tools are controlled by feature flags in `.chezmoidata.yaml`.
+Languages and tools are controlled by feature flags in `.chezmoidata/packages.yaml`.
 The live values in that file are authoritative — the table below is a
 snapshot for orientation.
-<!-- Source of truth: .chezmoidata.yaml package_features -->
+<!-- Source of truth: .chezmoidata/packages.yaml package_features -->
 
 **Group flags** (convenience shortcuts) currently enabled by default:
 `essentials`, `shell_tools`, `languages`, `editors`, `terminals`,
 `rust_alternatives`, `ai_tools`, `gaming`, `docker`, `hardware_tools`,
 `windows_utilities`, `sysinternals`, `network_tools`, `dev_extras`,
+`productivity`, `password_managers`, `browsers`, `media`, `vpn`,
 `nerd_fonts`. Group flags do not force individual flags on; they are
 mostly used by `package_mapping`/`always_install` to gate bulk package
 lists. Individual flags below override per-package routing.
@@ -169,6 +174,11 @@ lists. Individual flags below override per-package routing.
 | `sysinternals` | ✅ | (Windows) Sysinternals Suite |
 | `network_tools` | ✅ | bind, rclone, pritunl, unbound |
 | `dev_extras` | ✅ | postman, ilspy, pandoc, cygwin |
+| `productivity` | ✅ | PowerToys, Obsidian, Notepad++, WizTree, AutoHotkey, OFGB |
+| `password_managers` | ✅ | additional managers beyond 1Password (e.g. bitwarden-cli) |
+| `browsers` | ✅ | Chrome, LibreWolf, Edge, Chromium (scoop) |
+| `media` | ✅ | Spotify, Slack |
+| `vpn` | ✅ | Tailscale, ProtonVPN, Pritunl |
 | **Deprecated (off)** | | |
 | `asdf` | ❌ | replaced by mise |
 | `nvm` | ❌ | replaced by mise |
@@ -182,16 +192,16 @@ and chezmoi-managed symlinks/scripts.
 
 ## 🎨 Theme & Appearance
 
-**Unified Theme System**: All apps use a single theme setting in `.chezmoidata.yaml`.
+**Unified Theme System**: All apps use a single theme setting in `.chezmoidata/theme.yaml`.
 
-- **Active Theme**: Set via `theme.name` in `.chezmoidata.yaml` (default: `spaceduck`)
+- **Active Theme**: Set via `theme.name` in `.chezmoidata/theme.yaml` (default: `spaceduck`). Override per machine in `chezmoi.local.toml` via `[data] theme = "..."`.
 - **Available Themes**: spaceduck, onedark, gruvbox-material, tokyonight, tokyonight-storm, dracula, kanagawa
 - **Apps Using Theme**: neovim, wezterm, starship, eza, vivid (LS_COLORS), bat, delta
 - **Fonts**: Hack Nerd Font (primary), FiraCode Nerd Font (fallback with ligatures)
 
 To change theme:
 ```yaml
-# .chezmoidata.yaml
+# .chezmoidata/theme.yaml
 theme:
   name: "onedark"  # Change this, run chezmoi apply
 ```
@@ -220,7 +230,7 @@ scripts diff the list against `code --list-extensions` and install only
 the missing ones (additive — they never uninstall).
 
 Gating:
-- `package_features.vscode = true` (default in `.chezmoidata.yaml`)
+- `package_features.vscode = true` (default in `.chezmoidata/packages.yaml`)
 - `code` CLI on PATH (script skips silently if VS Code isn't installed yet)
 
 To add or remove an extension:
@@ -348,12 +358,21 @@ chezmoi update
 
 ### Enable/Disable Packages
 
-Edit `.chezmoidata.yaml` (chezmoi source directory):
+Edit `.chezmoidata/packages.yaml` (chezmoi source directory):
 
 ```yaml
 package_features:
   rust: true      # Enable rust
   python: false   # Disable python
+```
+
+Or override per-machine without touching the tracked source by editing
+`chezmoi.local.toml` (gitignored; see `chezmoi.local.toml.example`):
+
+```toml
+[data.package_features]
+rust = false
+golang = false
 ```
 
 Then apply:
@@ -366,45 +385,68 @@ chezmoi apply
 Configs automatically adapt to your platform:
 - **Windows**: PowerShell profile, Windows Terminal settings, WSL config
 - **Unix/Linux**: Zsh config, shell integrations
-- **WSL**: Special detection and configuration
-- **macOS**: Homebrew integration (if needed)
+- **WSL**: Special detection and configuration (1Password SSH agent shared from the Windows host via named-pipe relay)
+- **macOS**: Homebrew integration (cask list derived from `package_mapping.<feature>.darwin.cask`)
 
 ### Package Management
 
-- **Windows**: Scoop (CLI tools), Winget (GUI apps), Mise (language runtimes)
-- **Linux/WSL/macOS**: Mise (everything via cargo + runtimes)
+- **Windows**: Scoop (CLI), Winget (GUI), Mise (language runtimes)
+- **Linux/macOS/WSL**: Mise (everything, no sudo) + Homebrew (build deps + casks on macOS) + apt/dnf/pacman (system bootstrap only when sudo is available)
 
-Package lists are in `.chezmoidata.yaml` under `packages.scoop`, `winget_packages`, `mise_runtimes`.
+Package routing lives in `.chezmoidata/packages.yaml`:
+- `package_mapping.<feature>.{windows,linux,darwin}.{scoop,winget,brew,apt,dnf,pacman,mise,mise_remote,cask}` — per-feature, per-platform package names
+- `brew_bundle.*` — extra Homebrew bundle entries
+- `scoop_buckets` / `scoop_bucket_overrides` — Scoop bucket setup
+- `always_install.*` — packages installed regardless of feature flags
+- `remote_packages.<tier>` — minimal / medium / full package sets for remote machines
 
 ---
 
 ## 📁 Repository Structure
 
 ```
-.local/share/chezmoi/          # Chezmoi source directory
-├── .chezmoi.toml.tmpl         # Chezmoi configuration
-├── .chezmoidata.yaml          # Template variables & feature flags
-├── .chezmoiignore             # Platform & package exclusions
-├── .chezmoiscripts/           # Auto-run installation scripts
-├── .chezmoitemplates/         # Reusable template snippets
+.local/share/chezmoi/                       # Chezmoi source directory
+├── .chezmoi.toml.tmpl                      # Machine detection + [data] + .secrets.*
+├── chezmoi.local.toml.example              # Template for per-machine overrides (real
+│                                           # file lives at ~/.local/share/chezmoi/
+│                                           # chezmoi.local.toml, gitignored)
+├── .chezmoidata/                           # Static template data (merged into one namespace)
+│   ├── theme.yaml                          # theme.* + theme_mappings.*
+│   ├── fonts.yaml                          # fonts.* (Nerd Font choices, ligatures)
+│   ├── ssh.yaml                            # ssh.* (1Password agent paths)
+│   ├── packages.yaml                       # package_features, package_mapping,
+│   │                                       # brew_bundle, scoop_*, always_install,
+│   │                                       # remote_packages, claude_memory_projects
+│   ├── dns.yaml                            # vpn_dns_routes, encrypted_dns, browser_doh, caddy_ca
+│   └── mcp.yaml                            # mcp.* server definitions
+├── .chezmoiignore                          # Platform + feature-flag gating (itself a template)
+├── .chezmoiscripts/                        # Auto-run scripts (run_before_* / run_onchange_* / run_after_*)
+├── .chezmoitemplates/                      # Reusable partials (platform-detect, op-read-safe,
+│                                           # 1password-agent.toml, mise-tool-entry,
+│                                           # ssh-pub-resolve, common-header, ps-logging)
 │
-├── dot_config/                # XDG config files
-│   ├── git/                   # Git configuration
-│   ├── nvim/                  # Neovim configuration
-│   ├── wezterm/               # WezTerm terminal
-│   ├── starship/              # Starship prompt
-│   ├── mise/                  # Mise version manager
-│   ├── zsh/                   # Zsh configuration
-│   └── [language packages]    # Language-specific configs
+├── dot_config/                             # → ~/.config/ (XDG)
+│   ├── git/                                # Git configuration
+│   ├── nvim/                               # Neovim configuration (LazyVim-based)
+│   ├── wezterm/                            # WezTerm terminal
+│   ├── starship/                           # Starship prompt
+│   ├── mise/                               # Mise version manager
+│   ├── zsh/                                # Zsh configuration + dot_zshrc.d/
+│   └── [language packages]                 # Language-specific configs
 │
-├── Documents/PowerShell/      # PowerShell profile (Windows)
-├── AppData/Roaming/Code/      # VS Code settings (Windows)
-├── dot_local/bin/             # Local scripts
-├── dot_cache/zsh/             # Zsh completions
+├── Documents/PowerShell/                   # → ~/Documents/PowerShell/ (Windows pwsh profile)
+├── AppData/Roaming/Code/User/              # → %APPDATA%\Code\User\ (VS Code settings)
+├── dot_local/bin/                          # → ~/.local/bin/ (local scripts)
+├── dot_cache/zsh/                          # → ~/.cache/zsh/ (zsh completions)
+├── librewolf/                              # LibreWolf source-only data (deployed by script)
+├── vscode/                                 # VS Code source-only data (extensions.txt, etc.)
 │
-├── bootstrap.ps1              # Windows bootstrap script
-├── setup.sh                   # Unix bootstrap script
-└── README.md                  # This file
+├── bootstrap.ps1                           # Windows bootstrap script
+├── bootstrap.Tests.ps1                     # Pester tests for bootstrap.ps1
+├── setup.sh                                # Unix bootstrap script
+├── scripts/                                # Utility scripts (healthcheck, rollback, etc.)
+├── AGENTS.md                               # Agent / human technical reference
+└── README.md                               # This file
 ```
 
 ---
@@ -426,9 +468,11 @@ Exported from `dot_config/zsh/dot_zshrc.d/10-dirs.zsh` (zsh) and `Documents/Powe
 | `HELPSERVICES` | `$DHSPACE/HELPSERVICES` | Supporting service repos |
 | `NOTES` | `$PROJECTS/notes` | Obsidian vault |
 | `MYSPACE` | `$HOME/Dev` | Personal dev space (zsh only) |
-| `DOTFILES` | `$HOME/.local/share/chezmoi` | Chezmoi source dir |
+| `DOTFILES` | `$HOME/.local/share/chezmoi` (pwsh) / `$XDG_CONFIG_HOME/dotfiles` (zsh) | Chezmoi source dir — see note below |
 
 On Windows, `$HOME/projects` is a junction to `D:\`, so `DHSPACE` resolves to `D:\dh`, `NOTES` to `D:\notes`, etc.
+
+> **Note**: zsh's `DOTFILES` currently points to `$XDG_CONFIG_HOME/dotfiles` ([`dot_config/zsh/dot_zshrc.d/10-dirs.zsh`](dot_config/zsh/dot_zshrc.d/10-dirs.zsh)), while pwsh points to the real chezmoi source dir at `$HOME/.local/share/chezmoi`. The `dots` alias is therefore only reliable on pwsh until the zsh value is aligned.
 
 ### Navigation shortcuts
 
@@ -541,27 +585,35 @@ Windows Subsystem for Linux is fully supported:
 
 ---
 
-## 📝 Migration from Stow
+## 📝 History
 
-This repository replaces the old GNU Stow-based dotfiles with modern chezmoi:
+This repository replaced an earlier GNU Stow-based dotfiles layout. The
+chezmoi rewrite kept the look-and-feel and migrated everything to
+template-driven, platform-aware provisioning:
 
-**Improvements:**
-- ✅ One-command provisioning
-- ✅ Template-based platform detection
-- ✅ Feature flags for optional packages
-- ✅ Integrated bootstrap scripts
-- ✅ Built-in secrets management
-- ✅ ~5-10 minute setup (vs 30-60 minutes)
-
-**Old repository**: Stow-based (deprecated)  
-**New repository**: This one (`Randallsm83/chezmoi`)
+- One-command provisioning across Windows / Linux / macOS / WSL
+- Template-based platform detection (`.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_remote`, `.is_raspi`)
+- Feature flags for optional packages
+- Integrated bootstrap scripts (`bootstrap.ps1` + `setup.sh`)
+- 1Password / Age-based secrets management
+- Mirrored to GitHub (`github`) and GitLab (`origin`); see `CONTRIBUTING.md` for the `git pushall` / `git land` workflow
 
 ---
 
 ## 📚 Documentation
 
 - [Chezmoi Documentation](https://www.chezmoi.io/)
-- [AGENTS.md](AGENTS.md) - AI agent technical reference (architecture, commands, conventions)
+- [AGENTS.md](AGENTS.md) — AI agent / human technical reference (architecture, commands, conventions)
+- [ARCHITECTURE.md](ARCHITECTURE.md) — design decisions, directory structure, security model
+- [INSTALL-GUIDE.md](INSTALL-GUIDE.md) — full installation walkthrough across all platforms
+- [CHEZMOI-GUIDE.md](CHEZMOI-GUIDE.md) — chezmoi concepts and workflow reference
+- [SECRETS.md](SECRETS.md) — 1Password / Age integration patterns
+- [REMOTE.md](REMOTE.md) — remote/SSH machine model and tiers
+- [RASPI.md](RASPI.md) — Raspberry Pi medium-tier profile
+- [DNS.md](DNS.md) — split-DNS, encrypted DNS, browser DoH policy
+- [REINSTALL.md](REINSTALL.md) — rebuild / reset scenarios
+- [CONTRIBUTING.md](CONTRIBUTING.md) — branch naming, commit conventions, mirrored-remote workflow
+- [CHANGELOG.md](CHANGELOG.md) — release notes
 
 ---
 
@@ -582,6 +634,6 @@ MIT License - Feel free to use and modify for your own dotfiles!
 
 **Made with ❤️ using [chezmoi](https://www.chezmoi.io/)**
 
-*Last updated*: 2026-05-25  
+*Last updated*: 2026-05-26  
 *Managed files*: ~200 in `dot_config/`, ~370 managed total (varies per platform)  
-*Platforms*: Windows, Linux, WSL, macOS
+*Platforms*: Windows, Linux, WSL, macOS, Raspberry Pi
