@@ -106,6 +106,7 @@ INSTALL*.md
 *.Tests.ps1
 *.example
 AGENTS.md
+**/AGENTS.md
 INSTALL-GUIDE.md
 SECRETS.md
 REMOTE.md

@@ -155,3 +155,10 @@ Shell completions live in `dot_cache/zsh/completions/_<command>`.
 - `REINSTALL.md` — rebuild / reset scenarios
 - `CONTRIBUTING.md` — branch naming, commit conventions, PR template
 - `scripts/README.md` — utility scripts (WSL reset, healthcheck, rollback, etc.)
+
+## Subdirectory AGENTS.md
+- `.chezmoiscripts/.AGENTS.md` — script lifecycle, run-order ranges, platform pairing, re-running gotchas
+- `.chezmoidata/.AGENTS.md` — per-file ownership matrix, override surface, namespace-merge rules
+- `.chezmoitemplates/AGENTS.md` — partial inventory, call signatures, safe-failure conventions
+- `dot_config/zsh/dot_zshrc.d/AGENTS.md` — file-by-file load order, dependency ranges, `.tmpl` gating
+The leading dots on the first two are deliberate: chezmoi's `.chezmoidata/` loader rejects any non-data extension (`.md` → “unknown format”) and `.chezmoiscripts/` rejects any file that isn't a `run_*` script. Chezmoi otherwise ignores source files whose name begins with `.`, so the leading dot is the only way to keep per-directory documentation co-located without breaking `chezmoi apply`. `.chezmoitemplates/AGENTS.md` is loaded as a Go template instead and uses `{{ "{{ ... }}" }}` literal-string escapes for the same reason — see the in-file editor note.
