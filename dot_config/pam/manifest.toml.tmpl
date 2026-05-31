@@ -1,10 +1,16 @@
 [servers]
+{{- if not .is_wsl }}
+  # Skipped on WSL: @1password/sdk's native addon needs the 1Password desktop
+  # app on the same OS. The Windows-side app can't broker this socket into
+  # WSL (npiperelay only wraps the SSH agent pipe). Secrets are still
+  # available via the `op` CLI through chezmoi's $secretsTpl pipeline.
   [servers.1password]
     transport = "stdio"
     command = "npx"
     args = ["-y", "mcp-1password@beta", "--auth-mode=desktop", "--account=my"]
     idle_timeout_s = 300
     quota_per_minute = 0
+{{- end }}
   [servers.chrome-devtools]
     transport = "stdio"
     command = "npx"
