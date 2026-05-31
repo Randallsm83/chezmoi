@@ -71,17 +71,14 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
 }
 
-# PSCompletions (completion manager) - must load AFTER PSReadLine key bindings
-# as it overrides Tab with its own custom menu.
-#
-# In Warp the custom Tab menu doesn't render usefully, and `15-psc-native.ps1`
-# already bridges psc's JSON data to native ArgumentCompleters that DO work in
-# Warp. Skip the heavy Import-Module here (~180ms) when running inside Warp.
-if ($env:TERM_PROGRAM -ne 'WarpTerminal' -and (Get-Module -ListAvailable -Name PSCompletions)) {
-    Import-Module PSCompletions
-    $PSCompletions.init_data()
-    $PSCompletions.handle_completion()
-}
+# PSCompletions intentionally NOT loaded here. Its `handle_completion()`
+# installs a full-screen Tab menu that redraws over surrounding buffer
+# content. Per-CLI subcommand/option metadata still flows in via
+# `Scripts/15-psc-native.ps1`, which reads psc's JSON specs directly off
+# disk and registers native `Register-ArgumentCompleter -Native` entries
+# for every command in the psc set. Those flow into PSReadLine + PSFzf
+# automatically, so Tab completion is argument-aware AND fzf-styled (no
+# popup). Saves ~180ms of import cost on every shell start.
 
 # Source all modular scripts from Scripts directory
 # (includes starship, zoxide, fzf, completions, aliases, etc.)

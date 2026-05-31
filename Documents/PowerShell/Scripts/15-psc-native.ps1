@@ -11,7 +11,15 @@
 $pscRoot = "$HOME\scoop\modules\PSCompletions\completions"
 if (-not (Test-Path $pscRoot)) { return }
 
-$pscCacheFile = Join-Path $env:XDG_CACHE_HOME "powershell\psc-trees.clixml"
+# JSON cache (NOT clixml). Export-Clixml + Import-Clixml roundtrips hashtables
+# through `Deserialized.System.Collections.Hashtable` proxies; their `.Keys`
+# enumeration yields PSObject wrappers, not raw strings, and silently breaks
+# `.ToLower().StartsWith(...)` inside argument-completer scriptblocks (errors
+# are swallowed by the completer host). ConvertFrom-Json -AsHashtable gives
+# real [hashtable]/[string] types every load. See: bridge was returning 0
+# matches for `git che` even though $global:__psc_trees['git'].subs had 140
+# entries.
+$pscCacheFile = Join-Path $env:XDG_CACHE_HOME "powershell\psc-trees.json"
 $pscCacheDir = Split-Path $pscCacheFile
 if (-not (Test-Path $pscCacheDir)) {
     New-Item -ItemType Directory -Path $pscCacheDir -Force | Out-Null
@@ -156,37 +164,60 @@ function ConvertTo-CompletionTree {
     return $node
 }
 
-# Shared scriptblock for all psc-backed completers
+# Shared scriptblock for all psc-backed completers.
+#
+# All string operations explicitly coerce inputs to [string] because:
+# - $commandAst.CommandElements yields AST nodes that ToString() correctly,
+#   but the result must still be wrapped
+# - $node.subs.Keys can be a generic ICollection (real hashtable) OR a
+#   deserialized proxy; iterating directly may yield PSObject wrappers
+#   whose .ToLower() lookup goes through ETS resolution and silently fails
+#   inside Register-ArgumentCompleter scriptblocks (errors swallowed).
+# - .StartsWith on a PSObject can return a PSObject<bool> which evaluates
+#   truthy in some contexts and not others.
+#
+# `[string]$x` and `[string[]]@(...)` force a clean type before any method
+# call. This is the difference between getting 0 matches and getting the
+# correct list.
 $pscNativeCompleter = {
     param($wordToComplete, $commandAst, $cursorPosition)
 
-    $words = @($commandAst.CommandElements | ForEach-Object { $_.ToString() })
-    $cmdName = $words[0]
+    $words = @($commandAst.CommandElements | ForEach-Object { [string]$_ })
+    if ($words.Count -eq 0) { return }
+    $cmdName = [string]$words[0]
 
     $tree = $global:__psc_trees[$cmdName]
     if (-not $tree) { return }
 
-    # Walk the tree: skip the command name, follow subcommands
-    # When wordToComplete is empty, the cursor is after a space — all words are completed.
-    # When non-empty, the last word is being typed and should NOT be walked.
+    # Walk the tree: skip the command name, follow subcommands.
+    # When wordToComplete is empty, the cursor is after a space — every
+    # word in $words has been fully entered. When non-empty, the LAST word
+    # is being typed and must NOT be consumed by the walk.
+    $wc = ([string]$wordToComplete).ToLower()
     $node = $tree
-    $walkEnd = if ($wordToComplete -eq '') { $words.Count } else { $words.Count - 1 }
+    $walkEnd = if ($wc -eq '') { $words.Count } else { $words.Count - 1 }
     for ($i = 1; $i -lt $walkEnd; $i++) {
-        $w = $words[$i]
+        $w = [string]$words[$i]
         if ($w.StartsWith('-')) { continue }
-        if ($node.subs -and $node.subs.ContainsKey($w)) {
-            $node = $node.subs[$w]
+        $subs = $node.subs
+        if ($subs) {
+            $match = $null
+            foreach ($k in @($subs.Keys)) {
+                if ([string]$k -eq $w) { $match = [string]$k; break }
+            }
+            if ($match) { $node = $subs[$match] }
         }
     }
 
     $results = [System.Collections.Generic.List[System.Management.Automation.CompletionResult]]::new()
-    $wc = $wordToComplete.ToLower()
 
-    # Offer subcommands
+    # Offer subcommands matching the partial word
     if ($node.subs) {
-        foreach ($key in $node.subs.Keys) {
+        foreach ($k in @($node.subs.Keys)) {
+            $key = [string]$k
             if ($key.ToLower().StartsWith($wc)) {
-                $tip = if ($node.subs[$key].tip) { $node.subs[$key].tip } else { $key }
+                $childTip = [string]$node.subs[$key].tip
+                $tip = if ($childTip) { $childTip } else { $key }
                 $results.Add([System.Management.Automation.CompletionResult]::new(
                     $key, $key, 'ParameterValue', $tip
                 ))
@@ -194,13 +225,15 @@ $pscNativeCompleter = {
         }
     }
 
-    # Offer options/flags
+    # Offer options/flags matching the partial word
     if ($node.opts) {
-        foreach ($opt in $node.opts) {
-            if ($opt.name.ToLower().StartsWith($wc)) {
-                $tip = if ($opt.tip) { $opt.tip } else { $opt.name }
+        foreach ($opt in @($node.opts)) {
+            $optName = [string]$opt.name
+            if ($optName.ToLower().StartsWith($wc)) {
+                $optTip = [string]$opt.tip
+                $tip = if ($optTip) { $optTip } else { $optName }
                 $results.Add([System.Management.Automation.CompletionResult]::new(
-                    $opt.name, $opt.name, 'ParameterName', $tip
+                    $optName, $optName, 'ParameterName', $tip
                 ))
             }
         }
@@ -208,6 +241,11 @@ $pscNativeCompleter = {
 
     return $results
 }
+
+# Expose the scriptblock globally so other completers (e.g., git-aliases.ps1)
+# can chain back to psc for subcommand/option completion after handling their
+# own dynamic cases (refs, remotes, files).
+$global:__pscNativeCompleter = $pscNativeCompleter
 
 if ($pscRebuild) {
     # Walk every psc completion directory, parse JSON, build hashtable trees.
@@ -234,13 +272,14 @@ if ($pscRebuild) {
 
     $global:__psc_trees = $trees
     try {
-        $trees | Export-Clixml -Path $pscCacheFile -Depth 100 -Force
+        $trees | ConvertTo-Json -Depth 100 -Compress | Set-Content -Path $pscCacheFile -Encoding utf8 -NoNewline
     } catch {
         Write-Verbose "psc-trees cache write failed: $($_.Exception.Message)"
     }
 } else {
     try {
-        $global:__psc_trees = Import-Clixml -Path $pscCacheFile
+        $global:__psc_trees = Get-Content -Raw -Path $pscCacheFile -Encoding utf8 |
+            ConvertFrom-Json -AsHashtable -Depth 100
     } catch {
         Write-Verbose "psc-trees cache load failed; ignoring: $($_.Exception.Message)"
         $global:__psc_trees = @{}

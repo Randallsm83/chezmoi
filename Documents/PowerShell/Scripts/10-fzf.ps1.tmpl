@@ -56,11 +56,14 @@ if ($env:TERM_PROGRAM -ne 'WarpTerminal' -and (Get-Module -ListAvailable -Name P
     Import-Module PSFzf -ErrorAction SilentlyContinue
 
     if (Get-Module PSFzf) {
-        # Set keybindings - use explicit PSReadLineKeyHandler for better terminal compatibility
+        # Wire Ctrl+T (file picker) and Ctrl+R (history) via PSFzf's own
+        # option helper. -TabExpansion is intentionally NOT used here —
+        # we do Tab binding manually below for deterministic behavior.
         try {
-            Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r' -ErrorAction Stop
+            Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' `
+                            -PSReadlineChordReverseHistory 'Ctrl+r' `
+                            -ErrorAction Stop
         } catch {
-            # Fallback: Set keybindings directly if Set-PsFzfOption fails
             Set-PSReadLineKeyHandler -Key 'Ctrl+t' -ScriptBlock {
                 [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
                 [Microsoft.PowerShell.PSConsoleReadLine]::Insert("Invoke-FzfPsReadlineHandlerProvider")
@@ -68,10 +71,257 @@ if ($env:TERM_PROGRAM -ne 'WarpTerminal' -and (Get-Module -ListAvailable -Name P
             }
         }
 
-        # Enable tab completion only if PSCompletions isn't handling it
-        if (-not (Get-Module PSCompletions)) {
-            Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
+        # Tab → Invoke-PscFzfCompletion (defined below). This bypasses both
+        # PSFzf's Invoke-FzfTabCompletion AND PSReadLine's native completer
+        # plumbing, which were proven empirically flaky for our psc data
+        # set (Register-ArgumentCompleter -Native didn't fire for the empty
+        # word case `git <Tab>`, returning only file matches instead).
+        # Our handler reads the psc tree directly and falls back to PSFzf
+        # only for commands outside the psc set.
+        Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-PscFzfCompletion }
+    }
+}
+
+<#
+.SYNOPSIS
+    Tab handler that prefers the psc completion tree over PSReadLine's
+    native completer plumbing, with PSFzf as a fallback for non-psc commands.
+.DESCRIPTION
+    Built because `Register-ArgumentCompleter -Native` is unreliable for
+    the empty-word case (`git <Tab>`) — PSReadLine sometimes skips native
+    completers and returns only filesystem matches. This function walks
+    the live psc tree at $global:__psc_trees directly, builds the
+    CompletionResult list ourselves, and pipes through fzf using the
+    same styling as Ctrl+R / Ctrl+T (via $env:FZF_DEFAULT_OPTS).
+
+    For commands NOT in the psc set, falls back to PSFzf's
+    Invoke-FzfTabCompletion so things like cd, file paths, PowerShell
+    cmdlets still get the fzf overlay.
+#>
+function Invoke-PscFzfCompletion {
+    $line = $null; $cursor = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+    if ([string]::IsNullOrEmpty($line)) { return }
+
+    # Tokenize the buffer up to the cursor (preserves the in-progress word).
+    $beforeCursor = $line.Substring(0, $cursor)
+    $endsWithSpace = $beforeCursor -match '\s$'
+    $tokens = @($beforeCursor -split '\s+' | Where-Object { $_ })
+    if ($tokens.Count -eq 0) { Invoke-FzfTabCompletion; return }
+
+    $cmdName = $tokens[0]
+
+    # If we're still typing the command name itself (no space after it yet),
+    # let PSFzf handle command-name completion.
+    if ($tokens.Count -eq 1 -and -not $endsWithSpace) {
+        Invoke-FzfTabCompletion; return
+    }
+
+    # Identify the partial word being completed (used by both the
+    # TabExpansion2 path below and the psc-tree fallback).
+    if ($endsWithSpace) {
+        $partial = ''
+        $walkTokens = $tokens[1..($tokens.Count - 1)]
+        if ($tokens.Count -eq 1) { $walkTokens = @() }
+        $replIdx = $cursor
+        $replLen = 0
+    } else {
+        $partial = $tokens[-1]
+        $walkTokens = if ($tokens.Count -gt 2) { $tokens[1..($tokens.Count - 2)] } else { @() }
+        $replIdx = $cursor - $partial.Length
+        $replLen = $partial.Length
+    }
+
+    # Helper: pipe a list of { Name; Tip } objects through fzf and apply
+    # the user's pick to the buffer. Returns $true if a selection was made.
+    $pickViaFzf = {
+        param([object[]]$Items, [string]$Header)
+        if (-not $Items -or $Items.Count -eq 0) { return $false }
+        if ($Items.Count -eq 1) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace($replIdx, $replLen, $Items[0].Name)
+            return $true
         }
+        $maxN = ($Items | ForEach-Object { $_.Name.Length } | Measure-Object -Maximum).Maximum
+        $disp = $Items | ForEach-Object {
+            if ($_.Tip) {
+                "{0}{1} -- {2}" -f $_.Name, (' ' * [Math]::Max(1, $maxN - $_.Name.Length + 2)), $_.Tip
+            } else { $_.Name }
+        }
+        $fzfA = @(
+            '--header', $Header
+            '--prompt', 'tab> '
+            '--nth', '1'
+            '--delimiter', ' '
+        )
+        if ($partial) { $fzfA += @('--query', $partial) }
+        $sel = $disp | fzf @fzfA
+        if ($sel) {
+            $pick = ($sel -split '\s+')[0]
+            [Microsoft.PowerShell.PSConsoleReadLine]::Replace($replIdx, $replLen, $pick)
+            return $true
+        }
+        return $false
+    }
+
+    # ---- Source 1: TabExpansion2 (honors every Register-ArgumentCompleter,
+    # including the dynamic git ref/remote completer in Completions/git-aliases.ps1
+    # and any tool that ships a native PowerShell completer like kubectl). ----
+    try {
+        $te = TabExpansion2 -inputScript $beforeCursor -cursorColumn $beforeCursor.Length
+    } catch { $te = $null }
+    if ($te -and $te.CompletionMatches.Count -gt 0) {
+        $useful = @($te.CompletionMatches | Where-Object {
+            $_.ResultType -in 'ParameterValue','ParameterName','Command','Method','Property','Variable','Type','Keyword','Namespace'
+        })
+        if ($useful.Count -gt 0) {
+            $items = $useful | ForEach-Object {
+                $tip = if ($_.ToolTip -and $_.ToolTip -ne $_.CompletionText) { $_.ToolTip } else { '' }
+                [pscustomobject]@{ Name = $_.CompletionText; Tip = $tip }
+            }
+            if (& $pickViaFzf $items "Completions for: $($beforeCursor.TrimEnd())") { return }
+        }
+    }
+
+    # ---- Source 2: `usage complete-word` for tools that ship a usage spec
+    # (mise being the headline case — its native completer is overridden by the
+    # shell-activate function, so TabExpansion2 alone returns nothing). ----
+    if (Get-Command usage -ErrorAction SilentlyContinue) {
+        $cmdExe = Get-Command "$cmdName.exe" -CommandType Application -EA SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty Source
+        if (-not $cmdExe) { $cmdExe = (Get-Command $cmdName -EA SilentlyContinue).Source }
+        if ($cmdExe -and (Test-Path $cmdExe)) {
+            $tmpDir = if ($env:TEMP) { $env:TEMP } else { [System.IO.Path]::GetTempPath() }
+            $today = Get-Date -Format 'yyyy_M_d'
+            $specFile = Join-Path $tmpDir "usage__usage_spec_${cmdName}_$today.kdl"
+            if (-not (Test-Path $specFile)) {
+                try {
+                    & $cmdExe usage 2>$null | Out-File -FilePath $specFile -Encoding utf8
+                    $firstLine = Get-Content $specFile -TotalCount 1 -EA SilentlyContinue
+                    if (-not $firstLine -or $firstLine -notmatch '(^min_usage_version|^name |^cmd )') {
+                        Remove-Item $specFile -EA SilentlyContinue
+                    }
+                } catch { Remove-Item $specFile -EA SilentlyContinue }
+            }
+            if ((Test-Path $specFile) -and (Get-Item $specFile).Length -gt 0) {
+                $usageWords = @($walkTokens)
+                $raw = & usage complete-word --shell powershell -f $specFile -- $cmdName @usageWords $partial 2>$null
+                $usageItems = @($raw | Where-Object { $_ -and $_.Trim() } | ForEach-Object {
+                    $parts = $_ -split "`t", 2
+                    [pscustomobject]@{ Name = $parts[0].Trim(); Tip = if ($parts.Count -gt 1) { $parts[1].Trim() } else { '' } }
+                })
+                if ($usageItems.Count -gt 0) {
+                    if (& $pickViaFzf $usageItems "$cmdName (usage): $($beforeCursor.TrimEnd())") { return }
+                }
+            }
+        }
+    }
+
+    # ---- Source 3: parse `<cmd> [sub] --help` output for flags when the
+    # user is typing a flag (--branch, -b, etc.). psc's data is sparse on
+    # per-subcommand flags for many tools, so we grep the binary's help. ----
+    if ($partial -like '-*') {
+        $helpCmd = @($cmdName) + @($walkTokens | Where-Object { $_ -notmatch '^-' })
+        # `git <sub> --help` opens the HTML manual in a browser on Windows;
+        # `-h` prints brief usage to stderr instead. Many other CLIs accept
+        # `-h` too, but a few (e.g. PowerShell cmdlets, certain Go tools)
+        # treat it as a different option — so try `-h` first, fall back to
+        # `--help` only when `-h` produced nothing.
+        $helpText = try { & $helpCmd[0] @($helpCmd | Select-Object -Skip 1) -h 2>&1 | Out-String } catch { '' }
+        if ([string]::IsNullOrWhiteSpace($helpText) -and $cmdName -ne 'git') {
+            $helpText = try { & $helpCmd[0] @($helpCmd | Select-Object -Skip 1) --help 2>&1 | Out-String } catch { '' }
+        }
+        if ($helpText) {
+            $flagRegex = '(?m)^\s+(-[\w][\w-]*(?:,\s*--[\w][\w-]*)?|--[\w][\w-]*)(?:\s{2,}|=|\s*<|\s*\[|$)(.*)$'
+            $flagItems = [System.Collections.Generic.List[object]]::new()
+            foreach ($m in [regex]::Matches($helpText, $flagRegex)) {
+                $flagText = $m.Groups[1].Value
+                $desc = $m.Groups[2].Value.Trim()
+                # Split combined "-b, --branch" into both forms
+                foreach ($f in ($flagText -split ',\s*')) {
+                    $f = $f.Trim()
+                    if ($f -like "$partial*") {
+                        $flagItems.Add([pscustomobject]@{ Name = $f; Tip = $desc })
+                    }
+                }
+            }
+            # Dedupe by Name
+            $flagItems = @($flagItems | Sort-Object Name -Unique)
+            if ($flagItems.Count -gt 0) {
+                if (& $pickViaFzf $flagItems "$($beforeCursor.TrimEnd()) (flags from --help)") { return }
+            }
+        }
+    }
+
+    # If the command isn't in the psc set, defer to PSFzf entirely.
+    if (-not $global:__psc_trees -or -not $global:__psc_trees.ContainsKey($cmdName)) {
+        Invoke-FzfTabCompletion; return
+    }
+
+    # Walk the tree following the resolved subcommand path.
+    $node = $global:__psc_trees[$cmdName]
+    foreach ($w in $walkTokens) {
+        if ($w.StartsWith('-')) { continue }
+        $subs = $node.subs
+        if (-not $subs) { break }
+        $found = $null
+        foreach ($k in @($subs.Keys)) {
+            if ([string]$k -eq $w) { $found = [string]$k; break }
+        }
+        if ($found) { $node = $subs[$found] } else { break }
+    }
+
+    # Collect candidates: subcommands + options, both filtered by partial prefix.
+    $wc = $partial.ToLower()
+    $candidates = New-Object System.Collections.Generic.List[object]
+    if ($node.subs) {
+        foreach ($k in @($node.subs.Keys)) {
+            $key = [string]$k
+            if ($key.ToLower().StartsWith($wc)) {
+                $tip = [string]$node.subs[$key].tip
+                $candidates.Add([pscustomobject]@{ Name = $key; Tip = $tip })
+            }
+        }
+    }
+    if ($node.opts) {
+        foreach ($opt in @($node.opts)) {
+            $name = [string]$opt.name
+            if ($name.ToLower().StartsWith($wc)) {
+                $candidates.Add([pscustomobject]@{ Name = $name; Tip = [string]$opt.tip })
+            }
+        }
+    }
+
+    if ($candidates.Count -eq 0) {
+        # Nothing in psc — fall back to PSFzf (covers file paths etc.).
+        Invoke-FzfTabCompletion
+        return
+    }
+
+    # If exactly one match, just insert it without invoking fzf.
+    if ($candidates.Count -eq 1) {
+        [Microsoft.PowerShell.PSConsoleReadLine]::Replace($replIdx, $replLen, $candidates[0].Name)
+        return
+    }
+
+    # Build aligned display lines: `name  -- tooltip` (truncated tooltip).
+    $maxLen = ($candidates | ForEach-Object { $_.Name.Length } | Measure-Object -Maximum).Maximum
+    $display = $candidates | ForEach-Object {
+        if ($_.Tip) {
+            "{0}{1} -- {2}" -f $_.Name, (' ' * [Math]::Max(1, $maxLen - $_.Name.Length + 2)), $_.Tip
+        } else { $_.Name }
+    }
+
+    $fzfArgs = @(
+        '--header', "$cmdName$($walkTokens | ForEach-Object { " $_" }) <→ selection replaces '$partial'>".TrimEnd()
+        '--prompt', 'tab> '
+        '--nth', '1'
+        '--delimiter', ' '
+    )
+    if ($partial) { $fzfArgs += @('--query', $partial) }
+    $selected = $display | fzf @fzfArgs
+    if ($selected) {
+        $name = ($selected -split '\s+')[0]
+        [Microsoft.PowerShell.PSConsoleReadLine]::Replace($replIdx, $replLen, $name)
     }
 }
 
