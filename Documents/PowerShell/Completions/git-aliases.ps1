@@ -331,4 +331,115 @@ $global:__GitAliasCompletionMap.Keys | ForEach-Object {
     Register-ArgumentCompleter -Native -CommandName $_ -ScriptBlock $gitCompleter
 }
 
+# ---------------------------------------------------------------------------
+# Plain `git` itself: provide dynamic ref/remote/file completion for
+# subcommands that need it (checkout, switch, branch, merge, push, etc.).
+# For subcommand-name completion (e.g. `git che<Tab>`) and option/flag
+# completion (e.g. `git checkout --<Tab>`) we fall back to the psc bridge
+# (`$global:__pscNativeCompleter`, exposed by Scripts/15-psc-native.ps1).
+# ---------------------------------------------------------------------------
+$gitNativeCompleter = {
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    $elements = @($commandAst.CommandElements)
+    # Need at least `git <subcommand>` (2 elements) before dynamic args apply.
+    # If the user is still typing the subcommand itself, defer to psc.
+    if ($elements.Count -lt 2) {
+        if ($global:__pscNativeCompleter) {
+            return & $global:__pscNativeCompleter $wordToComplete $commandAst $cursorPosition
+        }
+        return
+    }
+
+    $subcommand = [string]$elements[1]
+    # Detect whether the cursor is positioned ON the subcommand token itself
+    # (i.e. they're still typing it). In that case the word being completed
+    # equals the subcommand text — fall back to psc for subcommand names.
+    if ($elements.Count -eq 2 -and $wordToComplete -ne '' -and $subcommand -eq $wordToComplete) {
+        if ($global:__pscNativeCompleter) {
+            return & $global:__pscNativeCompleter $wordToComplete $commandAst $cursorPosition
+        }
+        return
+    }
+
+    # Flags always go through psc (it has the full --option table per subcommand).
+    if ($wordToComplete -like '-*') {
+        if ($global:__pscNativeCompleter) {
+            return & $global:__pscNativeCompleter $wordToComplete $commandAst $cursorPosition
+        }
+        return
+    }
+
+    $otherArgs = @($elements | Select-Object -Skip 2 | ForEach-Object { $_.Extent.Text })
+    $completions = @()
+
+    switch ($subcommand) {
+        { $_ -in 'checkout','switch','branch','merge','rebase','diff','log','show','reset','cherry-pick','revert' } {
+            $completions = @(
+                git for-each-ref --format='%(refname:short)' refs/heads refs/tags refs/remotes 2>$null
+            ) | Where-Object { $_ -like "$wordToComplete*" }
+        }
+        'add' {
+            $completions = git ls-files --modified --others --exclude-standard 2>$null |
+                Where-Object { $_ -like "$wordToComplete*" }
+        }
+        'restore' {
+            if ($otherArgs -contains '--staged' -or $otherArgs -contains '-S') {
+                $completions = git diff --cached --name-only 2>$null | Where-Object { $_ -like "$wordToComplete*" }
+            } else {
+                $completions = git ls-files --modified 2>$null | Where-Object { $_ -like "$wordToComplete*" }
+            }
+        }
+        'push' {
+            if ($otherArgs.Count -eq 0) {
+                $completions = git remote 2>$null | Where-Object { $_ -like "$wordToComplete*" }
+            } else {
+                $completions = git for-each-ref --format='%(refname:short)' refs/heads 2>$null |
+                    Where-Object { $_ -like "$wordToComplete*" }
+            }
+        }
+        'pull' {
+            if ($otherArgs.Count -eq 0) {
+                $completions = git remote 2>$null | Where-Object { $_ -like "$wordToComplete*" }
+            }
+        }
+        'fetch' {
+            $completions = git remote 2>$null | Where-Object { $_ -like "$wordToComplete*" }
+        }
+        'remote' {
+            # Subcommands for `git remote <Tab>` come from psc; only completing
+            # an existing remote name (e.g. `git remote remove <Tab>`) is dynamic.
+            if ($otherArgs.Count -ge 1 -and $otherArgs[0] -in 'remove','rm','rename','set-url','show','prune','update','set-head','set-branches','get-url') {
+                $completions = git remote 2>$null | Where-Object { $_ -like "$wordToComplete*" }
+            }
+        }
+        'tag' {
+            $completions = git tag 2>$null | Where-Object { $_ -like "$wordToComplete*" }
+        }
+        'worktree' {
+            if ($otherArgs.Count -ge 1 -and $otherArgs[0] -in 'remove','move','lock','unlock') {
+                $completions = git worktree list --porcelain 2>$null |
+                    Where-Object { $_ -like 'worktree *' } |
+                    ForEach-Object { ($_ -split ' ', 2)[1] } |
+                    Where-Object { $_ -like "$wordToComplete*" }
+            }
+        }
+        default { }
+    }
+
+    # If we produced dynamic completions, return them. Otherwise fall back
+    # to psc so the user still gets sub-subcommand / option metadata.
+    $completions = @($completions)
+    if ($completions.Count -gt 0) {
+        return $completions | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
+    }
+    if ($global:__pscNativeCompleter) {
+        return & $global:__pscNativeCompleter $wordToComplete $commandAst $cursorPosition
+    }
+}
+
+Register-ArgumentCompleter -Native -CommandName git -ScriptBlock $gitNativeCompleter
+
 # vim: ft=ps1 sw=4 ts=4 et
