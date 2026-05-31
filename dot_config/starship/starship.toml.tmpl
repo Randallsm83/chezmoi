@@ -45,7 +45,7 @@ $line_break$character"""
 # Active palette follows chezmoi `theme.name` via `theme_mappings.starship`
 # in .chezmoidata.yaml. Switch themes by editing that one key and re-applying;
 # the palette catalog below stays static and ships every supported scheme.
-palette = '{{ index .theme_mappings.starship .theme }}'
+palette = '{{ index .theme_mappings.starship .theme.name }}'
 
 [palettes.gruvbox_dark_material]
 color_bg0           = '#1d2021'  # Background

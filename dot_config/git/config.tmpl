@@ -165,7 +165,7 @@
 {{- end }}
 
 # Delta (diff tool) configuration
-{{- $delta_theme := index .theme_mappings.delta .theme }}
+{{- $delta_theme := index .theme_mappings.delta .theme.name }}
 [delta]
 	navigate = true
 	line-numbers = true

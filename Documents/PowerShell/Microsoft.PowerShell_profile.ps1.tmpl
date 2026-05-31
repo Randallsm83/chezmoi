@@ -133,10 +133,10 @@ if ($env:TERM_PROGRAM -eq "vscode") {
     . "$(code --locate-shell-integration-path pwsh)"
 }
 
-# Set LS_COLORS using Vivid ({{ .theme }} theme)
+# Set LS_COLORS using Vivid ({{ .theme.name }} theme)
 {{- if index .package_features "rust_alternatives" }}
 if (Get-Command vivid -ErrorAction SilentlyContinue) {
-    $env:LS_COLORS = (vivid generate "$env:XDG_CONFIG_HOME\vivid\themes\{{ .theme }}.yml")
+    $env:LS_COLORS = (vivid generate "$env:XDG_CONFIG_HOME\vivid\themes\{{ .theme.name }}.yml")
 }
 {{- end }}
 

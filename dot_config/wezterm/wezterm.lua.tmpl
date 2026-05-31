@@ -5,7 +5,7 @@
 -- ╚███╔███╔╝███████╗███████╗   ██║   ███████╗██║  ██║██║ ╚═╝ ██║
 --  ╚══╝╚══╝ ╚══════╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝
 -- GPU-accelerated cross-platform terminal emulator.
--- Theme: {{ .theme }} | Primary host: {{ .chezmoi.hostname }} ({{ .chezmoi.os }})
+-- Theme: {{ .theme.name }} | Primary host: {{ .chezmoi.hostname }} ({{ .chezmoi.os }})
 
 local wezterm = require("wezterm") --[[@as Wezterm]]
 local act = wezterm.action
@@ -82,13 +82,13 @@ end
 -- resolved by name (theme_mappings.wezterm.<theme>); UI chrome accents are
 -- templated from .theme.<theme> so every supported theme re-skins cleanly.
 -- ─────────────────────────────────────────────────────────────────────────────
-{{- /* .theme is a string ("spaceduck") set in .chezmoi.toml.tmpl. The */ -}}
+{{- /* .theme.name is a string ("spaceduck") set in .chezmoi.toml.tmpl. The */ -}}
 {{- /* palette map lives at theme.<name> in .chezmoidata.yaml but the    */ -}}
-{{- /* string above shadows it at .theme, so we re-read the yaml file    */ -}}
+{{- /* string above shadows it at .theme.name, so we re-read the yaml file    */ -}}
 {{- /* directly (same pattern used by bat/opencode theme generators).    */ -}}
-{{- $wezterm_theme := index .theme_mappings.wezterm .theme }}
+{{- $wezterm_theme := index .theme_mappings.wezterm .theme.name }}
 {{- $themes := index (fromYaml (include ".chezmoidata/theme.yaml")) "theme" }}
-{{- $p := index $themes .theme }}
+{{- $p := index $themes .theme.name }}
 local THEME_NAME = "{{ $wezterm_theme }}"
 wezterm.GLOBAL.theme = THEME_NAME
 
