@@ -350,9 +350,11 @@ end
 
 local function _pane_cwd(pane)
   if not pane then return "" end
-  -- PaneInformation field is `current_working_dir` in newer wezterm and
-  -- `working_dir` in older builds; check both.
-  local cwd = pane.current_working_dir or pane.working_dir
+  -- PaneInformation only exposes `current_working_dir`. The older
+  -- `working_dir` field was removed; accessing it on the userdata raises
+  -- "attempt to get an unknown field 'working_dir'" and crashes the tab
+  -- handler (visible in the bar as `ERR attempt to get an unknown ...`).
+  local cwd = pane.current_working_dir
   if not cwd then return "" end
   local path
   if type(cwd) == "userdata" or type(cwd) == "table" then
