@@ -118,7 +118,7 @@ call plug#end()
 "               Colorscheme Settings
 " ============================================
 " Theme controlled by chezmoi unified theme system
-" Current theme: {{ .theme }}
+" Current theme: {{ .theme.name }}
 
 " Set terminal colors
 if &term =~ '256color'
@@ -133,21 +133,21 @@ if &term =~ '256color'
   set background=dark
 
   " Theme-specific settings
-{{- if eq .theme "gruvbox-material" }}
+{{- if eq .theme.name "gruvbox-material" }}
   let g:gruvbox_contrast_dark = 'medium'
-{{- else if eq .theme "tokyonight" }}
+{{- else if eq .theme.name "tokyonight" }}
   let g:tokyonight_style = 'night'
   let g:tokyonight_enable_italic = 1
-{{- else if eq .theme "tokyonight-storm" }}
+{{- else if eq .theme.name "tokyonight-storm" }}
   let g:tokyonight_style = 'storm'
   let g:tokyonight_enable_italic = 1
-{{- else if eq .theme "spaceduck" }}
+{{- else if eq .theme.name "spaceduck" }}
   " Spaceduck settings
   let g:spaceduck_italic = 1
 {{- end }}
 
   " Apply colorscheme
-  autocmd vimenter * ++nested colorscheme {{ index .theme_mappings.vim .theme }}
+  autocmd vimenter * ++nested colorscheme {{ index .theme_mappings.vim .theme.name }}
 endif
 
 " ============================================
@@ -496,7 +496,7 @@ let g:coc_global_extensions = [
 \ ]
 
 " Vim-airline
-let g:airline_theme='{{ index .theme_mappings.vim_airline .theme }}'
+let g:airline_theme='{{ index .theme_mappings.vim_airline .theme.name }}'
 let g:airline_powerline_fonts = 1
 let g:airline_extensions = ['branch', 'coc']
 " let g:airline#extensions#ale#open_lnum_symbol = ':L'

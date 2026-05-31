@@ -37,7 +37,7 @@ if [[ -n "$ENV_DIRS" ]]; then
 fi
 
 # ZSH Syntax Theme (rendered from .chezmoidata/theme.yaml → .theme.name)
-[[ -r "$ZDOTDIR/colors/{{ .theme }}.zsh-syntax-theme" ]] && source "$ZDOTDIR/colors/{{ .theme }}.zsh-syntax-theme"
+[[ -r "$ZDOTDIR/colors/{{ .theme.name }}.zsh-syntax-theme" ]] && source "$ZDOTDIR/colors/{{ .theme.name }}.zsh-syntax-theme"
 
 # Lazy-load (autoload) Zsh function files from a directory.
 export ZFUNCDIR="$ZDOTDIR/.zfunctions"

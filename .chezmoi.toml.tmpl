@@ -175,13 +175,10 @@
     shell_profile = {{ joinPath .chezmoi.homeDir ".config" "zsh" ".zshrc" | quote }}
 {{- end }}
 
-    # Theme and styling.
-    # `theme` is the SINGLE SOURCE OF TRUTH for the active theme name.
-    # Templates consume it via `index .theme_mappings.<app> .theme`.
-    # The value is rendered from .chezmoidata/theme.yaml -> theme.name so that
-    # editing that one file (and re-running `chezmoi apply --init`) flips every
-    # editor in lockstep. Override per-machine via `.chezmoi.local.toml`.
-    theme = {{ (index (fromYaml (include ".chezmoidata/theme.yaml")) "theme").name | quote }}
+    # Font/styling defaults. Theme name is NOT mirrored here — templates read
+    # `.theme.name` directly from `.chezmoidata/theme.yaml` so editing that one
+    # file + `chezmoi apply` is sufficient (no `--init` reinit dance). Per-machine
+    # override: `[data.theme] name = "..."` in `.chezmoi.local.toml`.
     font = "Hack"
     font_fallback = "FiraCode"
     nerd_font = "Hack Nerd Font"

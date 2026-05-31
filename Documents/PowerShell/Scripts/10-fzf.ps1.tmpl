@@ -12,12 +12,12 @@
 if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) { return }
 
 # Colors rendered from .chezmoidata/theme.yaml → theme.<active>.
-# `.theme` at this scope is the active theme name string (set in .chezmoi.toml.tmpl);
+# `.theme.name` at this scope is the active theme name string (set in .chezmoi.toml.tmpl);
 # the palette dict for that theme lives in .chezmoidata/theme.yaml under `theme.<name>`.
 # Same indirection used by wezterm.lua.tmpl and the bat/opencode generators.
 # Change `.theme.name` in .chezmoidata/theme.yaml to flip every editor (including fzf) in lockstep.
 {{- $themes := index (fromYaml (include ".chezmoidata/theme.yaml")) "theme" }}
-{{- $p := index $themes .theme }}
+{{- $p := index $themes .theme.name }}
 $env:FZF_DEFAULT_OPTS = @"
 --color=bg+:{{ $p.background }},bg:{{ $p.background }},spinner:{{ $p.blue }},hl:{{ $p.purple }}
 --color=fg:{{ $p.foreground }},header:{{ $p.blue }},info:{{ $p.green }},pointer:{{ $p.orange }}
