@@ -240,6 +240,47 @@ updateall() {
   echo "======================================\n"
 }
 
+# =================================================================================================
+# AI / MCP Wrappers (1Password-injected secrets)
+# =================================================================================================
+# Wrap CLIs that need API keys so secrets are pulled from 1Password at launch
+# rather than persisted in env vars or config files.
+#
+# Pattern: an env-reference file at ~/.config/op/<tool>.env contains
+#   VAR=op://<vault>/<item>/<field>
+# entries; we wrap the binary with `op run --env-file=...`. The resolved
+# secrets exist only in the child process's environment.
+#
+# Mirrors the Windows pwsh wrappers in Documents/PowerShell/Scripts/lib/99-functions-body.ps1.
+# Requires: op (1Password CLI) signed in. With the desktop-app integration
+# enabled, biometric unlock makes the lookup invisible.
+#
+# Bypass: set OP_WRAPPER_DISABLE=1 to run the bare binary without injection.
+if (( $+commands[op] )); then
+  _op_run_wrapped() {
+    # $1 = tool name (also basename of env file); remaining args forwarded.
+    emulate -L zsh
+    local tool=$1; shift
+    local env_file="$HOME/.config/op/${tool}.env"
+    local bin
+    bin=$(whence -p "$tool") || {
+      print -u2 "${tool}: command not found"
+      return 127
+    }
+    if [[ -n $OP_WRAPPER_DISABLE ]] || [[ ! -r $env_file ]]; then
+      [[ ! -r $env_file && -z $OP_WRAPPER_DISABLE ]] && \
+        print -u2 "${tool}: env file not found at ${env_file} - running without secret injection"
+      "$bin" "$@"
+      return
+    fi
+    op run --env-file="$env_file" --no-masking -- "$bin" "$@"
+  }
+
+  opencode() { _op_run_wrapped opencode "$@"; }
+  claude()   { _op_run_wrapped claude   "$@"; }
+  pam()      { _op_run_wrapped pam      "$@"; }
+fi
+
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
 # vim: ft=zsh sw=2 ts=2 et
