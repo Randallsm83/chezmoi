@@ -11,7 +11,7 @@
 # Available themes: spaceduck, onedark, gruvbox-material, tokyonight, tokyonight-storm, dracula, kanagawa
 
 theme:
-  name: "tokyonight"  # Active theme
+  name: "kanagawa"  # Active theme (maps to "Kanagawa Wave" in Zed, etc.)
 
   # Spaceduck - canonical pineapplegiant/spaceduck palette mapped to standard
   # ANSI color names so every consumer (wezterm chrome, bat, delta, starship,
