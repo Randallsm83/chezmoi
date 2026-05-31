@@ -52,9 +52,12 @@
   "default_agent": "sisyphus",
 
   "plugin": [
+    "@tarquinen/opencode-dcp@latest",
     "@warp-dot-dev/opencode-warp",
+    "envsitter-guard@latest",
+    "github:JRedeker/opencode-morph-fast-apply",
     "oh-my-openagent@latest",
-    "opencode-antigravity-auth@latest"
+    "opencode-vibeguard@latest"
   ],
 
   "provider": {
@@ -206,7 +209,8 @@
     "AGENTS.md",
     ".github/copilot-instructions.md",
     ".cursor/rules/*.mdc",
-    "WARP.md"
+    "WARP.md",
+    "~/.config/opencode/node_modules/opencode-morph-fast-apply/instructions/morph-tools.md"
   ],
 
   "skills": {

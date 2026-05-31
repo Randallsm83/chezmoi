@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Opencode-DCP/opencode-dynamic-context-pruning/master/dcp.schema.json",
+
+  // Raise the trigger points so DCP stops nagging at ~15% of the real 200K window.
+  // Percent values are relative to the active model's context window.
+  "compress": {
+    // Above maxContextLimit, DCP fires strong compression nudges (per nudgeFrequency).
+    // 75% of 200K = 150K -> only nag when we're genuinely getting full.
+    "maxContextLimit": "75%",
+
+    // Below minContextLimit, reminder nudges are off entirely.
+    // 40% of 200K = 80K -> stay quiet during normal exploration.
+    "minContextLimit": "40%"
+  }
+}
