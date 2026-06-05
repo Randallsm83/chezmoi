@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 Spaceduck theme for Notepad++.
 Palette inspired by spaceduck (pinwheelz, et al.):
@@ -7,7 +7,7 @@ Palette inspired by spaceduck (pinwheelz, et al.):
   orange #e39400  blue #00a3cc  purple #b3a1e6  magenta #c678dd
 Derived from DarkModeDefault.xml (itself based on Zenburn). License: GPL2
 -->
-<NotepadPlus modelDate="20260505" modelFileLastModifiedDate="20260505">
+<NotepadPlus modelDate="20260505" modelFileLastModifiedDate="20260507">
     <LexerStyles>
         <LexerType name="actionscript" desc="ActionScript" ext="">
             <WordsStyle name="DEFAULT" styleID="11" fgColor="ECF0C1" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
@@ -848,7 +848,7 @@ Derived from DarkModeDefault.xml (itself based on Zenburn). License: GPL2
             <WordsStyle name="USER KEYWORDS 7" styleID="134" fgColor="B3A1E6" bgColor="0F111B" fontName="" fontStyle="1" fontSize="" keywordClass="substyle7" />
             <WordsStyle name="USER KEYWORDS 8" styleID="135" fgColor="B3A1E6" bgColor="0F111B" fontName="" fontStyle="1" fontSize="" keywordClass="substyle8" />
         </LexerType>
-                <LexerType name="json" desc="JSON" ext="">
+        <LexerType name="json" desc="JSON" ext="">
             <WordsStyle name="DEFAULT" styleID="0" fgColor="ECF0C1" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="NUMBER" styleID="1" fgColor="00A3CC" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="STRING" styleID="2" fgColor="CE6F8F" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
@@ -985,7 +985,7 @@ Derived from DarkModeDefault.xml (itself based on Zenburn). License: GPL2
             <WordsStyle name="IDENTIFIER" styleID="6" fgColor="C0FFFF" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="VARIABLE" styleID="7" fgColor="66D9EF" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="COL NAME" styleID="8" fgColor="82AAFF" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
-            <WordsStyle name="COL NAME IN []&apos;s" styleID="16" fgColor="82AAFF" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
+            <WordsStyle name="COL NAME IN []'s" styleID="16" fgColor="82AAFF" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
         </LexerType>
         <LexerType name="nfo" desc="Dos Style" ext="">
             <WordsStyle name="DEFAULT" styleID="32" fgColor="ECF0C1" bgColor="0F111B" fontSize="" fontStyle="0" />
@@ -1350,7 +1350,7 @@ Derived from DarkModeDefault.xml (itself based on Zenburn). License: GPL2
             <WordsStyle name="BINARY ( 16#{1A803F59} )" styleID="11" fgColor="00A3CC" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="MONEY" styleID="12" fgColor="00A3CC" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="ISSUE { #123-CD-456 }" styleID="13" fgColor="E33400" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
-            <WordsStyle name="TAG { &lt;TITLE HEIGHT=100&gt; }" styleID="14" fgColor="ECF0C1" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
+            <WordsStyle name="TAG { &lt;TITLE HEIGHT=100> }" styleID="14" fgColor="ECF0C1" bgColor="0F111B" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="FILE { %/C/WINNT/SOME.DLL }" styleID="15" fgColor="ECF0C1" bgColor="333333" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="EMAIL { JOE@MAIL.DOM }" styleID="16" fgColor="ECF0C1" bgColor="333333" fontName="" fontStyle="0" fontSize="" />
             <WordsStyle name="URL { FTP://THERE.DOM }" styleID="17" fgColor="ECF0C1" bgColor="333333" fontName="" fontStyle="0" fontSize="" />
