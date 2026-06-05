@@ -47,8 +47,8 @@
   "share": "disabled",
   "snapshot": true,
 
-  "model": "anthropic/claude-opus-4-7",
-  "small_model": "anthropic/claude-sonnet-4-5",
+  "model": "openai/o4-mini",
+  "small_model": "openai/gpt-4o-mini",
   "default_agent": "sisyphus",
 
   "plugin": [
@@ -61,7 +61,7 @@
   ],
 
   "provider": {
-    "anthropic": {
+    "openai": {
       "options": {
         "timeout": 600000,
         "chunkTimeout": 30000,
@@ -192,14 +192,14 @@
   "agent": {
     "plan": {
       "mode": "primary",
-      "model": "anthropic/claude-opus-4-7",
+      "model": "openai/o4-mini",
       "prompt": "You are in planning mode. Research thoroughly and produce a clear, concise plan. Do NOT modify any files.",
       "tools": { "write": false, "edit": false }
     },
     "main": {
       "mode": "primary",
       "description": "Primary build/dev agent.",
-      "model": "anthropic/claude-opus-4-7"
+      "model": "openai/o4-mini"
     }
   },
 

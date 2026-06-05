@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-HOSTNAME_FQDN="${HOSTNAME_FQDN:-***REMOVED***}"
+HOSTNAME_FQDN="${HOSTNAME_FQDN:-raspi.***REMOVED***.ts.net}"
 UPSTREAM_HOST="${UPSTREAM_HOST:-127.0.0.1}"
 UPSTREAM_PORT="${UPSTREAM_PORT:-53}"   # Pi-hole's listening port (dnsmasq)
 DOT_PORT="${DOT_PORT:-853}"

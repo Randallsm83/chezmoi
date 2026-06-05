@@ -273,6 +273,14 @@ if (( $+commands[op] )); then
       "$bin" "$@"
       return
     fi
+    # Bypass op run for opencode: it uses its own auth login flow (ChatGPT
+    # Pro/Plus subscription) rather than API-key injection. The WSL op wrapper
+    # (Windows op.exe) also cannot spawn Linux ELF binaries, so this avoids
+    # the "%PATH% not found" error on WSL.
+    if [[ $tool == opencode ]]; then
+      "$bin" "$@"
+      return
+    fi
     op run --env-file="$env_file" --no-masking -- "$bin" "$@"
   }
 

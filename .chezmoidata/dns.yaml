@@ -78,7 +78,7 @@ vpn_dns_routes:
 encrypted_dns:
   enabled: true
   protocol: tls                            # "tls" (DoT) or "https" (DoH)
-  server_name: "***REMOVED***"
+  server_name: "raspi.***REMOVED***.ts.net"
   server_addresses:
     - "***REMOVED***"                     # raspi tailnet IPv4
   port: 853                                # used for the reachability probe
