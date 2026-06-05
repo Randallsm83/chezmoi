@@ -42,12 +42,12 @@ Important properties:
 1. **Tailscale MagicDNS** (`utun9`) — `100.100.100.100` / `fd7a:115c:a1e0::53`. Tailscale injects this at the per-interface level via NetworkExtension, which **outranks** system-scope profile DNS in macOS. This is why the encrypted DNS profile we install is not resolver #1 (see below).
 2. **Direct tailnet route to Pi-hole** — `100.100.149.88`. macOS may parallel-query this and MagicDNS for the same name; both responses are equivalent because MagicDNS forwards there anyway.
 3. **Split-DNS for work domains** — `/etc/resolver/<domain>` files routing `dh-int.com`, `dreamhost.*`, etc. to `10.25.0.15` (Pritunl-internal DNS). Only used when those domains are queried; only resolves when Pritunl is up.
-4. **Encrypted DNS profile (DoT, fallback)** — `raspi.tailf7fd34.ts.net` over TLS to `100.100.149.88:853`. Installed but generally not the active resolver because Tailscale outranks it. Becomes primary when Tailscale is down or `accept-dns` is off.
+4. **Encrypted DNS profile (DoT, fallback)** — `raspi.alai-altair.ts.net` over TLS to `100.100.149.88:853`. Installed but generally not the active resolver because Tailscale outranks it. Becomes primary when Tailscale is down or `accept-dns` is off.
 5. **LAN fallback** — `192.168.0.1` (router). Last-resort. Plaintext UDP/53. Not used in current observed behavior.
 
 ## Components and where they live
 
-### Pi side (raspi.tailf7fd34.ts.net)
+### Pi side (raspi.alai-altair.ts.net)
 
 - **Pi-hole** (dnsmasq) on `:53/udp,tcp`, listening on LAN + tailscale interfaces. Filters and logs.
 - **unbound** as a DoT terminator on `:853/tcp`. TLS cert from `tailscale cert`. Forwards plain DNS to `127.0.0.1:53` (Pi-hole). `module-config: "iterator"` (no validator — Pi-hole's upstream handles DNSSEC).
@@ -105,7 +105,7 @@ scutil --dns
 sudo profiles list -type configuration | grep pihole-dot
 
 # End-to-end DoT query against the Pi
-kdig @raspi.tailf7fd34.ts.net +tls +short example.com
+kdig @raspi.alai-altair.ts.net +tls +short example.com
 
 # Reflective probe — what the world sees as your resolver's egress IP
 dig +short TXT o-o.myaddr.l.google.com @ns1.google.com
@@ -145,8 +145,8 @@ Windows app
 127.0.0.1:53  -- unbound service (no recursion, DoT forward-only)
   | DoT (TCP/853 + TLS)
   v
-  forward-addr: 192.168.0.26@853#raspi.tailf7fd34.ts.net   (LAN, preferred)
-  forward-addr: 100.100.149.88@853#raspi.tailf7fd34.ts.net (tailnet fallback)
+  forward-addr: 192.168.0.26@853#raspi.alai-altair.ts.net   (LAN, preferred)
+  forward-addr: 100.100.149.88@853#raspi.alai-altair.ts.net (tailnet fallback)
   | TLS, validated against scoop cacert bundle
   v
 raspi:853  -- unbound DoT terminator (iterator only, no validator)

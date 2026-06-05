@@ -4,7 +4,7 @@ Windows-side unbound: a tiny DoT-forwarding stub resolver.
 Role:
   Local apps (Windows resolver -> 127.0.0.1:53)
     -> unbound here (no recursion, no validation)
-    -> DoT (TCP/853 + TLS) to raspi.tailf7fd34.ts.net (via LAN or tailnet IP)
+    -> DoT (TCP/853 + TLS) to raspi.alai-altair.ts.net (via LAN or tailnet IP)
          - LE cert, ACL on the Pi accepts our LAN + tailnet CIDRs
          - terminates DoT and forwards to Pi-hole, which gives us the
            homelab's ad-blocked, locally-overridden DNS
@@ -105,12 +105,12 @@ forward-zone:
 
     # raspi DoT terminator, LAN address. The Pi's ACL accepts 192.168.0.0/16.
     # The "#authname" suffix supplies the SNI / certificate validation
-    # hostname; LE cert is for raspi.tailf7fd34.ts.net regardless of which
+    # hostname; LE cert is for raspi.alai-altair.ts.net regardless of which
     # IP we connect to, so cert validation still passes via the system CA
     # bundle.
-    forward-addr: 192.168.0.26@853#raspi.tailf7fd34.ts.net
+    forward-addr: 192.168.0.26@853#raspi.alai-altair.ts.net
 
     # Same terminator via tailnet. Used when off-LAN but Tailscale is up.
     # Listed second so unbound's WP2 prefers the LAN path when both work
     # (LAN handshake is generally lower RTT).
-    forward-addr: 100.100.149.88@853#raspi.tailf7fd34.ts.net
+    forward-addr: 100.100.149.88@853#raspi.alai-altair.ts.net
