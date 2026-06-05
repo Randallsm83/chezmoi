@@ -90,6 +90,15 @@ Host raspi
   IdentitiesOnly yes
   IdentityFile ~/.ssh/raspi.pub
 
+# OpenClaw container host — DreamHost VM (resolved via Tailscale MagicDNS).
+# MagicDNS name is `cass`; `openclaw` kept as an alias for muscle memory.
+# Login user is `debian` (Debian cloud image). Key: Openclaw SSH Key in 1P.
+Host cass openclaw
+  HostName cass
+  User debian
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/openclaw.pub
+
 # ── Global Defaults ───────────────────────────────────────────────────────────
 # IMPORTANT: Host * must be last so per-host overrides take effect first.
 Host *
