@@ -1,47 +1,38 @@
 ---
-# ctrl-y: disable default delete_all_left, remap to accept autosuggestion
-"editor_view:delete_all_left": none
-"editor_view:insert_autosuggestion": ctrl-y
-# Move conflicting defaults to ctrl-alt so ctrl-h/j/k/l are free
-"editor_view:backspace": ctrl-alt-h
-"editor_view:insert_newline": ctrl-alt-j
 "editor_view:cut_all_right": ctrl-alt-k
-"input:clear_screen": ctrl-alt-l
-# Vim-style pane navigation (ctrl-h/j/k/l)
-"pane_group:navigate_left": ctrl-h
+"pane_group:add_down": ctrl-shift-d
+"editor_view:insert_newline": ctrl-alt-j
+"workspace:activate_last_tab": ctrl-9
+"workspace:activate_next_tab": "ctrl-shift-}"
+"editor_view:insert_autosuggestion": ctrl-y
+"workspace:activate_first_tab": ctrl-1
+"pane_group:resize_right": alt-l
+"workspace:activate_second_tab": ctrl-2
 "pane_group:navigate_down": ctrl-j
 "pane_group:navigate_up": ctrl-k
-"pane_group:navigate_right": ctrl-l
-# ctrl-shift-[/] -> tab switching (not panes)
+"pane_group:navigate_left": ctrl-h
+"editor_view:backspace": ctrl-alt-h
+"pane_group:resize_up": alt-k
+"pane_group:resize_left": alt-h
+"input:clear_screen": ctrl-alt-l
 "pane_group:navigate_prev": none
-"pane_group:navigate_next": none
-"workspace:activate_prev_tab": ctrl-shift-{
-"workspace:activate_next_tab": ctrl-shift-}
-# ctrl-enter: accept Active AI prompt suggestion
-"terminal:accept_prompt_suggestions": ctrl-enter
-# alt-h/j/k/l: pane resize (matches Neovim/WezTerm via smart-splits)
-"pane_group:resize_left":  alt-h
-"pane_group:resize_down":  alt-j
-"pane_group:resize_up":    alt-k
-"pane_group:resize_right": alt-l
-# Pane splits (match WezTerm Leader+d/e)
-"pane_group:add_down":  ctrl-shift-d
-"pane_group:add_right": ctrl-shift-e
-# Pane zoom/maximize (match WezTerm Leader+z)
-"pane_group:toggle_maximize_pane": ctrl-shift-z
-# Tab activation 1-9 (consistent across apps)
-"workspace:activate_first_tab":   ctrl-1
-"workspace:activate_second_tab":  ctrl-2
-"workspace:activate_third_tab":   ctrl-3
-"workspace:activate_fourth_tab":  ctrl-4
-"workspace:activate_fifth_tab":   ctrl-5
-"workspace:activate_sixth_tab":   ctrl-6
-"workspace:activate_seventh_tab": ctrl-7
-"workspace:activate_eighth_tab":  ctrl-8
-"workspace:activate_last_tab":    ctrl-9
-# Font size
 "view:increase_font_size": ctrl-=
-"view:decrease_font_size": ctrl--
-"view:reset_font_size":    ctrl-0
-# Fullscreen
+"view:reset_font_size": ctrl-0
+"pane_group:navigate_next": none
 "view:toggle_fullscreen": f11
+"editor_view:delete_all_left": none
+"pane_group:add_right": ctrl-shift-e
+"terminal:accept_prompt_suggestions": ctrl-enter
+"pane_group:toggle_maximize_pane": ctrl-shift-z
+"workspace:activate_seventh_tab": ctrl-7
+"pane_group:navigate_right": ctrl-l
+"workspace:activate_eighth_tab": ctrl-8
+"workspace:activate_fourth_tab": ctrl-4
+"view:decrease_font_size": ctrl--
+"pane_group:resize_down": alt-j
+"code_view:close_saved_tabs": none
+"workspace:activate_prev_tab": "ctrl-shift-{"
+"workspace:activate_fifth_tab": ctrl-5
+"code_view:close_all_tabs": none
+"workspace:activate_third_tab": ctrl-3
+"workspace:activate_sixth_tab": ctrl-6
