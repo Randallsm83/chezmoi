@@ -23,6 +23,7 @@ _gen_completion_runtime xh       --generate complete-zsh
 _gen_completion_runtime uv       generate-shell-completion zsh
 _gen_completion_runtime deno     completions zsh
 _gen_completion_runtime delta    --generate-completion zsh
+_gen_completion_runtime opencode completion
 
 # Upstream-only: the tool ships `_<name>` in its repo but exposes no
 # completion-printing flag. We fetch once, then cache forever (until the
