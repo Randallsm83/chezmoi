@@ -1386,6 +1386,7 @@ always_install:
     - aqua:zigtools/zls
     - aqua:tamasfe/taplo
     - npm:perlnavigator-server
+    - github:can1357/oh-my-pi
 
   mise_unix:
     - cargo-binstall
@@ -1443,3 +1444,4 @@ claude_memory_projects:
   chezmoi: "projects/chezmoi"
   projects: "projects"
 # vim: ts=2 sts=2 sw=2 et
+
