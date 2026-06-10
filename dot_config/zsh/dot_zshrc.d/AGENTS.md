@@ -19,7 +19,7 @@ Zsh init fragments. Sourced in **lexicographic order** by `dot_zshrc.tmpl` — t
 | 50 | `50-homebrew.zsh`, `50-mise.zsh` | Package-manager shims/env |
 | 60 | `60-vagrant.zsh` | Vagrant CLI integration |
 | 70 | `70-arduino.zsh`, `70-bun.zsh`, `70-golang.zsh.tmpl`, `70-lua.zsh.tmpl`, `70-node.zsh.tmpl`, `70-npm.zsh`, `70-nvm.zsh`, `70-perl.zsh`, `70-php.zsh`, `70-python.zsh.tmpl`, `70-ruby.zsh.tmpl`, `70-rust.zsh.tmpl` | Per-language env (each gated by `package_features.<lang>` via `.chezmoiignore` for `.tmpl` files, plain `.zsh` for unconditional langs) |
-| 80 | `80-bat.zsh`, `80-completions.zsh`, `80-eza.zsh.tmpl`, `80-fzf.zsh.tmpl`, `80-op.zsh`, `80-ripgrep.zsh`, `80-rust-alternatives.zsh`, `80-scott.zsh`, `80-tinty.zsh.tmpl`, `80-wget.zsh`, `80-zoxide.zsh` | CLI tool integrations (need PATH from 20/50, langs from 70) |
+| 80 | `80-atuin.zsh`, `80-bat.zsh`, `80-completions.zsh`, `80-eza.zsh.tmpl`, `80-fzf.zsh.tmpl`, `80-op.zsh`, `80-ripgrep.zsh`, `80-rust-alternatives.zsh`, `80-scott.zsh`, `80-tinty.zsh.tmpl`, `80-wget.zsh`, `80-zoxide.zsh` | CLI tool integrations (need PATH from 20/50, langs from 70) |
 | 85 | `85-git.zsh`, `85-vscode.zsh` | High-level integrations needing earlier sections |
 | 90 | `90-starship.zsh`, `90-thefuck.zsh` | Prompt + command correction (need PATH and tool detection) |
 | 99 | `99-warp.zsh` | Warp terminal — last-resort consumer |

@@ -27,7 +27,7 @@ package_features:
   # Group Flags (convenience shortcuts)
   # ============================================================================
   essentials: true      # git, ssh, 1password, mise, direnv
-  shell_tools: true     # starship, zsh, bat, eza, ripgrep, fd, fzf, zoxide, delta, vivid, wget, thefuck
+  shell_tools: true     # starship, zsh, bat, eza, ripgrep, fd, fzf, atuin, zoxide, delta, vivid, wget, thefuck
   languages: true       # All language runtimes (node, python, ruby, go, rust, lua)
   editors: true         # nvim, vscode
   terminals: true       # wezterm, warp, windows_terminal
@@ -70,6 +70,7 @@ package_features:
   zsh: true             # Unix shells only
   powershell: true      # Windows shell
   fzf: true             # Fuzzy finder (Go, not Rust)
+  atuin: true           # Shell history search/sync
   wget: true            # Downloader
   thefuck: true         # Command correction (Python)
   fastfetch: true       # System info display (C++)
@@ -491,6 +492,21 @@ package_mapping:
     darwin:
       brew: []
       mise: [fzf]
+
+  atuin:
+    windows:
+      scoop: []
+      winget: []
+      mise: []
+    linux:
+      apt: []
+      dnf: []
+      pacman: []
+      brew: []
+      mise: ["cargo:atuin"]
+    darwin:
+      brew: []
+      mise: ["cargo:atuin"]
 
   wget:
     windows:
@@ -1374,7 +1390,7 @@ always_install:
   mise_unix:
     - cargo-binstall
     - chezmoi
-
+    - github:can1357/oh-my-pi
 # Remote machine package sets
 # When is_remote=true and remote_minimal=true, only install essential tools
 remote_packages:
