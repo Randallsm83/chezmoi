@@ -1,8 +1,0 @@
-[env]
-DH_NPM_REGISTRY = "https://git.dreamhost.com/api/v4/packages/npm/"
-# DH-scoped secrets (DH_GITLAB_TOKEN, etc.) are materialized once at
-# `chezmoi apply --init` time from 1Password into ~/.config/dh/secrets.env
-# (template: dot_config/dh/private_secrets.env.tmpl).  mise reads it via
-# _.file — no exec(), no per-cd shell-out, no biometric prompts on cd.
-# Refresh after rotating any DH secret in 1Password:  chezmoi apply --init
-_.file = "~/.config/dh/secrets.env"
