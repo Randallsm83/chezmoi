@@ -1,0 +1,245 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Generate Flow Launcher theme XAML files from color palettes in .chezmoidata.yaml.
+# Re-runs when .chezmoidata.yaml's theme section changes (chezmoi tracks the hash
+# via the run_onchange_ prefix).
+
+$ErrorActionPreference = 'Stop'
+
+$FlowLauncherDir = Join-Path $HOME 'scoop\persist\flow-launcher\UserData\Themes'
+New-Item -ItemType Directory -Force -Path $FlowLauncherDir | Out-Null
+
+function Blend-WithWhite {
+    <#
+    .SYNOPSIS
+        Blend a hex color with white by a given ratio.
+    #>
+    param([string]$Hex, [double]$Ratio = 0.12)
+    $h = $Hex -replace '#', ''
+    $baseR = [Convert]::ToInt32($h.Substring(0, 2), 16)
+    $baseG = [Convert]::ToInt32($h.Substring(2, 2), 16)
+    $baseB = [Convert]::ToInt32($h.Substring(4, 2), 16)
+    $r = [Math]::Min(255, [int]($baseR * (1 - $Ratio) + 255 * $Ratio))
+    $g = [Math]::Min(255, [int]($baseG * (1 - $Ratio) + 255 * $Ratio))
+    $b = [Math]::Min(255, [int]($baseB * (1 - $Ratio) + 255 * $Ratio))
+    return '#{0:X2}{1:X2}{2:X2}' -f $r, $g, $b
+}
+
+function New-FlowLauncherTheme {
+    <#
+    .SYNOPSIS
+        Render a single Flow Launcher theme XAML file. Idempotent: skips the write
+        if the file already exists and content matches.
+    #>
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$Background,
+        [Parameter(Mandatory)][string]$Foreground,
+        [Parameter(Mandatory)][string]$Purple,
+        [Parameter(Mandatory)][string]$Pink,
+        [Parameter(Mandatory)][string]$Green,
+        [Parameter(Mandatory)][string]$Orange,
+        [Parameter(Mandatory)][string]$Blue,
+        [Parameter(Mandatory)][string]$Cyan,
+        [Parameter(Mandatory)][string]$Yellow
+    )
+
+    $SelectedBg = Blend-WithWhite -Hex $Background -Ratio 0.12
+
+    $xaml = @"
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:system="clr-namespace:System;assembly=mscorlib">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Themes/Base.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style
+        x:Key="ItemGlyph"
+        BasedOn="{StaticResource BaseGlyphStyle}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Foreground" />
+    </Style>
+    <Style
+        x:Key="QueryBoxStyle"
+        BasedOn="{StaticResource BaseQueryBoxStyle}"
+        TargetType="{x:Type TextBox}">
+        <Setter Property="Foreground" Value="$Foreground" />
+        <Setter Property="CaretBrush" Value="$Foreground" />
+    </Style>
+    <Style
+        x:Key="QuerySuggestionBoxStyle"
+        BasedOn="{StaticResource BaseQuerySuggestionBoxStyle}"
+        TargetType="{x:Type TextBox}">
+        <Setter Property="Foreground" Value="$Cyan" />
+    </Style>
+    <Style
+        x:Key="WindowBorderStyle"
+        BasedOn="{StaticResource BaseWindowBorderStyle}"
+        TargetType="{x:Type Border}">
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="BorderBrush" Value="$Cyan" />
+        <Setter Property="CornerRadius" Value="5" />
+        <Setter Property="Background" Value="$Background" />
+    </Style>
+    <Style
+        x:Key="WindowStyle"
+        BasedOn="{StaticResource BaseWindowStyle}"
+        TargetType="{x:Type Window}" />
+    <Style
+        x:Key="PendingLineStyle"
+        BasedOn="{StaticResource BasePendingLineStyle}"
+        TargetType="{x:Type Line}" />
+
+    <!--  Item Style  -->
+    <Style
+        x:Key="ItemTitleStyle"
+        BasedOn="{StaticResource BaseItemTitleStyle}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Foreground" />
+    </Style>
+    <Style
+        x:Key="ItemSubTitleStyle"
+        BasedOn="{StaticResource BaseItemSubTitleStyle}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Cyan" />
+    </Style>
+    <Style
+        x:Key="ItemTitleSelectedStyle"
+        BasedOn="{StaticResource BaseItemTitleSelectedStyle}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+    <Style
+        x:Key="ItemSubTitleSelectedStyle"
+        BasedOn="{StaticResource BaseItemSubTitleSelectedStyle}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Cyan" />
+        <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+    <SolidColorBrush x:Key="ItemSelectedBackgroundColor">$SelectedBg</SolidColorBrush>
+    <Style
+        x:Key="ItemImageSelectedStyle"
+        BasedOn="{StaticResource BaseItemImageSelectedStyle}"
+        TargetType="{x:Type Image}">
+        <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+
+    <!--  button style in the middle of the scrollbar  -->
+    <Style
+        x:Key="ThumbStyle"
+        BasedOn="{StaticResource BaseThumbStyle}"
+        TargetType="{x:Type Thumb}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="OverridesDefaultStyle" Value="true" />
+        <Setter Property="IsTabStop" Value="false" />
+        <Setter Property="Width" Value="2" />
+        <Setter Property="Focusable" Value="false" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Thumb}">
+                    <Border
+                        Background="$Cyan"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        CornerRadius="2"
+                        DockPanel.Dock="Right" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style
+        x:Key="ScrollBarStyle"
+        BasedOn="{StaticResource BaseScrollBarStyle}"
+        TargetType="{x:Type ScrollBar}" />
+    <Style
+        x:Key="SeparatorStyle"
+        BasedOn="{StaticResource BaseSeparatorStyle}"
+        TargetType="{x:Type Rectangle}">
+        <Setter Property="Fill" Value="$Cyan" />
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Margin" Value="12 0 12 6" />
+    </Style>
+    <Style
+        x:Key="SearchIconStyle"
+        BasedOn="{StaticResource BaseSearchIconStyle}"
+        TargetType="{x:Type Path}">
+        <Setter Property="Fill" Value="$Cyan" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Opacity" Value="0.8" />
+    </Style>
+    <Style
+        x:Key="ClockBox"
+        BasedOn="{StaticResource BaseClockBox}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Cyan" />
+    </Style>
+    <Style
+        x:Key="DateBox"
+        BasedOn="{StaticResource BaseDateBox}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Cyan" />
+    </Style>
+    <Style
+        x:Key="PreviewBorderStyle"
+        BasedOn="{StaticResource BasePreviewBorderStyle}"
+        TargetType="{x:Type Border}">
+        <Setter Property="BorderBrush" Value="$Cyan" />
+    </Style>
+    <Style
+        x:Key="PreviewItemTitleStyle"
+        BasedOn="{StaticResource BasePreviewItemTitleStyle}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Blue" />
+    </Style>
+    <Style
+        x:Key="PreviewItemSubTitleStyle"
+        BasedOn="{StaticResource BasePreviewItemSubTitleStyle}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Cyan" />
+    </Style>
+    <Style
+        x:Key="PreviewGlyph"
+        BasedOn="{StaticResource BasePreviewGlyph}"
+        TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground" Value="$Blue" />
+    </Style>
+</ResourceDictionary>
+"@
+
+    $xaml = $xaml -replace "`r`n", "`n"
+
+    $outPath = Join-Path $FlowLauncherDir "$Name.xaml"
+    if (Test-Path -LiteralPath $outPath) {
+        $existing = [System.IO.File]::ReadAllText($outPath) -replace "`r`n", "`n"
+        if ($existing -eq $xaml) {
+            return
+        }
+    }
+    [System.IO.File]::WriteAllText($outPath, $xaml, [System.Text.UTF8Encoding]::new($false))
+}
+
+# Generate every theme defined under .chezmoidata.yaml's `theme:` block.
+# We mirror the other generators' `range $themes` loop, skipping the `name` key
+# (active theme selector) and any non-map entries.
+{{- $themes := (index (fromYaml (include ".chezmoidata/theme.yaml")) "theme") }}
+{{- range $theme_name, $colors := $themes }}
+{{- if and (ne $theme_name "name") (kindIs "map" $colors) }}
+New-FlowLauncherTheme `
+    -Name "{{ $theme_name }}" `
+    -Background "{{ $colors.background }}" `
+    -Foreground "{{ $colors.foreground }}" `
+    -Purple "{{ $colors.purple }}" `
+    -Pink "{{ $colors.pink }}" `
+    -Green "{{ $colors.green }}" `
+    -Orange "{{ $colors.orange }}" `
+    -Blue "{{ $colors.blue }}" `
+    -Cyan "{{ $colors.cyan }}" `
+    -Yellow "{{ $colors.yellow }}"
+{{- end }}
+{{- end }}
+
+Write-Host "[OK] Generated Flow Launcher themes in $FlowLauncherDir" -ForegroundColor Green
+{{- end }}
