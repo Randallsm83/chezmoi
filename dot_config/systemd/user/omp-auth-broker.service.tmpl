@@ -1,0 +1,18 @@
+{{- if eq .chezmoi.os "linux" -}}
+[Unit]
+Description=OMP Auth Broker
+After=network.target
+
+[Service]
+Type=simple
+Environment=PATH=%h/.local/share/mise/shims:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=-%h/.config/omp/auth-broker.env
+ExecStart=%h/.local/share/mise/shims/omp auth-broker serve --bind=0.0.0.0:8765
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target
+{{- end }}
