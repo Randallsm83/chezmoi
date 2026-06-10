@@ -367,8 +367,8 @@ function Invoke-OpRun {
     # current directory` because op only finds 'pam.exe'. Resolve the
     # command to its absolute Source path (Get-Command resolves PATH +
     # PATHEXT correctly) and hand that to op so the exec is unambiguous.
-    $resolved = Get-Command $Tool -ErrorAction SilentlyContinue
-    if (-not $resolved) { $resolved = Get-Command "$Tool.exe" -ErrorAction SilentlyContinue }
+    $resolved = Get-Command $Tool -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $resolved) { $resolved = Get-Command "$Tool.exe" -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 }
     if (-not $resolved) {
         Write-Warning "opr: '$Tool' not found on PATH (and neither is '$Tool.exe')."
         return

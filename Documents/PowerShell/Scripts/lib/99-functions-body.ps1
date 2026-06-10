@@ -475,6 +475,10 @@ if (Test-CommandExists 'op') {
             & opencode.exe @args
         }
     }
+
+    function omp {
+        Invoke-OpRun omp @args
+    }
 }
 
 # ================================================================================================
