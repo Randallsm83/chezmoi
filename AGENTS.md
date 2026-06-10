@@ -91,7 +91,7 @@ The system is built around a small set of files that drive everything else:
 ### Feature flags
 Defined in `.chezmoidata/packages.yaml` under `package_features`. Two layers:
 - **Group flags** (convenience shortcuts): `essentials`, `shell_tools`, `languages`, `editors`, `terminals`, `rust_alternatives`, `ai_tools`, `gaming`, `docker`, `hardware_tools`, `windows_utilities`, `sysinternals`, `network_tools`, `dev_extras`, `nerd_fonts`.
-- **Individual flags**: `git`, `ssh`, `1password`, `mise`, `direnv`, `homebrew`, `wezterm`, `warp`, `windows_terminal`, `nvim`, `vim`, `vscode`, `starship`, `zsh`, `powershell`, `fzf`, `wget`, `thefuck`, `fastfetch`, `topgrade`, `rust`, `golang`, `python`, `ruby`, `lua`, `node`, `perl`, `julia`, `php`, `sqlite3`, `arduino`, `vagrant`. Deprecated/off: `asdf`, `nvm`, `tinted_theming`.
+- **Individual flags**: `git`, `ssh`, `1password`, `mise`, `direnv`, `homebrew`, `wezterm`, `warp`, `windows_terminal`, `nvim`, `vim`, `vscode`, `zed`, `starship`, `zsh`, `powershell`, `fzf`, `atuin`, `wget`, `thefuck`, `fastfetch`, `topgrade`, `rust`, `golang`, `python`, `ruby`, `lua`, `node`, `perl`, `julia`, `php`, `sqlite3`, `arduino`, `vagrant`. Deprecated/off: `asdf`, `nvm`, `tinted_theming`.
 
 **`1password` access caveat**: the flag name starts with a digit, which is invalid Go-template identifier syntax. Always access it as `{{ index .package_features "1password" }}`, **never** `.package_features.1password`.
 
