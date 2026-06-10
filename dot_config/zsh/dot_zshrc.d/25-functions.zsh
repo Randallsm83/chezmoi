@@ -287,6 +287,7 @@ if (( $+commands[op] )); then
   opencode() { _op_run_wrapped opencode "$@"; }
   claude()   { _op_run_wrapped claude   "$@"; }
   pam()      { _op_run_wrapped pam      "$@"; }
+  omp()      { _op_run_wrapped omp      "$@"; }
 fi
 
 # -------------------------------------------------------------------------------------------------
