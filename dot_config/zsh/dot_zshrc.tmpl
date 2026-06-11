@@ -48,6 +48,53 @@ export ZSHRCD="$ZDOTDIR/.zshrc.d"
 # Set any zstyles
 [[ -r "$ZDOTDIR/.zstyles" ]] && source "$ZDOTDIR/.zstyles"
 
+{{- $remote_tier := (index . "remote_tier" | default "full") }}
+{{- $homelab_zsh := or (eq $remote_tier "minimal") (eq $remote_tier "medium") (index . "is_raspi" | default false) }}
+{{- if $homelab_zsh }}
+# Homelab/remote tier: keep startup small and deterministic.
+# This intentionally bypasses antidote and sources only curated local fragments.
+export ZSH_HOMELAB_MINIMAL=1
+
+_source_zshrcd() {
+  local _file="$ZSHRCD/$1"
+  [[ -r "$_file" ]] && source "$_file"
+}
+
+_source_zshrcd 00-helpers.zsh
+_source_zshrcd 01-mise.zsh
+_source_zshrcd 10-dirs.zsh
+_source_zshrcd 20-paths.zsh
+_source_zshrcd 25-homelab-aliases.zsh
+_source_zshrcd 25-homelab-functions.zsh
+_source_zshrcd 25-history.zsh
+_source_zshrcd 30-misc.zsh
+_source_zshrcd 50-mise.zsh
+
+if [[ -n "$ENV_DIRS" ]]; then
+  for dir in ${(s/:/)ENV_DIRS}; do
+    [[ ! -d "$dir" ]] && mkdir -p "$dir"
+  done
+  unset ENV_DIRS
+fi
+
+autoload -Uz compinit
+compinit -d "${ZSH_COMPDUMP:-${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-${ZSH_VERSION}}" -C
+
+(( $+commands[fzf] )) && _source_zshrcd 80-fzf.zsh
+(( $+commands[eza] )) && _source_zshrcd 80-eza.zsh
+(( $+commands[zoxide] )) && _source_zshrcd 80-zoxide.zsh
+(( $+commands[bat] )) && _source_zshrcd 80-bat.zsh
+(( $+commands[rg] )) && _source_zshrcd 80-ripgrep.zsh
+
+if (( $+commands[starship] )); then
+  _source_zshrcd 90-starship.zsh
+else
+  PROMPT='%F{green}%n@%m%f:%F{blue}%~%f %# '
+fi
+_source_zshrcd 80-homelab-plugins.zsh
+
+unset -f _source_zshrcd
+{{- else }}
 # Clone antidote if necessary.
 export ANTIDOTE_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/antidote"
 
@@ -78,6 +125,7 @@ if ! command -v vivid >/dev/null 2>&1; then
     eval "$(gdircolors --sh)"
   fi
 fi
+{{- end }}
 
 if [[ -n "$ZSH_DEBUG" ]]; then
   zprof

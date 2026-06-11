@@ -11,6 +11,10 @@
 set -euo pipefail
 
 echo "Checking package installation..."
+{{- if not .install_packages }}
+echo "install_packages=false; skipping managed package and mise tool installation."
+exit 0
+{{- end }}
 
 # Ensure Arch perl scripts are in PATH (for pod2man used by Homebrew builds)
 if [ -d /usr/bin/core_perl ]; then

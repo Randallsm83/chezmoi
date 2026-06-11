@@ -106,11 +106,11 @@ To add a secret: append `key = "{{ op://Vault/Item/field }}"` to `$secretsTpl` i
 The legacy `op-read-safe` partial in `.chezmoitemplates/` is retained for one-off cases but should not be used for new secrets — each invocation triggers its own biometric prompt. Age-encrypted `.age` files are the backup mechanism. Detailed patterns are in `SECRETS.md`.
 
 ### Platform-specific patterns
-- **Windows** — Bootstrap via `bootstrap.ps1` (PowerShell 7+). Packages: Scoop (CLI) + Winget (GUI) + Mise (language runtimes only).
+- **Windows** — Bootstrap via `bootstrap.ps1` (PowerShell 7+). Packages: Mise (language runtimes and supported CLI tools) + Scoop (remaining CLI/bootstrap tools) + Winget (GUI).
 - **Unix/Linux/macOS** — Bootstrap via `setup.sh`. Packages: Mise (everything, no sudo) + Homebrew (build deps + platform formulae; cask list is generated from `package_mapping.<feature>.darwin.cask`) + apt/dnf/pacman (system bootstrap only when sudo is available).
 - **WSL** — Detected via `.chezmoi.kernel.osrelease` containing `microsoft`. Shares the 1Password SSH agent from the Windows host via named-pipe relay.
 - **Remote/SSH** — Auto-detected; respects `remote_tier` (`minimal` / `medium` / `full`) which selects a package set from `remote_packages.<tier>`. When a tool would normally come from a root-required distro package (e.g. `lua`, `luajit`, `vim`), `package_mapping.<feature>.mise_remote` provides a no-sudo mise fallback that `dot_config/mise/config.toml.tmpl` emits when `is_remote` is true.
-- **Raspberry Pi** — `is_raspi` is set when hostname matches `raspi*`/`raspberrypi*`/`rpi*`, or when `RASPI=1 ./setup.sh` is run. Pi defaults to `remote_tier = "medium"`. SSH access uses Tailscale MagicDNS (no `.local` mDNS fallback). See `RASPI.md`.
+- **Raspberry Pi** — `is_raspi` is set when hostname matches `raspi*`/`raspberrypi*`/`rpi*`, or when `RASPI=1 ./setup.sh` is run. Pi uses `remote_tier = "medium"` for the lightweight zsh loader, but bootstrap seeds `install_packages = false` so medium-tier tools are opt-in. SSH access uses Tailscale MagicDNS (no `.local` mDNS fallback). See `RASPI.md`.
 
 ### Zsh load order
 Files in `dot_config/zsh/dot_zshrc.d/` use numeric prefixes; lower numbers source first. The actual prefix ranges in use today:
@@ -151,7 +151,7 @@ Shell completions live in `dot_cache/zsh/completions/_<command>`.
 - `SECRETS.md` — 1Password / Age integration patterns
 - `CHEZMOI-GUIDE.md` — chezmoi concepts and workflow reference
 - `REMOTE.md` — remote/SSH machine model and tiers
-- `RASPI.md` — Raspberry Pi medium-tier profile
+- `RASPI.md` — Raspberry Pi homelab zsh profile
 - `REINSTALL.md` — rebuild / reset scenarios
 - `CONTRIBUTING.md` — branch naming, commit conventions, PR template
 - `scripts/README.md` — utility scripts (WSL reset, healthcheck, rollback, etc.)

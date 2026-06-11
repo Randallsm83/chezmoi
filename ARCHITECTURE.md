@@ -270,9 +270,9 @@ has_sudo = {{ not is_remote && not is_container }}
 - `minimal` — SSH-only servers. Skip GUI apps, ship only `node`, `python`,
   `go` + a few CLI tools (`fzf`, `ripgrep`, `fd`, `bat`, `delta`, `neovim`,
   `direnv`). No system packages; mise-only.
-- `medium` — ARM SBCs / dev VMs (default for Raspberry Pi). Adds Rust CLI
-  alternatives (`eza`, `zoxide`, `starship`), `lazygit`, and `gh`. See
-  `RASPI.md` for the canonical inventory.
+- `medium` — ARM SBCs / dev VMs. Raspberry Pi uses this tier for the
+  lightweight zsh loader, but the bootstrap seeds `install_packages = false`
+  so medium-tier tools are opt-in. See `RASPI.md`.
 - `full` — desktop parity. All language runtimes, full CLI suite, GUI apps
   where they apply.
 
@@ -301,7 +301,7 @@ no-sudo remote hosts (`lua`, `luajit`, `vim`) come from
 ├── config.windows.toml         # Windows overrides
 ├── config.linux.toml           # Linux additions
 ├── config.darwin.toml          # macOS additions
-├── config.medium.toml          # Medium-tier remote set (Raspberry Pi default)
+├── config.medium.toml          # Medium-tier remote set (opt-in on Raspberry Pi)
 └── config.remote.toml          # Minimal-tier remote set
 ```
 
