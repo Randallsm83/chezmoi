@@ -62,9 +62,10 @@ vpn_dns_routes:
 #   dot_config/dns/private_pihole-dot.mobileconfig.tmpl   (renders the profile)
 #   .chezmoiscripts/run_onchange_after_56_encrypted-dns.sh.tmpl  (installs it)
 #
-# Encrypts the LAN leg of DNS by pinning macOS at a DoT resolver instead of
-# UDP/53 to the LAN Pi-hole. Targets the tailnet hostname so the same profile
-# works on-LAN (Tailscale routes locally) and off-LAN (over WireGuard).
+# Encrypts DNS by pinning Apple/Linux clients at the Pi DoT resolver instead
+# of UDP/53 to Pi-hole. List both the LAN and tailnet addresses so on-LAN
+# clients do not depend on Tailscale for normal Wi-Fi browsing, while the
+# same profile still works off-LAN when Tailscale is connected.
 #
 # Pi-side prerequisite: the host must terminate DoT on :853 with a valid TLS
 # cert. See scripts/setup-pihole-dot.sh and the "Encrypted DNS" section of
@@ -80,10 +81,11 @@ encrypted_dns:
   protocol: tls                            # "tls" (DoT) or "https" (DoH)
   server_name: "raspi.***REMOVED***.ts.net"
   server_addresses:
+    - "***REMOVED***"                       # raspi Ethernet LAN IPv4
     - "***REMOVED***"                     # raspi tailnet IPv4
   port: 853                                # used for the reachability probe
   identifier: "com.ranmil.dns.pihole-dot"
-  display_name: "Pi-hole DoT (tailnet)"
+  display_name: "Pi-hole DoT"
   organization: "ranmil"
   payload_uuid: "6F4D2A1E-3B8C-4D7F-9E5A-1C2B3D4E5F6A"
   dns_payload_uuid: "7A5E3B2F-4C9D-5E8A-AF6B-2D3C4E5F6A7B"
