@@ -166,7 +166,7 @@ lists. Individual flags below override per-package routing.
 | `vagrant` | ❌ | off by default; enable per machine if needed |
 | `nerd_fonts` | ✅ | Hack/FiraCode/JetBrainsMono/CascadiaCode NF |
 | **AI / containers / hardware / networking** | | |
-| `ai_tools` | ✅ | ollama, claude-code, opencode, pam |
+| `ai_tools` | ✅ | claude, opencode, pam, scott |
 | `docker` | ✅ | docker-compose + (darwin) OrbStack |
 | `gaming` | ✅ | Steam, rtss, msiafterburner, ludusavi |
 | `hardware_tools` | ✅ | (Windows) cpu-z, gpu-z, smartmontools, fancontrol, etc. |
@@ -390,7 +390,7 @@ Configs automatically adapt to your platform:
 
 ### Package Management
 
-- **Windows**: Scoop (CLI), Winget (GUI), Mise (language runtimes)
+- **Windows**: Mise (language runtimes and supported CLI tools), Scoop (remaining CLI/bootstrap tools), Winget (GUI)
 - **Linux/macOS/WSL**: Mise (everything, no sudo) + Homebrew (build deps + casks on macOS) + apt/dnf/pacman (system bootstrap only when sudo is available)
 
 Package routing lives in `.chezmoidata/packages.yaml`:
@@ -399,6 +399,34 @@ Package routing lives in `.chezmoidata/packages.yaml`:
 - `scoop_buckets` / `scoop_bucket_overrides` — Scoop bucket setup
 - `always_install.*` — packages installed regardless of feature flags
 - `remote_packages.<tier>` — minimal / medium / full package sets for remote machines
+
+#### Discovering tools before adding them to mise
+
+`mpm` is installed as `pipx:meta-package-manager` and is useful for searching
+package-manager registries, but its output is not a guaranteed mise target. A
+registry hit can be a library package, a GUI package, or an OS package with no
+direct mise backend.
+
+Use the PowerShell helper `mpmise` to search with `mpm` and verify plausible
+mise spellings with `mise install --dry-run`:
+
+```powershell
+mpmise dog -Manager cargo,winget -GitHubRepo ogham/dog
+```
+
+Result statuses:
+- `OK` — the target resolves through a mise backend such as `github:` or `aqua:`.
+- `CHECK` — mise accepts the ecosystem package target (`cargo:`, `npm:`, `gem:`,
+  `pipx:`), but dry-run does not prove the package exposes a CLI binary.
+- `FAIL` — the mise target did not resolve.
+
+Rules of thumb:
+- `cargo:<name>` can still fail at real install time if the crate has no binaries.
+- `npm:<name>`, `gem:<name>`, and `pipx:<name>` can resolve but still may not
+  provide the CLI you expected.
+- `scoop` and `winget` results are discovery signals, not direct mise backends.
+- For GitHub-release CLIs, pass `-GitHubRepo owner/repo` so the helper checks
+  `github:owner/repo` and `aqua:owner/repo`.
 
 ---
 
@@ -609,7 +637,7 @@ template-driven, platform-aware provisioning:
 - [CHEZMOI-GUIDE.md](CHEZMOI-GUIDE.md) — chezmoi concepts and workflow reference
 - [SECRETS.md](SECRETS.md) — 1Password / Age integration patterns
 - [REMOTE.md](REMOTE.md) — remote/SSH machine model and tiers
-- [RASPI.md](RASPI.md) — Raspberry Pi medium-tier profile
+- [RASPI.md](RASPI.md) — Raspberry Pi homelab zsh profile
 - [DNS.md](DNS.md) — split-DNS, encrypted DNS, browser DoH policy
 - [REINSTALL.md](REINSTALL.md) — rebuild / reset scenarios
 - [CONTRIBUTING.md](CONTRIBUTING.md) — branch naming, commit conventions, mirrored-remote workflow

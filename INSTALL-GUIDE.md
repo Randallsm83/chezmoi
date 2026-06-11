@@ -638,7 +638,7 @@ There are two layers:
 | `vagrant` | ❌ `false` | off by default (not deprecated; just optional) |
 | `nerd_fonts` | ✅ `true` | Hack/FiraCode/JetBrainsMono/CascadiaCode NF |
 | **AI / containers / hardware / networking** | | |
-| `ai_tools` | ✅ `true` | ollama, claude-code, opencode, pam |
+| `ai_tools` | ✅ `true` | claude, opencode, pam, scott |
 | `docker` | ✅ `true` | docker-compose + (darwin) OrbStack |
 | `gaming` | ✅ `true` | Steam + RTSS/MSI Afterburner + ludusavi |
 | `hardware_tools` | ✅ `true` | (Windows) cpu-z, gpu-z, smartmontools, fancontrol |
