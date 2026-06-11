@@ -44,7 +44,7 @@
     "sqlite3": ["sqlite"],
     "arduino": ["arduino", "arduino-cli"],
     "nerd_fonts": ["CascadiaCode-NF", "FiraCode-NF", "Hack-NF", "JetBrainsMono-NF"],
-    "ai_tools": ["ollama", "ollama-full", "claude-code", "opencode"],
+    "ai_tools": ["opencode"],
     "gaming": ["steam", "ludusavi", "rtss", "msiafterburner", "msikombustor", "furmark"],
     "docker": ["docker-compose"],
     "hardware_tools": ["nvidia-profile-inspector", "nvcleanstall", "ddu", "cpu-z", "gpu-z", "smartmontools", "fancontrol", "windowsdesktop-runtime-10.0"],

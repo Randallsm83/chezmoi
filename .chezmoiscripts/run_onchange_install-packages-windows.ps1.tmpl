@@ -83,7 +83,7 @@ function Import-PSCompletionsModule {
 # ------------------------------------------------------------------------
 # Always-install packages (installed FIRST so aria2 / 7zip / etc. are
 # available before any feature-flag packages start downloading).
-# Order is preserved from .chezmoidata.yaml -> always_install.scoop.
+# Order is preserved from .chezmoidata/packages.yaml -> always_install.scoop.
 # ------------------------------------------------------------------------
 $alwaysInstallScoop = @(
 {{- range .always_install.scoop }}
@@ -98,6 +98,9 @@ $alwaysInstallScoop = @(
 $featureScoopPackages = @()
 $wingetPackages = @()
 $misePackages = @()
+{{- range .always_install.mise }}
+$misePackages += "{{ . }}"
+{{- end }}
 $pipPackages = @()
 $pwshModules = @()
 $pscCompletions = @()
@@ -234,7 +237,7 @@ if ($wingetPackages.Count -gt 0) {
     }
 }
 
-# Install mise packages (language runtimes)
+# Install mise packages (language runtimes and supported CLI tools)
 if ($misePackages.Count -gt 0) {
     if (Get-Command mise -ErrorAction SilentlyContinue) {
         $misePackages = $misePackages | Select-Object -Unique
@@ -252,6 +255,23 @@ if ($misePackages.Count -gt 0) {
         # Reshim so newly-installed runtimes register their shims, then refresh
         # this session's PATH so subsequent pip/npm/gem/perl calls find them.
         try { mise reshim 2>$null | Out-Null } catch { }
+        if ($misePackages -contains 'pipx:meta-package-manager') {
+            try {
+                $mpmInstall = mise where pipx:meta-package-manager 2>$null
+                if ($LASTEXITCODE -eq 0 -and $mpmInstall) {
+                    $mpmPython = Join-Path $mpmInstall 'meta-package-manager\Scripts\python.exe'
+                    if (Test-Path -LiteralPath $mpmPython) {
+                        & $mpmPython -m pip --version 2>$null | Out-Null
+                        if ($LASTEXITCODE -ne 0) {
+                            Write-Host "  Repairing mpm pip manager environment" -ForegroundColor Green
+                            & $mpmPython -m ensurepip --upgrade
+                        }
+                    }
+                }
+            } catch {
+                Write-Host "  mpm pip repair skipped: $($_.Exception.Message)" -ForegroundColor Yellow
+            }
+        }
     } else {
         Write-Host "`nmise not available. Install via: scoop install mise" -ForegroundColor Yellow
     }

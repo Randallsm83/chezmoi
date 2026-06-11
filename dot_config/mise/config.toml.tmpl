@@ -13,8 +13,8 @@
 # Platform-specific tool management strategy:
 #
 #   Windows:
-#     - mise: Language runtimes (node, python, ruby, go, rust, bun, deno, etc.)
-#     - scoop: CLI tools (bat, eza, fd, ripgrep, starship, neovim, etc.)
+#     - mise: Language runtimes and supported CLI tools
+#     - scoop: Remaining CLI tools, Windows integrations, and bootstrap tools
 #     - winget: GUI applications
 #
 #   Linux/WSL/macOS:
@@ -35,7 +35,7 @@
 {{- end }}
 {{- end }}
 {{- end }}
-{{- if and .package_features.lua (ne .chezmoi.os "windows") }}
+{{- if .package_features.lua }}
 {{- $luaMapping := index .package_mapping "lua" }}
 {{- if hasKey $luaMapping .chezmoi.os }}
 {{- $platform := index $luaMapping .chezmoi.os }}
@@ -44,7 +44,7 @@
 {{- end }}
 {{- /* On remote hosts (no sudo) the distro pkg manager can't run, so
        fall through to mise. See package_mapping.lua.linux.mise_remote. */ -}}
-{{- if and $.is_remote (hasKey $platform "mise_remote") }}
+{{- if and (ne $.chezmoi.os "windows") $.is_remote (hasKey $platform "mise_remote") }}
 {{- range $platform.mise_remote }}
 {{- template "mise-tool-entry" . }}
 {{- end }}
@@ -58,7 +58,7 @@
 {{- end }}
 
 # === Feature-Gated Tools ===
-{{- range $feature := list "direnv" "git" "nvim" "vim" "starship" "fzf" "atuin" "sqlite3" "fastfetch" "rust_alternatives" "ai_tools" }}
+{{- range $feature := list "direnv" "git" "nvim" "vim" "starship" "fzf" "atuin" "sqlite3" "fastfetch" "topgrade" "rust_alternatives" "ai_tools" }}
 {{- if and (hasKey $.package_features $feature) (index $.package_features $feature) }}
 {{- $mapping := index $.package_mapping $feature }}
 {{- if hasKey $mapping $.chezmoi.os }}

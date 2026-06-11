@@ -432,6 +432,224 @@ if (Test-CommandExists 'python') {
     function pip { & python -m pip $args }
 }
 
+# dog — on Windows v0.1.0 can pick Tailscale's IPv6 fallback resolver before LAN DNS.
+# Default to the primary Raspberry Pi DNS unless a nameserver is passed explicitly.
+if (Test-CommandExists 'dog.exe') {
+    function dog {
+        $hasNameserver = $false
+        foreach ($arg in $args) {
+            if ($arg -is [string] -and ($arg -like '@*' -or $arg -eq '-n' -or $arg -like '--nameserver*')) {
+                $hasNameserver = $true
+                break
+            }
+        }
+
+        if ($args.Count -eq 0 -or $hasNameserver) {
+            & dog.exe @args
+        } else {
+            & dog.exe @args '@***REMOVED***'
+        }
+    }
+}
+<#
+.SYNOPSIS
+    Search with mpm, then dry-run plausible mise install targets.
+.DESCRIPTION
+    mpm reports package-manager registry matches. It does not prove a package is
+    installable as a CLI through mise. For example, a crates.io package may be a
+    library with no binaries, so `cargo:<name>` can still fail.
+
+    Resolve-MiseTool runs an exact mpm search by default, maps supported manager
+    hits to likely mise target strings, and runs `mise install --dry-run` for each
+    candidate. Scoop and WinGet are discovery signals rather than direct mise
+    backends; pass -GitHubRepo owner/repo when a result points to a GitHub-release
+    CLI that mpm cannot infer.
+.PARAMETER Query
+    Package/tool name to search for.
+.PARAMETER Manager
+    Optional mpm managers to restrict the search to, such as cargo, npm, gem, scoop, or winget.
+.PARAMETER GitHubRepo
+    Optional owner/repo values to verify as github:owner/repo and aqua:owner/repo.
+.PARAMETER Fuzzy
+    Use fuzzy mpm search. By default the helper uses mpm's exact search to reduce noise.
+.PARAMETER Extended
+    Search descriptions too.
+.PARAMETER Limit
+    Maximum number of mpm result rows to convert into mise candidates.
+.EXAMPLE
+    Resolve-MiseTool dog -GitHubRepo ogham/dog
+.EXAMPLE
+    mpmise dog -Manager cargo,winget -GitHubRepo ogham/dog
+#>
+function Resolve-MiseTool {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Query,
+
+        [ValidateSet('cargo', 'gem', 'npm', 'pip', 'pipx', 'pwsh-gallery', 'scoop', 'winget')]
+        [string[]]$Manager,
+
+        [string[]]$GitHubRepo,
+
+        [switch]$Fuzzy,
+
+        [switch]$Extended,
+
+        [ValidateRange(1, 200)]
+        [int]$Limit = 20
+    )
+
+    foreach ($cmd in @('mpm', 'mise')) {
+        if (-not (Test-CommandExists $cmd)) {
+            Write-Warning "$cmd not found."
+            return
+        }
+    }
+
+    $mpmArgs = @('--no-stats', '--table-format', 'json')
+    foreach ($m in $Manager) {
+        $mpmArgs += "--$m"
+    }
+    $mpmArgs += 'search'
+    if (-not $Fuzzy) { $mpmArgs += '--exact' }
+    if ($Extended) { $mpmArgs += '--extended' }
+    $mpmArgs += $Query
+
+    Write-Host "mpm $($mpmArgs -join ' ')" -ForegroundColor DarkGray
+    $json = & mpm @mpmArgs
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "mpm search failed."
+        return
+    }
+    if (-not $json) {
+        Write-Warning 'mpm returned no JSON output.'
+        return
+    }
+
+    try {
+        $data = ($json -join "`n") | ConvertFrom-Json
+    } catch {
+        Write-Warning "Could not parse mpm JSON output: $($_.Exception.Message)"
+        return
+    }
+
+    $rows = @()
+    foreach ($managerProp in $data.PSObject.Properties) {
+        $managerId = $managerProp.Name
+        foreach ($pkg in @($managerProp.Value.packages)) {
+            $rows += [PSCustomObject]@{
+                Manager = $managerId
+                Package = $pkg.id
+                Name = $pkg.name
+                Version = $pkg.latest_version
+                Description = $pkg.description
+            }
+        }
+    }
+
+    if (-not $rows) {
+        Write-Warning "No mpm packages matched '$Query'."
+        return
+    }
+
+    Write-Host "`nmpm matches" -ForegroundColor Cyan
+    $rows | Select-Object -First $Limit Manager, Package, Name, Version, Description | Format-Table -AutoSize
+
+    $candidateMap = [ordered]@{}
+    $addMiseCandidate = {
+        param(
+            [string]$Target,
+            [string]$Source,
+            [string]$Package
+        )
+        if (-not $Target) { return }
+        if (-not $candidateMap.Contains($Target)) {
+            $candidateMap[$Target] = [PSCustomObject]@{
+                Target = $Target
+                Source = $Source
+                Package = $Package
+            }
+        }
+    }
+
+    foreach ($row in ($rows | Select-Object -First $Limit)) {
+        switch ($row.Manager) {
+            'cargo' { & $addMiseCandidate "cargo:$($row.Package)" $row.Manager $row.Package }
+            'gem'   { & $addMiseCandidate "gem:$($row.Package)" $row.Manager $row.Package }
+            'npm'   { & $addMiseCandidate "npm:$($row.Package)" $row.Manager $row.Package }
+            'pip'   { & $addMiseCandidate "pipx:$($row.Package)" $row.Manager $row.Package }
+            'pipx'  { & $addMiseCandidate "pipx:$($row.Package)" $row.Manager $row.Package }
+            'winget' {
+                # Common winget IDs for GitHub-release CLIs are Owner.ToolName.
+                # This is only a heuristic; verify the dry-run result.
+                if ($row.Package -match '^([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$') {
+                    & $addMiseCandidate "github:$($Matches[1])/$($Matches[2])" $row.Manager $row.Package
+                    if ($row.Name) {
+                        & $addMiseCandidate "github:$($Matches[1])/$($row.Name)" $row.Manager $row.Package
+                    }
+                }
+            }
+        }
+    }
+
+    foreach ($repo in $GitHubRepo) {
+        if ($repo -notmatch '^[^/\s]+/[^/\s]+$') {
+            Write-Warning "Skipping invalid GitHub repo '$repo' (expected owner/repo)."
+            continue
+        }
+        & $addMiseCandidate "github:$repo" 'manual' $repo
+        & $addMiseCandidate "aqua:$repo" 'manual' $repo
+    }
+
+    if ($candidateMap.Count -eq 0) {
+        Write-Warning 'No direct mise candidates could be inferred. Use -GitHubRepo owner/repo for GitHub-release tools, or install via the listed package manager.'
+        return
+    }
+
+    Write-Host "`nmise dry-runs" -ForegroundColor Cyan
+    $results = foreach ($entry in $candidateMap.Values) {
+        $target = "$($entry.Target)@latest"
+        $output = & mise install --dry-run $target 2>&1
+        $exit = $LASTEXITCODE
+        $summary = @($output | Where-Object {
+            $_ -match 'would install|ERROR|error:|there is nothing to install|no binaries|not a valid plugin'
+        } | Select-Object -First 1)
+        if (-not $summary) {
+            $summary = @($output | Select-Object -First 1)
+        }
+        $backend = ($entry.Target -split ':', 2)[0]
+        $isPackageBackend = $backend -in @('cargo', 'gem', 'npm', 'pipx')
+        $status = if ($exit -ne 0) {
+            'FAIL'
+        } elseif ($isPackageBackend) {
+            'CHECK'
+        } else {
+            'OK'
+        }
+        $detail = ($summary -join ' ')
+        if ($exit -eq 0 -and $isPackageBackend) {
+            $detail = "$detail; dry-run does not prove this package exposes a CLI binary"
+        }
+
+        [PSCustomObject]@{
+            Status = $status
+            Target = $entry.Target
+            Source = $entry.Source
+            Package = $entry.Package
+            Detail = $detail
+        }
+    }
+
+    $results | Format-Table -AutoSize
+    Write-Host "`nUse an OK target with: mise use -g <target>" -ForegroundColor DarkGray
+    Write-Host "CHECK means mise accepts the target, but the ecosystem package may still be a library or may not expose a CLI." -ForegroundColor DarkGray
+}
+
+function mpmise {
+    Resolve-MiseTool @args
+}
+
 if (Test-CommandExists 'scoop') {
     # scoop-search hook (replaces built-in search)
     if (Test-CommandExists 'scoop-search') {

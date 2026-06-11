@@ -107,7 +107,7 @@ package_features:
   # ============================================================================
   # AI & ML Tools
   # ============================================================================
-  ai_tools: true         # LLM inference and AI coding assistants (ollama, claude-code, opencode)
+  ai_tools: true         # AI coding assistants and DH AI tools (claude, opencode, pam, scott)
 
   # ============================================================================
   # Gaming
@@ -194,7 +194,7 @@ package_features:
 # Package Mapping - Platform-based structure
 # Each package specifies installation sources per platform.
 #
-# Windows: scoop (CLI), winget (GUI/system), mise (runtimes)
+# Windows: mise (runtimes and supported CLI tools), scoop (remaining CLI/bootstrap tools), winget (GUI/system)
 # Linux: apt/dnf/pacman (bootstrap only), brew, mise
 # Darwin: brew, mise
 #
@@ -205,9 +205,11 @@ package_mapping:
   # Version Control & Authentication
   git:
     windows:
-      scoop: [git, gh, glab, lazygit]
+      # Git for Windows and glab stay on Windows-native installers; gh and
+      # lazygit are user-space CLI tools managed by mise.
+      scoop: [git, glab]
       winget: [Git.Git]
-      mise: []
+      mise: [github-cli, lazygit]
     linux:
       apt: [git]
       dnf: [git]
@@ -351,9 +353,9 @@ package_mapping:
   # Text Editors
   nvim:
     windows:
-      scoop: [neovim]
+      scoop: []
       winget: []
-      mise: []
+      mise: [neovim]
     linux:
       # neovim is handled by mise on Linux (core plugin pulls prebuilt GitHub
       # release tarball — fast, current stable, no compile). Distro apt/dnf/
@@ -425,9 +427,9 @@ package_mapping:
   # Shell Tools
   starship:
     windows:
-      scoop: [starship]
+      scoop: []
       winget: []
-      mise: []
+      mise: [starship]
     linux:
       apt: []
       dnf: []
@@ -480,9 +482,11 @@ package_mapping:
 
   fzf:
     windows:
-      scoop: [fzf, kelleyma49.PSFzf]
+      # kelleyma49.PSFzf is the PowerShell integration; fzf itself is a
+      # mise-managed CLI tool.
+      scoop: [kelleyma49.PSFzf]
       winget: []
-      mise: []
+      mise: [fzf]
     linux:
       apt: []
       dnf: []
@@ -542,9 +546,9 @@ package_mapping:
 
   fastfetch:
     windows:
-      scoop: [fastfetch]
+      scoop: []
       winget: []
-      mise: []
+      mise: [fastfetch]
     linux:
       apt: []
       dnf: []
@@ -558,9 +562,9 @@ package_mapping:
 
   topgrade:
     windows:
-      scoop: [topgrade]
+      scoop: []
       winget: []
-      mise: []
+      mise: ["cargo:topgrade"]
     linux:
       apt: []
       dnf: []
@@ -635,9 +639,12 @@ package_mapping:
 
   lua:
     windows:
-      scoop: [lua, luarocks, luajit, lua-language-server]  # lua51 removed: its env_set (LUA_PATH/LUA_CPATH) breaks NVIDIA App OPS Lua runtime
+      # lua/luajit/luarocks stay on Scoop; lua-language-server is a mise/aqua
+      # tool like Unix. lua51 removed: its env_set (LUA_PATH/LUA_CPATH) breaks
+      # NVIDIA App OPS Lua runtime.
+      scoop: [lua, luarocks, luajit]
       winget: []
-      mise: []
+      mise: ["aqua:LuaLS/lua-language-server"]
     linux:
       # ONE source per platform when sudo is available. lua/luajit/luarocks
       # come from the native distro pkg manager (apt/dnf/pacman). mise's
@@ -733,9 +740,9 @@ package_mapping:
       # `rustup` is the Rust toolchain installer (Rust-native); `tree-sitter` is the parser
       # CLI for Rust-heavy editor ecosystems (neovim/zed) — both grouped here per the
       # rust_alternatives convention even though tree-sitter itself is C.
-      scoop: [bat, ripgrep, fd, eza, delta, zoxide, vivid, uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine, just, tokei, ouch, xh, less, rustup, tree-sitter]
+      scoop: [less, rustup, tree-sitter]
       winget: []
-      mise: []
+      mise: [github:sharkdp/bat, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, aqua:ouch-org/ouch, github:ducaale/xh]
     linux:
       apt: []
       dnf: []
@@ -755,9 +762,9 @@ package_mapping:
   # Development Tools
   sqlite3:
     windows:
-      scoop: [sqlite]
+      scoop: []
       winget: []
-      mise: []
+      mise: [sqlite]
     linux:
       apt: []
       dnf: []
@@ -820,18 +827,16 @@ package_mapping:
   # AI & ML Tools
   ai_tools:
     windows:
-      # `ollama-full` is the Scoop-suggested companion that bundles GPU runtime extras.
-      # `pam` and `scott` are DH-internal scoop manifests installed via direct URL
-      # (https://git.dreamhost.com/dreamhost-public/homebrew-{pam,scott}/-/raw/master/scoop/<name>.json);
-      # they have no scoop bucket, so they are emitted into scoop-packages.json.tmpl
-      # but the install script must `scoop install <url>` them (see scoop_bucket_overrides).
-      scoop: [ollama, ollama-full, claude-code, opencode, pam, scott]
+      # `pam` and `scott` are DH-internal Scoop packages currently listed by
+      # name; if their manifests are not available from configured buckets, the
+      # Windows install script needs explicit direct-URL handling before apply.
+      scoop: [pam, scott]
       winget: []
-      mise: []
+      mise: [claude, opencode]
     linux:
       apt: []
       dnf: []
-      pacman: []          # ollama removed; was unused on this host
+      pacman: []
       paru: []
       brew: [pam]
       mise: [claude, opencode]
@@ -1252,7 +1257,7 @@ brew_bundle:
 # Scoop Buckets
 # ============================================================================
 # Bucket name → repository URL mapping
-# Used by: install script (bucket setup), scoop export template
+# Used by: Windows install script bucket setup
 # Default bucket (main) is always available and not listed here
 
 scoop_buckets:
@@ -1266,7 +1271,8 @@ scoop_buckets:
 
 # Apps that live outside the 'main' bucket.
 # Only non-main apps need to be listed here; everything else defaults to main.
-# Used by scoop-export.json.tmpl to generate a valid scoop import file.
+# Documentation-only source mapping for human audits; the active install path
+# resolves apps by configured buckets and package names.
 scoop_bucket_overrides:
   extras:
     - arduino
@@ -1283,13 +1289,11 @@ scoop_bucket_overrides:
     - gpu-z
     - ilspy
     - islc
-    - lazygit
     - ludusavi
     - msiafterburner
     - msikombustor
     - nvcleanstall
     - nvidia-profile-inspector
-    - ollama-full
     - postman
     - raspberry-pi-imager
     - rancher-desktop
@@ -1338,15 +1342,12 @@ always_install:
     - chezmoi
     - gsudo
     - scoop-search
-    - jq
     - jid           # Interactive JSON drill-down (Scoop suggestion paired with jq)
-    - yq
     - make
     - unzip
     - gzip
-    - zls           # Zig LSP — pairs with `zig` in always_install.mise (CC/CXX toolchain)
-    - taplo         # TOML LSP/formatter — used by opencode lsp + chezmoi/Cargo configs
     - npiperelay    # Bridges the 1Password SSH agent named-pipe from Windows into WSL via socat
+    # jq, yq, zls and taplo are installed by mise via always_install.mise.
     # NOTE: `sudo` (scoop) conflicts with `gsudo` — only `gsudo` is kept.
 
   winget: []
@@ -1382,11 +1383,13 @@ always_install:
 
   mise:
     - aqua:jdx/usage
+    - jq
+    - yq
     - zig
     - aqua:zigtools/zls
     - aqua:tamasfe/taplo
     - npm:perlnavigator-server
-    - github:can1357/oh-my-pi
+    - pipx:meta-package-manager
 
   mise_unix:
     - cargo-binstall
