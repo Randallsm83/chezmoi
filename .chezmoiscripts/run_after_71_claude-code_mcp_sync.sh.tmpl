@@ -1,0 +1,41 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# Re-inject standalone qdrant/tavily MCP entries into ~/.claude.json on every
+# `chezmoi apply`.
+#
+# ~/.claude.json is intentionally ignored because Claude Code rewrites it at
+# runtime. The canonical server definitions live in ~/.mcp.json, rendered from
+# dot_mcp.json.tmpl. This hook copies only qdrant and tavily into Claude's
+# top-level mcpServers block and removes any stale pam pointer.
+
+set -euo pipefail
+
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+home = Path.home()
+shared_path = home / ".mcp.json"
+claude_path = home / ".claude.json"
+wanted = ("qdrant", "tavily")
+
+if not shared_path.exists():
+    raise SystemExit("[claude-code_mcp_sync] ~/.mcp.json missing; skipping")
+
+shared = json.loads(shared_path.read_text(encoding="utf-8"))
+source_servers = shared.get("mcpServers", {})
+
+data = {}
+if claude_path.exists():
+    data = json.loads(claude_path.read_text(encoding="utf-8"))
+
+servers = data.setdefault("mcpServers", {})
+servers.pop("pam", None)
+for name in wanted:
+    if name in source_servers:
+        servers[name] = source_servers[name]
+
+claude_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+print("[claude-code_mcp_sync] synced qdrant,tavily into ~/.claude.json")
+PY
+{{- end }}
