@@ -77,7 +77,7 @@ package_features:
   topgrade: true        # Cross-platform system upgrader (Rust)
   rust_alternatives: true # All Rust CLI tools: bat, rg, fd, eza, delta, zoxide, vivid,
                           # uutils-coreutils, tealdeer, navi, sd, dust, procs, hyperfine,
-                          # just, tokei, ouch, xh
+                          # just, tokei, ouch, xh, tin-summer, dog
 
   # ============================================================================
   # Language Runtimes (optional - enable as needed)
@@ -742,7 +742,7 @@ package_mapping:
       # rust_alternatives convention even though tree-sitter itself is C.
       scoop: [less, rustup, tree-sitter]
       winget: []
-      mise: [github:sharkdp/bat, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, aqua:ouch-org/ouch, github:ducaale/xh]
+      mise: [github:sharkdp/bat, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, aqua:ouch-org/ouch, github:ducaale/xh, cargo:tin-summer, github:ogham/dog]
     linux:
       apt: []
       dnf: []
@@ -751,13 +751,13 @@ package_mapping:
       pacman: []
       paru: []
       brew: []
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, cargo:ouch, github:ducaale/xh]
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, cargo:ouch, github:ducaale/xh, cargo:tin-summer, github:ogham/dog]
     darwin:
       brew: [tealdeer, coreutils, navi, dust, ouch]
       # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
       # the completions tarball instead of the binary release for eza.
       # NOTE: navi, dust, ouch moved to brew — no macOS arm64 GitHub release assets.
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:chmln/sd, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ducaale/xh]
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:chmln/sd, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ducaale/xh, cargo:tin-summer, github:ogham/dog]
 
   # Development Tools
   sqlite3:
