@@ -2,7 +2,7 @@
 
 This guide covers using these dotfiles on remote machines where you may have limited permissions or resources.
 
-> **Raspberry Pi?** See [RASPI.md](./RASPI.md) for the dedicated medium-tier Pi profile (auto-detected; one-liner is `RASPI=1 curl -fsSL .../setup.sh | bash`).
+> **Raspberry Pi?** See [RASPI.md](./RASPI.md) for the dedicated homelab zsh profile (auto-detected; one-liner is `RASPI=1 curl -fsSL .../setup.sh | bash`).
 
 ## Table of Contents
 
@@ -170,7 +170,7 @@ toolchains needed by no-sudo `mise` cargo builds are sourced from
 Cross-references:
 - Per-tier package list — `.chezmoidata.yaml` `remote_packages.<tier>`
 - No-sudo distro-package fallback — `package_mapping.<feature>.mise_remote`
-- Raspberry Pi profile — see `RASPI.md` for the canonical medium-tier inventory.
+- Raspberry Pi profile — see `RASPI.md` for the zsh-only default and opt-in package examples.
 
 ### Switching Between Tiers
 

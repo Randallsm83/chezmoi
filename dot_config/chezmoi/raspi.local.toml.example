@@ -8,10 +8,10 @@
 #
 
 # ============================================================================
-# Raspberry Pi (medium tier) - .chezmoi.local.toml example
+# Raspberry Pi homelab zsh-only - .chezmoi.local.toml example
 # ============================================================================
-# Copy to ~/.config/chezmoi/.chezmoi.local.toml on a Raspberry Pi to opt into
-# the curated medium-tier package set without relying on hostname detection.
+# Copy to ~/.config/chezmoi/.chezmoi.local.toml on a Raspberry Pi to use the
+# lightweight homelab zsh loader without installing the medium-tier tool set.
 #
 # `setup.sh` will write this file automatically when invoked with RASPI=1
 # (or when it auto-detects a Pi via /proc/device-tree/model or aarch64+Debian).
@@ -25,9 +25,10 @@
 
 [data]
     is_raspi = true
+    # Keep medium for the lightweight zsh loader, but do not install tools.
     remote_tier = "medium"      # minimal | medium | full
     remote_minimal = false
-    install_packages = true
+    install_packages = false
     setup_1password = false
     has_sudo = true
     theme = "spaceduck"
@@ -39,19 +40,19 @@
         mise = true
         direnv = false
         # editors
-        nvim = true
+        nvim = false
         vim = false
         vscode = false
         # shells/tools
         zsh = true
-        starship = true
-        fzf = true
-        rust_alternatives = true
+        starship = false
+        fzf = false
+        rust_alternatives = false
         thefuck = false
-        fastfetch = true
-        # languages: medium = node + python only
-        node = true
-        python = true
+        fastfetch = false
+        # languages off by default; enable only what this host needs
+        node = false
+        python = false
         rust = false
         golang = false
         ruby = false
