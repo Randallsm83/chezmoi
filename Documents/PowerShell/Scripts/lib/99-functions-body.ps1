@@ -1108,6 +1108,8 @@ function rust-tools {
         @{ Rust = 'tokei';              Replaces = 'cloc/sloccount';   Binary = 'tokei';     Invoke = @('cloc') }
         @{ Rust = 'ouch';               Replaces = 'tar/zip/compress'; Binary = 'ouch';      Invoke = @('compress','decompress') }
         @{ Rust = 'xh';                 Replaces = 'curl (HTTP)';      Binary = 'xh';        Invoke = @('http','https') }
+        @{ Rust = 'tin-summer';          Replaces = 'du (big files)';   Binary = 'sn';        Invoke = @() }
+        @{ Rust = 'dog';                 Replaces = 'dig (DNS)';        Binary = 'dog';       Invoke = @() }
     )
 
     $div = '─' * 56

@@ -94,6 +94,8 @@ function rust-tools() {
     'tokei:cloc/sloccount:tokei:cloc'
     'ouch:tar/zip/compress:ouch:compress,decompress'
     'xh:curl (HTTP):xh:http,https'
+    'tin-summer:du (big files):sn:'
+    'dog:dig (DNS):dog:'
   )
 
   local installed=0
