@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "qdrant": {
+      "command": {{ if eq .chezmoi.os "windows" }}"cmd"{{ else }}"uvx"{{ end }},
+      "args": {{ if eq .chezmoi.os "windows" }}[
+        "/c",
+        "uvx",
+        "--managed-python",
+        "--python",
+        "3.12",
+        "mcp-server-qdrant"
+      ]{{ else }}[
+        "--managed-python",
+        "--python",
+        "3.12",
+        "mcp-server-qdrant"
+      ]{{ end }},
+      "env": {
+        "QDRANT_URL": "http://raspi.***REMOVED***.ts.net:6333",
+        "QDRANT_API_KEY": "${QDRANT_API_KEY}",
+        "COLLECTION_NAME": "memories",
+        "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2"
+      }
+    },
+    "tavily": {
+      "type": "http",
+      "url": "https://mcp.tavily.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${TAVILY_API_KEY}"
+      }
+    }
+  }
+}

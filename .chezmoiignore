@@ -127,11 +127,10 @@ chezmoi.local.toml.example
 
 # Claude Code session/state file (auto-rewritten constantly with caches,
 # OAuth tokens, MCP creds, machine-specific project paths). The `mcpServers`
-# subtree is no longer reconciled from .chezmoidata/mcp.yaml — MCP ownership
-# migrated to pam in commit cb8a04d, and the single `mcpServers.pam` pointer
-# is now (re-)injected on every apply by
-# .chezmoiscripts/run_after_71_claude-code_pam_sync_windows.ps1.tmpl
-# (and its .sh counterpart on Unix).
+# subtree is reconciled by
+# .chezmoiscripts/run_after_71_claude-code_mcp_sync_windows.ps1.tmpl
+# (and its .sh counterpart on Unix), which copies the standalone qdrant/tavily
+# definitions from ~/.mcp.json and removes stale pam pointers.
 .claude.json
 .claude.json.bak-*
 
