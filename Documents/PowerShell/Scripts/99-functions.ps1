@@ -21,7 +21,8 @@
 $bodyFile = Join-Path $PSScriptRoot "lib\99-functions-body.ps1"
 if (-not (Test-Path $bodyFile)) { return }
 
-$funcsCacheDir = Join-Path $env:XDG_CACHE_HOME "powershell"
+$xdgCacheHome = if ($env:XDG_CACHE_HOME) { $env:XDG_CACHE_HOME } else { Join-Path $HOME '.cache' }
+$funcsCacheDir = Join-Path $xdgCacheHome "powershell"
 $funcsCacheFile = Join-Path $funcsCacheDir "99-functions-global.ps1"
 if (-not (Test-Path $funcsCacheDir)) {
     New-Item -ItemType Directory -Path $funcsCacheDir -Force | Out-Null
@@ -103,6 +104,105 @@ foreach ($name in $funcNames) {
     Set-Item -Path "Function:\$name" -Value $sb -Force
 }
 
+# OMP homelab auth helpers are intentionally eager instead of lazy. They are
+# used during auth/debugging sessions where the lazy cache may already be loaded
+# from an older profile revision, and their startup cost is negligible.
+function Get-OmpAuthHost {
+    if ($env:OMP_AUTH_HOST) { return $env:OMP_AUTH_HOST }
+    return 'raspi'
+}
+
+function Get-OmpGatewayPublicBaseUrl {
+    if ($env:OMP_GATEWAY_PUBLIC_BASE_URL) { return $env:OMP_GATEWAY_PUBLIC_BASE_URL.TrimEnd('/') }
+    return 'https://raspi.***REMOVED***.ts.net/v1'
+}
+
+function Get-OmpBrokerToken {
+    $token = & ssh (Get-OmpAuthHost) docker exec auth-broker cat /root/.omp/auth-broker.token
+    $token = ($token | Out-String).Trim()
+    if (-not $token) {
+        throw 'Could not read auth-broker token from the auth-broker container.'
+    }
+    return $token
+}
+
+function ompb {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
+    if ($Args.Count -gt 0 -and $Args[0] -eq 'check') {
+        Write-Warning 'auth-broker has no check action; running auth-gateway check instead.'
+        ompg check
+        return
+    }
+
+    $brokerToken = Get-OmpBrokerToken
+    try {
+        & ssh -t (Get-OmpAuthHost) docker exec -it `
+            -e OMP_AUTH_BROKER_URL=http://127.0.0.1:8765 `
+            -e "OMP_AUTH_BROKER_TOKEN=$brokerToken" `
+            auth-broker omp auth-broker @Args
+    } finally {
+        Remove-Variable brokerToken -ErrorAction SilentlyContinue
+    }
+}
+
+function ompg {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
+    $brokerToken = Get-OmpBrokerToken
+    try {
+        & ssh (Get-OmpAuthHost) docker exec `
+            -e "OMP_AUTH_BROKER_TOKEN=$brokerToken" `
+            auth-gateway omp auth-gateway @Args
+    } finally {
+        Remove-Variable brokerToken -ErrorAction SilentlyContinue
+    }
+}
+
+function ompb-login {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Provider
+    )
+    ompb login $Provider
+}
+
+function ompg-url {
+    Get-OmpGatewayPublicBaseUrl
+}
+
+function ompg-models {
+    $token = & ssh (Get-OmpAuthHost) docker exec auth-gateway omp auth-gateway token
+    if (-not $token) {
+        Write-Warning 'Could not read auth-gateway token from raspi.'
+        return
+    }
+
+    try {
+        Invoke-RestMethod -Uri "$(Get-OmpGatewayPublicBaseUrl)/models" -Headers @{ Authorization = "Bearer $token" } -TimeoutSec 15
+    } finally {
+        Remove-Variable token -ErrorAction SilentlyContinue
+    }
+}
+
+function omp-auth-tools {
+    Write-Host "`nOMP auth helpers" -ForegroundColor Cyan
+    Write-Host '  ompb <args>          run omp auth-broker in the auth-broker container'
+    Write-Host '  ompb-login <id>      login provider in the auth-broker container'
+    Write-Host '  ompg <args>          run omp auth-gateway in the auth-gateway container'
+    Write-Host '  ompg-models          query public /v1/models using the gateway token'
+    Write-Host '  ompg-url             print the public /v1 base URL'
+    Write-Host ''
+    Write-Host 'Common examples' -ForegroundColor Cyan
+    Write-Host '  ompb list'
+    Write-Host '  ompb status'
+    Write-Host '  ompb-login openai-codex'
+    Write-Host '  ompg check'
+    Write-Host '  ompg token'
+    Write-Host ''
+    Write-Host 'Overrides' -ForegroundColor Cyan
+    Write-Host '  $env:OMP_AUTH_HOST = "raspi"'
+    Write-Host '  $env:OMP_GATEWAY_PUBLIC_BASE_URL = "https://raspi.***REMOVED***.ts.net/v1"'
+    Write-Host ''
+}
 # Aliases for the lazy functions are declared inside lib/99-functions-body.ps1
 # (one Set-Alias per function definition). When a user calls e.g. `winjunk`,
 # the stub above for `winjunk` (or for `Remove-WinJunk`) fires, the body is
@@ -110,3 +210,4 @@ foreach ($name in $funcNames) {
 # directly. Declaring the aliases here as well would just duplicate state.
 
 # vim: ts=2 sts=2 sw=2 et
+

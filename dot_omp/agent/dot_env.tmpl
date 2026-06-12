@@ -1,0 +1,11 @@
+{{- $isWSL := and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+{{- if $isWSL -}}
+# OMP runtime environment for Randall's WSL/zsh workflow.
+# Keep command execution in zsh's non-interactive login mode so ~/.zshenv
+# supplies ZDOTDIR, mise shims, and ~/.local/bin without loading interactive
+# aliases/widgets that can change cwd or emit prompt/setup output.
+PI_SHELL_PREFIX="zsh -lc"
+
+# Qdrant MCP can cold-start FastEmbed; keep requests from timing out early.
+OMP_MCP_TIMEOUT_MS=120000
+{{- end }}

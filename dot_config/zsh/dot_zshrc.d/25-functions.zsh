@@ -273,6 +273,21 @@ if (( $+commands[op] )); then
       "$bin" "$@"
       return
     fi
+    # OMP's auth-broker token may be synchronized into ~/.omp from the homelab
+    # broker. Prefer that local token path so Windows and WSL can use the same
+    # broker without requiring `op run` for every invocation.
+    if [[ $tool == omp && -r "$HOME/.omp/auth-broker.token" ]]; then
+      local broker_url token
+      broker_url=$(awk -F= '/^[[:space:]]*OMP_AUTH_BROKER_URL[[:space:]]*=/{print $2; exit}' "$env_file")
+      broker_url=${broker_url#\"}
+      broker_url=${broker_url%\"}
+      broker_url=${broker_url:-http://raspi:8765}
+      token=$(<"$HOME/.omp/auth-broker.token")
+      token=${token//$'\r'/}
+      token=${token//$'\n'/}
+      env OMP_AUTH_BROKER_URL="$broker_url" OMP_AUTH_BROKER_TOKEN="$token" "$bin" "$@"
+      return
+    fi
     # Bypass op run for opencode: it uses its own auth login flow (ChatGPT
     # Pro/Plus subscription) rather than API-key injection. The WSL op wrapper
     # (Windows op.exe) also cannot spawn Linux ELF binaries, so this avoids
@@ -289,6 +304,90 @@ if (( $+commands[op] )); then
   pam()      { _op_run_wrapped pam      "$@"; }
   omp()      { _op_run_wrapped omp      "$@"; }
 fi
+_omp_auth_host() {
+  print -r -- "${OMP_AUTH_HOST:-raspi}"
+}
+
+_omp_gateway_public_base_url() {
+  print -r -- "${OMP_GATEWAY_PUBLIC_BASE_URL:-https://raspi.***REMOVED***.ts.net/v1}"
+}
+_omp_broker_token() {
+  ssh "$(_omp_auth_host)" docker exec auth-broker cat /root/.omp/auth-broker.token
+}
+
+# Run omp auth-broker inside the homelab auth-broker container.
+ompb() {
+  if [[ ${1:-} == check ]]; then
+    print -u2 "auth-broker has no check action; running auth-gateway check instead."
+    ompg check
+    return
+  fi
+
+  local broker_token
+  broker_token="$(_omp_broker_token)" || return
+  ssh -t "$(_omp_auth_host)" docker exec -it \
+    -e OMP_AUTH_BROKER_URL=http://127.0.0.1:8765 \
+    -e "OMP_AUTH_BROKER_TOKEN=${broker_token}" \
+    auth-broker omp auth-broker "$@"
+}
+
+# Run omp auth-gateway inside the homelab auth-gateway container.
+ompg() {
+  local broker_token
+  broker_token="$(_omp_broker_token)" || return
+  ssh "$(_omp_auth_host)" docker exec \
+    -e "OMP_AUTH_BROKER_TOKEN=${broker_token}" \
+    auth-gateway omp auth-gateway "$@"
+}
+
+# Start an OAuth login for a provider in the homelab auth-broker container.
+ompb-login() {
+  if [[ $# -ne 1 ]]; then
+    print -u2 "usage: ompb-login <provider-id>"
+    return 2
+  fi
+  ompb login "$1"
+}
+
+# Print the public OpenAI-compatible OMP gateway base URL.
+ompg-url() {
+  _omp_gateway_public_base_url
+}
+
+# Query the public gateway models endpoint with the Pi gateway token.
+ompg-models() {
+  local token base_url
+  token=$(ssh "$(_omp_auth_host)" docker exec auth-gateway omp auth-gateway token) || return
+  base_url="$(_omp_gateway_public_base_url)"
+  base_url="${base_url%/}"
+  printf 'header = "Authorization: Bearer %s"\nurl = "%s/models"\n' "$token" "$base_url" | curl -fsS -K -
+}
+
+# List OMP homelab auth helper commands.
+omp-auth-tools() {
+  local cyan reset
+  cyan=$(tput setaf 6 2>/dev/null)
+  reset=$(tput sgr0 2>/dev/null)
+
+  print "\n${cyan}OMP auth helpers${reset}"
+  print "  ompb <args>          run omp auth-broker in the auth-broker container"
+  print "  ompb-login <id>      login provider in the auth-broker container"
+  print "  ompg <args>          run omp auth-gateway in the auth-gateway container"
+  print "  ompg-models          query public /v1/models using the gateway token"
+  print "  ompg-url             print the public /v1 base URL"
+  print ""
+  print "${cyan}Common examples${reset}"
+  print "  ompb list"
+  print "  ompb status"
+  print "  ompb-login openai-codex"
+  print "  ompg check"
+  print "  ompg token"
+  print ""
+  print "${cyan}Overrides${reset}"
+  print "  export OMP_AUTH_HOST=raspi"
+  print "  export OMP_GATEWAY_PUBLIC_BASE_URL=https://raspi.***REMOVED***.ts.net/v1"
+  print ""
+}
 
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-

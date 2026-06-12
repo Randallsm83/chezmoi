@@ -206,6 +206,9 @@ docs/**
 .config/sway/
 .config/hyprland/
 
+# OMP agent runtime env is only used by WSL/zsh.
+.omp/agent/.env
+
 # Unix-specific dotfiles
 .xinitrc
 .Xresources
