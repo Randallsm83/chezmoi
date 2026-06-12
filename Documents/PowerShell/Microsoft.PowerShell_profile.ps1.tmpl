@@ -87,14 +87,15 @@ if (Test-Path $scriptsDir) {
     Get-ChildItem -Path $scriptsDir -Filter "*.ps1" -File -ErrorAction SilentlyContinue |
         Sort-Object Name |
         ForEach-Object {
-        if ([string]::IsNullOrWhiteSpace($_.FullName)) {
+        $script = $_
+        if ([string]::IsNullOrWhiteSpace($script.FullName)) {
             return
         }
-        Write-Verbose "Sourcing: $($_.Name)"
+        Write-Verbose "Sourcing: $($script.Name)"
         try {
-            . $_.FullName
+            . $script.FullName
         } catch {
-            Write-Warning "Skipping profile script '$($_.Name)': $($_.Exception.Message)"
+            Write-Warning "Skipping profile script '$($script.Name)': $($_.Exception.Message)"
         }
     }
 }
