@@ -402,8 +402,8 @@ All three should return nothing.
 These were installed outside scoop/winget on `randa` and need to be reinstalled on
 `ranmil`. Where a scoop manifest exists, prefer that and add to chezmoi.
 
-- **Zed** — currently per-user at `AppData\Local\Programs\Zed`. Use `scoop install
-  extras/zed` on `ranmil` and add to the chezmoi scoop install list.
+- **Zed** — currently per-user at `AppData\Local\Programs\Zed`; reinstall
+  manually if needed. It is intentionally not in the chezmoi package manifests.
 - **Notepad++** — `scoop install extras/notepadplusplus` if you want it managed,
   otherwise reinstall via official installer.
 - **Autodesk Fusion 360** — official installer (account-linked, no scoop).

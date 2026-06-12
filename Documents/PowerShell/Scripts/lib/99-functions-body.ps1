@@ -695,7 +695,38 @@ if (Test-CommandExists 'op') {
     }
 
     function omp {
-        Invoke-OpRun omp @args
+        $tokenFile = Join-Path $HOME '.omp\auth-broker.token'
+        if (-not (Test-Path $tokenFile)) {
+            Invoke-OpRun omp @args
+            return
+        }
+
+        $resolved = Get-Command omp -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $resolved) { $resolved = Get-Command 'omp.exe' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 }
+        if (-not $resolved) {
+            Write-Warning "omp: executable not found on PATH."
+            return
+        }
+
+        $oldBrokerUrl = $env:OMP_AUTH_BROKER_URL
+        $oldBrokerToken = $env:OMP_AUTH_BROKER_TOKEN
+        try {
+            $envFile = Join-Path $HOME '.config\op\omp.env'
+            if (Test-Path $envFile) {
+                $urlLine = Get-Content -LiteralPath $envFile | Where-Object { $_ -match '^\s*OMP_AUTH_BROKER_URL\s*=' } | Select-Object -First 1
+                if ($urlLine) {
+                    $urlValue = (($urlLine -split '=', 2)[1]).Trim().Trim('"').Trim("'")
+                    if ($urlValue -and $urlValue -notmatch '^op://') {
+                        $env:OMP_AUTH_BROKER_URL = $urlValue
+                    }
+                }
+            }
+            $env:OMP_AUTH_BROKER_TOKEN = (Get-Content -LiteralPath $tokenFile | Out-String).Trim()
+            & $resolved.Source @args
+        } finally {
+            if ($null -eq $oldBrokerUrl) { Remove-Item Env:OMP_AUTH_BROKER_URL -ErrorAction SilentlyContinue } else { $env:OMP_AUTH_BROKER_URL = $oldBrokerUrl }
+            if ($null -eq $oldBrokerToken) { Remove-Item Env:OMP_AUTH_BROKER_TOKEN -ErrorAction SilentlyContinue } else { $env:OMP_AUTH_BROKER_TOKEN = $oldBrokerToken }
+        }
     }
 }
 
