@@ -314,6 +314,9 @@ _omp_gateway_public_base_url() {
 _omp_broker_token() {
   ssh "$(_omp_auth_host)" docker exec auth-broker cat /root/.omp/auth-broker.token
 }
+_omp_gateway_token() {
+  ssh "$(_omp_auth_host)" docker exec auth-gateway cat /root/.omp/auth-gateway.token
+}
 
 # Run omp auth-broker inside the homelab auth-broker container.
 ompb() {
@@ -354,13 +357,23 @@ ompg-url() {
   _omp_gateway_public_base_url
 }
 
-# Query the public gateway models endpoint with the Pi gateway token.
+# List OMP registry/provider model IDs from the gateway container.
 ompg-models() {
-  local token base_url
-  token=$(ssh "$(_omp_auth_host)" docker exec auth-gateway omp auth-gateway token) || return
+  local broker_token
+  broker_token="$(_omp_broker_token)" || return
+  ssh "$(_omp_auth_host)" docker exec \
+    -e "OMP_AUTH_BROKER_TOKEN=${broker_token}" \
+    auth-gateway omp --list-models
+}
+
+# Query the public gateway models endpoint with the Pi gateway token.
+ompg-api-models() {
+  local gateway_token base_url
+  gateway_token="$(_omp_gateway_token)" || return
   base_url="$(_omp_gateway_public_base_url)"
-  base_url="${base_url%/}"
-  printf 'header = "Authorization: Bearer %s"\nurl = "%s/models"\n' "$token" "$base_url" | curl -fsS -K -
+  curl -fsS -H "Authorization: Bearer ${gateway_token}" "${base_url}/models" |
+    jq -r '.data[].id' |
+    sort -u
 }
 
 # List OMP homelab auth helper commands.
@@ -373,7 +386,8 @@ omp-auth-tools() {
   print "  ompb <args>          run omp auth-broker in the auth-broker container"
   print "  ompb-login <id>      login provider in the auth-broker container"
   print "  ompg <args>          run omp auth-gateway in the auth-gateway container"
-  print "  ompg-models          query public /v1/models using the gateway token"
+  print "  ompg-models          list OMP registry/provider model IDs"
+  print "  ompg-api-models      list public OpenAI-compatible /v1/models IDs"
   print "  ompg-url             print the public /v1 base URL"
   print ""
   print "${cyan}Common examples${reset}"
@@ -382,6 +396,7 @@ omp-auth-tools() {
   print "  ompb-login openai-codex"
   print "  ompg check"
   print "  ompg token"
+  print "  ompg-api-models"
   print ""
   print "${cyan}Overrides${reset}"
   print "  export OMP_AUTH_HOST=raspi"

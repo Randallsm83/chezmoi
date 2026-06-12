@@ -762,6 +762,19 @@ function Get-OmpBrokerToken {
 
 <# 
 .SYNOPSIS
+    Read the homelab auth-gateway bearer token without printing it.
+#>
+function Get-OmpGatewayToken {
+    $token = ssh (Get-OmpAuthHost) docker exec auth-gateway cat /root/.omp/auth-gateway.token
+    $token = ($token | Out-String).Trim()
+    if (-not $token) {
+        throw 'Could not read auth-gateway token from the auth-gateway container.'
+    }
+    return $token
+}
+
+<# 
+.SYNOPSIS
     Run omp auth-broker inside the homelab auth-broker container.
 #>
 function ompb {
@@ -780,6 +793,21 @@ function ompb {
             auth-broker omp auth-broker @Args
     } finally {
         Remove-Variable brokerToken -ErrorAction SilentlyContinue
+    }
+}
+
+<# 
+.SYNOPSIS
+    Query the public gateway models endpoint with the Pi gateway token.
+#>
+function ompg-api-models {
+    $gatewayToken = Get-OmpGatewayToken
+
+    try {
+        $models = Invoke-RestMethod -Uri "$(Get-OmpGatewayPublicBaseUrl)/models" -Headers @{ Authorization = "Bearer $gatewayToken" } -Method Get
+        $models.data | ForEach-Object { $_.id } | Sort-Object -Unique
+    } finally {
+        Remove-Variable gatewayToken -ErrorAction SilentlyContinue
     }
 }
 
@@ -821,19 +849,17 @@ function ompg-url {
 
 <# 
 .SYNOPSIS
-    Query the public gateway models endpoint with the Pi gateway token.
+    List OMP registry/provider model IDs from the gateway container.
 #>
 function ompg-models {
-    $token = ssh (Get-OmpAuthHost) docker exec auth-gateway omp auth-gateway token
-    if (-not $token) {
-        Write-Warning 'Could not read auth-gateway token from raspi.'
-        return
-    }
+    $brokerToken = Get-OmpBrokerToken
 
     try {
-        Invoke-RestMethod -Uri "$(Get-OmpGatewayPublicBaseUrl)/models" -Headers @{ Authorization = "Bearer $token" } -TimeoutSec 15
+        ssh (Get-OmpAuthHost) docker exec `
+            -e "OMP_AUTH_BROKER_TOKEN=$brokerToken" `
+            auth-gateway omp --list-models
     } finally {
-        Remove-Variable token -ErrorAction SilentlyContinue
+        Remove-Variable brokerToken -ErrorAction SilentlyContinue
     }
 }
 
@@ -846,7 +872,8 @@ function omp-auth-tools {
     Write-Host '  ompb <args>          run omp auth-broker in the auth-broker container'
     Write-Host '  ompb-login <id>      login provider in the auth-broker container'
     Write-Host '  ompg <args>          run omp auth-gateway in the auth-gateway container'
-    Write-Host '  ompg-models          query public /v1/models using the gateway token'
+    Write-Host '  ompg-models          list OMP registry/provider model IDs'
+    Write-Host '  ompg-api-models      list public OpenAI-compatible /v1/models IDs'
     Write-Host '  ompg-url             print the public /v1 base URL'
     Write-Host ''
     Write-Host 'Common examples' -ForegroundColor Cyan
@@ -855,6 +882,7 @@ function omp-auth-tools {
     Write-Host '  ompb-login openai-codex'
     Write-Host '  ompg check'
     Write-Host '  ompg token'
+    Write-Host '  ompg-api-models'
     Write-Host ''
     Write-Host 'Overrides' -ForegroundColor Cyan
     Write-Host '  $env:OMP_AUTH_HOST = "raspi"'
