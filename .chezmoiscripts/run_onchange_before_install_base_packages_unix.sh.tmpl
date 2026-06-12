@@ -525,6 +525,24 @@ install_1password_desktop() {
 # install_1password_desktop's pacman branch both have paru available.
 install_aur_helper || log_warning "AUR helper install failed; 1Password steps may fall through."
 install_1password_cli
+{{- if .is_wsl }}
+# WSL can have a stale /usr/local/bin/op shim from older Windows-bridged setup:
+# it execs /mnt/c/.../op.exe directly, which fails with "Exec format error"
+# when Windows interop/binfmt is unavailable. Prefer the native Linux CLI from
+# the distro package and keep auto-signin wired through shell startup.
+if [ -x /usr/bin/op ] && [ -f /usr/local/bin/op ] && grep -q '/mnt/c/.*/op.exe' /usr/local/bin/op 2>/dev/null; then
+    log_info "Repairing stale WSL 1Password CLI shim at /usr/local/bin/op"
+    if command_exists sudo; then
+        sudo sh -c 'cat > /usr/local/bin/op <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+exec /usr/bin/op "$@"
+EOF
+chmod 0755 /usr/local/bin/op'
+    else
+        log_warning "sudo required to repair /usr/local/bin/op"
+    fi
+fi
+{{- end }}
 {{- if not .is_wsl }}
 # Desktop app only needed on native Linux (WSL uses Windows 1Password SSH agent)
 install_1password_desktop
