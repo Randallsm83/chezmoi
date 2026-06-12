@@ -6,6 +6,11 @@
 #   origin   fetch/push = git@gitlab.com:Randallsm83/chezmoi.git   (canonical)
 #   github   fetch/push = git@github.com:Randallsm83/chezmoi.git   (mirror)
 #
+# WSL exception: when Windows interop is unavailable, Windows OpenSSH cannot be
+# executed and the local 1Password socket may not be ready during bootstrap.
+# In that case fetch from the public GitHub mirror over HTTPS and keep SSH
+# pushurls for later authenticated pushes.
+#
 # Multi-host pushes go through the `git pushall` alias (see
 # dot_config/git/config.tmpl), which pushes origin then github serially with
 # bounded retry. The previous dual-pushurl-on-origin layout fanned out two
@@ -28,8 +33,17 @@
 set -euo pipefail
 
 REPO_DIR={{ .chezmoi.sourceDir | quote }}
+{{ if and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
+WANT_ORIGIN_URL="https://github.com/Randallsm83/chezmoi.git"
+WANT_ORIGIN_PUSHURL="git@gitlab.com:Randallsm83/chezmoi.git"
+WANT_GITHUB_URL="https://github.com/Randallsm83/chezmoi.git"
+WANT_GITHUB_PUSHURL="git@github.com:Randallsm83/chezmoi.git"
+{{ else }}
 WANT_ORIGIN_URL="git@gitlab.com:Randallsm83/chezmoi.git"
+WANT_ORIGIN_PUSHURL=""
 WANT_GITHUB_URL="git@github.com:Randallsm83/chezmoi.git"
+WANT_GITHUB_PUSHURL=""
+{{ end }}
 
 # Bail if the source dir isn't a git checkout (chezmoi was installed via
 # `chezmoi init --source=/some/extracted/tarball` or similar).
@@ -42,18 +56,23 @@ cd "$REPO_DIR"
 have_origin=$(git config --get remote.origin.url 2>/dev/null || true)
 have_origin_push=$(git config --get-all remote.origin.pushurl 2>/dev/null || true)
 have_github=$(git config --get remote.github.url 2>/dev/null || true)
+have_github_push=$(git config --get-all remote.github.pushurl 2>/dev/null || true)
 
 if [ "$have_origin" = "$WANT_ORIGIN_URL" ] \
-    && [ -z "$have_origin_push" ] \
-    && [ "$have_github" = "$WANT_GITHUB_URL" ]; then
+    && [ "$have_origin_push" = "$WANT_ORIGIN_PUSHURL" ] \
+    && [ "$have_github" = "$WANT_GITHUB_URL" ] \
+    && [ "$have_github_push" = "$WANT_GITHUB_PUSHURL" ]; then
     exit 0
 fi
 
-echo "[chezmoi-repo-remotes] Configuring origin (GitLab) + github (GitHub) remotes in $REPO_DIR"
+echo "[chezmoi-repo-remotes] Configuring origin + github remotes in $REPO_DIR"
 
 # Canonical origin = GitLab (single URL, single pushurl by default).
 git remote set-url origin "$WANT_ORIGIN_URL"
 git config --unset-all remote.origin.pushurl 2>/dev/null || true
+if [ -n "$WANT_ORIGIN_PUSHURL" ]; then
+    git remote set-url --push origin "$WANT_ORIGIN_PUSHURL"
+fi
 
 # Separate `github` remote so `git push github main` (and
 # `--force-with-lease` recovery) is available.
@@ -63,6 +82,9 @@ else
     git remote add github "$WANT_GITHUB_URL"
 fi
 git config --unset-all remote.github.pushurl 2>/dev/null || true
+if [ -n "$WANT_GITHUB_PUSHURL" ]; then
+    git remote set-url --push github "$WANT_GITHUB_PUSHURL"
+fi
 
 echo "[chezmoi-repo-remotes] Done. Push both with: git pushall (see CONTRIBUTING.md)"
 {{- end -}}

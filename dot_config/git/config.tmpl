@@ -36,8 +36,9 @@
 	# Windows: Use native OpenSSH which reads ~/.ssh/config for 1Password agent
 	sshCommand = C:/Windows/System32/OpenSSH/ssh.exe
 {{- else if and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
-	# WSL: Use Windows SSH to access 1Password agent on Windows host
-	sshCommand = /mnt/c/Windows/System32/OpenSSH/ssh.exe
+	# WSL: use the native ssh selected by PATH. Some distros do not have Windows
+	# interop available, so forcing /mnt/c/.../ssh.exe breaks every Git fetch.
+	# 1Password agent wiring is handled by ~/.ssh/config when available.
 {{- else if eq .chezmoi.os "darwin" }}
 	# macOS: 1Password SSH agent path contains spaces (Group Container), which git
 	# cannot quote inside core.sshCommand. IdentityAgent is declared in
