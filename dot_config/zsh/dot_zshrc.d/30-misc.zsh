@@ -37,9 +37,11 @@ export MYSQL_HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/mysql/history"
 
 export SQLITE_HISTORY="${XDG_STATE_HOME:-$HOME/.local/state}/sqlite/history"
 
-# Colored man pages
-export LESS_TERMCAP_md="$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null)"
-export LESS_TERMCAP_me="$(tput sgr0 2>/dev/null)"
+# Colored man pages. Use raw ANSI escapes instead of spawning `tput` during
+# every shell startup. Terminals targeted by this repo (WezTerm, Warp, Windows
+# Terminal, xterm-compatible Linux/WSL terminals) all understand these codes.
+export LESS_TERMCAP_md=$'\e[1m\e[32m'
+export LESS_TERMCAP_me=$'\e[0m'
 
 # Skip uninteresting commands in history
 export HISTIGNORE="&:[bf]g:c:clear:history:exit:q:pwd:* --help"
@@ -55,9 +57,9 @@ env_dirs=(
   "$DOTNET_CLI_HOME"
   "$TERMINFO"
   "$VAGRANT_HOME"
-  "$(dirname "$LESSHISTFILE")"
-  "$(dirname "$MYSQL_HISTFILE")"
-  "$(dirname "$SQLITE_HISTORY")"
+  "${LESSHISTFILE:h}"
+  "${MYSQL_HISTFILE:h}"
+  "${SQLITE_HISTORY:h}"
 )
 
 env_dirs=(${(@)env_dirs:#""})

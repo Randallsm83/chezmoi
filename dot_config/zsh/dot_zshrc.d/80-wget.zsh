@@ -13,7 +13,7 @@ export WGETRC="${XDG_CONFIG_HOME:-$HOME/.config}/wget/wgetrc"
 
 export WGET_HSTS="${XDG_CACHE_HOME:-$HOME/.cache}/wget/wget-hsts"
 
-export ENV_DIRS="$ENV_DIRS:$(dirname "$WGET_HSTS")"
+export ENV_DIRS="$ENV_DIRS:${WGET_HSTS:h}"
 
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-

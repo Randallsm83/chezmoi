@@ -12,10 +12,8 @@
 
 [[ $TERM == 'dumb' ]] && return 1
 
-_has() { command -v "$1" >/dev/null 2>&1; }
-
 # Set LS_COLORS via vivid to match theme
-if _has vivid; then
+if (( $+commands[vivid] )); then
   export LS_COLORS="$(vivid generate {{ index .theme_mappings.vivid .theme.name | quote }} 2>/dev/null)"
 fi
 
@@ -43,7 +41,7 @@ _eza_build_flags() {
   echo "${(j: :)flags}"
 }
 
-if _has eza; then
+if (( $+commands[eza] )); then
   # Remove any pre-existing aliases so we can define functions with the same names
   unalias ls ll la lt 2>/dev/null
   ls() { command eza $(_eza_build_flags) "$@"; }

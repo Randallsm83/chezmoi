@@ -114,9 +114,10 @@ alias ardc='arduino-cloud-cli'
 # Wget
 alias wget='wget --hsts-file=$XDG_CACHE_HOME/wget/wget-hsts'
 
-# Build (parallel)
-alias make="make -j$(nproc)"
-alias ninja="ninja -j$(nproc)"
+# Build (parallel). Use functions so `nproc` is resolved only when the command
+# is actually invoked, not at shell startup.
+make() { command make -j"$(nproc)" "$@"; }
+ninja() { command ninja -j"$(nproc)" "$@"; }
 alias nj="ninja"
 
 # Arch/Pacman

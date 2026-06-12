@@ -46,7 +46,7 @@ fi
 # Initialization - replaces cd with zoxide
 # =============================================================================
 
-eval "$(zoxide init zsh --cmd cd)"
+zsh_cache_eval zoxide-init zoxide init zsh --cmd cd
 
 # =============================================================================
 # Helper Functions

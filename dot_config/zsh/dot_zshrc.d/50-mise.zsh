@@ -32,10 +32,9 @@ export MISE_RUSTUP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/rustup"
 # Activate whichever mise is first on PATH. dot_zshenv prepends ~/.local/bin
 # (used during bootstrap before Homebrew exists). Once `brew install mise`
 # runs, the install-packages script removes the standalone binary so this
-# resolves to the brew-managed mise.
-if command -v mise >/dev/null 2>&1; then
-  eval "$(mise activate zsh)"
-fi
+# resolves to the brew-managed mise. Cached: the activate script is sourced
+# from a version-keyed cache instead of spawning `mise activate` each startup.
+zsh_cache_eval mise-activate mise activate zsh
 
 # =================================================================================================
 # Mise-installed tools paths

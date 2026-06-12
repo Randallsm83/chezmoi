@@ -12,7 +12,7 @@
 (( $+commands[atuin] )) || return 0
 
 # Keep fzf Ctrl-R and history-substring-search arrow bindings intact.
-eval "$(atuin init zsh --disable-ctrl-r --disable-up-arrow)"
+zsh_cache_eval atuin-init atuin init zsh --disable-ctrl-r --disable-up-arrow
 
 # Alt-R (ESC r) opens Atuin history search in the active keymap.
 bindkey -M emacs '^[r' atuin-search

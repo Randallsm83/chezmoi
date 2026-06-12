@@ -102,8 +102,40 @@ if [[ ! -d "$ANTIDOTE_HOME" ]]; then
   git clone https://github.com/mattmc3/antidote "$ANTIDOTE_HOME"
 fi
 
-source "$ANTIDOTE_HOME/antidote.zsh"
-antidote load
+# antidote upstream fast path: source a pre-generated static plugin bundle on
+# every startup, and only source antidote.zsh + rebuild the bundle when either
+# the bundle list or antidote itself is newer. This preserves the exact plugin
+# set while avoiding antidote's own startup machinery on the hot path.
+zsh_plugins_base="${ZDOTDIR:-$HOME}/.zsh_plugins"
+zsh_plugins_txt="${zsh_plugins_base}.txt"
+zsh_plugins_zsh="${zsh_plugins_base}.zsh"
+if [[ ! -f "$zsh_plugins_zsh" \
+   || ! "$zsh_plugins_zsh" -nt "$zsh_plugins_txt" \
+   || ! "$zsh_plugins_zsh" -nt "$ANTIDOTE_HOME/antidote.zsh" ]]; then
+  (
+    source "$ANTIDOTE_HOME/antidote.zsh"
+    antidote bundle <"$zsh_plugins_txt" >| "$zsh_plugins_zsh"
+  )
+fi
+source "$zsh_plugins_zsh"
+for plugin_src in \
+  "$ANTIDOTE_HOME/zsh-users/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" \
+  "$ANTIDOTE_HOME/zsh-users/zsh-syntax-highlighting/highlighters/main/main-highlighter.zsh" \
+  "$ANTIDOTE_HOME/zsh-users/zsh-autosuggestions/zsh-autosuggestions.zsh"
+do
+  if [[ -f "$plugin_src" && ( ! -f "$plugin_src.zwc" || "$plugin_src" -nt "$plugin_src.zwc" ) ]]; then
+    zcompile "$plugin_src"
+  fi
+done
+unset plugin_src
+
+# Keep the `antidote` command available for ad-hoc maintenance without paying
+# its startup cost on every shell.
+antidote() {
+  unset -f antidote
+  source "$ANTIDOTE_HOME/antidote.zsh"
+  antidote "$@"
+}
 
 # for _rc in $ZDOTDIR/.zshrc.d/*.zsh; do
 #   # Ignore tilde files.
@@ -118,11 +150,11 @@ antidote load
 
 # LS_COLORS is set by vivid in 80-eza.zsh using the active theme from chezmoi
 # Legacy dircolors fallback only if vivid is not installed
-if ! command -v vivid >/dev/null 2>&1; then
-  if command -v dircolors >/dev/null 2>&1; then
-    eval "$(dircolors --sh)"
-  elif command -v gdircolors >/dev/null 2>&1; then
-    eval "$(gdircolors --sh)"
+if (( ! $+commands[vivid] )); then
+  if (( $+commands[dircolors] )); then
+    zsh_cache_eval dircolors-init dircolors --sh
+  elif (( $+commands[gdircolors] )); then
+    zsh_cache_eval dircolors-init gdircolors --sh
   fi
 fi
 {{- end }}

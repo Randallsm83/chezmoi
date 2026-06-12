@@ -12,9 +12,11 @@
 # Check if op command is available
 (( $+commands[op] )) || return 1
 
-# Load 1Password CLI completions
-eval "$(op completion zsh)"
-compdef _op op
+# Load 1Password CLI completions via the shared async helper (writes
+# $ZSH_COMPLETION_DIR/_op in the background and registers it for the current
+# shell) instead of a synchronous `eval "$(op completion zsh)"` on the
+# startup critical path. Matches how every other tool's completions load.
+_gen_completion_runtime op completion zsh
 
 # Source 1Password plugins (e.g., GitHub CLI integration)
 if [[ -f "$HOME/.config/op/plugins.sh" ]]; then

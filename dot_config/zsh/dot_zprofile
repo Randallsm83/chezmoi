@@ -18,30 +18,43 @@ export EDITOR='nvim'
 export VISUAL="$EDITOR"
 export PAGER='less'
 
-# Normalize OS detection (uname -s returns 'Darwin', 'Linux', etc.)
-OS_KERNEL="$(uname -s | tr '[:upper:]' '[:lower:]')"
+# Normalize OS detection from zsh's builtin $OSTYPE (already lowercase on zsh).
+OS_KERNEL="${${OSTYPE:-unknown}%%-*}"
 export OSTYPE="$OS_KERNEL"
 
-# Determine if WSL
-if [[ "$OS_KERNEL" == "linux" ]] && { [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qiE '(microsoft|wsl)' /proc/version 2>/dev/null; }; then
-  export ZSH_OS="wsl"
+# Determine if WSL. Fast path: WSL_DISTRO_NAME. Fallback: inspect osrelease
+# without spawning grep.
+if [[ "$OS_KERNEL" == "linux" ]]; then
+  osrelease=""
+  [[ -r /proc/sys/kernel/osrelease ]] && osrelease="${(L)$(</proc/sys/kernel/osrelease)}"
+  if [[ -n "${WSL_DISTRO_NAME:-}" || "$osrelease" == *microsoft* || "$osrelease" == *wsl* ]]; then
+    export ZSH_OS="wsl"
+  else
+    export ZSH_OS="linux"
+  fi
+  unset osrelease
 elif [[ "$OS_KERNEL" == "darwin" ]]; then
   export ZSH_OS="macos"
-elif [[ "$OS_KERNEL" == "linux" ]]; then
-  export ZSH_OS="linux"
 else
   export ZSH_OS="unknown"
 fi
 
-# Set core count for parallel builds
+# Set core count for parallel builds. Avoid nproc on Linux/WSL by counting
+# cpuN rows in /proc/stat in-shell.
 if [[ "$ZSH_OS" == "macos" ]]; then
   cores="$(sysctl -n hw.logicalcpu 2>/dev/null || echo 4)"
 elif [[ "$ZSH_OS" == "linux" ]] || [[ "$ZSH_OS" == "wsl" ]]; then
-  cores="$(nproc 2>/dev/null || echo 4)"
+  cores=0
+  while IFS= read -r line; do
+    case "$line" in
+      cpu[0-9]*\ *) cores=$((cores + 1)) ;;
+    esac
+  done </proc/stat
+  (( cores > 0 )) || cores=4
 fi
 export MACHINE_CORES="${cores:-4}"
 
-export SHORT_HOST=$(hostname -s 2>/dev/null || uname -n | cut -d. -f1)
+export SHORT_HOST="${HOST%%.*}"
 
 # Added by OrbStack: command-line tools and integration
 # This won't be added again if you remove it.
