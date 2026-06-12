@@ -139,7 +139,7 @@ lists. Individual flags below override per-package routing.
 | `nvim` | ✅ | neovim + LazyVim plugins |
 | `vim` | ✅ | vim binary + `.vimrc` |
 | `vscode` | ✅ | settings.json + extension installer |
-| `zed` | ✅ | Zed editor + settings |
+| `zed` | ❌ | Zed settings only; install the app manually if needed |
 | **Shell tools** | | |
 | `starship` | ✅ | prompt |
 | `zsh` | ✅ | zsh + zshrc.d |
@@ -173,7 +173,7 @@ lists. Individual flags below override per-package routing.
 | `windows_utilities` | ✅ | (Windows) Everything, Flow Launcher, Ventoy |
 | `sysinternals` | ✅ | (Windows) Sysinternals Suite |
 | `network_tools` | ✅ | bind, rclone, pritunl, unbound |
-| `dev_extras` | ✅ | postman, ilspy, pandoc, cygwin |
+| `dev_extras` | ✅ | postman, pandoc, cygwin |
 | `productivity` | ✅ | PowerToys, Obsidian, Notepad++, WizTree, AutoHotkey, OFGB |
 | `password_managers` | ✅ | additional managers beyond 1Password (e.g. bitwarden-cli) |
 | `browsers` | ✅ | Chrome, LibreWolf, Edge, Chromium (scoop) |

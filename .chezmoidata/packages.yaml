@@ -61,7 +61,7 @@ package_features:
   nvim: true
   vim: true
   vscode: true
-  zed: true
+  zed: false            # Zed configs are managed; app install is manual
 
   # ============================================================================
   # Shell Tools (recommended)
@@ -409,19 +409,21 @@ package_mapping:
       mise: []
 
   zed:
+    # Zed configuration is managed in dot_config/zed, but the app package is
+    # intentionally not installed by the package manifests.
     windows:
-      scoop: [zed]
-      winget: [ZedIndustries.Zed]  # codified to match installed-via-winget drift (P1)
+      scoop: []
+      winget: []
       mise: []
     linux:
       apt: []
       dnf: []
       pacman: []
-      brew: [] # zed installed via official script on Linux
+      brew: []
       mise: []
     darwin:
       brew: []
-      cask: [zed]
+      cask: []
       mise: []
 
   # Shell Tools
@@ -852,10 +854,10 @@ package_mapping:
       # in `windows_utilities` installs all VC++ redistributables.
       # `blender` codified from installed-not-declared drift (3D modeling / modding pipeline).
       scoop: [steam, ludusavi, rtss, msiafterburner, msikombustor, furmark, blender]
-      # Modding tooling (Wabbajack/Vortex/r2modman), GPU OSD overlay (SpecialK),
-      # SoftFever's OrcaSlicer (Bambu P1S slicer; grouped with gaming per audit
-      # decision — adjacent hobby tooling), and Microsoft.GameInput runtime.
-      winget: [WabbajackTools.Wabbajack, NexusMods.Vortex, SoftFever.OrcaSlicer, ebkr.r2modman, SpecialK.SpecialK, Microsoft.GameInput]
+      # Modding tooling (Wabbajack/Vortex/r2modman), SoftFever's OrcaSlicer
+      # (Bambu P1S slicer; grouped with gaming per audit decision — adjacent
+      # hobby tooling), and Microsoft.GameInput runtime.
+      winget: [WabbajackTools.Wabbajack, NexusMods.Vortex, SoftFever.OrcaSlicer, ebkr.r2modman, Microsoft.GameInput]
       mise: []
     linux:
       apt: []
@@ -986,15 +988,13 @@ package_mapping:
   # Miscellaneous Development
   dev_extras:
     windows:
-      # `windowsdesktop-runtime-8.0` (ilspy) and `latex` (pandoc PDF output) are
-      # Scoop-suggested companions for packages already in this feature.
+      # `latex` is a Scoop-suggested companion for pandoc PDF output.
       # `glow` (Go; markdown TUI renderer) codified from installed-not-declared drift —
       # grouped here alongside pandoc/wkhtmltopdf as document-rendering tooling.
-      scoop: [postman, ilspy, pandoc, wkhtmltopdf, cygwin, dd, wp-cli, windowsdesktop-runtime-8.0, latex, glow]
+      scoop: [postman, pandoc, wkhtmltopdf, cygwin, dd, wp-cli, latex, glow]
       # Dev runtimes/SDKs/build toolchains codified from installed-not-declared drift:
       # WSL, usbipd-win (USB-over-IP for WSL), WinDbg (kernel debugger), VS Build Tools 2022,
       # Windows SDK 10.0.26100, JDK 24 + JRE.
-      # NOTE: ZedIndustries.Zed is owned by the `zed` feature mapping above.
       winget: [Microsoft.WSL, dorssel.usbipd-win, Microsoft.WinDbg, Microsoft.VisualStudio.2022.BuildTools, Microsoft.WindowsSDK.10.0.26100, Oracle.JDK.24, Oracle.JavaRuntimeEnvironment]
       mise: []
     linux:
@@ -1287,7 +1287,6 @@ scoop_bucket_overrides:
     - flow-launcher
     - furmark
     - gpu-z
-    - ilspy
     - islc
     - ludusavi
     - msiafterburner
@@ -1303,11 +1302,9 @@ scoop_bucket_overrides:
     - secureuxtheme
     - vcredist-aio
     - ventoy
-    - zed
   versions:
     - openscad-dev
     - steam
-    - windowsdesktop-runtime-8.0
     # windowsdesktop-runtime-10.0 removed: scoop install fails repeatedly; the
     # .NET 10 runtime is installed transitively by other winget apps.
   nonportable:

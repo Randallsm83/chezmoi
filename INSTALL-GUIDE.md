@@ -611,7 +611,7 @@ There are two layers:
 | `nvim` | ✅ `true` | neovim + LazyVim configs |
 | `vim` | ✅ `true` | vim + `.vimrc` |
 | `vscode` | ✅ `true` | VS Code settings + extension installer |
-| `zed` | ✅ `true` | Zed editor + settings |
+| `zed` | ❌ `false` | Zed settings only; install the app manually if needed |
 | **Shell tools** | | |
 | `starship` | ✅ `true` | prompt |
 | `zsh` | ✅ `true` | zsh + `.zshrc.d` |
@@ -645,7 +645,7 @@ There are two layers:
 | `windows_utilities` | ✅ `true` | (Windows) Everything, Flow Launcher, Ventoy |
 | `sysinternals` | ✅ `true` | (Windows) Sysinternals Suite |
 | `network_tools` | ✅ `true` | bind, rclone, pritunl, unbound |
-| `dev_extras` | ✅ `true` | postman, ilspy, pandoc, cygwin |
+| `dev_extras` | ✅ `true` | postman, pandoc, cygwin |
 | **Deprecated (off)** | | |
 | `asdf` | ❌ `false` | replaced by mise |
 | `nvm` | ❌ `false` | replaced by mise |

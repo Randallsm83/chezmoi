@@ -1,5 +1,5 @@
 {
-  "comment": "Scoop package reference - authoritative list is in .chezmoidata.yaml",
+  "comment": "Scoop package reference - authoritative list is in .chezmoidata/packages.yaml",
   "buckets": [
     "main",
     "extras",
@@ -51,6 +51,6 @@
     "windows_utilities": ["everything", "flow-launcher", "bulk-crap-uninstaller", "ventoy", "vcredist-aio"],
     "sysinternals": ["sysinternals-suite", "ctrl2cap", "whois"],
     "network_tools": ["bind", "rclone"],
-    "dev_extras": ["postman", "ilspy", "pandoc", "wkhtmltopdf", "cygwin", "dd", "wp-cli", "windowsdesktop-runtime-8.0", "latex"]
+    "dev_extras": ["postman", "pandoc", "wkhtmltopdf", "cygwin", "dd", "wp-cli", "latex"]
   }
 }
