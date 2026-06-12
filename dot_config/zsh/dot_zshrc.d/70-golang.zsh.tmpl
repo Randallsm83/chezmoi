@@ -12,14 +12,10 @@
 #!/usr/bin/env zsh
 
 update_golang_env() {
-  local go_bin_path
-  go_bin_path="$(which go 2>/dev/null)"
+  local go_bin_path="${commands[go]-}"
   if [[ -n "${go_bin_path}" ]]; then
-    export GOROOT
-    GOROOT="$(dirname "$(dirname "${go_bin_path:A}")")"
-
-    export GOPATH
-    GOPATH="$(dirname "${GOROOT:A}")/packages"
+    export GOROOT="${go_bin_path:A:h:h}"
+    export GOPATH="${GOROOT:A:h}/packages"
   fi
 }
 

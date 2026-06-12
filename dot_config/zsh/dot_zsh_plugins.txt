@@ -11,7 +11,7 @@ so-fancy/diff-so-fancy                        # Better Git Diff
 
 zsh-users/zsh-autosuggestions                 # Auto-suggestions
 zsh-users/zsh-syntax-highlighting             # Syntax Highlighting
-zsh-users/zsh-history-substring-search        # Up/Down to search history
+zsh-users/zsh-history-substring-search kind:defer  # Up/Down to search history (defer until after first prompt)
 
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-

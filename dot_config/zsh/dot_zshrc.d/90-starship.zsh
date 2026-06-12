@@ -14,8 +14,8 @@ export STARSHIP_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/starship"
 
 # Check if starship exists BEFORE trying to init
 # Avoid Windows path pollution from /mnt/*
-if (( $+commands[starship] )) && [[ "$(command -v starship)" != /mnt/* ]]; then
-  eval "$(starship init zsh)"
+if (( $+commands[starship] )) && [[ "${commands[starship]}" != /mnt/* ]]; then
+  zsh_cache_starship_init
 else
   return 0
 fi

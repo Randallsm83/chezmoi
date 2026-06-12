@@ -148,6 +148,9 @@ chezmoi.local.toml.example
 bootstrap.ps1
 setup.sh
 
+# Autoresearch benchmark harness (repo tooling, never deployed to home)
+autoresearch.sh
+
 # Binaries managed outside chezmoi
 .local/bin/op
 

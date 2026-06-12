@@ -16,7 +16,7 @@ export PYTHONUSERBASE="${XDG_DATA_HOME:-$HOME/.local/share}/python"
 export PYTHONPYCACHEPREFIX="${XDG_CACHE_HOME:-$HOME/.cache}/python"
 export PYTHONSTARTUP="${XDG_CONFIG_HOME:-$HOME/.config}/python/pythonrc"
 
-export ENV_DIRS="$ENV_DIRS:$PYTHONUSERBASE:$PYTHONPYCACHEPREFIX:$(dirname "$PYTHONSTARTUP")"
+export ENV_DIRS="$ENV_DIRS:$PYTHONUSERBASE:$PYTHONPYCACHEPREFIX:${PYTHONSTARTUP:h}"
 
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
