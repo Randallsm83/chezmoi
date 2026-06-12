@@ -730,6 +730,137 @@ if (Test-CommandExists 'op') {
     }
 }
 
+<# 
+.SYNOPSIS
+    Resolve the host that owns the OMP auth-broker/auth-gateway containers.
+#>
+function Get-OmpAuthHost {
+    if ($env:OMP_AUTH_HOST) { return $env:OMP_AUTH_HOST }
+    return 'raspi'
+}
+
+<# 
+.SYNOPSIS
+    Resolve the public OpenAI-compatible OMP auth-gateway base URL.
+#>
+function Get-OmpGatewayPublicBaseUrl {
+    if ($env:OMP_GATEWAY_PUBLIC_BASE_URL) { return $env:OMP_GATEWAY_PUBLIC_BASE_URL.TrimEnd('/') }
+    return 'https://raspi.alai-altair.ts.net/v1'
+}
+<# 
+.SYNOPSIS
+    Read the homelab auth-broker bearer token without printing it.
+#>
+function Get-OmpBrokerToken {
+    $token = ssh (Get-OmpAuthHost) docker exec auth-broker cat /root/.omp/auth-broker.token
+    $token = ($token | Out-String).Trim()
+    if (-not $token) {
+        throw 'Could not read auth-broker token from the auth-broker container.'
+    }
+    return $token
+}
+
+<# 
+.SYNOPSIS
+    Run omp auth-broker inside the homelab auth-broker container.
+#>
+function ompb {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
+    if ($Args.Count -gt 0 -and $Args[0] -eq 'check') {
+        Write-Warning 'auth-broker has no check action; running auth-gateway check instead.'
+        ompg check
+        return
+    }
+
+    $brokerToken = Get-OmpBrokerToken
+    try {
+        ssh -t (Get-OmpAuthHost) docker exec -it `
+            -e OMP_AUTH_BROKER_URL=http://127.0.0.1:8765 `
+            -e "OMP_AUTH_BROKER_TOKEN=$brokerToken" `
+            auth-broker omp auth-broker @Args
+    } finally {
+        Remove-Variable brokerToken -ErrorAction SilentlyContinue
+    }
+}
+
+<# 
+.SYNOPSIS
+    Run omp auth-gateway inside the homelab auth-gateway container.
+#>
+function ompg {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
+    $brokerToken = Get-OmpBrokerToken
+    try {
+        ssh (Get-OmpAuthHost) docker exec `
+            -e "OMP_AUTH_BROKER_TOKEN=$brokerToken" `
+            auth-gateway omp auth-gateway @Args
+    } finally {
+        Remove-Variable brokerToken -ErrorAction SilentlyContinue
+    }
+}
+
+<# 
+.SYNOPSIS
+    Start an OAuth login for a provider in the homelab auth-broker container.
+#>
+function ompb-login {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$Provider
+    )
+    ompb login $Provider
+}
+
+<# 
+.SYNOPSIS
+    Print the public OpenAI-compatible OMP gateway base URL.
+#>
+function ompg-url {
+    Get-OmpGatewayPublicBaseUrl
+}
+
+<# 
+.SYNOPSIS
+    Query the public gateway models endpoint with the Pi gateway token.
+#>
+function ompg-models {
+    $token = ssh (Get-OmpAuthHost) docker exec auth-gateway omp auth-gateway token
+    if (-not $token) {
+        Write-Warning 'Could not read auth-gateway token from raspi.'
+        return
+    }
+
+    try {
+        Invoke-RestMethod -Uri "$(Get-OmpGatewayPublicBaseUrl)/models" -Headers @{ Authorization = "Bearer $token" } -TimeoutSec 15
+    } finally {
+        Remove-Variable token -ErrorAction SilentlyContinue
+    }
+}
+
+<# 
+.SYNOPSIS
+    List OMP homelab auth helper commands.
+#>
+function omp-auth-tools {
+    Write-Host "`nOMP auth helpers" -ForegroundColor Cyan
+    Write-Host '  ompb <args>          run omp auth-broker in the auth-broker container'
+    Write-Host '  ompb-login <id>      login provider in the auth-broker container'
+    Write-Host '  ompg <args>          run omp auth-gateway in the auth-gateway container'
+    Write-Host '  ompg-models          query public /v1/models using the gateway token'
+    Write-Host '  ompg-url             print the public /v1 base URL'
+    Write-Host ''
+    Write-Host 'Common examples' -ForegroundColor Cyan
+    Write-Host '  ompb list'
+    Write-Host '  ompb status'
+    Write-Host '  ompb-login openai-codex'
+    Write-Host '  ompg check'
+    Write-Host '  ompg token'
+    Write-Host ''
+    Write-Host 'Overrides' -ForegroundColor Cyan
+    Write-Host '  $env:OMP_AUTH_HOST = "raspi"'
+    Write-Host '  $env:OMP_GATEWAY_PUBLIC_BASE_URL = "https://raspi.alai-altair.ts.net/v1"'
+    Write-Host ''
+}
 # ================================================================================================
 # Common Utility Functions
 # ================================================================================================

@@ -1,0 +1,67 @@
+{{- $isWSL := and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+providers:
+  webSearch: codex
+  image: openai
+  kimiApiFormat: openai
+setupVersion: 1
+theme:
+  dark: dark-tokyo-night
+symbolPreset: nerd
+statusLine:
+  preset: nerd
+  separator: powerline-thin
+  sessionAccent: true
+  showHookStatus: true
+terminal:
+  showImages: true
+tui:
+  hyperlinks: auto
+display:
+  shimmer: kitt
+  showTokenUsage: true
+showHardwareCursor: true
+task:
+  showResolvedModelBadge: true
+memory:
+  backend: mnemopi
+mnemopi:
+  scoping: per-project-tagged
+vault:
+  enabled: true
+github:
+  enabled: true
+secrets:
+  enabled: true
+modelRoles:
+  vision: openai-codex/gpt-5.5:high
+  plan: anthropic/claude-fable-5:high
+  slow: openai-codex/gpt-5.5:xhigh
+  default: openai-codex/gpt-5.5:high
+  designer: openai-codex/gpt-5.5:high
+  task: openai-codex/gpt-5.5:medium
+  commit: openai-codex/gpt-5.5:medium
+  smol: openai-codex/gpt-5.4-nano
+defaultThinkingLevel: high
+autoResume: false
+steeringMode: one-at-a-time
+followUpMode: one-at-a-time
+interruptMode: immediate
+loop:
+  mode: compact
+doubleEscapeAction: tree
+treeFilterMode: all
+stt:
+  enabled: true
+compaction:
+  handoffSaveToDisk: true
+collapseChangelog: false
+todo:
+  reminders:
+    max: 1
+dev:
+  autoqa:
+    consent: granted
+{{ if $isWSL }}
+disabledExtensions:
+  - mcp:pam
+{{ end }}
