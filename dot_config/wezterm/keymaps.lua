@@ -421,6 +421,8 @@ function M.apply_to_config(config)
     { key = "9",          mods = "CTRL",        action = act.ActivateTab(-1) },
     { key = "[",          mods = "CTRL|SHIFT",  action = act.ActivateTabRelative(-1) },
     { key = "]",          mods = "CTRL|SHIFT",  action = act.ActivateTabRelative(1) },
+    { key = "{",          mods = "CTRL|SHIFT",  action = act.ActivateTabRelative(-1) },
+    { key = "}",          mods = "CTRL|SHIFT",  action = act.ActivateTabRelative(1) },
     { key = "LeftArrow",  mods = "CTRL|SHIFT",  action = act.MoveTabRelative(-1) },
     { key = "RightArrow", mods = "CTRL|SHIFT",  action = act.MoveTabRelative(1) },
     { key = ",",          mods = "LEADER",      action = rename_tab },
