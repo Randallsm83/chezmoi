@@ -23,7 +23,12 @@ Skip on non-Windows: file gated by name suffix `_windows.ps1.tmpl` plus
 this template only renders content when on Windows.
 */}}
 {{- if eq .chezmoi.os "windows" -}}
-# Source content sha256: {{ include (joinPath .chezmoi.sourceDir "projects" "dh" "mise.toml") | sha256sum }}
+{{- $miseSrc := joinPath .chezmoi.sourceDir "projects" "dh" "mise.toml" -}}
+{{- if stat $miseSrc }}
+# Source content sha256: {{ include $miseSrc | sha256sum }}
+{{- else }}
+# Source content sha256: (source missing: {{ $miseSrc }})
+{{- end }}
 $ErrorActionPreference = 'Stop'
 
 $src = '{{ joinPath .chezmoi.sourceDir "projects" "dh" "mise.toml" | replace "\\" "/" }}'

@@ -366,6 +366,8 @@ Library/**
 {{- if not .package_features.node }}
 # Node.js package files
 .config/zsh/.zshrc.d/70-node.zsh
+Documents/PowerShell/Scripts/70-bun.ps1
+Documents/PowerShell/Scripts/70-npm.ps1
 {{- end }}
 
 {{- if not .package_features.perl }}
@@ -374,6 +376,7 @@ Library/**
 .perltidyrc
 .cache/zsh/completions/_cpanm
 .config/zsh/.zshrc.d/70-perl.zsh
+Documents/PowerShell/Scripts/70-perl.ps1
 {{- end }}
 
 {{- if not .package_features.php }}
@@ -438,6 +441,11 @@ Library/**
 # Homebrew package files (bootstrap only, not actively managed)
 .config/homebrew/**
 .config/zsh/.zshrc.d/50-homebrew.zsh
+{{- end }}
+
+{{- if not .package_features.wget }}
+# Wget package files
+Documents/PowerShell/Scripts/80-wget.ps1
 {{- end }}
 
 {{- if not .package_features.vagrant }}
