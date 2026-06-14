@@ -1,0 +1,19 @@
+[display]
+compact = false
+use_pager = false
+show_title = false
+
+[updates]
+auto_update = true
+auto_update_interval_hours = 720
+archive_source = "https://github.com/tldr-pages/tldr/releases/latest/download/"
+tls_backend = "rustls-with-webpki-roots"
+
+[directories]
+# XDG-compliant cache location. The `dirs` crate ignores XDG_* on Windows,
+# and TEALDEER_CACHE_DIR is deprecated, so the cache dir must be set here.
+cache_dir = {{ printf "%s/.cache/tealdeer" .chezmoi.homeDir | quote }}
+# Custom pages dir also defaults to an OS path on Windows; pin it to XDG data dir.
+custom_pages_dir = {{ printf "%s/.local/share/tealdeer/pages" .chezmoi.homeDir | quote }}
+
+[search]
