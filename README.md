@@ -601,6 +601,10 @@ Git is configured to use 1Password for SSH authentication automatically.
 3. Add SSH keys to 1Password
 4. Configs automatically use the agent
 
+### OMP homelab auth
+
+The `omp` shell wrapper (zsh and pwsh) talks to a self-hosted auth broker on the Raspberry Pi homelab. It prefers a local `~/.omp/auth-broker.token` when present (setting the broker URL/token for that process only) and otherwise falls back to `op run` so credentials are resolved from 1Password at invocation. Shared agent settings live under `dot_omp/agent/` ([`dot_omp/agent/config.yml.tmpl`](dot_omp/agent/config.yml.tmpl)); no tokens are ever written into the source tree.
+
 ---
 
 ## 🐧 WSL-Specific Notes
@@ -662,6 +666,6 @@ MIT License - Feel free to use and modify for your own dotfiles!
 
 **Made with ❤️ using [chezmoi](https://www.chezmoi.io/)**
 
-*Last updated*: 2026-05-26  
+*Last updated*: 2026-06-12  
 *Managed files*: ~200 in `dot_config/`, ~370 managed total (varies per platform)  
 *Platforms*: Windows, Linux, WSL, macOS, Raspberry Pi
