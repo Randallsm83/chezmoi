@@ -24,7 +24,9 @@ $env:DOCKER_CONFIG = "$env:XDG_CONFIG_HOME\docker"
 # =================================================================================================
 # GitLab CLI
 # =================================================================================================
-$env:GLAB_CONFIG_DIR = "$env:XDG_CONFIG_HOME\\glab-cli"
+if (Get-Command glab -ErrorAction SilentlyContinue) {
+    $env:GLAB_CONFIG_DIR = "$env:XDG_CONFIG_HOME\\glab-cli"
+}
 
 # =================================================================================================
 # GnuPG
@@ -32,14 +34,21 @@ $env:GLAB_CONFIG_DIR = "$env:XDG_CONFIG_HOME\\glab-cli"
 $env:GNUPGHOME = "$env:XDG_DATA_HOME\gnupg"
 
 # =================================================================================================
-# TLDR (simplified man pages)
+# tealdeer / tldr (simplified man pages)
+# `dirs` crate ignores XDG_* on Windows, so TEALDEER_CONFIG_DIR points it at the XDG config dir.
+# The cache dir is set via `cache_dir` in config.toml (TEALDEER_CACHE_DIR is deprecated).
 # =================================================================================================
-$env:TLDR_CACHE_DIR = "$env:XDG_CACHE_HOME\tldr"
+if (Get-Command tldr -ErrorAction SilentlyContinue) {
+    $env:TEALDEER_CONFIG_DIR = "$env:XDG_CONFIG_HOME\tealdeer"
+}
 
 # =================================================================================================
-# Vagrant
+# Vagrant — only set when vagrant is actually installed (mirrors 60-vagrant.zsh's command guard).
+# Avoids polluting the environment with VAGRANT_HOME when the vagrant feature is disabled.
 # =================================================================================================
-$env:VAGRANT_HOME = "$env:XDG_DATA_HOME\vagrant"
+if (Get-Command vagrant -ErrorAction SilentlyContinue) {
+    $env:VAGRANT_HOME = "$env:XDG_DATA_HOME\vagrant"
+}
 
 # =================================================================================================
 # MySQL
