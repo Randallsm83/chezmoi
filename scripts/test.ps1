@@ -206,6 +206,19 @@ function Test-ChezmoiState {
     }
 }
 
+function Test-ShellParityLint {
+    Write-SectionHeader 'Shell Parity Lint'
+
+    # Guards against the VAGRANT_HOME class of bug: unguarded tool env vars in
+    # pwsh fragments and disabled-feature fragments that aren't .chezmoiignore'd.
+    Invoke-TestCase 'lint-shell-parity.ps1 passes' {
+        $linter = Join-Path $PSScriptRoot 'lint-shell-parity.ps1'
+        if (-not (Test-Path -LiteralPath $linter)) { return $false }
+        & pwsh -NoProfile -File $linter | Out-Null
+        $LASTEXITCODE -eq 0
+    }
+}
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "============================================" -ForegroundColor White
@@ -216,6 +229,7 @@ Test-ChezmoiInstallation
 Test-EssentialTools
 Test-Configurations
 Test-ChezmoiState
+Test-ShellParityLint
 
 Write-SectionHeader 'Test Results'
 Write-Host ""
