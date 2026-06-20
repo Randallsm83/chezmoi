@@ -55,7 +55,7 @@ Exit code is `0` on all-pass, `1` on any failure. Suitable for CI.
 
 **Purpose:** Windows counterpart to `test.sh`.
 
-**Tests:** chezmoi installation + source files, essential tools (`scoop`, `git`, `curl`, `mise`, `op`, `gsudo`), XDG locations (env-var set in any scope or default dir exists), pwsh profile file, Git user config, mise config file, Developer Mode enabled, chezmoi state (`managed`, `diff`, `data`).
+**Tests:** chezmoi installation + source files, essential tools (`scoop`, `git`, `curl`, `mise`, `op`, `gsudo`), XDG locations (env-var set in any scope or default dir exists), pwsh profile file, Git user config, mise config file, Developer Mode enabled, chezmoi state (`managed`, `diff`, `data`), plus the shell parity linter below.
 
 **Usage:**
 ```powershell
@@ -63,6 +63,21 @@ pwsh -NoProfile -File .\scripts\test.ps1
 ```
 
 Exit code is `0` on all-pass, `1` on any failure.
+
+---
+
+### `lint-shell-parity.ps1`
+
+**Purpose:** Guard against Windows PowerShell shell-startup drift from the zsh side.
+
+**Checks:** tool-specific PowerShell env vars are guarded by command/path availability, bootstrap-only vars stay exempt, and PowerShell integration files that correspond to feature-gated zsh integrations are also gated through `.chezmoiignore`.
+
+**Usage:**
+```powershell
+pwsh -NoProfile -File .\scripts\lint-shell-parity.ps1
+```
+
+Runs automatically from `scripts/test.ps1`; run it directly when editing `Documents/PowerShell/Scripts/*.ps1`, `.chezmoiignore`, or zsh integration gating.
 
 ---
 
