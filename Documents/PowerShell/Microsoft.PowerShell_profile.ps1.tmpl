@@ -44,6 +44,48 @@ $PSDefaultParameterValues['Out-File:Encoding']    = 'utf8'
 $PSDefaultParameterValues['Set-Content:Encoding'] = 'utf8'
 $PSDefaultParameterValues['Add-Content:Encoding'] = 'utf8'
 
+# Bound the on-disk PSReadLine history file. PSReadLine's MaximumHistoryCount
+# caps only the in-memory list; with SaveIncrementally the file on disk grows
+# without limit (agent-driven multi-line command blocks pile up fast). A multi-MB
+# file makes startup slow AND, with several concurrent sessions + Defender
+# real-time scanning, triggers "history file ... is being used by another process"
+# lock errors. Trim to the last N lines, serialized across sessions via a mutex,
+# before PSReadLine reads the file. zsh bounds its own history natively (SAVEHIST).
+if (Test-Path $env:PSREADLINE_HISTORY) {
+    if ((Get-Item $env:PSREADLINE_HISTORY).Length -gt 2MB) {
+        $histMutex = [System.Threading.Mutex]::new($false, 'Global\dotfiles-psreadline-history-trim')
+        $histLocked = $false
+        try { $histLocked = $histMutex.WaitOne(0) } catch { $histLocked = $false }
+        if ($histLocked) {
+            try {
+                $histKeep = 20000
+                $histLines = [System.IO.File]::ReadAllLines($env:PSREADLINE_HISTORY)
+                if ($histLines.Count -gt $histKeep) {
+                    $histStart = $histLines.Count - $histKeep
+                    # Advance to a command boundary so we never keep a dangling tail
+                    # of a multi-line entry (continuation lines end with a backtick).
+                    while ($histStart -gt 0 -and $histStart -lt $histLines.Count -and $histLines[$histStart - 1].EndsWith('`')) {
+                        $histStart++
+                    }
+                    if ($histStart -lt $histLines.Count) {
+                        $histTmp = "$env:PSREADLINE_HISTORY.trim.tmp"
+                        [System.IO.File]::WriteAllLines($histTmp, $histLines[$histStart..($histLines.Count - 1)])
+                        Move-Item -LiteralPath $histTmp -Destination $env:PSREADLINE_HISTORY -Force
+                    }
+                }
+            } catch {
+                # Best-effort: a concurrent append can briefly hold the file; the
+                # next session retries on its next startup.
+            } finally {
+                $histMutex.ReleaseMutex()
+                $histMutex.Dispose()
+            }
+        } else {
+            $histMutex.Dispose()
+        }
+    }
+}
+
 # PSReadLine configuration - load BEFORE Starship to avoid GetHistoryItems errors
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
@@ -213,6 +255,18 @@ $env:WARP_API_KEY = "{{ $warp_key }}"
 # 99-functions.ps1, which reads ~/.config/op/claude.env. Other tools that need
 # the key (Anthropic SDK scripts, aider, etc.) should use their own per-tool
 # wrapper or invoke directly: `op run --env-file=~/.config/op/<tool>.env -- ...`
+
+# GITHUB_TOKEN: sourced at shell start from gh's keyring (NOT baked into the
+# rendered profile -- same reasoning as ANTHROPIC_API_KEY above; no literal
+# secret on disk). Gives mise / gh / git / other CLIs an authenticated token so
+# GitHub release fetches (`mise upgrade`, `mise install`, plugin updates) use the
+# 5000-req/hr authenticated limit instead of the 60-req/hr unauthenticated one.
+# `gh auth token` is non-interactive (no biometric prompt) and reads the Windows
+# Credential Manager keyring. The guard lets an explicit override win.
+if (-not $env:GITHUB_TOKEN -and (Get-Command gh -ErrorAction SilentlyContinue)) {
+    $ghToken = (gh auth token 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $ghToken) { $env:GITHUB_TOKEN = $ghToken.Trim() }
+}
 
 # Welcome message (optional - comment out if you prefer clean startup)
 # Write-Host "PowerShell $($PSVersionTable.PSVersion) - Welcome, {{ .name }}!" -ForegroundColor Cyan
