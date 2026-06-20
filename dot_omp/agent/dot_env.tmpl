@@ -1,10 +1,19 @@
-{{- $isWSL := and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
-{{- if $isWSL -}}
-# OMP runtime environment for Randall's WSL/zsh workflow.
-# Keep command execution in zsh's non-interactive login mode so ~/.zshenv
-# supplies ZDOTDIR, mise shims, and ~/.local/bin without loading interactive
-# aliases/widgets that can change cwd or emit prompt/setup output.
-PI_SHELL_PREFIX="zsh -lc"
+{{- $isWindows := eq .chezmoi.os "windows" -}}
+{{- $isZshHost := or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
+{{- if $isWindows -}}
+# OMP runtime environment for Randall's Windows/Git-Bash workflow.
+# Bash reads BASH_ENV before parsing each non-interactive `-c` command, so this
+# is the Windows-safe place to load PATH, aliases, and functions for OMP tools.
+{{- $home := .chezmoi.homeDir | replace "\\" "/" }}
+BASH_ENV={{ $home }}/.config/omp/agent-bash-env
+
+# Qdrant MCP can cold-start FastEmbed; keep requests from timing out early.
+OMP_MCP_TIMEOUT_MS=120000
+{{- else if $isZshHost -}}
+# OMP runtime environment for Randall's zsh workflow.
+# config.yml selects zsh as the shell; OMP_AGENT_SHELL makes ~/.zshenv source
+# ~/.config/zsh/agent-env.zsh before zsh parses the command string.
+OMP_AGENT_SHELL=1
 
 # Qdrant MCP can cold-start FastEmbed; keep requests from timing out early.
 OMP_MCP_TIMEOUT_MS=120000

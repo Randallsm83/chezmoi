@@ -19,6 +19,11 @@ tui:
 display:
   shimmer: kitt
   showTokenUsage: true
+{{- if eq .chezmoi.os "darwin" }}
+shellPath: /bin/zsh
+{{- else if eq .chezmoi.os "linux" }}
+shellPath: /usr/bin/zsh
+{{- end }}
 showHardwareCursor: true
 task:
   showResolvedModelBadge: true
@@ -33,15 +38,16 @@ github:
 secrets:
   enabled: true
 modelRoles:
-  vision: openai-codex/gpt-5.5:high
+  vision: anthropic/claude-opus-4-8:high
   plan: anthropic/claude-fable-5:high
-  slow: openai-codex/gpt-5.5:xhigh
-  default: openai-codex/gpt-5.5:high
-  designer: openai-codex/gpt-5.5:high
-  task: openai-codex/gpt-5.5:medium
-  commit: openai-codex/gpt-5.5:medium
-  smol: openai-codex/gpt-5.4-nano
-defaultThinkingLevel: high
+  slow: anthropic/claude-opus-4-8:xhigh
+  default: anthropic/claude-opus-4-8:high
+  designer: anthropic/claude-opus-4-8:high
+  task: openai-codex/gpt-5.5:xhigh
+  commit: openai-codex/gpt-5.5:xhigh
+  smol: openai-codex/gpt-5.5:medium
+  advisor: anthropic/claude-fable-5:high
+defaultThinkingLevel: auto
 autoResume: false
 steeringMode: one-at-a-time
 followUpMode: one-at-a-time
@@ -61,6 +67,7 @@ todo:
 dev:
   autoqa:
     consent: granted
+hideThinkingBlock: false
 {{ if $isWSL }}
 disabledExtensions:
   - mcp:pam
