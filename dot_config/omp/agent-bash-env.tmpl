@@ -1,0 +1,120 @@
+# OMP Bash tool bootstrap for Windows/Git Bash. Managed by chezmoi.
+# Loaded through BASH_ENV before every non-interactive bash `-c` command.
+
+case "${_OMP_AGENT_BASH_ENV_LOADED:-}" in
+  1) return 0 ;;
+esac
+export _OMP_AGENT_BASH_ENV_LOADED=1
+
+# Normalize Windows paths before putting them in POSIX PATH-like variables. Git
+# Bash can open C:/... files, but a literal C:\ path inside PATH is split at the
+# drive colon.
+_omp_posix_path() {
+  local path="$1" drive rest
+  [[ -n "$path" ]] || return 0
+  if [[ "$path" == [A-Za-z]:* ]]; then
+    drive="${path:0:1}"
+    rest="${path:2}"
+    rest="${rest//\\//}"
+    drive="${drive,,}"
+    printf '/%s%s\n' "$drive" "$rest"
+  elif command -v cygpath >/dev/null 2>&1 && [[ "$path" == *\\* || "$path" == *:* ]]; then
+    cygpath -u "$path" 2>/dev/null || printf '%s\n' "$path"
+  else
+    printf '%s\n' "$path"
+  fi
+}
+
+_omp_home="$(_omp_posix_path "${HOME:-}")"
+
+export XDG_CONFIG_HOME="$(_omp_posix_path "${XDG_CONFIG_HOME:-$_omp_home/.config}")"
+export XDG_DATA_HOME="$(_omp_posix_path "${XDG_DATA_HOME:-$_omp_home/.local/share}")"
+export XDG_STATE_HOME="$(_omp_posix_path "${XDG_STATE_HOME:-$_omp_home/.local/state}")"
+export XDG_CACHE_HOME="$(_omp_posix_path "${XDG_CACHE_HOME:-$_omp_home/.cache}")"
+
+export EDITOR="${EDITOR:-nvim}"
+export VISUAL="${VISUAL:-$EDITOR}"
+export PAGER="${PAGER:-less}"
+export COLORTERM="${COLORTERM:-truecolor}"
+
+export DOTFILES="$(_omp_posix_path "${DOTFILES:-$_omp_home/.local/share/chezmoi}")"
+export LESSHISTFILE="$(_omp_posix_path "${LESSHISTFILE:-$XDG_STATE_HOME/less/history}")"
+export PYTHON_HISTORY="$(_omp_posix_path "${PYTHON_HISTORY:-$XDG_STATE_HOME/python/history}")"
+export RIPGREP_CONFIG_PATH="$(_omp_posix_path "${RIPGREP_CONFIG_PATH:-$XDG_CONFIG_HOME/ripgrep/ripgreprc}")"
+
+export MISE_DATA_DIR="$(_omp_posix_path "${MISE_DATA_DIR:-$XDG_DATA_HOME/mise}")"
+export MISE_CACHE_DIR="$(_omp_posix_path "${MISE_CACHE_DIR:-$XDG_CACHE_HOME/mise}")"
+export MISE_CONFIG_DIR="$(_omp_posix_path "${MISE_CONFIG_DIR:-$XDG_CONFIG_HOME/mise}")"
+export MISE_GLOBAL_CONFIG_FILE="$(_omp_posix_path "${MISE_GLOBAL_CONFIG_FILE:-$XDG_CONFIG_HOME/mise/config.toml}")"
+export MISE_INSTALL_MISSING="${MISE_INSTALL_MISSING:-false}"
+
+_omp_prepend_path() {
+  local dir="$1"
+  [[ -d "$dir" ]] || return 0
+  case ":$PATH:" in
+    *":$dir:"*) ;;
+    *) PATH="$dir:$PATH" ;;
+  esac
+}
+
+_omp_prepend_path "$_omp_home/.local/bin"
+_omp_prepend_path "$MISE_DATA_DIR/shims"
+export PATH
+
+# LDE writes ~/.lde-env without export keywords. Mirror the zsh fragment's
+# auto-export behavior for subprocesses launched by OMP.
+if [[ -f "$_omp_home/.lde-env" ]]; then
+  set -a
+  # shellcheck source=/dev/null
+  source "$_omp_home/.lde-env"
+  set +a
+fi
+
+shopt -s expand_aliases 2>/dev/null || true
+
+# Chezmoi / workspace conveniences from zsh, kept bash-compatible.
+alias czs='chezmoi status'
+alias czd='chezmoi diff'
+alias czdr='chezmoi apply --dry-run --verbose'
+alias cza='chezmoi apply'
+alias cze='chezmoi edit'
+alias czcd='cd "$(chezmoi source-path)"'
+alias dots='cd "$DOTFILES"'
+alias gg='git grep -E'
+
+paths() {
+  printf '%s\n' "${PATH//:/$'\n'}"
+}
+
+_omp_eza_flags_file() {
+  local base="$XDG_CONFIG_HOME/eza"
+  local host="${HOSTNAME:-${COMPUTERNAME:-}}"
+  local candidate
+  for candidate in "flags.$host.txt" flags.bash.txt flags.local.txt flags.txt; do
+    [[ -n "$candidate" && -f "$base/$candidate" ]] && { printf '%s\n' "$base/$candidate"; return 0; }
+  done
+  printf '%s\n' "$base/flags.txt"
+}
+
+_omp_eza_flags() {
+  local file line
+  file="$(_omp_eza_flags_file)"
+  [[ -f "$file" ]] || return 0
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+    [[ -n "${EZA_DISABLE_GDF:-}" && "$line" == "--group-directories-first" ]] && continue
+    printf '%s\n' "$line"
+  done < "$file"
+  [[ -n "${EZA_FLAGS_EXTRA:-}" ]] && printf '%s\n' $EZA_FLAGS_EXTRA
+}
+
+if command -v eza >/dev/null 2>&1; then
+  ls() { command eza $(_omp_eza_flags) "${@:-.}"; }
+  ll() { command eza $(_omp_eza_flags) -l "${@:-.}"; }
+  la() { command eza $(_omp_eza_flags) -la "${@:-.}"; }
+  lt() { command eza $(_omp_eza_flags) --tree "${@:-.}"; }
+fi
+
+unset -f _omp_prepend_path _omp_posix_path
+unset _omp_home

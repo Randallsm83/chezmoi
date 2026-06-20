@@ -32,6 +32,12 @@ export PATH="${XDG_DATA_HOME:-$HOME/.local/share}/mise/shims:$PATH"
 # Warp doesn't set this automatically
 export COLORTERM=truecolor
 
+# OMP/zsh agent bootstrap. zsh sources ~/.zshenv before parsing `-c`, so aliases
+# and functions from agent-env.zsh are available to the command itself.
+if [[ -n "${OMP_AGENT_SHELL:-}" && -r "$ZDOTDIR/agent-env.zsh" ]]; then
+  source "$ZDOTDIR/agent-env.zsh"
+fi
+
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-
 # vim: ft=zsh sw=2 ts=2 et

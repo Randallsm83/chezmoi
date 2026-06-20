@@ -206,8 +206,7 @@ docs/**
 .config/sway/
 .config/hyprland/
 
-# OMP agent runtime env is only used by WSL/zsh.
-.omp/agent/.env
+# OMP agent runtime env is managed cross-platform by dot_omp/agent/dot_env.tmpl.
 
 # Unix-specific dotfiles
 .xinitrc
