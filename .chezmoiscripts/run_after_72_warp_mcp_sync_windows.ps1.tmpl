@@ -1,0 +1,49 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+    Re-inject standalone qdrant/tavily MCP entries into ~/.warp/.mcp.json.
+
+.DESCRIPTION
+    Warp rewrites its MCP config at runtime. The canonical server definitions
+    live in ~/.mcp.json, rendered from dot_mcp.json.tmpl. This hook copies only
+    qdrant and tavily, and removes the legacy tavily-mcp npx entry so Warp does
+    not expose duplicate Tavily servers.
+#>
+
+$ErrorActionPreference = "Stop"
+
+$script = @'
+import json
+from pathlib import Path
+
+home = Path.home()
+shared_path = home / ".mcp.json"
+warp_path = home / ".warp" / ".mcp.json"
+wanted = ("qdrant", "tavily")
+legacy = ("tavily-mcp",)
+
+if not shared_path.exists():
+    raise SystemExit("[warp_mcp_sync] ~/.mcp.json missing; skipping")
+
+shared = json.loads(shared_path.read_text(encoding="utf-8"))
+source_servers = shared.get("mcpServers", {})
+
+data = {}
+if warp_path.exists():
+    data = json.loads(warp_path.read_text(encoding="utf-8"))
+
+servers = data.setdefault("mcpServers", {})
+for name in legacy:
+    servers.pop(name, None)
+for name in wanted:
+    if name in source_servers:
+        servers[name] = source_servers[name]
+
+warp_path.parent.mkdir(parents=True, exist_ok=True)
+warp_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+print("[warp_mcp_sync] synced qdrant,tavily into ~/.warp/.mcp.json")
+'@
+
+$script | python -
+{{- end }}

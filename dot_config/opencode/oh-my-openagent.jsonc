@@ -10,12 +10,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/main/assets/oh-my-opencode.schema.json",
 
-  // Disable the plugin's automatic merge of `mcpServers` from ~/.claude.json
-  // into opencode's MCP map. opencode now talks to pam exclusively for MCP;
-  // there is no longer any inline MCP inventory in opencode.json (it ships
-  // as `"mcp": {}` and pam-sync injects the single `pam` pointer afterwards).
+  // Import MCP entries from Claude Code's runtime config. Claude's chezmoi
+  // sync keeps the standalone qdrant/tavily entries current, so opencode can
+  // reuse them directly.
   "claude_code": {
-    "mcp": false
+    "mcp": true
   },
 
   // Preferred model-routing philosophy:
@@ -105,8 +104,8 @@
 
   "disabled_agents": [],
 
-  // pam already provides context7; suppress OmO's duplicate.
-  "disabled_mcps": ["context7"],
+  // Keep bundled MCPs enabled; context7 should be available directly.
+  "disabled_mcps": [],
 
   // No commit footer / no Co-authored-by trailer.
   "git_master": {

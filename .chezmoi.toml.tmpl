@@ -223,7 +223,6 @@ warp_api_key        = "{{ op://Personal/Warp API Key/credential }}"
 gitlab_pat          = "{{ op://Personal/4mxqh5hwci5jq7h2on23s56pia/credential }}"
 dh_gitlab_pat       = "{{ op://DH/ndmvgzl7uyaiikhdpquzwlzwde/credential }}"
 dh_clickup_api_key  = "{{ op://DH/fw4qmg4qxp4pjzatmwpcvkodym/credential }}"
-tavily_api_key      = "{{ op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential }}"
 github_pat          = "{{ op://Personal/GitHub Token/token }}"` -}}
 {{ "" }}
 {{- if and (lookPath "op") (ne (env "CHEZMOI_SKIP_1P") "1") -}}

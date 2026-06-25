@@ -104,8 +104,8 @@ mcp:
     # Requires: 1Password desktop app beta channel + Settings → Developer
     # → "Connect with 1Password SDKs" enabled.
     # Account name is read from $OP_ACCOUNT (e.g. "my" for my.1password.com)
-    # so it stays per-user and out of source control; pam/claude/opencode
-    # env-files set it on the wrapped process. If unset, the MCP falls back
+    # so it stays per-user and out of source control; claude/opencode env files
+    # set it on the wrapped process. If unset, the MCP falls back
     # to whichever account `op` currently has signed in.
     "1password":
       type: stdio

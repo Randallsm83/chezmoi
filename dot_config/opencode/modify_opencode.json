@@ -9,11 +9,8 @@
       tools, instructions, skills, provider, model defaults, etc.) come from
       the literal JSON below and are authoritative on every `chezmoi apply`.
     - The `mcp` key is preserved verbatim from the live file (received on
-      `.chezmoi.stdin`). The per-machine pam auth token lives inside
-      `mcp.pam.command` and is injected/refreshed by `pam sync --client opencode`
-      (see .chezmoiscripts/run_after_71_opencode_pam_sync_windows.ps1.tmpl).
-      Keeping mcp out of the template ensures that token never enters chezmoi
-      source / git history.
+      `.chezmoi.stdin`) because opencode may rewrite runtime MCP state and
+      credentials outside chezmoi's source tree.
     - Output is alphabetical at every level (`toPrettyJson` sorts map keys).
       opencode preserves the nested key order it reads, so after the first
       apply the live file converges on this same alphabetical layout and
@@ -278,7 +275,7 @@
 {{- $_ = set $desired "skills" (dict "paths" (list $skillsPath)) -}}
 {{- $_ = set (index $desired "lsp") "python" (dict "command" (list $pythonLspPath "--stdio") "extensions" (list ".py" ".pyi")) -}}
 
-{{- /* Preserve `mcp` from the live file (pam sync owns this key). */ -}}
+{{- /* Preserve `mcp` from the live file. */ -}}
 {{- $_ = set $desired "mcp" $preservedMcp -}}
 
 {{ $desired | toPrettyJson }}

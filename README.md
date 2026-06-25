@@ -166,7 +166,7 @@ lists. Individual flags below override per-package routing.
 | `vagrant` | ❌ | off by default; enable per machine if needed |
 | `nerd_fonts` | ✅ | Hack/FiraCode/JetBrainsMono/CascadiaCode NF |
 | **AI / containers / hardware / networking** | | |
-| `ai_tools` | ✅ | claude, opencode, pam, scott |
+| `ai_tools` | ✅ | claude, opencode, scott |
 | `docker` | ✅ | docker-compose + (darwin) OrbStack |
 | `gaming` | ✅ | Steam, rtss, msiafterburner, ludusavi |
 | `hardware_tools` | ✅ | (Windows) cpu-z, gpu-z, smartmontools, fancontrol, etc. |
@@ -515,7 +515,6 @@ zsh aliases and pwsh functions (pwsh functions are only defined when the target 
 | `notes` | `$NOTES` | Obsidian vault |
 | `cdn` | `$DHSPACE/ndn` | top-level DH repo |
 | `cdaudit` | `$DHSPACE/ndn-audit` | top-level DH repo |
-| `cdpam` | `$DHSPACE/pam` | top-level DH repo |
 | `cdscott` | `$DHSPACE/scott` | top-level DH repo |
 | `cdtm` | `$DHSPACE/task-management` | top-level DH repo |
 | `cdapi` | `$BACKEND/api-gateway` | common backend service |
@@ -525,7 +524,7 @@ zsh also exposes the longer-form aliases `backend`, `frontend`, `helpservices` a
 
 ### `dhgitall`
 
-Runs a `git` command across every repo under `$BACKEND/`, `$FRONTEND/`, and `$HELPSERVICES/`. Entries without a `.git` directory are skipped. Top-level repos under `$DHSPACE` (ndn, ndn-audit, pam, scott, task-management) are **intentionally excluded** — run git commands against them individually.
+Runs a `git` command across every repo under `$BACKEND/`, `$FRONTEND/`, and `$HELPSERVICES/`. Entries without a `.git` directory are skipped. Top-level repos under `$DHSPACE` (ndn, ndn-audit, scott, task-management) are **intentionally excluded** — run git commands against them individually.
 
 ```bash
 dhgitall status -sb           # quick status across all service repos
