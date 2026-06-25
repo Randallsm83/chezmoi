@@ -136,6 +136,7 @@ function Test-EssentialTools {
     Invoke-TestCase 'git installed'    { Test-CommandExists git }
     Invoke-TestCase 'curl installed'   { Test-CommandExists curl }
     Invoke-TestCase 'mise installed'   { Test-CommandExists mise }
+    Invoke-TestCase 'mpmise command available without profile' { Test-CommandExists mpmise }
     Invoke-TestCase 'op (1Password CLI) installed' { Test-CommandExists op }
     Invoke-TestCase 'gsudo installed'  { Test-CommandExists gsudo }
 }
@@ -219,6 +220,77 @@ function Test-ShellParityLint {
     }
 }
 
+
+function Test-ThemeIntegration {
+    Write-SectionHeader 'Theme Integration'
+
+    Invoke-TestCase 'OMP config renders active chezmoi theme' {
+        $activeTheme = (chezmoi execute-template '{{ .theme.name }}' 2>$null | Out-String).Trim()
+        $ompTheme = (chezmoi execute-template '{{ index .theme_mappings.omp .theme.name }}' 2>$null | Out-String).Trim()
+        if ([string]::IsNullOrWhiteSpace($activeTheme) -or [string]::IsNullOrWhiteSpace($ompTheme)) { return $false }
+
+        $rendered = (chezmoi cat '~/.omp/agent/config.yml' 2>$null | Out-String)
+        ($rendered -match '(?ms)^theme:\s+dark:\s*"?'+ [regex]::Escape($ompTheme) + '"?\s*$')
+    }
+
+    Invoke-TestCase 'OMP theme generators exist for Windows and Unix' {
+        $src = chezmoi source-path 2>$null
+        if (-not $src) { return $false }
+        (Test-Path -LiteralPath (Join-Path $src '.chezmoiscripts\run_onchange_generate_omp_themes_windows.ps1.tmpl')) -and
+            (Test-Path -LiteralPath (Join-Path $src '.chezmoiscripts\run_onchange_generate_omp_themes.sh.tmpl'))
+    }
+
+    Invoke-TestCase 'OMP theme generator renders kanagawa and spaceduck' {
+        $src = chezmoi source-path 2>$null
+        if (-not $src) { return $false }
+        $generator = Join-Path $src '.chezmoiscripts\run_onchange_generate_omp_themes_windows.ps1.tmpl'
+        if (-not (Test-Path -LiteralPath $generator)) { return $false }
+        $rendered = (Get-Content -LiteralPath $generator -Raw | chezmoi execute-template 2>$null | Out-String)
+        ($rendered -match 'New-OmpTheme\s+`') -and
+            ($rendered -match '-Name "kanagawa"') -and
+            ($rendered -match '-Name "spaceduck"')
+    }
+
+    Invoke-TestCase 'generated OMP kanagawa and spaceduck themes satisfy OMP color schema' {
+        $requiredColors = @(
+            'accent', 'border', 'borderAccent', 'borderMuted', 'success', 'error', 'warning', 'muted', 'dim',
+            'text', 'thinkingText', 'selectedBg', 'userMessageBg', 'userMessageText', 'customMessageBg',
+            'customMessageText', 'customMessageLabel', 'toolPendingBg', 'toolSuccessBg', 'toolErrorBg',
+            'toolTitle', 'toolOutput', 'mdHeading', 'mdLink', 'mdLinkUrl', 'mdCode', 'mdCodeBlock',
+            'mdCodeBlockBorder', 'mdQuote', 'mdQuoteBorder', 'mdHr', 'mdListBullet', 'toolDiffAdded',
+            'toolDiffRemoved', 'toolDiffContext', 'syntaxComment', 'syntaxKeyword', 'syntaxFunction',
+            'syntaxVariable', 'syntaxString', 'syntaxNumber', 'syntaxType', 'syntaxOperator', 'syntaxPunctuation',
+            'thinkingOff', 'thinkingMinimal', 'thinkingLow', 'thinkingMedium', 'thinkingHigh', 'thinkingXhigh',
+            'bashMode', 'pythonMode', 'statusLineBg', 'statusLineSep', 'statusLineModel', 'statusLinePath',
+            'statusLineGitClean', 'statusLineGitDirty', 'statusLineContext', 'statusLineSpend', 'statusLineStaged',
+            'statusLineDirty', 'statusLineUntracked', 'statusLineOutput', 'statusLineCost', 'statusLineSubagents'
+        )
+
+        foreach ($themeName in @('kanagawa', 'spaceduck')) {
+            $themePath = Join-Path $HOME ".omp\agent\themes\$themeName.json"
+            if (-not (Test-Path -LiteralPath $themePath)) { return $false }
+
+            $themeJson = Get-Content -LiteralPath $themePath -Raw | ConvertFrom-Json -AsHashtable
+            foreach ($requiredColor in $requiredColors) {
+                if (-not $themeJson.colors.ContainsKey($requiredColor)) { return $false }
+            }
+            if ($themeJson.colors.Keys.Count -ne $requiredColors.Count) { return $false }
+
+            foreach ($colorValue in $themeJson.colors.Values) {
+                if ($colorValue -is [int] -or $colorValue -is [long]) {
+                    if ($colorValue -lt 0 -or $colorValue -gt 255) { return $false }
+                    continue
+                }
+                if ($colorValue -isnot [string]) { return $false }
+                if ($colorValue -eq '' -or $colorValue.StartsWith('#')) { continue }
+                if (-not $themeJson.vars.ContainsKey($colorValue)) { return $false }
+            }
+        }
+
+        $true
+    }
+}
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "============================================" -ForegroundColor White
@@ -230,6 +302,7 @@ Test-EssentialTools
 Test-Configurations
 Test-ChezmoiState
 Test-ShellParityLint
+Test-ThemeIntegration
 
 Write-SectionHeader 'Test Results'
 Write-Host ""

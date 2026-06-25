@@ -1,0 +1,184 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Generate Oh My Pi custom theme JSON files from .chezmoidata/theme.yaml palettes.
+# Theme data sha256: {{ include ".chezmoidata/theme.yaml" | sha256sum }}
+
+$ErrorActionPreference = 'Stop'
+
+$ThemesDir = Join-Path $HOME '.omp\agent\themes'
+New-Item -ItemType Directory -Force -Path $ThemesDir | Out-Null
+
+function Blend-Colors {
+    param(
+        [Parameter(Mandatory)][string]$Background,
+        [Parameter(Mandatory)][string]$Foreground,
+        [int]$ForegroundPercent
+    )
+
+    $ratio = [Math]::Max(0, [Math]::Min(100, $ForegroundPercent)) / 100
+    $bg = $Background -replace '#', ''
+    $fg = $Foreground -replace '#', ''
+    $br = [Convert]::ToInt32($bg.Substring(0, 2), 16)
+    $bgc = [Convert]::ToInt32($bg.Substring(2, 2), 16)
+    $bb = [Convert]::ToInt32($bg.Substring(4, 2), 16)
+    $fr = [Convert]::ToInt32($fg.Substring(0, 2), 16)
+    $fgc = [Convert]::ToInt32($fg.Substring(2, 2), 16)
+    $fb = [Convert]::ToInt32($fg.Substring(4, 2), 16)
+    $r = [Math]::Min(255, [int]($br * (1 - $ratio) + $fr * $ratio))
+    $g = [Math]::Min(255, [int]($bgc * (1 - $ratio) + $fgc * $ratio))
+    $b = [Math]::Min(255, [int]($bb * (1 - $ratio) + $fb * $ratio))
+    return '#{0:X2}{1:X2}{2:X2}' -f $r, $g, $b
+}
+
+function New-OmpTheme {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$Background,
+        [Parameter(Mandatory)][string]$Foreground,
+        [Parameter(Mandatory)][string]$Purple,
+        [Parameter(Mandatory)][string]$Pink,
+        [Parameter(Mandatory)][string]$Green,
+        [Parameter(Mandatory)][string]$Orange,
+        [Parameter(Mandatory)][string]$Blue,
+        [Parameter(Mandatory)][string]$Cyan,
+        [Parameter(Mandatory)][string]$Yellow
+    )
+
+    $BgDark = Blend-Colors -Background $Background -Foreground '#000000' -ForegroundPercent 12
+    $Comment = Blend-Colors -Background $Background -Foreground $Foreground -ForegroundPercent 45
+    $Gray = Blend-Colors -Background $Background -Foreground $Foreground -ForegroundPercent 22
+    $DimGray = Blend-Colors -Background $Background -Foreground $Foreground -ForegroundPercent 34
+    $StatusBg = Blend-Colors -Background $Background -Foreground '#000000' -ForegroundPercent 20
+    $SelectedBg = Blend-Colors -Background $Background -Foreground $Foreground -ForegroundPercent 16
+
+    $themeJson = @"
+{
+  "`$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/theme-schema.json",
+  "name": "$Name",
+  "vars": {
+    "bg": "$Background",
+    "bgDark": "$BgDark",
+    "fg": "$Foreground",
+    "comment": "$Comment",
+    "cyan": "$Cyan",
+    "blue": "$Blue",
+    "purple": "$Purple",
+    "magenta": "$Pink",
+    "green": "$Green",
+    "teal": "$Cyan",
+    "darkTeal": "$Cyan",
+    "orange": "$Orange",
+    "yellow": "$Yellow",
+    "red": "$Pink",
+    "darkRed": "$Pink",
+    "gray": "$Gray",
+    "dimGray": "$DimGray",
+    "lightBlue": "$Foreground",
+    "cyan2": "$Cyan",
+    "statusBg": "$StatusBg",
+    "selectedBg": "$SelectedBg"
+  },
+  "colors": {
+    "accent": "purple",
+    "border": "blue",
+    "borderAccent": "cyan",
+    "borderMuted": "gray",
+    "success": "green",
+    "error": "darkRed",
+    "warning": "yellow",
+    "muted": "comment",
+    "dim": "dimGray",
+    "text": "",
+    "thinkingText": "dimGray",
+    "selectedBg": "selectedBg",
+    "userMessageBg": "bgDark",
+    "userMessageText": "",
+    "customMessageBg": "bgDark",
+    "customMessageText": "",
+    "customMessageLabel": "purple",
+    "toolPendingBg": "bgDark",
+    "toolSuccessBg": "bgDark",
+    "toolErrorBg": "bgDark",
+    "toolTitle": "purple",
+    "toolOutput": "dimGray",
+    "mdHeading": "purple",
+    "mdLink": "cyan",
+    "mdLinkUrl": "dimGray",
+    "mdCode": "lightBlue",
+    "mdCodeBlock": "fg",
+    "mdCodeBlockBorder": "gray",
+    "mdQuote": "comment",
+    "mdQuoteBorder": "gray",
+    "mdHr": "gray",
+    "mdListBullet": "cyan",
+    "toolDiffAdded": "green",
+    "toolDiffRemoved": "red",
+    "toolDiffContext": "comment",
+    "syntaxComment": "comment",
+    "syntaxKeyword": "purple",
+    "syntaxFunction": "blue",
+    "syntaxVariable": "lightBlue",
+    "syntaxString": "green",
+    "syntaxNumber": "orange",
+    "syntaxType": "cyan2",
+    "syntaxOperator": "fg",
+    "syntaxPunctuation": "fg",
+    "thinkingOff": "gray",
+    "thinkingMinimal": "dimGray",
+    "thinkingLow": "blue",
+    "thinkingMedium": "cyan",
+    "thinkingHigh": "purple",
+    "thinkingXhigh": "magenta",
+    "bashMode": "cyan",
+    "statusLineBg": "statusBg",
+    "statusLineSep": 238,
+    "statusLineModel": "purple",
+    "statusLinePath": "cyan",
+    "statusLineGitClean": "green",
+    "statusLineGitDirty": "yellow",
+    "statusLineContext": "blue",
+    "statusLineSpend": "teal",
+    "statusLineStaged": 70,
+    "statusLineDirty": 178,
+    "statusLineUntracked": 39,
+    "statusLineOutput": 205,
+    "statusLineCost": 205,
+    "statusLineSubagents": "orange",
+    "pythonMode": "yellow"
+  },
+  "export": {
+    "pageBg": "bgDark",
+    "cardBg": "bg",
+    "infoBg": "selectedBg"
+  }
+}
+"@
+
+    $themeJson = $themeJson -replace "`r`n", "`n"
+    $outPath = Join-Path $ThemesDir "$Name.json"
+    if (Test-Path -LiteralPath $outPath) {
+        $existing = [System.IO.File]::ReadAllText($outPath) -replace "`r`n", "`n"
+        if ($existing -eq $themeJson) { return }
+    }
+    [System.IO.File]::WriteAllText($outPath, $themeJson, [System.Text.UTF8Encoding]::new($false))
+}
+
+{{- $themes := (index (fromYaml (include ".chezmoidata/theme.yaml")) "theme") }}
+{{- range $theme_name, $colors := $themes }}
+{{- if and (ne $theme_name "name") (kindIs "map" $colors) }}
+New-OmpTheme `
+    -Name "{{ $theme_name }}" `
+    -Background "{{ $colors.background }}" `
+    -Foreground "{{ $colors.foreground }}" `
+    -Purple "{{ $colors.purple }}" `
+    -Pink "{{ $colors.pink }}" `
+    -Green "{{ $colors.green }}" `
+    -Orange "{{ $colors.orange }}" `
+    -Blue "{{ $colors.blue }}" `
+    -Cyan "{{ $colors.cyan }}" `
+    -Yellow "{{ $colors.yellow }}"
+{{- end }}
+{{- end }}
+
+Write-Host "[OK] Generated Oh My Pi themes in $ThemesDir" -ForegroundColor Green
+{{- end }}

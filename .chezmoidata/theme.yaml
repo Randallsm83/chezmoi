@@ -11,7 +11,7 @@
 # Available themes: spaceduck, onedark, gruvbox-material, tokyonight, tokyonight-storm, dracula, kanagawa
 
 theme:
-  name: "kanagawa"  # Active theme (maps to "Kanagawa Wave" in Zed, etc.)
+  name: "spaceduck"  # Active theme
 
   # Spaceduck - canonical pineapplegiant/spaceduck palette mapped to standard
   # ANSI color names so every consumer (wezterm chrome, bat, delta, starship,
@@ -183,6 +183,16 @@ theme_mappings:
 
   # OpenCode TUI theme names (custom JSONs generated from our palette)
   opencode:
+    spaceduck: "spaceduck"
+    onedark: "onedark"
+    gruvbox-material: "gruvbox-material"
+    tokyonight: "tokyonight"
+    tokyonight-storm: "tokyonight-storm"
+    dracula: "dracula"
+    kanagawa: "kanagawa"
+
+  # Oh My Pi coding-agent theme names (custom JSONs generated into ~/.omp/agent/themes)
+  omp:
     spaceduck: "spaceduck"
     onedark: "onedark"
     gruvbox-material: "gruvbox-material"

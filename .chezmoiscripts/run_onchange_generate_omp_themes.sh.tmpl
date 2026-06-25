@@ -1,0 +1,177 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# Generate Oh My Pi custom theme JSON files from .chezmoidata/theme.yaml palettes.
+# Theme data sha256: {{ include ".chezmoidata/theme.yaml" | sha256sum }}
+
+set -euo pipefail
+
+OMP_THEMES_DIR="${PI_CODING_AGENT_DIR:-$HOME/.omp/agent}/themes"
+mkdir -p "$OMP_THEMES_DIR"
+
+blend_colors() {
+    local bg="${1#\#}"
+    local fg="${2#\#}"
+    local percent="$3"
+    local br=$((16#${bg:0:2}))
+    local bgc=$((16#${bg:2:2}))
+    local bb=$((16#${bg:4:2}))
+    local fr=$((16#${fg:0:2}))
+    local fgc=$((16#${fg:2:2}))
+    local fb=$((16#${fg:4:2}))
+    local r=$(((br * (100 - percent) + fr * percent) / 100))
+    local g=$(((bgc * (100 - percent) + fgc * percent) / 100))
+    local b=$(((bb * (100 - percent) + fb * percent) / 100))
+    printf '#%02X%02X%02X' "$r" "$g" "$b"
+}
+
+generate_theme() {
+    local name="$1"
+    local background="$2"
+    local foreground="$3"
+    local purple="$4"
+    local pink="$5"
+    local green="$6"
+    local orange="$7"
+    local blue="$8"
+    local cyan="$9"
+    local yellow="${10}"
+    local bg_dark comment gray dim_gray status_bg selected_bg out_path tmp_path
+
+    bg_dark="$(blend_colors "$background" '#000000' 12)"
+    comment="$(blend_colors "$background" "$foreground" 45)"
+    gray="$(blend_colors "$background" "$foreground" 22)"
+    dim_gray="$(blend_colors "$background" "$foreground" 34)"
+    status_bg="$(blend_colors "$background" '#000000' 20)"
+    selected_bg="$(blend_colors "$background" "$foreground" 16)"
+    out_path="$OMP_THEMES_DIR/${name}.json"
+    tmp_path="${out_path}.tmp"
+
+    cat > "$tmp_path" <<EOF
+{
+  "\$schema": "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/theme-schema.json",
+  "name": "$name",
+  "vars": {
+    "bg": "$background",
+    "bgDark": "$bg_dark",
+    "fg": "$foreground",
+    "comment": "$comment",
+    "cyan": "$cyan",
+    "blue": "$blue",
+    "purple": "$purple",
+    "magenta": "$pink",
+    "green": "$green",
+    "teal": "$cyan",
+    "darkTeal": "$cyan",
+    "orange": "$orange",
+    "yellow": "$yellow",
+    "red": "$pink",
+    "darkRed": "$pink",
+    "gray": "$gray",
+    "dimGray": "$dim_gray",
+    "lightBlue": "$foreground",
+    "cyan2": "$cyan",
+    "statusBg": "$status_bg",
+    "selectedBg": "$selected_bg"
+  },
+  "colors": {
+    "accent": "purple",
+    "border": "blue",
+    "borderAccent": "cyan",
+    "borderMuted": "gray",
+    "success": "green",
+    "error": "darkRed",
+    "warning": "yellow",
+    "muted": "comment",
+    "dim": "dimGray",
+    "text": "",
+    "thinkingText": "dimGray",
+    "selectedBg": "selectedBg",
+    "userMessageBg": "bgDark",
+    "userMessageText": "",
+    "customMessageBg": "bgDark",
+    "customMessageText": "",
+    "customMessageLabel": "purple",
+    "toolPendingBg": "bgDark",
+    "toolSuccessBg": "bgDark",
+    "toolErrorBg": "bgDark",
+    "toolTitle": "purple",
+    "toolOutput": "dimGray",
+    "mdHeading": "purple",
+    "mdLink": "cyan",
+    "mdLinkUrl": "dimGray",
+    "mdCode": "lightBlue",
+    "mdCodeBlock": "fg",
+    "mdCodeBlockBorder": "gray",
+    "mdQuote": "comment",
+    "mdQuoteBorder": "gray",
+    "mdHr": "gray",
+    "mdListBullet": "cyan",
+    "toolDiffAdded": "green",
+    "toolDiffRemoved": "red",
+    "toolDiffContext": "comment",
+    "syntaxComment": "comment",
+    "syntaxKeyword": "purple",
+    "syntaxFunction": "blue",
+    "syntaxVariable": "lightBlue",
+    "syntaxString": "green",
+    "syntaxNumber": "orange",
+    "syntaxType": "cyan2",
+    "syntaxOperator": "fg",
+    "syntaxPunctuation": "fg",
+    "thinkingOff": "gray",
+    "thinkingMinimal": "dimGray",
+    "thinkingLow": "blue",
+    "thinkingMedium": "cyan",
+    "thinkingHigh": "purple",
+    "thinkingXhigh": "magenta",
+    "bashMode": "cyan",
+    "statusLineBg": "statusBg",
+    "statusLineSep": 238,
+    "statusLineModel": "purple",
+    "statusLinePath": "cyan",
+    "statusLineGitClean": "green",
+    "statusLineGitDirty": "yellow",
+    "statusLineContext": "blue",
+    "statusLineSpend": "teal",
+    "statusLineStaged": 70,
+    "statusLineDirty": 178,
+    "statusLineUntracked": 39,
+    "statusLineOutput": 205,
+    "statusLineCost": 205,
+    "statusLineSubagents": "orange",
+    "pythonMode": "yellow"
+  },
+  "export": {
+    "pageBg": "bgDark",
+    "cardBg": "bg",
+    "infoBg": "selectedBg"
+  }
+}
+EOF
+
+    if [[ -f "$out_path" ]] && cmp -s "$tmp_path" "$out_path"; then
+        rm -f "$tmp_path"
+    else
+        mv "$tmp_path" "$out_path"
+    fi
+}
+
+{{- $themes := (index (fromYaml (include ".chezmoidata/theme.yaml")) "theme") }}
+{{- range $theme_name, $colors := $themes }}
+{{- if and (ne $theme_name "name") (kindIs "map" $colors) }}
+generate_theme \
+    "{{ $theme_name }}" \
+    "{{ $colors.background }}" \
+    "{{ $colors.foreground }}" \
+    "{{ $colors.purple }}" \
+    "{{ $colors.pink }}" \
+    "{{ $colors.green }}" \
+    "{{ $colors.orange }}" \
+    "{{ $colors.blue }}" \
+    "{{ $colors.cyan }}" \
+    "{{ $colors.yellow }}"
+{{- end }}
+{{- end }}
+
+echo "[OK] Generated Oh My Pi themes in $OMP_THEMES_DIR"
+{{- end }}
