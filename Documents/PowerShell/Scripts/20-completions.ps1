@@ -50,7 +50,6 @@ $cacheableCompletions = [ordered]@{
     just     = { & just --completions powershell }
     kubectl  = { & kubectl completion powershell }
     lazygit  = { & lazygit completion powershell }
-    pam      = { & pam completion powershell }
     procs    = { & procs --gen-completion-out powershell }
     rg       = { & rg --generate complete-powershell }
     rustup   = { & rustup completions powershell }

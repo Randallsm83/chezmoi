@@ -130,7 +130,7 @@ chezmoi.local.toml.example
 # subtree is reconciled by
 # .chezmoiscripts/run_after_71_claude-code_mcp_sync_windows.ps1.tmpl
 # (and its .sh counterpart on Unix), which copies the standalone qdrant/tavily
-# definitions from ~/.mcp.json and removes stale pam pointers.
+# definitions from ~/.mcp.json.
 .claude.json
 .claude.json.bak-*
 

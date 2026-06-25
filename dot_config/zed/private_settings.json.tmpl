@@ -215,22 +215,9 @@
   },
 
   // ── MCP / Context servers ─────────────────────────────
-  // pam is the SOLE source of MCP servers — every tool (tavily, context7,
-  // sequential-thinking, etc.) is exposed through the single pam stdio proxy.
-  // Do NOT add additional context_servers entries here. To add or remove an
-  // MCP backend, edit .chezmoidata/mcp.yaml and `pam sync --client zed`.
-  // TODO: convert this file to .tmpl and template the --token=... via $secretsTpl
-  // so it isn't committed to git in plaintext.
-  "context_servers": {
-    "pam": {
-      "args": [
-        "mcpd-stdio",
-        "--token=cb2390154ee6f9954b41f86acddb5acdf84274de901e16318cdd9d95208e82d8"
-      ],
-      "command": "pam",
-      "source": "custom"
-    }
-  },
+  // No chezmoi-managed context servers here. Shared MCP servers are exposed
+  // through tool-specific direct configs.
+  "context_servers": {},
 
   // ── AI / Agent ────────────────────────────────────
   "features": {
@@ -290,10 +277,7 @@
           "delete_path": true,
           "create_directory": true,
           "copy_path": true
-        },
-        // pam exposes every MCP backend in .chezmoidata/mcp.yaml — enable them
-        // all here instead of pinning a per-server allow-list that drifts.
-        "enable_all_context_servers": true
+        }
       }
     }
   },

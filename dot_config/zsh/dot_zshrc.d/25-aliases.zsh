@@ -27,7 +27,6 @@ alias cdhs='cd $HELPSERVICES'
 # Top-level DH repos (live directly under $DHSPACE)
 alias cdn='cd $DHSPACE/ndn'
 alias cdaudit='cd $DHSPACE/ndn-audit'
-alias cdpam='cd $DHSPACE/pam'
 alias cdscott='cd $DHSPACE/scott'
 alias cdtm='cd $DHSPACE/task-management'
 

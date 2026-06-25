@@ -1,5 +1,0 @@
-doctor_timeout_seconds = 0
-start_ready_timeout_seconds = 120
-
-[hooks]
-  before_resolve_timeout_seconds = 0

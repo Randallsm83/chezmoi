@@ -8,7 +8,7 @@
     ~/.claude.json is intentionally ignored because Claude Code rewrites it at
     runtime. The canonical server definitions live in ~/.mcp.json, rendered
     from dot_mcp.json.tmpl. This hook copies only qdrant and tavily into
-    Claude's top-level mcpServers block and removes any stale pam pointer.
+    Claude's top-level mcpServers block.
 #>
 
 $ErrorActionPreference = "Stop"
@@ -33,7 +33,6 @@ if claude_path.exists():
     data = json.loads(claude_path.read_text(encoding="utf-8"))
 
 servers = data.setdefault("mcpServers", {})
-servers.pop("pam", None)
 for name in wanted:
     if name in source_servers:
         servers[name] = source_servers[name]

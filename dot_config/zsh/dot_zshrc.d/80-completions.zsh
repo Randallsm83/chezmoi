@@ -24,7 +24,6 @@ _gen_completion_runtime uv       generate-shell-completion zsh
 _gen_completion_runtime deno     completions zsh
 _gen_completion_runtime delta    --generate-completion zsh
 _gen_completion_runtime atuin    gen-completions --shell zsh
-_gen_completion_runtime pam      completion zsh
 _gen_completion_runtime arduino-cli completion zsh
 _gen_completion_runtime glow     completion zsh
 _gen_completion_runtime lazygit  completion zsh
