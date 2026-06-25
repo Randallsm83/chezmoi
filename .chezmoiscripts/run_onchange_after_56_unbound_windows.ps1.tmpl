@@ -1,5 +1,5 @@
 {{- /*
-Windows unbound: DoT-forwarding stub resolver setup.
+Windows unbound: loopback recursive caching resolver setup.
 
 Pipeline:
   1. Render service.conf.tmpl from `unbound/service.conf.tmpl` into the
@@ -47,11 +47,12 @@ if (-not (Test-Path -LiteralPath $unboundPersist)) {
     New-Item -ItemType Directory -Path $unboundPersist -Force | Out-Null
 }
 
-# Verify cacert is present (referenced from service.conf for TLS validation).
+# Warn about cacert only when the rendered config references a TLS cert bundle.
 # Filename is cacert.pem in the scoop package, not ca-bundle.crt.
 $cacertPath = Join-Path $scoopRoot 'apps\cacert\current\cacert.pem'
-if (-not (Test-Path -LiteralPath $cacertPath)) {
-    Write-Warning "[unbound] cacert.pem not found at $cacertPath. TLS upstreams will fail. Install via 'scoop install cacert'."
+$usesTlsCertBundle = $srcConfig -match '(?m)^\s*tls-cert-bundle\s*:'
+if ($usesTlsCertBundle -and -not (Test-Path -LiteralPath $cacertPath)) {
+    Write-Warning "[unbound] cacert.pem not found at $cacertPath, but service.conf references tls-cert-bundle:. Install via 'scoop install cacert'."
 }
 
 # ── Write service.conf (LF, UTF-8 no BOM) if changed ────────────────────────
@@ -104,6 +105,7 @@ if ($LASTEXITCODE -ne 0) {
 # `sc config` to add `-c <our-persist-conf>`. cmd.exe is required for the
 # -w flag because pwsh parses it as its own -WindowStyle parameter.
 $wantBin = '"' + $unboundExe + '" -w service -c "' + $dstConfig + '"'
+$serviceNeedsRestart = $needsWrite
 
 $svc = Get-Service -Name 'unbound' -ErrorAction SilentlyContinue
 if (-not $svc) {
@@ -112,6 +114,7 @@ if (-not $svc) {
     gsudo --loglevel none -- cmd.exe /c $installCmd
     Start-Sleep -Seconds 2
     $svc = Get-Service -Name 'unbound' -ErrorAction SilentlyContinue
+    if ($svc) { $serviceNeedsRestart = $true }
 }
 
 if (-not $svc) {
@@ -122,10 +125,12 @@ if (-not $svc) {
 # Ensure binPath includes our explicit -c <conf>. unbound -w install hardcodes
 # the path to '<exe> -w service' alone; we need to amend it.
 $currentBin = (Get-CimInstance Win32_Service -Filter "Name='unbound'").PathName
-if ($currentBin -ne $wantBin) {
+$currentBinNormalized = $currentBin -replace '"', ''
+$wantBinNormalized = "$unboundExe -w service -c $dstConfig"
+if ($currentBinNormalized -ne $wantBinNormalized) {
     Write-Host "[unbound] updating service binPath to use $dstConfig..."
-    gsudo --loglevel none -- cmd.exe /c "net stop unbound" 2>&1 | Out-Null
     gsudo --loglevel none -- cmd.exe /c ("sc config unbound binPath= " + ('"' + $wantBin + '"'))
+    $serviceNeedsRestart = $true
 }
 
 # Ensure auto-start
@@ -133,15 +138,54 @@ if ((Get-Service unbound).StartType -ne 'Automatic') {
     gsudo --loglevel none -- cmd.exe /c "sc config unbound start= auto" | Out-Null
 }
 
-# Restart only when the rendered service.conf actually changed. Skipping the
-# restart on no-op applies eliminates the brief DNS outage that used to fire on
-# every `chezmoi apply` even when no unbound settings had moved. `Restart-Service`
-# is a cleaner pwsh idiom than `net stop/start`; gsudo wraps it because this
-# script otherwise runs in the user context (per-command elevation pattern used
-# above for `sc config` / `net stop`).
-if ($needsWrite) {
-    Write-Host "[unbound] (re)starting service to pick up service.conf..."
-    gsudo --loglevel none -- powershell -NoProfile -Command "Restart-Service unbound" 2>&1 | Out-Null
+# Restart when rendered service.conf changed or service registration changed.
+# If the service is simply stopped, start it so the localhost health probe
+# checks the intended resolver before adapter DNS is changed.
+$svc = Get-Service -Name 'unbound'
+if ($serviceNeedsRestart) {
+    Write-Host "[unbound] (re)starting service to pick up service changes..."
+    $restartServiceScript = @'
+$ErrorActionPreference = 'Stop'
+$timeout = [TimeSpan]::FromSeconds(30)
+$svc = Get-Service -Name 'unbound'
+
+if ($svc.Status -eq 'Running') {
+    Stop-Service -Name 'unbound' -ErrorAction Stop
+    $svc.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped, $timeout)
+} elseif ($svc.Status -eq 'StopPending') {
+    $svc.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped, $timeout)
+} elseif ($svc.Status -ne 'Stopped') {
+    if ($svc.CanStop) {
+        Stop-Service -Name 'unbound' -ErrorAction Stop
+        $svc.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped, $timeout)
+    } else {
+        throw "unbound is $($svc.Status) and cannot be stopped"
+    }
+}
+
+Start-Service -Name 'unbound' -ErrorAction Stop
+$svc = Get-Service -Name 'unbound'
+$svc.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Running, $timeout)
+'@
+    gsudo --loglevel none -- powershell -NoProfile -Command $restartServiceScript 2>&1 | Out-Null
+} elseif ($svc.Status -eq 'Stopped') {
+    Write-Host "[unbound] starting service..."
+    gsudo --loglevel none -- powershell -NoProfile -Command "Start-Service unbound" 2>&1 | Out-Null
+}
+
+$running = $false
+for ($i = 0; $i -lt 10; $i++) {
+    $svc = Get-Service -Name 'unbound' -ErrorAction SilentlyContinue
+    if ($svc -and $svc.Status -eq 'Running') {
+        $running = $true
+        break
+    }
+    Start-Sleep -Milliseconds 500
+}
+
+if (-not $running) {
+    Write-Warning "[unbound] service did not reach Running within 5s. Leaving Windows DNS unchanged so you don't get locked out. Check 'Get-Service unbound' and re-run 'chezmoi apply'."
+    exit 0
 }
 
 # ── Verify the listener is actually up ─────────────────────────────────────
@@ -172,16 +216,16 @@ Write-Host "[unbound] listener responsive on 127.0.0.1:53"
 # (`.` -> 100.100.100.100, fd7a:115c:a1e0::53) and that's how MagicDNS
 # resolves `*.ts.net` and short tailnet hostnames. Forcing its adapter to
 # 127.0.0.1 doesn't kill MagicDNS (NRPT still wins for matching names) but
-# leave it alone so the system has a clean fallback path.
+# leave its DNS settings alone so MagicDNS remains managed by Tailscale.
 #
 # vEthernet / Loopback are skipped because they're virtual bridges / lo.
 #
 # Why VPN tunnels need this: when Proton's WireGuard tunnel comes up it
 # attaches `10.2.0.1` to its adapter, which Windows happily queries in
-# parallel with NRPT catch-all rules and 10.2.0.1 typically wins the race
-# (in-tunnel resolver, lower latency than unbound -> DoT -> raspi). Result:
-# Proton answers DNS even though NRPT says it should go to 127.0.0.1.
-# Pinning the tunnel adapter to only 127.0.0.1 removes the competing entry.
+# parallel with NRPT catch-all rules and the tunnel resolver can win the
+# race against the loopback recursive resolver. Result: Proton answers DNS
+# even though NRPT says it should go to 127.0.0.1. Pinning the tunnel adapter
+# to only 127.0.0.1 removes the competing entry.
 #
 # Live cleanup on every Proton reconnect is handled by an event-triggered
 # Scheduled Task installed by
@@ -221,5 +265,5 @@ foreach ($a in $targetAdapters) {
 # Flush the resolver cache so the next query goes through unbound.
 ipconfig /flushdns | Out-Null
 
-Write-Host "[unbound] done. Active resolver: 127.0.0.1 -> DoT to raspi (or public fallback)."
+Write-Host "[unbound] done. Active resolver: 127.0.0.1 (local recursive caching resolver)."
 {{- end -}}

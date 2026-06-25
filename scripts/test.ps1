@@ -298,6 +298,42 @@ function Test-DnsSafety {
         $rendered = (chezmoi execute-template '{{ range $profile, $cfg := .vpn_dns_routes }}{{ range $cfg.domains }}{{ if and (eq . "") (eq $cfg.nameserver "127.0.0.1") }}unsafe{{ end }}{{ end }}{{ end }}' 2>$null | Out-String).Trim()
         $rendered -ne 'unsafe'
     }
+
+    Invoke-TestCase 'unbound service.conf uses loopback recursion without root forward-zone' {
+        $src = chezmoi source-path 2>$null
+        if (-not $src) { return $false }
+        $template = Join-Path $src 'unbound\service.conf.tmpl'
+        if (-not (Test-Path -LiteralPath $template)) { return $false }
+        $text = Get-Content -LiteralPath $template -Raw
+        $listensOnLocalhost = $text -match '(?m)^[ \t]*interface:[ \t]+127\.0\.0\.1(?:@53)?[ \t]*(?:#.*)?$'
+        $hasRootForwardZone = $text -match '(?m)^[ \t]*forward-zone:[ \t]*(?:#.*)?(?:\r?\n[ \t]+[^\r\n]*)*?\r?\n[ \t]+name:[ \t]*"\."[ \t]*(?:#.*)?$'
+        $listensOnLocalhost -and -not $hasRootForwardZone
+    }
+
+    Invoke-TestCase 'local unbound resolves public DNS' {
+        try {
+            $result = Resolve-DnsName -Server 127.0.0.1 -Name 'cloudflare.com' -Type A -DnsOnly -QuickTimeout -ErrorAction Stop
+            @($result | Where-Object { $_.Type -eq 'A' -and $_.IPAddress }).Count -gt 0
+        } catch {
+            $false
+        }
+    }
+
+    Invoke-TestCase 'active Windows adapters use local unbound DNS' {
+        $physical = Get-NetAdapter -Physical -ErrorAction SilentlyContinue |
+            Where-Object { $_.Status -eq 'Up' -and $_.InterfaceAlias -notmatch '^(Tailscale|vEthernet|Loopback)' }
+        $tunnels = Get-NetAdapter -ErrorAction SilentlyContinue |
+            Where-Object { $_.Status -eq 'Up' -and $_.InterfaceAlias -match '^ProtonVPN( TUN)?$' }
+        $targetAdapters = @($physical) + @($tunnels)
+        if ($targetAdapters.Count -eq 0) { return $false }
+
+        foreach ($adapter in $targetAdapters) {
+            $servers = @((Get-DnsClientServerAddress -InterfaceAlias $adapter.InterfaceAlias -AddressFamily IPv4 -ErrorAction SilentlyContinue).ServerAddresses)
+            if ($servers.Count -ne 1 -or $servers[0] -ne '127.0.0.1') { return $false }
+        }
+
+        $true
+    }
 }
 
 # ─── Main ────────────────────────────────────────────────────────────────────

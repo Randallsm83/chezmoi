@@ -1,31 +1,20 @@
 {{- /*
-Windows-side unbound: a tiny DoT-forwarding stub resolver.
+Windows-side unbound: loopback-only recursive caching resolver for public DNS.
 
 Role:
+  Windows physical adapters point at 127.0.0.1 only.
   Local apps (Windows resolver -> 127.0.0.1:53)
-    -> unbound here (no recursion, no validation)
-    -> DoT (TCP/853 + TLS) to raspi.***REMOVED***.ts.net (via LAN or tailnet IP)
-         - LE cert, ACL on the Pi accepts our LAN + tailnet CIDRs
-         - terminates DoT and forwards to Pi-hole, which gives us the
-           homelab's ad-blocked, locally-overridden DNS
+    -> unbound here (loopback-only cache; DNSSEC validation off)
+    -> unbound's iterator recurses directly from the root/auth DNS over IPv4
+       for public DNS answers.
 
-No public DoT fallback ON PURPOSE. Earlier iteration included Cloudflare +
-Quad9 as fallbacks for off-network scenarios, but unbound's forwarder
-selection (WP2) was preferring the public anycast resolvers over the LAN
-raspi by RTT, silently bypassing Pi-hole filtering. Single upstream means:
-  - raspi up    -> DNS works, fully encrypted, ad-blocked
-  - raspi down  -> DNS fails (browsers will cache for a while; user fixes Pi)
-If you ever need the public fallback (laptop scenario), switch this conf
-to use only the tailnet IP and add `1.1.1.1@853#cloudflare-dns.com` back.
-Documented in dotfiles README under "Windows DNS".
+No upstream forwarders are configured for public DNS. Windows adapters stay
+pinned to local unbound; unbound performs direct recursion instead of
+forwarding to upstream recursive resolvers.
 
-DNSSEC validation is OFF. The Pi forwards via dnscrypt-proxy to Cloudflare
-which validates upstream. Re-enabling would require unbound-anchor to
+DNSSEC validation is OFF. Re-enabling would require unbound-anchor to
 bootstrap the root key on Windows, which adds maintenance for marginal
-benefit (validation already done upstream).
-
-The TLS cert bundle path below is rendered at chezmoi-apply time. cacert
-is in always_install.scoop so it's guaranteed present.
+benefit on this workstation-local cache.
 
 Edit this template; chezmoi re-runs the install script if its sha256
 changes (same trigger pattern as the librewolf script).
@@ -50,16 +39,14 @@ server:
     do-tcp: yes
     do-udp: yes
     # IPv6 disabled: this host has no usable IPv6 DNS path. Without this,
-    # unbound's iterator tries IPv6 root/auth servers (e.g. 2620:1ec:...:2)
-    # and floods the Windows Application log with thousands of
-    # "udp connect failed: No error" errors per day. Both forward-addrs
-    # below are IPv4, so disabling IPv6 outbound is a clean fix. The ::1
-    # listener was also dropped (do-ip6: no would conflict with it) — local
-    # apps resolve via 127.0.0.1 anyway.
+    # unbound's iterator tries IPv6 root/auth servers and floods the Windows
+    # Application log with "udp connect failed: No error" entries. Local apps
+    # resolve via 127.0.0.1, so no ::1 listener is needed.
     do-ip4: yes
     do-ip6: no
-    # We're a forwarder, not a recursor. Disable the validator module
-    # (Pi/cloudflare/quad9 all DNSSEC-validate for us).
+    # Recursive caching resolver. The iterator sends IPv4 queries directly to
+    # root/auth servers for public DNS; Windows adapters remain configured to
+    # 127.0.0.1 so apps use this local cache.
     module-config: "iterator"
 
     # Performance tuning for a single-user workstation.
@@ -74,43 +61,9 @@ server:
     serve-expired-ttl: 86400
     serve-expired-client-timeout: 1800
 
-    # ── TLS ─────────────────────────────────────────────────────────────
-    # System CA bundle (scoop "cacert" package, file is cacert.pem).
-    # Required for unbound to validate the Let's Encrypt cert on the raspi
-    # DoT terminator and the public DoT fallbacks.
-    tls-cert-bundle: "{{ .chezmoi.homeDir | replace "\\" "/" }}/scoop/apps/cacert/current/cacert.pem"
-
-    # Hardening (forwarder-safe set only).
-    # Removed for forwarder mode:
-    #   - qname-minimisation: forces unbound into recursive query path,
-    #     which silently switches to plain UDP/53 to root servers and
-    #     bypasses our forward-zone.
-    #   - harden-referral-path: same — a recursor-only feature that
-    #     causes unbound to consult NS records and walk the tree itself.
-    # Both were verified empirically: with them on, unbound contacts root
-    # servers on UDP/53. Off, it cleanly forwards via DoT.
+    # Hardening safe for direct recursion on a loopback-only workstation cache.
     hide-identity: yes
     hide-version: yes
     harden-glue: yes
     harden-dnssec-stripped: yes
     use-caps-for-id: no
-
-forward-zone:
-    name: "."
-    # Use TLS for every upstream.
-    forward-tls-upstream: yes
-    # Try in order; on failure unbound moves to the next forward-addr.
-    # forward-first must be NO so unbound never silently bypasses TLS.
-    forward-first: no
-
-    # raspi DoT terminator, LAN address. The Pi's ACL accepts 192.168.0.0/16.
-    # The "#authname" suffix supplies the SNI / certificate validation
-    # hostname; LE cert is for raspi.***REMOVED***.ts.net regardless of which
-    # IP we connect to, so cert validation still passes via the system CA
-    # bundle.
-    forward-addr: ***REMOVED***@853#raspi.***REMOVED***.ts.net
-
-    # Same terminator via tailnet. Used when off-LAN but Tailscale is up.
-    # Listed second so unbound's WP2 prefers the LAN path when both work
-    # (LAN handshake is generally lower RTT).
-    forward-addr: ***REMOVED***@853#raspi.***REMOVED***.ts.net
