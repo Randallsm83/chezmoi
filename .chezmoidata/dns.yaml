@@ -13,23 +13,11 @@
 #   - macOS    -> /etc/resolver/<domain> files
 #   - Linux    -> systemd-resolved domain routing where available
 #
-# A `domains: [""]` entry is special-cased to the NRPT catch-all (Namespace
-# = "."), which forces ALL queries — not just suffix-matched ones — to that
-# profile's nameserver. Used by the `pihole` profile below to pin every
-# query to the loopback unbound stub on Windows, overriding any per-adapter
-# DNS list a VPN tries to inject (Proton's `10.2.0.1` is the motivating
-# case). On Tailscale-only or no-VPN states the catch-all is harmless: 127.0.0.1
-# is the existing default resolver anyway (see DNS.md).
+# Do not use a catch-all Windows NRPT namespace (`.`) for localhost DNS here.
+# If the local stub resolver is stopped or stale, that policy breaks all
+# hostname resolution. Keep this block to explicit split-DNS namespaces only.
+
 vpn_dns_routes:
-  # Force every DNS query through the local DoT-forwarding unbound stub
-  # (managed by run_onchange_after_56_unbound_windows.ps1.tmpl). Without
-  # this, when a VPN like Proton attaches its own DNS to its tunnel adapter,
-  # Windows uses the VPN-adapter DNS list for outbound queries and bypasses
-  # 127.0.0.1 entirely — silently leaking DNS to the VPN's resolver.
-  pihole:
-    nameserver: "127.0.0.1"
-    domains:
-      - ""   # empty -> NRPT catch-all (Namespace = ".")
 
   pritunl:
     nameserver: "10.25.0.15"

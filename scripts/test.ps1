@@ -291,6 +291,15 @@ function Test-ThemeIntegration {
     }
 }
 
+function Test-DnsSafety {
+    Write-SectionHeader 'DNS Safety'
+
+    Invoke-TestCase 'Windows NRPT routes do not include localhost catch-all' {
+        $rendered = (chezmoi execute-template '{{ range $profile, $cfg := .vpn_dns_routes }}{{ range $cfg.domains }}{{ if and (eq . "") (eq $cfg.nameserver "127.0.0.1") }}unsafe{{ end }}{{ end }}{{ end }}' 2>$null | Out-String).Trim()
+        $rendered -ne 'unsafe'
+    }
+}
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "============================================" -ForegroundColor White
@@ -303,6 +312,7 @@ Test-Configurations
 Test-ChezmoiState
 Test-ShellParityLint
 Test-ThemeIntegration
+Test-DnsSafety
 
 Write-SectionHeader 'Test Results'
 Write-Host ""
