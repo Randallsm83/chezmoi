@@ -1,5 +1,5 @@
 {{- /*
-Windows unbound: loopback recursive caching resolver setup.
+Windows unbound: loopback recursive cache for public DNS.
 
 Pipeline:
   1. Render service.conf.tmpl from `unbound/service.conf.tmpl` into the
@@ -9,11 +9,12 @@ Pipeline:
   2. Validate via `unbound-checkconf`.
   3. Install / refresh the Windows "unbound" service (unbound.exe -w
      install).
-  4. Start the service and wait for 127.0.0.1:53 to answer.
-  5. ONLY if the listener is verified responsive: switch every active
-     IPv4 ethernet/Wi-Fi adapter to use 127.0.0.1 as its primary DNS.
-     If the listener is not responsive, leave adapter DNS alone and
-     emit a warning.
+  4. Start the service and wait for 127.0.0.1:53 to resolve through
+     the local recursive cache.
+  5. ONLY if the local cache is verified responsive: switch every active
+     IPv4 ethernet/Wi-Fi adapter to use 127.0.0.1 as its local DNS cache.
+     If the cache is not responsive, reset any adapter that only points at
+     127.0.0.1 and emit a warning.
 
 Trigger semantics: same `run_onchange_` pattern as the librewolf script.
 The embedded sha256 comments below pick up changes to the rendered
@@ -59,14 +60,44 @@ if ($usesTlsCertBundle -and -not (Test-Path -LiteralPath $cacertPath)) {
 $dstConfig = Join-Path $unboundPersist 'service.conf'
 $dstAppLink = Join-Path $unboundApp 'service.conf'
 $srcText = ($srcConfig -replace "`r`n", "`n")
+$previousConfigText = $null
 $needsWrite = $true
 if (Test-Path -LiteralPath $dstConfig) {
-    $dstText = ([System.IO.File]::ReadAllText($dstConfig)) -replace "`r`n", "`n"
-    if ($dstText -eq $srcText) { $needsWrite = $false }
+    $previousConfigText = ([System.IO.File]::ReadAllText($dstConfig)) -replace "`r`n", "`n"
+    if ($previousConfigText -eq $srcText) { $needsWrite = $false }
 }
 if ($needsWrite) {
     [System.IO.File]::WriteAllText($dstConfig, $srcText, [System.Text.UTF8Encoding]::new($false))
     Write-Host "[unbound] wrote $dstConfig ($($srcText.Length) bytes)"
+}
+
+function Restore-PreviousUnboundConfig {
+    param([string]$Reason)
+
+    $resetLocalDnsScript = @'
+$ErrorActionPreference = 'SilentlyContinue'
+if ((Get-Service unbound -ErrorAction SilentlyContinue).Status -eq 'Running') {
+    Restart-Service unbound
+} else {
+    Start-Service unbound
+}
+Get-NetAdapter | Where-Object { $_.Status -eq 'Up' } | ForEach-Object {
+    $dns = Get-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -AddressFamily IPv4 -ErrorAction SilentlyContinue
+    $servers = @($dns.ServerAddresses)
+    if ($servers.Count -eq 1 -and $servers[0] -eq '127.0.0.1') {
+        Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ResetServerAddresses
+    }
+}
+ipconfig /flushdns | Out-Null
+'@
+
+    if ($needsWrite -and $previousConfigText) {
+        Write-Warning "[unbound] $Reason Restoring previous service.conf so the local resolver keeps working."
+        [System.IO.File]::WriteAllText($dstConfig, $previousConfigText, [System.Text.UTF8Encoding]::new($false))
+        gsudo --loglevel none -- powershell -NoProfile -Command $resetLocalDnsScript 2>&1 | Out-Null
+    } else {
+        Write-Warning "[unbound] $Reason"
+    }
 }
 
 # Scoop's unbound install symlinks $unboundApp\service.conf to the persist
@@ -93,7 +124,7 @@ if (-not (Test-Path -LiteralPath $dstAppLink) -or
 Write-Host "[unbound] running unbound-checkconf..."
 & $checkConfExe $dstConfig
 if ($LASTEXITCODE -ne 0) {
-    Write-Warning "[unbound] config validation failed; leaving system DNS unchanged"
+    Restore-PreviousUnboundConfig "config validation failed; leaving system DNS unchanged."
     exit 1
 }
 
@@ -140,7 +171,7 @@ if ((Get-Service unbound).StartType -ne 'Automatic') {
 
 # Restart when rendered service.conf changed or service registration changed.
 # If the service is simply stopped, start it so the localhost health probe
-# checks the intended resolver before adapter DNS is changed.
+# checks the intended DoT-forwarding cache before adapter DNS is changed.
 $svc = Get-Service -Name 'unbound'
 if ($serviceNeedsRestart) {
     Write-Host "[unbound] (re)starting service to pick up service changes..."
@@ -184,11 +215,11 @@ for ($i = 0; $i -lt 10; $i++) {
 }
 
 if (-not $running) {
-    Write-Warning "[unbound] service did not reach Running within 5s. Leaving Windows DNS unchanged so you don't get locked out. Check 'Get-Service unbound' and re-run 'chezmoi apply'."
+    Restore-PreviousUnboundConfig "service did not reach Running within 5s; leaving Windows DNS unchanged."
     exit 0
 }
 
-# ── Verify the listener is actually up ─────────────────────────────────────
+# ── Verify the local recursive cache is actually up ─────────────────────────
 $listening = $false
 for ($i = 0; $i -lt 10; $i++) {
     Start-Sleep -Milliseconds 500
@@ -201,16 +232,16 @@ for ($i = 0; $i -lt 10; $i++) {
 }
 
 if (-not $listening) {
-    Write-Warning "[unbound] listener did not respond on 127.0.0.1:53 within 5s. Leaving Windows DNS unchanged so you don't get locked out. Check 'Get-Service unbound' and 'Get-Content `"$dstConfig`"' then re-run 'chezmoi apply'."
+    Restore-PreviousUnboundConfig "local recursive cache did not respond on 127.0.0.1:53 within 5s; leaving Windows DNS unchanged."
     exit 0
 }
 
-Write-Host "[unbound] listener responsive on 127.0.0.1:53"
+Write-Host "[unbound] local recursive cache responsive on 127.0.0.1:53"
 
 # ── Switch active adapters' DNS to 127.0.0.1 ──────────────────────────────
 # Physical ethernet/Wi-Fi adapters AND user-space VPN tunnels (ProtonVPN,
-# Pritunl, etc.) all get pinned to 127.0.0.1 so the local unbound is the
-# only DNS server in the per-adapter list.
+# Pritunl, etc.) all get pinned to 127.0.0.1 so the local recursive cache is
+# the only DNS server in the per-adapter list.
 #
 # Tailscale is excluded on purpose: it auto-installs an NRPT catch-all
 # (`.` -> 100.100.100.100, fd7a:115c:a1e0::53) and that's how MagicDNS
@@ -222,10 +253,10 @@ Write-Host "[unbound] listener responsive on 127.0.0.1:53"
 #
 # Why VPN tunnels need this: when Proton's WireGuard tunnel comes up it
 # attaches `10.2.0.1` to its adapter, which Windows happily queries in
-# parallel with NRPT catch-all rules and the tunnel resolver can win the
-# race against the loopback recursive resolver. Result: Proton answers DNS
-# even though NRPT says it should go to 127.0.0.1. Pinning the tunnel adapter
-# to only 127.0.0.1 removes the competing entry.
+# parallel with NRPT catch-all rules and the tunnel DNS server can win the
+# race against the loopback recursive cache. Result: Proton answers DNS even
+# though the local resolver should be the adapter DNS path.
+# Pinning the tunnel adapter to only 127.0.0.1 removes the competing entry.
 #
 # Live cleanup on every Proton reconnect is handled by an event-triggered
 # Scheduled Task installed by
@@ -251,7 +282,7 @@ $targetAdapters = @($physical) + @($tunnels)
 foreach ($a in $targetAdapters) {
     $current = (Get-DnsClientServerAddress -InterfaceAlias $a.InterfaceAlias -AddressFamily IPv4 -ErrorAction SilentlyContinue).ServerAddresses
     if ($current -and ($current.Count -eq 1) -and ($current[0] -eq '127.0.0.1')) {
-        # Already pointing at us.
+        # Already pointing at the local cache.
         continue
     }
     Write-Host "[unbound] $($a.InterfaceAlias): switching IPv4 DNS from [$($current -join ', ')] -> [127.0.0.1]"
@@ -262,8 +293,8 @@ foreach ($a in $targetAdapters) {
     gsudo --loglevel none -- powershell -NoProfile -Command "Set-DnsClientServerAddress -InterfaceAlias '$aliasQ' -ServerAddresses '127.0.0.1'"
 }
 
-# Flush the resolver cache so the next query goes through unbound.
+# Flush the Windows DNS client cache so the next query goes through the local recursive cache.
 ipconfig /flushdns | Out-Null
 
-Write-Host "[unbound] done. Active resolver: 127.0.0.1 (local recursive caching resolver)."
+Write-Host "[unbound] done. Active DNS path: Windows -> 127.0.0.1 local recursive cache."
 {{- end -}}

@@ -4,13 +4,13 @@
 # ============================================================================
 # RUN THIS ON THE PI, NOT ON THE MAC.
 #
-# Stands up unbound on :853 doing DoT, forwarding plain DNS to Pi-hole at
-# 127.0.0.1:53. Uses a TLS cert minted by `tailscale cert` so the macOS
-# Encrypted DNS profile (managed by this dotfiles repo's encrypted_dns
-# block) can connect with hostname verification.
+# Stands up unbound on :853 doing DoT, forwarding plain DNS to Pi-hole on
+# the Pi's primary LAN address. Pi-hole/FTL may bind only to the LAN address
+# (for example 192.168.0.26:53), not loopback; forwarding to 127.0.0.1 caused
+# DoT queries to SERVFAIL while direct Pi-hole LAN queries worked.
 #
 # Layout after this script runs:
-#   :853 (TLS, exposed)  -> unbound -> 127.0.0.1:53 (Pi-hole, plaintext-local)
+#   :853 (TLS, exposed)  -> unbound -> ${UPSTREAM_HOST}:53 (Pi-hole, plaintext-local)
 #
 # Idempotent: re-running upgrades configs and reloads unbound. Cert refresh
 # should be wired up via cron / systemd timer separately (Tailscale certs
@@ -24,8 +24,8 @@
 set -euo pipefail
 
 HOSTNAME_FQDN="${HOSTNAME_FQDN:-raspi.alai-altair.ts.net}"
-UPSTREAM_HOST="${UPSTREAM_HOST:-127.0.0.1}"
-UPSTREAM_PORT="${UPSTREAM_PORT:-53}"   # Pi-hole's listening port (dnsmasq)
+UPSTREAM_HOST="${UPSTREAM_HOST:-$(hostname -I | awk '{print $1}')}"
+UPSTREAM_PORT="${UPSTREAM_PORT:-53}"   # Pi-hole's listening port (dnsmasq/FTL)
 DOT_PORT="${DOT_PORT:-853}"
 CERT_DIR="${CERT_DIR:-/etc/unbound/tls}"
 UNBOUND_CONF="/etc/unbound/unbound.conf.d/99-pihole-dot.conf"
@@ -80,9 +80,10 @@ cat > "$UNBOUND_CONF" <<EOF
 # Managed by setup-pihole-dot.sh -- do not edit by hand.
 #
 # unbound here is purely a DoT terminator that forwards plain DNS to
-# Pi-hole on 127.0.0.1:53. We don't recurse and we don't validate --
-# Pi-hole + upstream resolver handle that. Disabling the validator
-# avoids the auto-trust-anchor / root.key bootstrap dance entirely.
+# Pi-hole on ${UPSTREAM_HOST}:${UPSTREAM_PORT} over TCP. We don't recurse and
+# we don't validate -- Pi-hole + upstream resolver handle that. Debian's
+# default root trust-anchor include is disabled below so validation cannot
+# turn this forwarding terminator into SERVFAIL.
 server:
     interface: 0.0.0.0@${DOT_PORT}
     interface: ::0@${DOT_PORT}
@@ -91,7 +92,7 @@ server:
     tls-port: ${DOT_PORT}
     # No DNSSEC validation in unbound itself (we're not recursive).
     module-config: "iterator"
-    # Default is yes; we MUST allow it because Pi-hole listens on 127.0.0.1.
+    # Permit forwarding to local/private Pi-hole listener addresses.
     do-not-query-localhost: no
     # Accept queries from loopback, LAN, and the tailnet only.
     access-control: 127.0.0.0/8 allow
@@ -106,12 +107,19 @@ server:
 
 forward-zone:
     name: "."
+    forward-tcp-upstream: yes
     forward-addr: ${UPSTREAM_HOST}@${UPSTREAM_PORT}
 EOF
 
 # ---------------------------------------------------------------------------
 # 4. Validate and reload.
 # ---------------------------------------------------------------------------
+log "disabling Debian root trust-anchor include for this forwarding terminator"
+if [ -f /etc/unbound/unbound.conf.d/root-auto-trust-anchor-file.conf ]; then
+    mv /etc/unbound/unbound.conf.d/root-auto-trust-anchor-file.conf \
+        /etc/unbound/unbound.conf.d/root-auto-trust-anchor-file.conf.disabled
+fi
+
 log "validating config"
 unbound-checkconf >/dev/null
 

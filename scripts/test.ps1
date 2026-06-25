@@ -299,15 +299,37 @@ function Test-DnsSafety {
         $rendered -ne 'unsafe'
     }
 
-    Invoke-TestCase 'unbound service.conf uses loopback recursion without root forward-zone' {
+    Invoke-TestCase 'unbound service.conf uses local recursion without root forward-zone' {
         $src = chezmoi source-path 2>$null
         if (-not $src) { return $false }
         $template = Join-Path $src 'unbound\service.conf.tmpl'
         if (-not (Test-Path -LiteralPath $template)) { return $false }
+
         $text = Get-Content -LiteralPath $template -Raw
-        $listensOnLocalhost = $text -match '(?m)^[ \t]*interface:[ \t]+127\.0\.0\.1(?:@53)?[ \t]*(?:#.*)?$'
-        $hasRootForwardZone = $text -match '(?m)^[ \t]*forward-zone:[ \t]*(?:#.*)?(?:\r?\n[ \t]+[^\r\n]*)*?\r?\n[ \t]+name:[ \t]*"\."[ \t]*(?:#.*)?$'
-        $listensOnLocalhost -and -not $hasRootForwardZone
+        $listensOnLocalhost = $text -match '(?m)^\s*interface:\s*127\.0\.0\.1@53\s*$'
+        $usesIterator = $text -match '(?m)^\s*module-config:\s*"iterator"\s*$'
+        $hasNoRootForwardZone = $text -notmatch '(?m)^\s*forward-zone:\s*$'
+        $hasNoTlsForwarding = $text -notmatch '(forward-tls-upstream|forward-addr:|tls-cert-bundle:)'
+        $hasNoRaspiDependency = $text -notmatch 'encrypted_dns|raspi\.alai-altair\.ts\.net'
+
+        $listensOnLocalhost -and
+            $usesIterator -and
+            $hasNoRootForwardZone -and
+            $hasNoTlsForwarding -and
+            $hasNoRaspiDependency
+    }
+
+    Invoke-TestCase 'Pi DoT setup forwards to Pi-hole listener instead of hardcoded loopback' {
+        $src = chezmoi source-path 2>$null
+        if (-not $src) { return $false }
+        $script = Join-Path $src 'scripts\setup-pihole-dot.sh'
+        if (-not (Test-Path -LiteralPath $script)) { return $false }
+        $text = Get-Content -LiteralPath $script -Raw
+        ($text -match 'UPSTREAM_HOST="\$\{UPSTREAM_HOST:-\$\(hostname -I') -and
+            ($text -match 'forward-tcp-upstream:\s*yes') -and
+            ($text -match 'forward-addr: \$\{UPSTREAM_HOST\}@\$\{UPSTREAM_PORT\}') -and
+            ($text -match 'root-auto-trust-anchor-file\.conf\.disabled') -and
+            ($text -notmatch 'UPSTREAM_HOST="\$\{UPSTREAM_HOST:-127\.0\.0\.1\}"')
     }
 
     Invoke-TestCase 'local unbound resolves public DNS' {
