@@ -47,7 +47,7 @@ local M = {}
 -- LEADER+Z ............... Zoom toggle
 -- CTRL+H, CTRL+J, CTRL+K, CTRL+L .. Move between panes (smart-splits, vim-aware)
 -- META+H, META+J, META+K, META+L .. Resize panes (smart-splits, vim-aware)
--- LEADER+R ............... Resize-pane mode (hjkl or arrows; ESC, Enter, or q exits)
+-- LEADER+R ............... Resize-pane mode (hjkl or arrows; q/Enter exits)
 -- LEADER+Space ........... Rotate panes clockwise
 -- LEADER+! ............... Break pane into its own tab
 -- LEADER+@ ............... Swap pane with another (visual picker)
@@ -104,6 +104,32 @@ function M.apply_to_config(config)
   -- ───────────────────────────────────────────────────────────────────────────
   -- resurrect.wezterm — session/workspace persistence to disk
   -- ───────────────────────────────────────────────────────────────────────────
+  -- resurrect.wezterm creates its state dirs with os.execute("mkdir ...")
+  -- during plugin init on Windows, which flashes transient cmd/conhost
+  -- windows. If the plugin is already cached, register its module path and
+  -- no-op only that helper before requiring the plugin. On a clean machine
+  -- the plugin may not be cached yet; in that case skip suppression so the
+  -- require below can clone it normally.
+  if wezterm.target_triple:find("windows") then
+    for _, plugin in ipairs(wezterm.plugin.list()) do
+      local plugin_dir = plugin.plugin_dir or ""
+      if plugin_dir:find("resurrect", 1, true) then
+        package.path = package.path
+          .. ";"
+          .. plugin_dir
+          .. "/plugin/?.lua"
+
+        local ok_utils, resurrect_utils = pcall(require, "resurrect.utils")
+        if ok_utils and resurrect_utils then
+          resurrect_utils.ensure_folder_exists = function() end
+        elseif wezterm.log_warn then
+          wezterm.log_warn("Could not preload resurrect.utils; startup mkdir suppression skipped")
+        end
+        break
+      end
+    end
+  end
+
   local ok_resurrect, resurrect = pcall(wezterm.plugin.require, "https://github.com/MLFlexer/resurrect.wezterm")
   if ok_resurrect then
     -- Auto-save the workspace state every 15 minutes.
@@ -226,7 +252,7 @@ function M.apply_to_config(config)
     win:perform_action(act.InputSelector({
       title = "  Project workspace (zoxide)",
       fuzzy = true,
-      fuzzy_description = "  > ",
+      fuzzy_description = "  >  (Ctrl-C/G cancels) ",
       choices = choices,
       action = wezterm.action_callback(function(w, p, _, label)
         if not label then return end
@@ -374,9 +400,9 @@ function M.apply_to_config(config)
   }
 
   local which_key = act.InputSelector({
-    title = "  Which-key  (LEADER actions — type to filter, Esc to cancel)",
-    fuzzy = true,
-    fuzzy_description = "  > ",
+    title = "  Which-key  (LEADER actions — type to filter)",
+    description = "  Enter = accept, Ctrl-C/Ctrl-G = cancel, / = filter",
+    fuzzy_description = "  >  (Ctrl-C/G cancels) ",
     choices = wk_choices,
     action = wezterm.action_callback(function(win, pane, _, label)
       if not label then return end
@@ -500,7 +526,7 @@ function M.apply_to_config(config)
   -- Key tables (modal modes)
   -- ───────────────────────────────────────────────────────────────────────────
   config.key_tables = {
-    -- LEADER+R → mash hjkl/arrows; ESC/Enter/q exits.
+    -- LEADER+R → mash hjkl/arrows; q/Enter exits.
     resize_pane = {
       { key = "h",          mods = "NONE", action = act.AdjustPaneSize({ "Left", 3 }) },
       { key = "j",          mods = "NONE", action = act.AdjustPaneSize({ "Down", 3 }) },
@@ -572,6 +598,7 @@ function M.apply_to_config(config)
     search_mode = {
       { key = "Escape",     mods = "NONE",  action = act.CopyMode("Close") },
       { key = "Enter",      mods = "NONE",  action = act.CopyMode("PriorMatch") },
+      { key = "q",          mods = "NONE",  action = act.CopyMode("Close") },
       { key = "n",          mods = "CTRL",  action = act.CopyMode("NextMatch") },
       { key = "p",          mods = "CTRL",  action = act.CopyMode("PriorMatch") },
       { key = "r",          mods = "CTRL",  action = act.CopyMode("CycleMatchType") },
