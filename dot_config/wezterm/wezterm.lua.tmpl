@@ -789,6 +789,17 @@ config.mouse_bindings = {
   -- CTRL+click opens links; suppress the implicit click-through.
   { event = { Up   = { streak = 1, button = "Left" } },  mods = "CTRL", action = act.OpenLinkAtMouseCursor },
   { event = { Down = { streak = 1, button = "Left" } },  mods = "CTRL", action = act.Nop },
+  -- Plain selection should only select text; copying stays explicit via CTRL+SHIFT+C.
+  { event = { Up   = { streak = 1, button = "Left" } },  mods = "NONE", action = act.Nop },
+  { event = { Up   = { streak = 2, button = "Left" } },  mods = "NONE", action = act.Nop },
+  { event = { Up   = { streak = 3, button = "Left" } },  mods = "NONE", action = act.Nop },
+  -- ALT is the configured mouse-reporting bypass modifier; don't let bypass-select copy either.
+  { event = { Up   = { streak = 1, button = "Left" } },  mods = "ALT",  action = act.Nop },
+  -- Shift-extended selections should not copy on release either.
+  { event = { Up   = { streak = 1, button = "Left" } },  mods = "SHIFT",     action = act.Nop },
+  { event = { Up   = { streak = 1, button = "Left" } },  mods = "SHIFT|ALT", action = act.Nop },
+  { event = { Up   = { streak = 2, button = "Left" } },  mods = "ALT",  action = act.Nop },
+  { event = { Up   = { streak = 3, button = "Left" } },  mods = "ALT",  action = act.Nop },
   -- Right click pastes from clipboard.
   { event = { Down = { streak = 1, button = "Right" } }, mods = "NONE", action = act.PasteFrom("Clipboard") },
   -- Triple click selects the whole semantic zone (prompt-aware).
@@ -809,9 +820,12 @@ config.visual_bell = {
 
 config.scrollback_lines = 50000
 config.enable_kitty_graphics = true
-config.enable_kitty_keyboard = true
-config.allow_win32_input_mode = true
-config.debug_key_events = true
+-- Keep keyboard input boring on Windows. OMP/PSReadLine already handle normal
+-- terminal keys; enhanced Kitty/Win32 key protocols can trap TUIs in numeric
+-- prefix/editor states where ordinary keys just beep.
+config.enable_kitty_keyboard = false
+config.allow_win32_input_mode = false
+config.debug_key_events = false
 
 -- OpenGL is the battle-tested front-end on Windows. The WebGpu backend
 -- in wezterm has documented input-latency and frame-pacing issues on

@@ -99,9 +99,13 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
     Set-PSReadLineOption -MaximumHistoryCount 10000
     
-    # Predictive IntelliSense
-    Set-PSReadLineOption -PredictionSource History
-    Set-PSReadLineOption -PredictionViewStyle ListView
+    # Predictive IntelliSense requires an interactive console with VT support.
+    # Redirected/non-interactive shells still need the rest of the profile
+    # (PATH, mise, aliases/functions) to load cleanly.
+    if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsOutputRedirected) {
+        Set-PSReadLineOption -PredictionSource History
+        Set-PSReadLineOption -PredictionViewStyle ListView
+    }
     
     # Starship uses 2-line prompt - set ExtraPromptLineCount for proper PSFzf rendering
     Set-PSReadLineOption -ExtraPromptLineCount 1
@@ -111,6 +115,18 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
     Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
     Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteCharOrExit
+
+    # PSReadLine binds Alt+digits and Vi command-mode digits to DigitArgument
+    # by default. In WezTerm/Vi mode an accidental numeric prefix can leave the
+    # prompt in a state where ordinary keys just beep. Make those chords abort
+    # instead; numbers remain normal while inserting text.
+    foreach ($digitArgumentChord in @('Alt+-') + (0..9 | ForEach-Object { "Alt+$_" })) {
+        Set-PSReadLineKeyHandler -Key $digitArgumentChord -Function Abort
+    }
+    foreach ($digitArgumentKey in 0..9) {
+        Set-PSReadLineKeyHandler -Key $digitArgumentKey -ViMode Command -Function Abort
+    }
+    Set-PSReadLineKeyHandler -Key Ctrl+g -Function Abort
 }
 
 # PSCompletions intentionally NOT loaded here. Its `handle_completion()`

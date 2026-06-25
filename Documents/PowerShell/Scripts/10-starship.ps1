@@ -27,8 +27,13 @@ if (-not (Test-Path $env:STARSHIP_CACHE)) {
 # =============================================================================
 
 if (Get-Command starship -ErrorAction SilentlyContinue) {
-    # Skip starship in Warp - conflicts with Warp's shell integration
-    if ($env:TERM_PROGRAM -ne 'WarpTerminal') {
+    # Skip starship in Warp - conflicts with Warp's shell integration.
+    # Also skip redirected/non-interactive shells; starship errors under
+    # TERM=dumb and those shells do not render a prompt anyway.
+    if ($env:TERM_PROGRAM -ne 'WarpTerminal' `
+            -and $Host.Name -eq 'ConsoleHost' `
+            -and -not [Console]::IsOutputRedirected `
+            -and $env:TERM -ne 'dumb') {
         Invoke-Expression (&starship init powershell)
     }
 }

@@ -36,6 +36,11 @@ if (Get-Command fd -ErrorAction SilentlyContinue) {
     $env:FZF_CTRL_T_COMMAND = $env:FZF_DEFAULT_COMMAND
 }
 
+# Only these CLIs are allowed through the `usage complete-word` fallback.
+# Do not probe arbitrary commands with `<cmd> usage` during Tab completion:
+# many CLIs treat it as a real command path, prompt for auth, or hit the network.
+$script:FzfUsageSpecCommands = @('mise')
+
 # Ctrl+T preview with bat
 if (Get-Command bat -ErrorAction SilentlyContinue) {
     $env:FZF_CTRL_T_OPTS = "--preview 'bat --color=always --style=numbers --line-range=:500 {}' --preview-window=right:60%:wrap"
@@ -185,7 +190,7 @@ function Invoke-PscFzfCompletion {
     # ---- Source 2: `usage complete-word` for tools that ship a usage spec
     # (mise being the headline case — its native completer is overridden by the
     # shell-activate function, so TabExpansion2 alone returns nothing). ----
-    if (Get-Command usage -ErrorAction SilentlyContinue) {
+    if (($script:FzfUsageSpecCommands -contains $cmdName) -and (Get-Command usage -ErrorAction SilentlyContinue)) {
         $cmdExe = Get-Command "$cmdName.exe" -CommandType Application -EA SilentlyContinue |
             Select-Object -First 1 -ExpandProperty Source
         if (-not $cmdExe) { $cmdExe = (Get-Command $cmdName -EA SilentlyContinue).Source }
@@ -647,8 +652,8 @@ function ftab {
         })
     }
 
-    # --- Fallback: usage complete-word for CLI tools ---
-    if ($items.Count -eq 0 -and $isFileOnly -and (Get-Command usage -ErrorAction SilentlyContinue)) {
+    # --- Fallback: usage complete-word for allowlisted CLI tools ---
+    if ($items.Count -eq 0 -and $isFileOnly -and ($script:FzfUsageSpecCommands -contains (($InputLine -split '\s+', 2)[0])) -and (Get-Command usage -ErrorAction SilentlyContinue)) {
         $cmdName = ($InputLine -split '\s+', 2)[0]
         $cmdExe = Get-Command "$cmdName.exe" -CommandType Application -ErrorAction SilentlyContinue |
             Select-Object -First 1 -ExpandProperty Source
