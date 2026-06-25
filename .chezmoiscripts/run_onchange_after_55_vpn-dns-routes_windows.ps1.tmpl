@@ -6,17 +6,10 @@
 #
 # What this does:
 #   For each (profile, domain) pair in vpn_dns_routes, ensures a Name
-#   Resolution Policy Table rule exists routing that domain to the profile's
-#   nameserver. Two flavors:
-#     1. Suffix routing (pritunl): scopes a specific namespace (e.g.
-#        '.dh-int.com') to a VPN-internal resolver so private names resolve
-#        when the VPN is up.
-#     2. Catch-all (pihole): an empty-string domain renders to Namespace='.'
-#        which forces ALL queries to a chosen resolver (typically the local
-#        DoT-forwarding unbound stub at 127.0.0.1) regardless of which
-#        adapter is up. Defeats VPN-injected DNS (e.g. Proton's 10.2.0.1)
-#        from silently winning over the loopback resolver. NRPT prefers
-#        longest-suffix match, so VPN-specific rules still win over '.'.
+#   Resolution Policy Table rule exists routing that explicit namespace
+#   (for example, '.dh-int.com') to the profile's VPN-internal resolver.
+#   Do not configure a localhost catch-all namespace here: if 127.0.0.1:53 is
+#   not responsive, Windows loses all hostname resolution.
 #
 # Why NRPT instead of just setting per-adapter DNS:
 #   Windows resolves queries using the DNS list on the outgoing interface.
