@@ -116,5 +116,21 @@ if command -v eza >/dev/null 2>&1; then
   lt() { command eza $(_omp_eza_flags) --tree "${@:-.}"; }
 fi
 
+# Windows cannot execute extensionless shebang scripts from Git Bash-style
+# subprocesses. Route `mpmise` through the .cmd shim while keeping Unix shells on
+# the executable `~/.local/bin/mpmise` script.
+if [[ "${OS:-}" == "Windows_NT" || -n "${WINDIR:-}" ]]; then
+  mpmise() {
+    local home="${USERPROFILE:-${HOME:-}}"
+    home="${home//\\//}"
+    local shim="$home/.local/bin/mpmise.cmd"
+    if [[ -f "$shim" ]]; then
+      command "$shim" "$@"
+    else
+      command mpmise.cmd "$@"
+    fi
+  }
+fi
+
 unset -f _omp_prepend_path _omp_posix_path
 unset _omp_home

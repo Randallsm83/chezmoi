@@ -507,7 +507,7 @@ function Resolve-MiseTool {
         }
     }
 
-    $mpmArgs = @('--no-stats', '--table-format', 'json')
+    $mpmArgs = @('--no-summary', '--table-format', 'json')
     foreach ($m in $Manager) {
         $mpmArgs += "--$m"
     }
@@ -647,7 +647,12 @@ function Resolve-MiseTool {
 }
 
 function mpmise {
-    Resolve-MiseTool @args
+    $shim = Join-Path $HOME '.local\bin\mpmise.cmd'
+    if (Test-Path -LiteralPath $shim) {
+        & $shim @args
+    } else {
+        Resolve-MiseTool @args
+    }
 }
 
 if (Test-CommandExists 'scoop') {
@@ -694,39 +699,43 @@ if (Test-CommandExists 'op') {
         }
     }
 
-    function omp {
-        $tokenFile = Join-Path $HOME '.omp\auth-broker.token'
-        if (-not (Test-Path $tokenFile)) {
-            Invoke-OpRun omp @args
+    function tvly {
+        $resolved = Get-Command tvly -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $resolved) {
+            Write-Warning "tvly: executable not found on PATH."
             return
         }
 
+        $envFile = Join-Path $HOME '.config\op\tvly.env'
+        if (Test-Path $envFile) {
+            & op run --env-file=$envFile --no-masking -- $resolved.Source @args
+        } else {
+            Write-Warning "Env file not found: $envFile - launching $($resolved.Source) without secret injection"
+            & $resolved.Source @args
+        }
+    }
+
+    function omp {
         $resolved = Get-Command omp -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-        if (-not $resolved) { $resolved = Get-Command 'omp.exe' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 }
         if (-not $resolved) {
             Write-Warning "omp: executable not found on PATH."
             return
         }
 
-        $oldBrokerUrl = $env:OMP_AUTH_BROKER_URL
-        $oldBrokerToken = $env:OMP_AUTH_BROKER_TOKEN
-        try {
-            $envFile = Join-Path $HOME '.config\op\omp.env'
-            if (Test-Path $envFile) {
-                $urlLine = Get-Content -LiteralPath $envFile | Where-Object { $_ -match '^\s*OMP_AUTH_BROKER_URL\s*=' } | Select-Object -First 1
-                if ($urlLine) {
-                    $urlValue = (($urlLine -split '=', 2)[1]).Trim().Trim('"').Trim("'")
-                    if ($urlValue -and $urlValue -notmatch '^op://') {
-                        $env:OMP_AUTH_BROKER_URL = $urlValue
-                    }
-                }
+        $envFile = Join-Path $HOME '.config\op\omp.env'
+        if (Test-Path $envFile) {
+            if ((Get-Command Invoke-OpEnsure -ErrorAction SilentlyContinue) -and (Invoke-OpEnsure -Quiet)) {
+                & op run --env-file=$envFile --no-masking -- $resolved.Source @args
+                return
             }
-            $env:OMP_AUTH_BROKER_TOKEN = (Get-Content -LiteralPath $tokenFile | Out-String).Trim()
-            & $resolved.Source @args
-        } finally {
-            if ($null -eq $oldBrokerUrl) { Remove-Item Env:OMP_AUTH_BROKER_URL -ErrorAction SilentlyContinue } else { $env:OMP_AUTH_BROKER_URL = $oldBrokerUrl }
-            if ($null -eq $oldBrokerToken) { Remove-Item Env:OMP_AUTH_BROKER_TOKEN -ErrorAction SilentlyContinue } else { $env:OMP_AUTH_BROKER_TOKEN = $oldBrokerToken }
+
+            Write-Error "omp: 1Password CLI is not authorized; refusing to run without OMP_AUTH_BROKER_TOKEN because auth-broker requests will fail with 401. Unlock/authorize 1Password, then run 'op-refresh'."
+            $global:LASTEXITCODE = 1
+            return
         }
+
+        Write-Warning "Env file not found: $envFile - launching $($resolved.Source) without secret injection"
+        & $resolved.Source @args
     }
 }
 

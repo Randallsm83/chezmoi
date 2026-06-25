@@ -150,12 +150,12 @@ Three pieces, one per tool:
 
 1. **1Password item** — the actual credential. Prefer item-UUID references
    (stable across renames) over the human title. Example:
-   `op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential` (Tavily).
+   `op://Personal/63ydj7e44lzuwzjr4fnjrvmqvu/credential` (Tavily).
 2. **Env-reference file** — a non-secret file mapping env-var names to
    `op://` references. Lives at `~/.config/op/<tool>.env` (chezmoi-managed at
    `dot_config/op/<tool>.env`):
    ```dotenv
-   TAVILY_API_KEY=op://Personal/ytw3xmw4bkb7u5yamcdzgdsy7u/credential
+   TAVILY_API_KEY=op://Personal/63ydj7e44lzuwzjr4fnjrvmqvu/credential
    ANTHROPIC_API_KEY=op://Personal/Anthropic API/credential
    # ... only secrets the wrapped tool needs
    ```
@@ -234,23 +234,20 @@ Example: wiring up `aider` with `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`.
 |---|---|---|
 | `claude` | `~/.config/op/claude.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY` |
 | `opencode` | `~/.config/op/opencode.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY` |
-| `pam` | `~/.config/op/pam.env` | `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `VERCEL_TOKEN`, `NEON_API_KEY`, `QDRANT_API_KEY`, `DH_CLICKUP_API_KEY` (+ public `CLICKUP_TEAM_ID`) |
+| `tvly` | `~/.config/op/tvly.env` | `TAVILY_API_KEY` |
+| `omp` | `~/.config/op/omp.env` | `OMP_AUTH_BROKER_TOKEN`, `TAVILY_API_KEY`, `QDRANT_API_KEY` |
 
 `~/.claude.json` references these via `${VAR_NAME}` substitution in HTTP
 header values and stdio MCP `env` blocks, so all four MCP servers
 (`tavily`, `vercel`, `neon`, `qdrant`) connect through the wrapper without
 any literal credentials in `~/.claude.json`.
 
-The `pam` daemon (Personal Agent Multiplexer, MCP proxy) is wrapped the same way: `op run --env-file=~/.config/op/pam.env -- pam.exe start`. The manifest at `~/.config/pam/manifest.toml` resolves most secrets inline via `${op://...}` placeholders at backend spawn; `pam.env` covers the subset the manifest pulls from the process environment via `env://` references (today: the clickup backend's `DH_CLICKUP_API_KEY`), and pre-stages the rest of the AI-provider set so future backends that switch to `env://` Just Work. Source lives at `dot_config/private_op/private_pam.env` (chezmoi `private_` prefix → 0600 on disk).
 
 `~/.config/opencode/opencode.json` references these via `{env:VAR_NAME}`
 substitution (opencode's syntax — different from Claude Code's `${VAR_NAME}`).
-The MCP block in `opencode.json` is rendered from the same
-`.chezmoidata/mcp.yaml` source of truth, with placeholders rewritten on
-apply. The `oh-my-openagent` plugin is configured (in
-`~/.config/opencode/oh-my-openagent.jsonc`) with `claude_code.mcp: false`
-so it does not also import the `${VAR}`-shaped Claude Code entries — those
-wouldn't be expanded by opencode and would 401 into auto-OAuth.
+The MCP block in `opencode.json` is runtime-managed by opencode. The
+`oh-my-openagent` plugin imports Claude Code's MCP entries (`claude_code.mcp:
+true`), so opencode reuses the standalone entries synced into `~/.claude.json`.
 
 ### Verifying no leakage
 

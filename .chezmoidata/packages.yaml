@@ -107,7 +107,7 @@ package_features:
   # ============================================================================
   # AI & ML Tools
   # ============================================================================
-  ai_tools: true         # AI coding assistants and DH AI tools (claude, opencode, pam, scott)
+  ai_tools: true         # AI coding assistants and DH AI tools (claude, opencode, scott)
 
   # ============================================================================
   # Gaming
@@ -829,10 +829,10 @@ package_mapping:
   # AI & ML Tools
   ai_tools:
     windows:
-      # `pam` and `scott` are DH-internal Scoop packages currently listed by
-      # name; if their manifests are not available from configured buckets, the
-      # Windows install script needs explicit direct-URL handling before apply.
-      scoop: [pam, scott]
+      # `scott` is a DH-internal Scoop package currently listed by name; if
+      # its manifest is not available from configured buckets, the Windows
+      # install script needs explicit direct-URL handling before apply.
+      scoop: [scott]
       winget: []
       mise: [claude, opencode]
     linux:
@@ -840,7 +840,7 @@ package_mapping:
       dnf: []
       pacman: []
       paru: []
-      brew: [pam]
+      brew: []
       mise: [claude, opencode]
     darwin:
       brew: []
@@ -996,7 +996,7 @@ package_mapping:
       # WSL, usbipd-win (USB-over-IP for WSL), WinDbg (kernel debugger), VS Build Tools 2022,
       # Windows SDK 10.0.26100, JDK 24 + JRE.
       winget: [Microsoft.WSL, dorssel.usbipd-win, Microsoft.WinDbg, Microsoft.VisualStudio.2022.BuildTools, Microsoft.WindowsSDK.10.0.26100, Oracle.JDK.24, Oracle.JavaRuntimeEnvironment]
-      mise: []
+      mise: [npm:postman-cli]
     linux:
       apt: []
       dnf: []
@@ -1130,8 +1130,6 @@ brew_bundle:
   taps_darwin:
     - { name: "buo/cask-upgrade" }
     - { name: "dreamhost/homebrew", url: "git@git.dreamhost.com:dreamhost/homebrew-repo.git" }
-  taps_linux:
-    - { name: "dreamhost-public/pam", url: "git@git.dreamhost.com:dreamhost-public/homebrew-pam.git" }
 
   # --------------------------------------------------------------------------
   # Always-installed formulae (no feature flag, all hosts)

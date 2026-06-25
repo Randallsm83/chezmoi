@@ -222,9 +222,10 @@ if ($envRebuild) {
 # Initialization
 # =================================================================================================
 
-# Ensure scoop shims take precedence over system directories (system32, OpenSSH, etc.)
-# Placed before mise activation so mise tool paths still win over scoop shims.
-# Final order: ~/.local/bin > mise > scoop/shims > system32
+# Ensure mise shims and scoop shims are resolvable even if cached activation fails.
+# Placed before mise activation so activated tool paths still win over static shims.
+# Final order: ~/.local/bin > activated mise tools > scoop/shims > mise/shims > system32
+Add-ToPath "$env:MISE_DATA_DIR\shims"
 Add-ToPath "$HOME\scoop\shims"
 
 # `mise activate pwsh` output is cached: rebuilds when the binary or the global

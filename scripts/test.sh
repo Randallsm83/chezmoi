@@ -128,6 +128,7 @@ test_essential_tools() {
     test_case "git installed" "assert_command_exists git"
     test_case "curl installed" "assert_command_exists curl"
     
+    test_case "mpmise available" "assert_command_exists mpmise"
     if [ "$(uname -s)" != "Darwin" ] && [ ! -f /proc/version ] || ! grep -qi microsoft /proc/version 2>/dev/null; then
         # Unix but not WSL or macOS - expect mise
         test_case "mise installed" "assert_command_exists mise"
