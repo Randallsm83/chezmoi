@@ -107,7 +107,7 @@ The legacy `op-read-safe` partial in `.chezmoitemplates/` is retained for one-of
 
 ### OMP homelab auth
 The `omp` CLI authenticates against a homelab auth-broker (and an OpenAI-compatible auth-gateway) running in containers on the Pi (`raspi`). Configuration is split across three managed surfaces:
-- **Agent settings** — `dot_omp/agent/config.yml.tmpl` renders `~/.omp/agent/config.yml` on both Windows and WSL from a single shared baseline; only genuinely platform-specific keys (e.g. WSL `disabledExtensions: [mcp:pam]`) sit behind an `isWSL` guard. Treat the shared block as the source of truth — do not re-fork a setting per platform unless it truly differs. `dot_omp/agent/dot_env.tmpl` renders the WSL-only `~/.omp/agent/.env`, and `.chezmoiignore` excludes `.omp/agent/.env` on Windows.
+- **Agent settings** — `dot_omp/agent/config.yml.tmpl` renders `~/.omp/agent/config.yml` on both Windows and WSL from a single shared baseline. Treat the shared block as the source of truth — do not re-fork a setting per platform unless it truly differs. `dot_omp/agent/dot_env.tmpl` renders the WSL-only `~/.omp/agent/.env`, and `.chezmoiignore` excludes `.omp/agent/.env` on Windows.
 - **The `omp` wrapper** — defined in zsh `dot_config/zsh/dot_zshrc.d/25-functions.zsh` and pwsh `Documents/PowerShell/Scripts/lib/99-functions-body.ps1`. It prefers a synchronized local `~/.omp/auth-broker.token` (exporting `OMP_AUTH_BROKER_URL` + `OMP_AUTH_BROKER_TOKEN` for that process only) and falls back to the `op run --env-file=~/.config/op/omp.env` path when no token file is present, so Windows and WSL hit the same broker without per-pane biometric prompts.
 - **Helper commands** — `ompb`/`ompg` run `omp auth-broker`/`auth-gateway` inside the Pi containers over SSH; `ompb-login`, `ompg-url`, `ompg-models` (broker model list), and `ompg-api-models` (gateway `/models` via the gateway token) round out the set. The auth host and public gateway base URL resolve from `OMP_AUTH_HOST` (default `raspi`) and `OMP_GATEWAY_PUBLIC_BASE_URL`.
 Never write the resolved broker/gateway tokens into the chezmoi source or any doc — they live only in `~/.omp/*.token` and the running process env.
@@ -138,6 +138,12 @@ Files in `dot_config/zsh/dot_zshrc.d/` use numeric prefixes; lower numbers sourc
 - `99-*` last-resort consumers (`warp`).
 
 Shell completions live in `dot_cache/zsh/completions/_<command>`.
+
+### Shell completion playbook
+- **PowerShell completions** live in `Documents/PowerShell/Completions/<command>.ps1` and are loaded by `Documents/PowerShell/Scripts/20-completions.ps1`. If upstream output changes shell behavior (for example `hf --show-completion` imports PSReadLine and remaps Tab), prefer a small hand-written `Register-ArgumentCompleter -Native` wrapper instead of evaluating upstream output at startup.
+- **zsh completions** live in `dot_cache/zsh/completions/_<command>` when the completion is static or needs custom environment variables. Runtime-generated completions belong in `dot_config/zsh/dot_zshrc.d/80-completions.zsh` via `_gen_completion_runtime`.
+- **Hugging Face CLI (`hf`)** is a Typer CLI. Do not use `hf --install-completion` in chezmoi because it writes to the active user shell outside source control. Use the checked-in files `Documents/PowerShell/Completions/hf.ps1` and `dot_cache/zsh/completions/_hf`; both drive completion by setting `_HF_COMPLETE` plus Typer completion environment variables at completion time.
+- After adding a cross-shell completion, verify the generated behavior directly and run `pwsh -NoProfile -File scripts/lint-shell-parity.ps1`.
 
 ## Line endings (CRITICAL)
 - **LF everywhere.** Every text file in this repo uses Unix line endings (LF).

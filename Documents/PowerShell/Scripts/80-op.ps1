@@ -149,10 +149,9 @@ function Wait-OpReady {
         failure mode.
       - **-Force**. Bypass the cache and re-verify from scratch.
         Exposed via the `op-refresh` alias.
-      - **-AllowDesktopAuth**. Skip the non-interactive guard. Use this
-        when stdin is closed (pam hook, MCP connector, scheduled task)
-        but the desktop app's biometric / Windows Hello prompt can
-        still answer for the user — the prompt is system-modal and
+      - **-AllowDesktopAuth**. Skip the non-interactive guard for contexts
+        where stdin is closed but the desktop app's biometric / Windows Hello
+        prompt can still answer for the user — the prompt is system-modal and
         does NOT consume stdin.
 
     Flow:
@@ -170,11 +169,9 @@ function Wait-OpReady {
 .PARAMETER Force
     Bypass the TTL cache and re-verify even if a recent probe succeeded.
 .PARAMETER AllowDesktopAuth
-    Allow the signin attempt even when stdin is redirected. Safe on
-    macOS / Windows where the 1Password desktop app delivers the unlock
-    prompt as a system-modal dialog rather than via stdin. The pam
-    [hooks].before_resolve entry passes this so the hook can actually
-    auto-authorize from a daemon spawned with stdin closed.
+    Allow the signin attempt even when stdin is redirected. Safe on macOS /
+    Windows where the 1Password desktop app delivers the unlock prompt as a
+    system-modal dialog rather than via stdin.
 .OUTPUTS
     [bool] $true when op is signed in (or assumed signed in via
     OP_SERVICE_ACCOUNT_TOKEN); $false otherwise.
@@ -361,12 +358,10 @@ function Invoke-OpRun {
     )
 
     $envFile = Join-Path $HOME ".config/op/$Tool.env"
-    # `op run` execs the wrapped command itself rather than going through
-    # a shell, so it does NOT honor Windows PATHEXT. Passing the bare
-    # name 'pam' fails with `cannot run executable found relative to
-    # current directory` because op only finds 'pam.exe'. Resolve the
-    # command to its absolute Source path (Get-Command resolves PATH +
-    # PATHEXT correctly) and hand that to op so the exec is unambiguous.
+    # `op run` execs the wrapped command itself rather than going through a
+    # shell, so it does NOT honor Windows PATHEXT. Resolve the command to its
+    # absolute Source path (Get-Command resolves PATH + PATHEXT correctly) and
+    # hand that to op so the exec is unambiguous.
     $resolved = Get-Command $Tool -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $resolved) { $resolved = Get-Command "$Tool.exe" -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 }
     if (-not $resolved) {
@@ -377,10 +372,10 @@ function Invoke-OpRun {
 
     if (Test-Path $envFile) {
         # When we'd inject secrets, refuse to proceed under an unsigned
-        # session — otherwise `op run` will fail with a less obvious
-        # error after pam (or whatever tool) has already spawned and
-        # logged its own startup noise. Surface the actionable warning
-        # from Invoke-OpEnsure first so the user sees one clear cause.
+        # session — otherwise `op run` will fail with a less obvious error
+        # after the wrapped tool has already spawned and logged its own startup
+        # noise. Surface the actionable warning from Invoke-OpEnsure first so
+        # the user sees one clear cause.
         if (-not (Invoke-OpEnsure -Quiet)) {
             Write-Warning "opr: not signed in to 1Password CLI — skipping secret injection for $exe. Fix the cause above and run 'op-refresh', or run $exe directly to skip secrets entirely."
             return
