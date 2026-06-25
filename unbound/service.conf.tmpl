@@ -1,16 +1,12 @@
 {{- /*
-Windows-side unbound: loopback-only recursive caching resolver for public DNS.
+Windows-side unbound: loopback-only recursive cache for public DNS.
 
-Role:
-  Windows physical adapters point at 127.0.0.1 only.
-  Local apps (Windows resolver -> 127.0.0.1:53)
-    -> unbound here (loopback-only cache; DNSSEC validation off)
-    -> unbound's iterator recurses directly from the root/auth DNS over IPv4
-       for public DNS answers.
+Flow:
+  Windows adapters -> 127.0.0.1 -> local unbound cache
+    -> root/auth DNS over IPv4 recursion.
 
-No upstream forwarders are configured for public DNS. Windows adapters stay
-pinned to local unbound; unbound performs direct recursion instead of
-forwarding to upstream recursive resolvers.
+No raspi/Pi-hole dependency is configured on Windows. If raspi or Tailscale is
+offline, Windows DNS still works through the local resolver.
 
 DNSSEC validation is OFF. Re-enabling would require unbound-anchor to
 bootstrap the root key on Windows, which adds maintenance for marginal
@@ -38,15 +34,12 @@ server:
     # ── Behavior ────────────────────────────────────────────────────────
     do-tcp: yes
     do-udp: yes
-    # IPv6 disabled: this host has no usable IPv6 DNS path. Without this,
-    # unbound's iterator tries IPv6 root/auth servers and floods the Windows
-    # Application log with "udp connect failed: No error" entries. Local apps
-    # resolve via 127.0.0.1, so no ::1 listener is needed.
+    # IPv6 disabled: this host has no usable IPv6 DNS path. Local apps resolve
+    # via 127.0.0.1, and the iterator sends IPv4 queries directly to root/auth
+    # servers for public DNS answers.
     do-ip4: yes
     do-ip6: no
-    # Recursive caching resolver. The iterator sends IPv4 queries directly to
-    # root/auth servers for public DNS; Windows adapters remain configured to
-    # 127.0.0.1 so apps use this local cache.
+    # Recursive caching resolver for public DNS.
     module-config: "iterator"
 
     # Performance tuning for a single-user workstation.
@@ -61,7 +54,7 @@ server:
     serve-expired-ttl: 86400
     serve-expired-client-timeout: 1800
 
-    # Hardening safe for direct recursion on a loopback-only workstation cache.
+    # Hardening safe for a loopback-only recursive cache.
     hide-identity: yes
     hide-version: yes
     harden-glue: yes
