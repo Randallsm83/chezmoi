@@ -20,7 +20,7 @@ zstarttime() {
 
 # Run a git command across every service repo under BACKEND/FRONTEND/HELPSERVICES.
 # Skips entries without a .git directory. Top-level repos under $DHSPACE
-# (ndn, ndn-audit, pam, scott, task-management) are intentionally excluded.
+# (ndn, ndn-audit, scott, task-management) are intentionally excluded.
 dhgitall() {
     for dir in "$BACKEND"/*/ "$FRONTEND"/*/ "$HELPSERVICES"/*/; do
         [[ -d "$dir/.git" ]] || continue
@@ -273,21 +273,6 @@ if (( $+commands[op] )); then
       "$bin" "$@"
       return
     fi
-    # OMP's auth-broker token may be synchronized into ~/.omp from the homelab
-    # broker. Prefer that local token path so Windows and WSL can use the same
-    # broker without requiring `op run` for every invocation.
-    if [[ $tool == omp && -r "$HOME/.omp/auth-broker.token" ]]; then
-      local broker_url token
-      broker_url=$(awk -F= '/^[[:space:]]*OMP_AUTH_BROKER_URL[[:space:]]*=/{print $2; exit}' "$env_file")
-      broker_url=${broker_url#\"}
-      broker_url=${broker_url%\"}
-      broker_url=${broker_url:-http://raspi:8765}
-      token=$(<"$HOME/.omp/auth-broker.token")
-      token=${token//$'\r'/}
-      token=${token//$'\n'/}
-      env OMP_AUTH_BROKER_URL="$broker_url" OMP_AUTH_BROKER_TOKEN="$token" "$bin" "$@"
-      return
-    fi
     # Bypass op run for opencode: it uses its own auth login flow (ChatGPT
     # Pro/Plus subscription) rather than API-key injection. The WSL op wrapper
     # (Windows op.exe) also cannot spawn Linux ELF binaries, so this avoids
@@ -301,7 +286,6 @@ if (( $+commands[op] )); then
 
   opencode() { _op_run_wrapped opencode "$@"; }
   claude()   { _op_run_wrapped claude   "$@"; }
-  pam()      { _op_run_wrapped pam      "$@"; }
   omp()      { _op_run_wrapped omp      "$@"; }
 fi
 _omp_auth_host() {
