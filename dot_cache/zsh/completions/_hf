@@ -1,0 +1,11 @@
+#compdef hf
+
+(( $+commands[hf] )) || return 1
+
+local _hf_completion
+_hf_completion="$(env _TYPER_COMPLETE_ARGS="${words[1,$CURRENT]}" _HF_COMPLETE=complete_zsh hf 2>/dev/null)" || return
+[[ -n "$_hf_completion" ]] || return 1
+
+eval "$_hf_completion"
+
+# vim: ft=zsh sw=2 ts=2 et
