@@ -1,19 +1,23 @@
 {{- /*
-Windows-side unbound: loopback-only recursive cache for public DNS.
+Windows-side unbound: loopback-only forwarding cache for raspi/Pi-hole DoT.
 
 Flow:
   Windows adapters -> 127.0.0.1 -> local unbound cache
-    -> root/auth DNS over IPv4 recursion.
+    -> raspi DoT endpoints from .encrypted_dns -> Pi-hole
+    -> Pi-hole's configured encrypted upstream.
 
-No raspi/Pi-hole dependency is configured on Windows. If raspi or Tailscale is
-offline, Windows DNS still works through the local resolver.
+No public recursive fallback is configured on Windows. If raspi/Pi-hole is
+unavailable, the health gate leaves or resets adapter DNS instead of silently
+leaking to local recursion.
 
-DNSSEC validation is OFF. Re-enabling would require unbound-anchor to
-bootstrap the root key on Windows, which adds maintenance for marginal
-benefit on this workstation-local cache.
+DNSSEC validation is OFF here. Pi-hole's upstream resolver handles validation;
+this Windows hop only forwards to the Pi-hole DoT terminator.
 
-Edit this template; chezmoi re-runs the install script if its sha256
-changes (same trigger pattern as the librewolf script).
+The TLS cert bundle path below is rendered at chezmoi-apply time. cacert is in
+always_install.scoop so it should be present when this feature is used.
+
+Edit this template; chezmoi re-runs the install script if its sha256 changes
+(same trigger pattern as the librewolf script).
 */ -}}
 server:
     # ── Logging ─────────────────────────────────────────────────────────
@@ -34,12 +38,13 @@ server:
     # ── Behavior ────────────────────────────────────────────────────────
     do-tcp: yes
     do-udp: yes
-    # IPv6 disabled: this host has no usable IPv6 DNS path. Local apps resolve
-    # via 127.0.0.1, and the iterator sends IPv4 queries directly to root/auth
-    # servers for public DNS answers.
+    # IPv6 disabled: this host has no usable IPv6 DNS path. The raspi DoT
+    # endpoints are IPv4 addresses from .encrypted_dns, and local apps resolve
+    # via 127.0.0.1, so no ::1 listener is needed.
     do-ip4: yes
     do-ip6: no
-    # Recursive caching resolver for public DNS.
+    # Forwarding cache. The root forward-zone below sends queries over TLS to
+    # raspi/Pi-hole endpoints; Windows adapters stay pinned to 127.0.0.1.
     module-config: "iterator"
 
     # Performance tuning for a single-user workstation.
@@ -54,9 +59,28 @@ server:
     serve-expired-ttl: 86400
     serve-expired-client-timeout: 1800
 
-    # Hardening safe for a loopback-only recursive cache.
+    # ── TLS ─────────────────────────────────────────────────────────────
+    # System CA bundle (Scoop "cacert" package, file is cacert.pem).
+    # Required for unbound to validate the Let's Encrypt certificate served by
+    # the raspi DoT terminator.
+    tls-cert-bundle: "{{ .chezmoi.homeDir | replace "\\" "/" }}/scoop/apps/cacert/current/cacert.pem"
+
+    # Hardening safe for a loopback-only forwarding cache.
     hide-identity: yes
     hide-version: yes
     harden-glue: yes
     harden-dnssec-stripped: yes
     use-caps-for-id: no
+
+forward-zone:
+    name: "."
+    # Use raspi/Pi-hole DoT for every upstream query.
+    forward-tls-upstream: yes
+    # Do not fall back to direct/plaintext DNS if raspi is unavailable.
+    forward-first: no
+
+    # raspi DoT terminators from .chezmoidata/dns.yaml encrypted_dns.
+    # The "#authname" suffix supplies SNI and certificate validation hostname.
+{{- range $addr := .encrypted_dns.server_addresses }}
+    forward-addr: {{ $addr }}@{{ $.encrypted_dns.port }}#{{ $.encrypted_dns.server_name }}
+{{- end }}

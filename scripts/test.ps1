@@ -299,7 +299,7 @@ function Test-DnsSafety {
         $rendered -ne 'unsafe'
     }
 
-    Invoke-TestCase 'unbound service.conf uses local recursion without root forward-zone' {
+    Invoke-TestCase 'unbound service.conf forwards root to raspi DoT without public fallback' {
         $src = chezmoi source-path 2>$null
         if (-not $src) { return $false }
         $template = Join-Path $src 'unbound\service.conf.tmpl'
@@ -308,15 +308,21 @@ function Test-DnsSafety {
         $text = Get-Content -LiteralPath $template -Raw
         $listensOnLocalhost = $text -match '(?m)^\s*interface:\s*127\.0\.0\.1@53\s*$'
         $usesIterator = $text -match '(?m)^\s*module-config:\s*"iterator"\s*$'
-        $hasNoRootForwardZone = $text -notmatch '(?m)^\s*forward-zone:\s*$'
-        $hasNoTlsForwarding = $text -notmatch '(forward-tls-upstream|forward-addr:|tls-cert-bundle:)'
-        $hasNoRaspiDependency = $text -notmatch 'encrypted_dns|raspi\.***REMOVED***\.ts\.net'
+        $hasRootForwardZone = $text -match '(?m)^\s*forward-zone:\s*$'
+        $usesTlsForwarding = $text -match '(?m)^\s*forward-tls-upstream:\s*yes\s*$'
+        $disablesForwardFallback = $text -match '(?m)^\s*forward-first:\s*no\s*$'
+        $hasTlsCertBundle = $text -match '(?m)^\s*tls-cert-bundle:\s*".*cacert\.pem"\s*$'
+        $hasRaspiForwarders = ($text -match 'forward-addr:\s*\{\{ \$addr \}\}@\{\{ \$\.encrypted_dns\.port \}\}#\{\{ \$\.encrypted_dns\.server_name \}\}')
+        $hasNoPublicFallback = $text -notmatch '(cloudflare-dns\.com|dns\.quad9\.net|google|8\.8\.8\.8|1\.1\.1\.1|forward-first:\s*yes)'
 
         $listensOnLocalhost -and
             $usesIterator -and
-            $hasNoRootForwardZone -and
-            $hasNoTlsForwarding -and
-            $hasNoRaspiDependency
+            $hasRootForwardZone -and
+            $usesTlsForwarding -and
+            $disablesForwardFallback -and
+            $hasTlsCertBundle -and
+            $hasRaspiForwarders -and
+            $hasNoPublicFallback
     }
 
     Invoke-TestCase 'Pi DoT setup forwards to Pi-hole listener instead of hardcoded loopback' {

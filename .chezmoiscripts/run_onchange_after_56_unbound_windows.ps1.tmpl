@@ -1,5 +1,5 @@
 {{- /*
-Windows unbound: loopback recursive cache for public DNS.
+Windows unbound: loopback forwarding cache for raspi/Pi-hole DoT.
 
 Pipeline:
   1. Render service.conf.tmpl from `unbound/service.conf.tmpl` into the
@@ -9,12 +9,12 @@ Pipeline:
   2. Validate via `unbound-checkconf`.
   3. Install / refresh the Windows "unbound" service (unbound.exe -w
      install).
-  4. Start the service and wait for 127.0.0.1:53 to resolve through
-     the local recursive cache.
-  5. ONLY if the local cache is verified responsive: switch every active
-     IPv4 ethernet/Wi-Fi adapter to use 127.0.0.1 as its local DNS cache.
-     If the cache is not responsive, reset any adapter that only points at
-     127.0.0.1 and emit a warning.
+  4. Start the service and wait for 127.0.0.1:53 to resolve through the local
+     forwarding cache to raspi/Pi-hole.
+  5. ONLY if the local cache is verified responsive: switch every active IPv4
+     ethernet/Wi-Fi adapter to use 127.0.0.1 as its local DNS cache. If the
+     cache is not responsive, reset any adapter that only points at 127.0.0.1
+     and emit a warning.
 
 Trigger semantics: same `run_onchange_` pattern as the librewolf script.
 The embedded sha256 comments below pick up changes to the rendered
@@ -219,7 +219,7 @@ if (-not $running) {
     exit 0
 }
 
-# ── Verify the local recursive cache is actually up ─────────────────────────
+# ── Verify the local raspi/Pi-hole forwarding cache is actually up ──────────
 $listening = $false
 for ($i = 0; $i -lt 10; $i++) {
     Start-Sleep -Milliseconds 500
@@ -232,16 +232,16 @@ for ($i = 0; $i -lt 10; $i++) {
 }
 
 if (-not $listening) {
-    Restore-PreviousUnboundConfig "local recursive cache did not respond on 127.0.0.1:53 within 5s; leaving Windows DNS unchanged."
+    Restore-PreviousUnboundConfig "local raspi/Pi-hole forwarding cache did not respond on 127.0.0.1:53 within 5s; leaving Windows DNS unchanged."
     exit 0
 }
 
-Write-Host "[unbound] local recursive cache responsive on 127.0.0.1:53"
+Write-Host "[unbound] local raspi/Pi-hole forwarding cache responsive on 127.0.0.1:53"
 
 # ── Switch active adapters' DNS to 127.0.0.1 ──────────────────────────────
 # Physical ethernet/Wi-Fi adapters AND user-space VPN tunnels (ProtonVPN,
-# Pritunl, etc.) all get pinned to 127.0.0.1 so the local recursive cache is
-# the only DNS server in the per-adapter list.
+# Pritunl, etc.) all get pinned to 127.0.0.1 so the local raspi/Pi-hole
+# forwarding cache is the only DNS server in the per-adapter list.
 #
 # Tailscale is excluded on purpose: it auto-installs an NRPT catch-all
 # (`.` -> 100.100.100.100, fd7a:115c:a1e0::53) and that's how MagicDNS
@@ -254,8 +254,8 @@ Write-Host "[unbound] local recursive cache responsive on 127.0.0.1:53"
 # Why VPN tunnels need this: when Proton's WireGuard tunnel comes up it
 # attaches `10.2.0.1` to its adapter, which Windows happily queries in
 # parallel with NRPT catch-all rules and the tunnel DNS server can win the
-# race against the loopback recursive cache. Result: Proton answers DNS even
-# though the local resolver should be the adapter DNS path.
+# race against the loopback raspi/Pi-hole cache. Result: Proton answers DNS
+# even though the local resolver should be the adapter DNS path.
 # Pinning the tunnel adapter to only 127.0.0.1 removes the competing entry.
 #
 # Live cleanup on every Proton reconnect is handled by an event-triggered
@@ -293,8 +293,8 @@ foreach ($a in $targetAdapters) {
     gsudo --loglevel none -- powershell -NoProfile -Command "Set-DnsClientServerAddress -InterfaceAlias '$aliasQ' -ServerAddresses '127.0.0.1'"
 }
 
-# Flush the Windows DNS client cache so the next query goes through the local recursive cache.
+# Flush the Windows DNS client cache so the next query goes through the local raspi/Pi-hole cache.
 ipconfig /flushdns | Out-Null
 
-Write-Host "[unbound] done. Active DNS path: Windows -> 127.0.0.1 local recursive cache."
+Write-Host "[unbound] done. Active DNS path: Windows -> 127.0.0.1 local cache -> raspi/Pi-hole DoT."
 {{- end -}}
