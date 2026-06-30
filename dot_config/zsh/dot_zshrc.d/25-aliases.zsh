@@ -105,6 +105,8 @@ alias gg='git grep -E'
 # SSH
 alias rotatekeys='source $HOME/ssh-key-manager.sh && rotate_keys'
 alias displaykeys='source $HOME/ssh-key-manager.sh && display_public_keys'
+alias pssh='$HOME/.local/share/chezmoi/ssh-portable'                 # zero-footprint portable SSH shell
+alias psshs='SSH_PORTABLE_AUTO_SYNC=1 $HOME/.local/share/chezmoi/ssh-portable'  # auto-sync before connect
 
 # Arduino
 alias ard='arduino-cli'

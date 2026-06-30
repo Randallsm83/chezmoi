@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+# ssh-portable — SSH with portable-shell config embedded, zero remote footprint.
+#
+# Usage:
+#   ssh-portable <user@host>
+#   ssh-portable <host> -- <command>
+#
+# This script embeds portable-shell.sh as a base64 string in the SSH command,
+# so no stdin pipe is needed and the interactive shell survives disconnect.
+# The remote temp file is deleted before the interactive shell starts.
+#
+# Environment:
+#   SSH_PORTABLE_SCRIPT — override path to portable-shell.sh
+#   SSH_PORTABLE_NO_RM  — if set, leave the temp file on the remote (debug)
+#   SSH_PORTABLE_SHELL  — remote shell to exec (default: zsh)
+#   SSH_PORTABLE_AUTO_SYNC — set to 1 to auto-sync from GitHub before connecting
+#
+# Flags:
+#   --sync     — fetch the latest portable-shell.sh from GitHub before connecting
+#   --no-sync  — skip auto-sync for this run (overrides SSH_PORTABLE_AUTO_SYNC=1)
+#
+# Example:
+#   ssh-portable ***REMOVED***
+#   ssh-portable ***REMOVED*** -- ls -la
+#   SSH_PORTABLE_SHELL=zsh ssh-portable ***REMOVED***
+#   SSH_PORTABLE_AUTO_SYNC=1 ssh-portable ***REMOVED***
+#   ssh-portable --sync ***REMOVED*** -- ls -la
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Help menu
+# ---------------------------------------------------------------------------
+_show_help() {
+  cat <<'EOF'
+ssh-portable — SSH with portable-shell config embedded, zero remote footprint.
+
+Usage:
+  ssh-portable [options] <host> [-- <remote-command>]
+
+Options:
+  -h, --help            Show this help message and exit
+  --sync                Fetch the latest portable-shell.sh from GitHub before connecting
+  --no-sync             Skip auto-sync for this run (overrides SSH_PORTABLE_AUTO_SYNC=1)
+
+Arguments:
+  <host>                SSH destination (user@host, or host from ~/.ssh/config)
+  -- <remote-command>   Run a remote command instead of an interactive shell
+
+Environment Variables:
+  SSH_PORTABLE_SCRIPT       Override path to portable-shell.sh
+  SSH_PORTABLE_NO_RM        If set, leave the temp file on the remote (debug)
+  SSH_PORTABLE_SHELL        Remote shell to exec (default: bash)
+  SSH_PORTABLE_AUTO_SYNC    Set to 1 to auto-sync from GitHub before every connection
+
+Examples:
+  ssh-portable ***REMOVED***
+  ssh-portable --sync ***REMOVED***
+  ssh-portable ***REMOVED*** -- ls -la
+  SSH_PORTABLE_SHELL=zsh ssh-portable ***REMOVED***
+  SSH_PORTABLE_AUTO_SYNC=1 ssh-portable ***REMOVED***
+EOF
+}
+
+# ---------------------------------------------------------------------------
+# Early exit for help
+# ---------------------------------------------------------------------------
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  _show_help
+  exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# Auto-sync: fetch the latest portable-shell.sh from the repo if it differs
+# ---------------------------------------------------------------------------
+_sync_portable_script() {
+  local local_file="$1"
+  local remote_url="https://raw.githubusercontent.com/Randallsm83/chezmoi/main/portable-shell.sh"
+
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "  ssh-portable: curl not found, skipping auto-sync" >&2
+    return 0
+  fi
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  if ! curl -fsSL -o "$tmpfile" "$remote_url" 2>/dev/null; then
+    echo "  ssh-portable: could not fetch remote version, using local" >&2
+    rm -f "$tmpfile"
+    return 0
+  fi
+
+  if cmp -s "$local_file" "$tmpfile"; then
+    rm -f "$tmpfile"
+    return 0
+  fi
+
+  mv "$tmpfile" "$local_file"
+  echo "  ssh-portable: synced portable-shell.sh to latest version" >&2
+}
+
+# ---------------------------------------------------------------------------
+# Find the portable shell script
+# ---------------------------------------------------------------------------
+script="${SSH_PORTABLE_SCRIPT:-}"
+script_overridden=false
+[ -n "$script" ] && script_overridden=true
+
+if [ -z "$script" ] || [ ! -f "$script" ]; then
+  # Same directory as this wrapper
+  script="$(dirname "$0")/portable-shell.sh"
+fi
+
+if [ ! -f "$script" ]; then
+  # Chezmoi source directory fallback
+  script="${XDG_CONFIG_HOME:-$HOME/.config}/chezmoi/portable-shell.sh"
+fi
+
+if [ ! -f "$script" ]; then
+  # Last resort: search PATH
+  script="$(command -v portable-shell.sh 2>/dev/null || true)"
+fi
+
+if [ -z "$script" ] || [ ! -f "$script" ]; then
+  cat >&2 <<'EOF'
+Error: portable-shell.sh not found.
+
+Set SSH_PORTABLE_SCRIPT to its path, or place it next to this script,
+or in ~/.config/chezmoi/portable-shell.sh, or in your PATH.
+EOF
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Parse arguments: everything before "--" is the SSH target/options,
+# everything after is a remote command to run instead of an interactive shell.
+# ---------------------------------------------------------------------------
+ssh_args=()
+remote_cmd=""
+in_cmd=false
+sync_mode="${SSH_PORTABLE_AUTO_SYNC:-0}"
+
+for arg in "$@"; do
+  if [ "$in_cmd" = true ]; then
+    remote_cmd="${remote_cmd}${remote_cmd:+ }$(printf '%q' "$arg")"
+  elif [ "$arg" = "--sync" ]; then
+    sync_mode=1
+  elif [ "$arg" = "--no-sync" ]; then
+    sync_mode=0
+  elif [ "$arg" = "--" ]; then
+    in_cmd=true
+  else
+    ssh_args+=("$arg")
+  fi
+done
+
+if [ "$sync_mode" = "1" ] && [ "$script_overridden" = false ]; then
+  _sync_portable_script "$script"
+fi
+
+# ---------------------------------------------------------------------------
+# Base64 encode the script (macOS / Linux compatible)
+# ---------------------------------------------------------------------------
+if command -v gbase64 >/dev/null 2>&1; then
+  encoded=$(gbase64 -w0 < "$script")
+elif command -v base64 >/dev/null 2>&1; then
+  # macOS base64 doesn't have -w0, but wraps at 76 cols by default
+  encoded=$(base64 < "$script" | tr -d '\n')
+else
+  echo "Error: base64 or gbase64 not found" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Build remote command string
+# ---------------------------------------------------------------------------
+remote_shell="${SSH_PORTABLE_SHELL:-zsh}"
+
+if [ -n "$remote_cmd" ]; then
+  # Non-interactive: source the config, run the command, clean up
+  remote="
+    tmp=\$(mktemp)
+    echo '$encoded' | base64 -d > \"\$tmp\"
+    source \"\$tmp\"
+    [ -z \"\${SSH_PORTABLE_NO_RM:-}\" ] && rm -f \"\$tmp\"
+    $remote_cmd
+  "
+else
+  # Interactive: source the config, delete the temp file, then exec into
+  # a new interactive shell so the TTY survives and aliases are available.
+  remote="
+    tmp=\$(mktemp)
+    echo '$encoded' | base64 -d > \"\$tmp\"
+    source \"\$tmp\"
+    [ -z \"\${SSH_PORTABLE_NO_RM:-}\" ] && rm -f \"\$tmp\"
+    exec $remote_shell -i
+  "
+fi
+
+# ---------------------------------------------------------------------------
+# Execute SSH
+# ---------------------------------------------------------------------------
+exec ssh -t "${ssh_args[@]}" "$remote"
