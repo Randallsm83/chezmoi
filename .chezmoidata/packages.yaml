@@ -755,11 +755,13 @@ package_mapping:
       brew: []
       mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, cargo:ouch, github:ducaale/xh, cargo:tin-summer, github:ogham/dog]
     darwin:
-      brew: [tealdeer, coreutils, navi, dust, ouch]
+      brew: [tealdeer, coreutils, navi, dust, ouch, doggo]
       # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
       # the completions tarball instead of the binary release for eza.
-      # NOTE: navi, dust, ouch moved to brew — no macOS arm64 GitHub release assets.
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:chmln/sd, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ducaale/xh, cargo:tin-summer, github:ogham/dog]
+      # NOTE: navi, dust, ouch, doggo moved to brew — no macOS arm64 GitHub release assets.
+      # NOTE: dog (ogham/dog) is unmaintained and ships no arm64 darwin asset;
+      # replaced by the maintained doggo DNS client.
+      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:chmln/sd, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ducaale/xh, cargo:tin-summer]
 
   # Development Tools
   sqlite3:

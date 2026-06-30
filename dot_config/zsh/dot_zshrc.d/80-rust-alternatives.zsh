@@ -95,7 +95,7 @@ function rust-tools() {
     'ouch:tar/zip/compress:ouch:compress,decompress'
     'xh:curl (HTTP):xh:http,https'
     'tin-summer:du (big files):sn:'
-    'dog:dig (DNS):dog:'
+    'doggo:dig (DNS):doggo:'
   )
 
   local installed=0

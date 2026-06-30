@@ -1309,6 +1309,7 @@ function rust-tools {
         @{ Rust = 'xh';                 Replaces = 'curl (HTTP)';      Binary = 'xh';        Invoke = @('http','https') }
         @{ Rust = 'tin-summer';          Replaces = 'du (big files)';   Binary = 'sn';        Invoke = @() }
         @{ Rust = 'dog';                 Replaces = 'dig (DNS)';        Binary = 'dog';       Invoke = @() }
+        @{ Rust = 'doggo';               Replaces = 'dig (DNS)';        Binary = 'doggo';     Invoke = @() }
     )
 
     $div = '─' * 56
