@@ -13,7 +13,10 @@
 
 # Specify desired highlighting theme (e.g. "TwoDark"). Run `bat --list-themes`
 # for a list of all available themes
-{{- $bat_theme := index .theme_mappings.bat .theme.name }}
+{{ $bat_theme := "TwoDark" -}}
+{{ if and .theme .theme.name (index .theme_mappings.bat .theme.name) -}}
+{{ $bat_theme = index .theme_mappings.bat .theme.name -}}
+{{ end -}}
 --theme="{{ $bat_theme }}"
 
 # Enable this to use italic text on the terminal. This is not supported on all

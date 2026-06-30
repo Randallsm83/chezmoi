@@ -175,10 +175,11 @@
     shell_profile = {{ joinPath .chezmoi.homeDir ".config" "zsh" ".zshrc" | quote }}
 {{- end }}
 
-    # Font/styling defaults. Theme name is NOT mirrored here — templates read
-    # `.theme.name` directly from `.chezmoidata/theme.yaml` so editing that one
-    # file + `chezmoi apply` is sufficient (no `--init` reinit dance). Per-machine
-    # override: `[data.theme] name = "..."` in `.chezmoi.local.toml`.
+    # Font/styling defaults. Theme is defined in .chezmoidata/theme.yaml as a
+    # map (.theme.name) and is NOT mirrored here as a plain string. Doing so
+    # would shadow the map with a string, causing template errors in any file
+    # that references .theme.name. Per-machine override: [data.theme] name = "..."
+    # in .chezmoi.local.toml, not a top-level `theme = "..."` key.
     font = "Hack"
     font_fallback = "FiraCode"
     nerd_font = "Hack Nerd Font"
@@ -333,10 +334,37 @@ CHEZMOI_SKIP_1P=1 to opt out explicitly).
 {{- /* ========================================================================== */ -}}
 {{- /* Local Overrides                                                         */ -}}
 {{- /* ========================================================================== */ -}}
-{{- /* Create a .chezmoi.local.toml file to override any settings above.       */ -}}
-{{- /* Example: .chezmoi.local.toml                                            */ -}}
-{{- /* [data]                                                                  */ -}}
-{{- /*     is_work = true                                                      */ -}}
-{{- /*     has_sudo = false                                                    */ -}}
-{{- /*     install_packages = false                                            */ -}}
+{{- /* Per-machine overrides live in .chezmoi.local.toml in the chezmoi source */ -}}
+{{- /* dir (gitignored). Its contents are appended verbatim below; because     */ -}}
+{{- /* chezmoi/TOML merge duplicate tables, a [data] / [data.package_features] */ -}}
+{{- /* table here overrides the values emitted above. This is what makes the   */ -}}
+{{- /* documented override mechanism actually work — previously this section    */ -}}
+{{- /* was comments only and local overrides were silently ignored.            */ -}}
+{{- /*                                                                          */ -}}
+{{- /* Example .chezmoi.local.toml:                                            */ -}}
+{{- /*   [data]                                                                */ -}}
+{{- /*       is_work = true                                                    */ -}}
+{{- /*   [data.package_features]                                               */ -}}
+{{- /*       vscode = false                                                    */ -}}
 {{- /* ========================================================================== */ -}}
+{{- /* Load the local override file once. Only [data.package_features] is
+      merged here, because package_features are NOT emitted elsewhere in this
+      config (they come from .chezmoidata/packages.yaml at template time), so
+      re-declaring the table cannot cause a TOML duplicate-key error. The
+      other [data] keys above already have their final values; to override
+      those per-machine, extend this block deliberately (each key must be
+      emitted in exactly ONE place to avoid duplicate-key parse errors). */ -}}
+{{- $localToml := joinPath .chezmoi.sourceDir ".chezmoi.local.toml" -}}
+{{- if stat $localToml }}
+{{-   $local := include $localToml | fromToml -}}
+{{-   $localData := index $local "data" | default dict -}}
+{{-   $localPF := index $localData "package_features" | default dict -}}
+{{-   if $localPF }}
+
+# ---- per-machine package_features overrides (.chezmoi.local.toml) ----
+[data.package_features]
+{{-     range $k, $v := $localPF }}
+    {{ $k }} = {{ $v }}
+{{-     end }}
+{{-   end }}
+{{- end }}
