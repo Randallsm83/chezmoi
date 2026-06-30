@@ -285,6 +285,15 @@ Library/**
 .config/dns/**
 {{- end }}
 
+{{- /* OMP auth-broker systemd service is raspi-homelab-only. It serves the
+      shared auth broker over the LAN for the homelab; no other machine
+      (macOS, Windows, other Linux, WSL, remote VMs) should ever run it.
+      Gate the target file to is_raspi only — the template body is also
+      guarded by is_raspi as defense-in-depth. */ -}}
+{{- if not (index . "is_raspi" | default false) }}
+.config/systemd/user/omp-auth-broker.service
+{{- end }}
+
 {{- /* Remote machine exclusions */ -}}
 {{- if (index . "is_remote" | default false) }}
 # Exclude on remote machines (GUI apps, heavy tools)

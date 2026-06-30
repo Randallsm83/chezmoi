@@ -1,4 +1,4 @@
-{{- if eq .chezmoi.os "linux" -}}
+{{- if (index . "is_raspi" | default false) -}}
 [Unit]
 Description=OMP Auth Broker
 After=network.target
