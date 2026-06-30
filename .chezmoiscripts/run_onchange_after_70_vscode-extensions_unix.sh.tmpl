@@ -32,7 +32,13 @@ WANTED_RAW=$(cat <<'EOF'
 EOF
 )
 
-mapfile -t wanted < <(
+# bash 3.2 (macOS system bash) has no `mapfile`/`readarray`, so build the
+# array with a read loop. IFS= + -r preserves each line verbatim; the
+# herestring-free pipe feeds already-trimmed, comment-stripped lines.
+wanted=()
+while IFS= read -r line; do
+    [ -n "$line" ] && wanted+=("$line")
+done < <(
     printf '%s\n' "$WANTED_RAW" \
     | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
     | grep -Ev '^(#|$)'

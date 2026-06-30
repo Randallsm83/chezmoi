@@ -55,10 +55,22 @@ case "$OS" in
         sudo mkdir -p /etc/resolver
 
         # Track which files we want present so we can remove stale ones.
-        declare -A want=()
+        # macOS ships bash 3.2, which lacks associative arrays, so use a
+        # space-delimited set of " domain " tokens for membership tests.
+        want=" "
         for r in "${routes[@]}"; do
             IFS='|' read -r domain ns vpn <<< "$r"
-            want["$domain"]=1
+            # Empty domain is the Windows-only NRPT catch-all (Namespace ".").
+            # macOS /etc/resolver has no catch-all equivalent, and an empty
+            # name would make the path "/etc/resolver/" (the dir itself),
+            # so skip it here — mirrors the Linux branch.
+            if [ -z "$domain" ]; then
+                continue
+            fi
+            case "$want" in
+                *" $domain "*) : ;;
+                *) want="$want$domain " ;;
+            esac
             f="/etc/resolver/$domain"
             content="$TAG
 # vpn=$vpn
@@ -76,7 +88,11 @@ nameserver $ns
         for f in /etc/resolver/*; do
             [ -f "$f" ] || continue
             domain="$(basename "$f")"
-            if [ -z "${want[$domain]:-}" ] && sudo grep -q "^$TAG" "$f"; then
+            case "$want" in
+                *" $domain "*) in_want=1 ;;
+                *) in_want=0 ;;
+            esac
+            if [ "$in_want" -eq 0 ] && sudo grep -q "^$TAG" "$f"; then
                 printf '  remove  %-25s  (no longer in vpn_dns_routes)\n' "$domain"
                 sudo rm -f "$f"
             fi
