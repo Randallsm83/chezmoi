@@ -2,7 +2,7 @@
 REM ============================================================================
 REM pwsh-profile.cmd - opencode shell override that LOADS $PROFILE
 REM
-REM Why: opencode launches its configured shell with -NoProfile -NonInteractive
+REM Why: opencode and others launch its configured shell with -NoProfile -NonInteractive
 REM -Command "<script>" for every bash-tool invocation. -NoProfile skips your
 REM $PROFILE and the modular Scripts\*.ps1, so auth-health, opr, etc. are
 REM missing in opencode-driven shells.
