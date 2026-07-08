@@ -30,12 +30,6 @@
 
 mcp:
   servers:
-    context7:
-      type: stdio
-      command: cmd
-      args: ["/c", "npx", "-y", "@upstash/context7-mcp@latest"]
-      env: {}
-
     mcp-deepwiki:
       type: stdio
       command: cmd
@@ -75,12 +69,6 @@ mcp:
       url: "https://mcp.neon.tech/mcp"
       headers:
         Authorization: "Bearer ${NEON_API_KEY}"
-
-    tavily:
-      type: http
-      url: "https://mcp.tavily.com/mcp/"
-      headers:
-        Authorization: "Bearer ${TAVILY_API_KEY}"
 
     clickup:
       type: stdio

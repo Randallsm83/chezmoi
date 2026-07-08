@@ -1,12 +1,12 @@
 {{- if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
-# Re-inject standalone qdrant/tavily MCP entries into ~/.claude.json on every
-# `chezmoi apply`.
+# Re-inject the standalone qdrant MCP entry into ~/.claude.json on every
+# `chezmoi apply`, and purge any stale tavily entry.
 #
 # ~/.claude.json is intentionally ignored because Claude Code rewrites it at
 # runtime. The canonical server definitions live in ~/.mcp.json, rendered from
-# dot_mcp.json.tmpl. This hook copies only qdrant and tavily into Claude's
-# top-level mcpServers block.
+# dot_mcp.json.tmpl. This hook copies only qdrant into Claude's top-level
+# mcpServers block and removes tavily/tavily-mcp if a previous sync left them.
 
 set -euo pipefail
 
@@ -17,7 +17,8 @@ from pathlib import Path
 home = Path.home()
 shared_path = home / ".mcp.json"
 claude_path = home / ".claude.json"
-wanted = ("qdrant", "tavily")
+wanted = ("qdrant",)
+remove = ("tavily", "tavily-mcp")
 
 if not shared_path.exists():
     raise SystemExit("[claude-code_mcp_sync] ~/.mcp.json missing; skipping")
@@ -33,8 +34,10 @@ servers = data.setdefault("mcpServers", {})
 for name in wanted:
     if name in source_servers:
         servers[name] = source_servers[name]
+for name in remove:
+    servers.pop(name, None)
 
 claude_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
-print("[claude-code_mcp_sync] synced qdrant,tavily into ~/.claude.json")
+print("[claude-code_mcp_sync] synced qdrant, pruned tavily in ~/.claude.json")
 PY
 {{- end }}

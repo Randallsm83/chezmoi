@@ -11,7 +11,7 @@
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/main/assets/oh-my-opencode.schema.json",
 
   // Import MCP entries from Claude Code's runtime config. Claude's chezmoi
-  // sync keeps the standalone qdrant/tavily entries current, so opencode can
+  // sync keeps the standalone qdrant entry current, so opencode can
   // reuse them directly.
   "claude_code": {
     "mcp": true
@@ -104,8 +104,8 @@
 
   "disabled_agents": [],
 
-  // Keep bundled MCPs enabled; context7 should be available directly.
-  "disabled_mcps": [],
+  // context7 disabled here; it is provided by the omp plugin, not this bundle.
+  "disabled_mcps": ["context7"],
 
   // No commit footer / no Co-authored-by trailer.
   "git_master": {
