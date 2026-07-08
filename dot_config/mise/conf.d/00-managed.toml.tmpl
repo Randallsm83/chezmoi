@@ -8,18 +8,21 @@
 #
 
 # =============================================================================
-# MISE CONFIGURATION
+# MISE — CHEZMOI-MANAGED BASELINE  (~/.config/mise/conf.d/00-managed.toml)
 # =============================================================================
-# Platform-specific tool management strategy:
+# This is the Unix chezmoi-managed baseline tool set + settings, rendered from
+# .chezmoidata/packages.yaml. Windows mise 2026.5.7 does not activate conf.d
+# fragments, so Windows renders the same baseline into active config.toml via
+# dot_config/mise/modify_config.toml instead.
 #
-#   Windows:
-#     - mise: Language runtimes and supported CLI tools
-#     - scoop: Remaining CLI tools, Windows integrations, and bootstrap tools
-#     - winget: GUI applications
+# On Unix, ad-hoc `mise use -g <tool>` / `mise settings set` writes to
+# ~/.config/mise/config.toml, which has higher precedence than this fragment.
+# Edit packages.yaml for baseline changes; never hand-edit the rendered file.
 #
-#   Linux/WSL/macOS:
-#     - mise: Everything (CLI tools + language runtimes)
-#     - homebrew: macOS GUI apps only (warp, wezterm)
+# Platform strategy:
+#   Windows:         same package mapping, rendered by modify_config.toml into
+#                    ~/.config/mise/config.toml (not this conf.d fragment)
+#   Linux/WSL/macOS: mise (everything), homebrew (macOS GUI apps only)
 # =============================================================================
 
 [tools]

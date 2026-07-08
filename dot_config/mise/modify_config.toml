@@ -1,0 +1,153 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* chezmoi:template:line-endings=lf */ -}}
+{{- /*
+  ~/.config/mise/config.toml handling:
+
+    - Windows: mise 2026.5.7 does not activate tools from
+      ~/.config/mise/conf.d/00-managed.toml, so this modify-template renders
+      the curated baseline directly into the only global config that mise loads
+      for activation. Existing live [tools], [settings], and [env] values are
+      overlaid on top so ad-hoc `mise use -g <tool>@<version>` and
+      `mise settings set ...` changes survive `chezmoi apply`.
+
+    - Non-Windows: preserve the live file verbatim. The managed baseline stays
+      in ~/.config/mise/conf.d/00-managed.toml where mise activates it on Unix.
+*/ -}}
+{{- define "mise-record-tool" -}}
+{{- $tools := .tools -}}
+{{- $spec := .spec -}}
+{{- $tool := $spec -}}
+{{- $version := "latest" -}}
+{{- if contains "@" $spec -}}
+{{-   $parts := splitList "@" $spec -}}
+{{-   if eq (len $parts) 3 -}}
+{{-     $tool = printf "%s@%s" (index $parts 0) (index $parts 1) -}}
+{{-     $version = index $parts 2 -}}
+{{-   else if eq (len $parts) 2 -}}
+{{-     if eq (index $parts 0) "npm:" -}}
+{{-       $tool = $spec -}}
+{{-     else -}}
+{{-       $tool = index $parts 0 -}}
+{{-       $version = index $parts 1 -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- $_ := set $tools $tool $version -}}
+{{- end -}}
+
+{{- $stdin := "" -}}
+{{- if hasKey .chezmoi "stdin" -}}
+{{-   $stdin = .chezmoi.stdin -}}
+{{- end -}}
+{{- if ne .chezmoi.os "windows" -}}
+{{- if ne $stdin "" -}}
+{{ $stdin }}
+{{- else -}}
+# User-owned mise global config.
+#
+# On Unix, the curated baseline lives in ~/.config/mise/conf.d/00-managed.toml.
+# This file is intentionally left for ad-hoc `mise use -g` overrides.
+[tools]
+{{- end -}}
+{{- else -}}
+{{- $current := dict -}}
+{{- if ne $stdin "" -}}
+{{-   $current = fromToml $stdin -}}
+{{- end -}}
+
+{{- $managedTools := dict -}}
+{{- range $feature := list "node" "python" "ruby" "golang" "rust" "perl" "php" -}}
+{{-   if index $.package_features $feature -}}
+{{-     $mapping := index $.package_mapping $feature -}}
+{{-     if hasKey $mapping $.chezmoi.os -}}
+{{-       $platform := index $mapping $.chezmoi.os -}}
+{{-       range $platform.mise -}}
+{{-         template "mise-record-tool" (dict "tools" $managedTools "spec" .) -}}
+{{-       end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- if .package_features.lua -}}
+{{-   $luaMapping := index .package_mapping "lua" -}}
+{{-   if hasKey $luaMapping .chezmoi.os -}}
+{{-     $platform := index $luaMapping .chezmoi.os -}}
+{{-     range $platform.mise -}}
+{{-       template "mise-record-tool" (dict "tools" $managedTools "spec" .) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- range .always_install.mise -}}
+{{-   template "mise-record-tool" (dict "tools" $managedTools "spec" .) -}}
+{{- end -}}
+{{- range $feature := list "direnv" "git" "nvim" "vim" "starship" "fzf" "atuin" "sqlite3" "fastfetch" "topgrade" "rust_alternatives" "ai_tools" "dev_extras" -}}
+{{-   if and (hasKey $.package_features $feature) (index $.package_features $feature) -}}
+{{-     $mapping := index $.package_mapping $feature -}}
+{{-     if hasKey $mapping $.chezmoi.os -}}
+{{-       $platform := index $mapping $.chezmoi.os -}}
+{{-       range $platform.mise -}}
+{{-         template "mise-record-tool" (dict "tools" $managedTools "spec" .) -}}
+{{-       end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+
+{{- $tools := dict -}}
+{{- range $k, $v := $managedTools -}}
+{{-   $_ := set $tools $k $v -}}
+{{- end -}}
+{{- if hasKey $current "tools" -}}
+{{-   range $k, $v := index $current "tools" -}}
+{{-     $_ := set $tools $k $v -}}
+{{-   end -}}
+{{- end -}}
+
+{{- $settings := dict
+  "idiomatic_version_file" true
+  "idiomatic_version_file_disable_tools" (list)
+  "always_keep_download" false
+  "always_keep_install" false
+  "plugin_autoupdate_last_check_duration" "1 week"
+  "trusted_config_paths" (list "")
+  "verbose" false
+  "http_timeout" "30s"
+  "jobs" 4
+  "raw" false
+  "yes" false
+  "not_found_auto_install" false
+  "task_output" "prefix"
+  "paranoid" false
+  "shorthands_file" "~/.config/mise/shorthands.toml"
+  "experimental" true
+  "status" (dict "missing_tools" "if_other_versions_installed" "show_env" false "show_tools" false)
+  "disable_tools" (list "lua" "luajit" "rust")
+  "cargo" (dict "binstall" true)
+  "node" (dict)
+  "npm" (dict "bun" true)
+  "python" (dict "compile" true)
+  "ruby" (dict)
+-}}
+{{- if hasKey $current "settings" -}}
+{{-   range $k, $v := index $current "settings" -}}
+{{-     $_ := set $settings $k $v -}}
+{{-   end -}}
+{{- end -}}
+
+{{- $env := dict "LUAROCKS_VERSION" "3.11.1" -}}
+{{- if hasKey $current "env" -}}
+{{-   range $k, $v := index $current "env" -}}
+{{-     $_ := set $env $k $v -}}
+{{-   end -}}
+{{- end -}}
+
+{{- $output := dict -}}
+{{- range $k, $v := $current -}}
+{{-   $_ := set $output $k $v -}}
+{{- end -}}
+{{- $_ := set $output "tools" $tools -}}
+{{- $_ = set $output "settings" $settings -}}
+{{- $_ = set $output "env" $env -}}
+{{- if not (hasKey $output "_") -}}
+{{-   $_ = set $output "_" (dict) -}}
+{{- end -}}
+{{ $output | toToml }}
+{{- end -}}

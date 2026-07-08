@@ -13,6 +13,12 @@
 # Validation: Run `chezmoi execute-template < .chezmoiremove` to test syntax
 # ============================================================================
 
+{{- if eq .chezmoi.os "windows" }}
+# Windows mise does not activate conf.d fragments. Remove the stale managed
+# fragment and use ~/.config/mise/config.toml instead.
+.config/mise/conf.d/00-managed.toml
+{{- end }}
+
 {{- if not .package_features.rust }}
 .config/zsh/.zshrc.d/70-rust.zsh
 .cache/zsh/completions/_rustc

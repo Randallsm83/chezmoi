@@ -173,7 +173,8 @@ echo "Configuring GitHub API authentication for mise..."
 setup_github_token || true
 
 # 1. Install mise tools declared in config (PRIMARY)
-# Tools are declared in ~/.config/mise/config.toml (managed by chezmoi template)
+# Baseline tools are declared in ~/.config/mise/conf.d/00-managed.toml (chezmoi
+# template); `mise install` also picks up user pins in ~/.config/mise/config.toml.
 echo ""
 echo "Installing mise tools/runtimes from config..."
 mise install --yes 2>&1 || echo "Warning: Some mise tools failed to install"

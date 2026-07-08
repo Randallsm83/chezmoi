@@ -14,7 +14,7 @@
 {{-     end -}}
 {{-   end -}}
 {{- end -}}
-{{- if or (contains ":" $tool) (contains "/" $tool) }}
+{{- if or (contains ":" $tool) (contains "/" $tool) (contains "." $tool) }}
 "{{ $tool }}" = "{{ $version }}"
 {{- else }}
 {{ $tool }} = "{{ $version }}"

@@ -129,8 +129,8 @@ chezmoi.local.toml.example
 # OAuth tokens, MCP creds, machine-specific project paths). The `mcpServers`
 # subtree is reconciled by
 # .chezmoiscripts/run_after_71_claude-code_mcp_sync_windows.ps1.tmpl
-# (and its .sh counterpart on Unix), which copies the standalone qdrant/tavily
-# definitions from ~/.mcp.json.
+# (and its .sh counterpart on Unix), which copies the standalone qdrant
+# definition from ~/.mcp.json and prunes any stale tavily entry.
 .claude.json
 .claude.json.bak-*
 
@@ -217,6 +217,10 @@ docs/**
 .config/mise/config.linux.toml
 .config/fzf/fzf.bash
 .lde.yml
+
+# Windows mise does not activate conf.d fragments; the managed baseline is
+# merged directly into ~/.config/mise/config.toml by modify_config.toml.
+.config/mise/conf.d/00-managed.toml
 
 # 1Password agent.toml lives in %LOCALAPPDATA% on Windows, not ~/.config
 .config/1Password/**

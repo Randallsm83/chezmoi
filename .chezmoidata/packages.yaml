@@ -509,10 +509,10 @@ package_mapping:
       dnf: []
       pacman: []
       brew: []
-      mise: ["cargo:atuin"]
+      mise: [atuin]
     darwin:
       brew: []
-      mise: ["cargo:atuin"]
+      mise: [atuin]
 
   wget:
     windows:
@@ -566,13 +566,13 @@ package_mapping:
     windows:
       scoop: []
       winget: []
-      mise: ["cargo:topgrade"]
+      mise: [topgrade]
     linux:
       apt: []
       dnf: []
       pacman: []
       brew: []
-      mise: ["cargo:topgrade"]
+      mise: [topgrade]
     darwin:
       brew: [topgrade]
       mise: []
@@ -646,7 +646,7 @@ package_mapping:
       # NVIDIA App OPS Lua runtime.
       scoop: [lua, luarocks, luajit]
       winget: []
-      mise: ["aqua:LuaLS/lua-language-server"]
+      mise: [lua-language-server]
     linux:
       # ONE source per platform when sudo is available. lua/luajit/luarocks
       # come from the native distro pkg manager (apt/dnf/pacman). mise's
@@ -662,12 +662,12 @@ package_mapping:
       dnf: [lua, luajit, luarocks]
       pacman: [lua, luajit, luarocks]
       brew: []
-      mise: ["aqua:LuaLS/lua-language-server"]
+      mise: [lua-language-server]
       mise_remote: [lua, luajit]
     darwin:
       # macOS native pkg manager = brew. Same reasoning as Linux.
       brew: [lua, luajit, luarocks]
-      mise: ["aqua:LuaLS/lua-language-server"]
+      mise: [lua-language-server]
 
   node:
     windows:
@@ -744,7 +744,9 @@ package_mapping:
       # rust_alternatives convention even though tree-sitter itself is C.
       scoop: [less, rustup, tree-sitter]
       winget: []
-      mise: [github:sharkdp/bat, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, aqua:ouch-org/ouch, github:ducaale/xh, cargo:tin-summer, github:ogham/dog]
+      # coreutils=uutils (aqua) installs individual shims (uname/ls/rm/cp/...) on PATH;
+      # 05-coreutils.ps1 detects uname.exe to swap PowerShell built-ins for uutils.
+      mise: [bat, ripgrep, fd, eza, delta, zoxide, vivid, coreutils, cargo:tealdeer, navi, sd, dust, github:dalance/procs, hyperfine, just, tokei, aqua:ouch-org/ouch, xh, cargo:tin-summer, github:ogham/dog]
     linux:
       apt: []
       dnf: []
@@ -753,7 +755,9 @@ package_mapping:
       pacman: []
       paru: []
       brew: []
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, cargo:coreutils, cargo:tealdeer, cargo:navi, github:chmln/sd, cargo:du-dust, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, cargo:ouch, github:ducaale/xh, cargo:tin-summer, github:ogham/dog]
+      # coreutils stays on cargo (multicall binary, no individual shims) so uutils
+      # doesn't shadow system GNU ls/cat/rm; g-prefixed GNU come from the distro pkg mgr.
+      mise: [bat, bat-extras, ripgrep, fd, eza, delta, zoxide, vivid, cargo:coreutils, cargo:tealdeer, navi, sd, dust, github:dalance/procs, hyperfine, just, tokei, cargo:ouch, xh, cargo:tin-summer, github:ogham/dog]
     darwin:
       brew: [tealdeer, coreutils, navi, dust, ouch, doggo]
       # NOTE: eza stays on cargo backend — mise's github asset autodetect picks
@@ -761,7 +765,7 @@ package_mapping:
       # NOTE: navi, dust, ouch, doggo moved to brew — no macOS arm64 GitHub release assets.
       # NOTE: dog (ogham/dog) is unmaintained and ships no arm64 darwin asset;
       # replaced by the maintained doggo DNS client.
-      mise: [github:sharkdp/bat, bat-extras, github:BurntSushi/ripgrep, github:sharkdp/fd, cargo:eza, github:dandavison/delta, github:ajeetdsouza/zoxide, github:sharkdp/vivid, github:chmln/sd, github:dalance/procs, github:sharkdp/hyperfine, github:casey/just, cargo:tokei, github:ducaale/xh, cargo:tin-summer]
+      mise: [bat, bat-extras, ripgrep, fd, eza, delta, zoxide, vivid, sd, github:dalance/procs, hyperfine, just, tokei, xh, cargo:tin-summer]
 
   # Development Tools
   sqlite3:
@@ -836,7 +840,7 @@ package_mapping:
       # install script needs explicit direct-URL handling before apply.
       scoop: [scott]
       winget: []
-      mise: [claude, opencode]
+      mise: [claude, opencode, llama.cpp]
     linux:
       apt: []
       dnf: []
@@ -1379,19 +1383,19 @@ always_install:
   dnf: []
 
   mise:
-    - aqua:jdx/usage
+    - usage
     - jq
     - yq
     - zig
-    - aqua:zigtools/zls
-    - aqua:tamasfe/taplo
+    - zls
+    - taplo
     - npm:perlnavigator-server
     - pipx:meta-package-manager
+    - github:can1357/oh-my-pi
 
   mise_unix:
     - cargo-binstall
     - chezmoi
-    - github:can1357/oh-my-pi
 # Remote machine package sets
 # When is_remote=true and remote_minimal=true, only install essential tools
 remote_packages:
