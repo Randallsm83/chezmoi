@@ -1,70 +1,109 @@
-{{- $isWSL := and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
-providers:
+providers: 
   webSearch: codex
   image: openai
   kimiApiFormat: openai
+  autoThinkingModel: online
 setupVersion: 1
-theme:
-  dark: "{{ index .theme_mappings.omp .theme.name }}"
+theme: 
+  dark: spaceduck
 symbolPreset: nerd
-statusLine:
+statusLine: 
   preset: nerd
   separator: powerline-thin
   sessionAccent: true
   showHookStatus: true
-terminal:
+  transparent: false
+terminal: 
   showImages: true
-tui:
+tui: 
   hyperlinks: auto
-display:
+display: 
   shimmer: kitt
   showTokenUsage: true
-{{- if eq .chezmoi.os "darwin" }}
-shellPath: /bin/zsh
-{{- else if eq .chezmoi.os "linux" }}
-shellPath: /usr/bin/zsh
-{{- end }}
 showHardwareCursor: true
-task:
+task: 
   showResolvedModelBadge: true
-memory:
+memory: 
   backend: mnemopi
-mnemopi:
+mnemopi: 
   scoping: per-project-tagged
-vault:
+  polyphonicRecall: true
+  enhancedRecall: true
+vault: 
   enabled: true
-github:
+github: 
   enabled: true
-secrets:
+secrets: 
   enabled: true
-modelRoles:
-  vision: anthropic/claude-opus-4-8:high
-  plan: anthropic/claude-fable-5:high
-  slow: anthropic/claude-opus-4-8:xhigh
-  default: anthropic/claude-opus-4-8:high
-  designer: anthropic/claude-opus-4-8:high
-  task: openai-codex/gpt-5.5:xhigh
-  commit: openai-codex/gpt-5.5:xhigh
-  smol: openai-codex/gpt-5.5:medium
-  advisor: anthropic/claude-fable-5:high
+modelRoles: 
+  vision: openai-codex/gpt-5.5:xhigh
+  plan: openai-codex/gpt-5.5:high
+  slow: openai-codex/gpt-5.5:xhigh
+  default: openai-codex/gpt-5.5:high
+  designer: openai-codex/gpt-5.5:high
+  task: openai-codex/gpt-5.5
+  commit: openai-codex/gpt-5.5
+  smol: openai-codex/gpt-5.5
+  advisor: anthropic/claude-opus-4-8:high
 defaultThinkingLevel: auto
 autoResume: false
 steeringMode: one-at-a-time
 followUpMode: one-at-a-time
 interruptMode: immediate
-loop:
+loop: 
   mode: compact
 doubleEscapeAction: tree
 treeFilterMode: all
-stt:
+stt: 
   enabled: true
-compaction:
+compaction: 
   handoffSaveToDisk: true
+  strategy: snapcompact
+  thresholdPercent: 65
+  reserveTokens: 32768
+  keepRecentTokens: 40000
+  idleEnabled: true
+  idleThresholdTokens: 90000
+  idleTimeoutSeconds: 120
+  autoContinue: true
 collapseChangelog: false
-todo:
-  reminders:
+todo: 
+  reminders: 
     max: 1
-dev:
-  autoqa:
+dev: 
+  autoqa: 
     consent: granted
 hideThinkingBlock: false
+disabledProviders: 
+  []
+disabledExtensions: 
+  - slash-command:pr-review-toolkit:review-pr
+  - skill:ai-dashboard-manual-qa
+  - skill:browser-demo
+  - skill:budget-ux-auditor
+  - skill:WotR Companion App UX Auditor
+  - mcp:postman:postman
+  - mcp:context7:context7
+  - mcp:upstash-context7-mcp
+  - mcp:nitrofire-q-gread
+  - mcp:tavily
+  - skill:desktop-commander-overview
+  - skill:doctor
+  - skill:reindex
+proseOnlyThinking: false
+serviceTier: openai-only
+personality: pragmatic
+autocompleteMaxVisible: 10
+features: 
+  unexpectedStopDetection: true
+branchSummary: 
+  enabled: true
+bash: 
+  autoBackground: 
+    enabled: true
+bashInterceptor: 
+  enabled: true
+inspect_image: 
+  enabled: true
+checkpoint: 
+  enabled: true
