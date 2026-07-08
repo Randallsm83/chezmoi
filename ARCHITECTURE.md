@@ -276,10 +276,12 @@ has_sudo = {{ not is_remote && not is_container }}
 - `full` — desktop parity. All language runtimes, full CLI suite, GUI apps
   where they apply.
 
-The sets live in `remote_packages.<tier>` in `.chezmoidata/packages.yaml` and are
-consumed by `dot_config/mise/config.toml.tmpl`. Toolchain fallbacks for
-no-sudo remote hosts (`lua`, `luajit`, `vim`) come from
-`package_mapping.<feature>.mise_remote`.
+The sets live in `remote_packages.<tier>` in `.chezmoidata/packages.yaml`.
+Unix renders them through `dot_config/mise/conf.d/00-managed.toml.tmpl`; Windows
+renders the active global `~/.config/mise/config.toml` through
+`dot_config/mise/modify_config.toml` because Windows mise 2026.5.7 does not
+activate `conf.d` fragments. Toolchain fallbacks for no-sudo remote hosts
+(`lua`, `luajit`, `vim`) come from `package_mapping.<feature>.mise_remote`.
 
 ---
 
@@ -297,12 +299,12 @@ no-sudo remote hosts (`lua`, `luajit`, `vim`) come from
 **Mise Configuration Files**:
 ```
 ~/.config/mise/
-├── config.toml                 # Main config (all platforms)
-├── config.windows.toml         # Windows overrides
-├── config.linux.toml           # Linux additions
-├── config.darwin.toml          # macOS additions
-├── config.medium.toml          # Medium-tier remote set (opt-in on Raspberry Pi)
-└── config.remote.toml          # Minimal-tier remote set
+├── config.toml                  # Windows: modify-managed active baseline + preserved user pins
+│                                # Unix: user-owned `mise use -g` / settings overrides
+├── conf.d/
+│   └── 00-managed.toml          # Unix managed baseline tools + [settings]
+├── config.medium.toml           # Medium-tier remote set (opt-in on Raspberry Pi)
+└── config.remote.toml           # Minimal-tier remote set
 ```
 
 **Tool Categories**:
@@ -318,7 +320,7 @@ no-sudo remote hosts (`lua`, `luajit`, `vim`) come from
 ├── installs/                          # Installed tools
 │   ├── node@23.7.0/
 │   ├── python@3.12.0/
-│   └── cargo:ripgrep@14.1.0/
+│   └── ripgrep@14.1.0/
 ├── downloads/                         # Downloaded archives
 └── shims/                             # Tool shims (in PATH)
 ```

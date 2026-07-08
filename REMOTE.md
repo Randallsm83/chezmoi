@@ -118,14 +118,16 @@ When `has_sudo = false`, all tools are installed via mise to user-writable locat
 │   ├── node@23.7.0/
 │   ├── python@3.12/
 │   ├── go@latest/
-│   └── cargo:ripgrep@latest/
+│   └── ripgrep@latest/
 ├── downloads/         # Downloaded archives
 └── shims/            # Tool shims
 
 # Tool configuration
 ~/.config/mise/
-├── config.toml                # Main config (full set)
-└── config.remote.toml         # Remote minimal config
+├── conf.d/
+│   └── 00-managed.toml      # chezmoi-managed baseline (renders the remote tier set when is_remote)
+├── config.toml              # user-owned: `mise use -g` writes here, survives chezmoi apply
+└── config.remote.toml       # Minimal-tier remote set
 ```
 
 ### System Package Fallback
@@ -151,7 +153,7 @@ sudo dnf install -y git curl wget unzip zip gcc gcc-c++ make \
 ## Remote tier matrix
 
 Three tiers are defined in `.chezmoidata.yaml` under `remote_packages.<tier>`
-and consumed by `dot_config/mise/config.toml.tmpl` plus `.chezmoiignore`.
+and consumed by `dot_config/mise/conf.d/00-managed.toml.tmpl` plus `.chezmoiignore`.
 Select the tier by setting `remote_tier` in `~/.config/chezmoi/.chezmoi.local.toml`
 or by letting hostname detection pick it (Raspberry Pi hosts default to
 `medium`).

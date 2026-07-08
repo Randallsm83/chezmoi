@@ -104,7 +104,7 @@ graph TD
 1. **Chezmoi Installation**: Tries scoop first (preferred), falls back to winget
 2. **Scoop Installation**: Installs scoop if missing (no admin required)
 3. **Chezmoi Init**: Clones repo to `~/.local/share/chezmoi` and applies configs
-4. **Scoop Packages**: Installs 20+ CLI tools (git, gh, lazygit, neovim, mise, starship, zoxide, fzf, ripgrep, fd, bat, eza, vivid, delta, jq, yq, 1password-cli, cygwin, make, zig, curl, wget, 7zip)
+4. **Scoop Packages**: Installs bootstrap + non-mise tools (git, glab, mise, 1password-cli, aria2, 7zip, gsudo, make, curl, wget). The mise-capable CLI tools that used to live here (gh, lazygit, neovim, starship, zoxide, fzf, ripgrep, fd, bat, eza, vivid, delta, jq, yq, zig) are now installed via mise — see steps 6-7.
 5. **Winget Packages**: Installs GUI apps (Git.Git, PowerShell, WindowsTerminal, WezTerm, Warp, VS Code, 7zip)
 6. **Mise Runtimes**: Installs language runtimes (node@lts, python@3.12, ruby@latest, go@latest, rust@stable, lua@latest, bun@latest, deno@latest)
 7. **Mise Tools**: Installs global tools (direnv, 1password-cli, usage, yarn, uv)
@@ -186,7 +186,7 @@ graph TD
 4. **XDG Setup**: Creates XDG directory structure
 5. **Chezmoi Installation**: One-line install via `get.chezmoi.io`
 6. **Mise Installation**: Installs mise via `mise.run` script
-7. **CLI Tools**: Installs CLI tools via mise using cargo backend (ripgrep, fd, bat, eza, delta, bottom, starship, zoxide)
+7. **CLI Tools**: Installs CLI tools via mise (ripgrep, fd, bat, eza, delta, starship, zoxide)
 8. **Language Runtimes**: Installs runtimes via mise (same as Windows)
 9. **Global Tools**: Installs mise global tools (same as Windows)
 
@@ -300,13 +300,13 @@ graph TD
     WinType -->|Language Runtime| MiseWin[Use mise<br/>Consistent versioning<br/>Project-specific versions]
     
     LinuxPhase -->|Bootstrap<br/>Base packages| SysLinux{sudo<br/>available?}
-    LinuxPhase -->|After bootstrap<br/>All other tools| MiseLinux[Use mise<br/>Everything via cargo + runtimes<br/>No sudo needed]
+    LinuxPhase -->|After bootstrap<br/>All other tools| MiseLinux[Use mise<br/>CLI tools + runtimes<br/>No sudo needed]
     
     SysLinux -->|Yes| NativePkgMgr[Use native package manager<br/>apt-get, dnf, or pacman]
     SysLinux -->|No| SkipSys[Skip system packages<br/>Log warning]
     
     MacPhase -->|Bootstrap<br/>Base packages| BrewMac[Use Homebrew<br/>Only for base tools<br/>git, curl, etc.]
-    MacPhase -->|After bootstrap<br/>All other tools| MiseMac[Use mise<br/>Everything via cargo + runtimes<br/>Consistent with other platforms]
+    MacPhase -->|After bootstrap<br/>All other tools| MiseMac[Use mise<br/>CLI tools + runtimes<br/>Consistent with other platforms]
     
     Scoop --> Result1[✅ Installed via scoop]
     Winget --> Result2[✅ Installed via winget]
@@ -621,7 +621,7 @@ There are two layers:
 | `thefuck` | ✅ `true` | command corrector (ships today; deploys `90-thefuck.zsh`) |
 | `fastfetch` | ✅ `true` | system info display |
 | `topgrade` | ✅ `true` | cross-platform updater |
-| `rust_alternatives` | ✅ `true` | bat, ripgrep, fd, eza, delta, zoxide, vivid, sd, dust, procs, hyperfine, tealdeer, navi, just, tokei, ouch, xh, uutils-coreutils |
+| `rust_alternatives` | ✅ `true` | bat, ripgrep, fd, eza, delta, zoxide, vivid, sd, dust, procs, hyperfine, tealdeer, navi, just, tokei, ouch, xh, coreutils, tin-summer, dog |
 | **Language runtimes** | | |
 | `rust` | ✅ `true` | rustup + cargo |
 | `golang` | ✅ `true` | go toolchain |

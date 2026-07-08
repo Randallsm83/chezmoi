@@ -542,7 +542,7 @@ dot_config/your_language/
 {{- end }}
 ```
 
-4. **Add to mise config** (if runtime) (`dot_config/mise/config.toml.tmpl`):
+4. **Add to mise config** (if runtime) — declare it in `.chezmoidata/packages.yaml` (`package_mapping.<feature>.<platform>.mise` or `always_install.mise`). Unix renders the managed fragment at `~/.config/mise/conf.d/00-managed.toml`; Windows merges the same baseline into active `~/.config/mise/config.toml` via `dot_config/mise/modify_config.toml`:
 ```toml
 [tools]
 your_language = "latest"

@@ -149,7 +149,7 @@ lists. Individual flags below override per-package routing.
 | `thefuck` | ✅ | command-corrector |
 | `fastfetch` | ✅ | system info display |
 | `topgrade` | ✅ | cross-platform updater |
-| `rust_alternatives` | ✅ | bat, rg, fd, eza, delta, zoxide, vivid, sd, dust, procs, hyperfine, tealdeer, navi, just, tokei, ouch, xh, uutils-coreutils |
+| `rust_alternatives` | ✅ | bat, rg, fd, eza, delta, zoxide, vivid, sd, dust, procs, hyperfine, tealdeer, navi, just, tokei, ouch, xh, coreutils, tin-summer, dog |
 | **Language runtimes** | | |
 | `rust` | ✅ | rustup + cargo |
 | `golang` | ✅ | go toolchain |

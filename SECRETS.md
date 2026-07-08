@@ -238,8 +238,8 @@ Example: wiring up `aider` with `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`.
 | `omp` | `~/.config/op/omp.env` | `OMP_AUTH_BROKER_TOKEN`, `TAVILY_API_KEY`, `QDRANT_API_KEY` |
 
 `~/.claude.json` references these via `${VAR_NAME}` substitution in HTTP
-header values and stdio MCP `env` blocks, so all four MCP servers
-(`tavily`, `vercel`, `neon`, `qdrant`) connect through the wrapper without
+header values and stdio MCP `env` blocks, so the secret-backed MCP servers
+(`vercel`, `neon`, `qdrant`) connect through the wrapper without
 any literal credentials in `~/.claude.json`.
 
 

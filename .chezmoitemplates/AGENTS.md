@@ -24,7 +24,7 @@ that itself contains the `*/}}` end marker, which this file does in line 42).
 | `1password` | bash | High-level helpers: `has_1password_cli`, `is_1password_authenticated`, `ensure_1password_auth`, `has_1password_item`, `get_1password_field`, `get_1password_document`. Use in scripts that need to branch on op state. |
 | `1password-agent.toml` | TOML | Emits the `[[ssh-keys]]` vault list for 1Password's SSH agent config. Driven by `.ssh.onepassword_vaults` in [`.chezmoidata/ssh.yaml`](../.chezmoidata/ssh.yaml). |
 | `op-read-safe` | template fn | **Legacy** single-secret resolver. Wraps `op read <ref>` with error-swallowing + `CHEZMOI_SKIP_1P` gate. Each invocation = one biometric prompt — prefer `.secrets.*` batch in `.chezmoi.toml.tmpl`. Retained for one-offs only. |
-| `mise-tool-entry` | template fn | Converts a mise package string (`node@lts`, `github:user/repo`, `fzf`) into a TOML `[tools]` entry with correct quoting for `:` and `/`. Used by `dot_config/mise/config*.toml.tmpl`. |
+| `mise-tool-entry` | template fn | Converts a mise package string (`node@lts`, `github:user/repo`, `fzf`) into a TOML `[tools]` entry with correct quoting for keys containing `:`, `/`, or `.` (e.g. `llama.cpp`). Used by the Unix `dot_config/mise/conf.d/00-managed.toml.tmpl`; Windows uses `dot_config/mise/modify_config.toml` to merge the baseline into active `config.toml`. |
 | `ssh-pub-resolve` | template fn | Resolves an SSH public key with precedence: `.secrets.<key>` → `ssh-add -L` (matched by comment suffix, non-Windows only) → empty. Keeps SSH working on remote hosts where `op` is absent. |
 
 ## Call signatures
