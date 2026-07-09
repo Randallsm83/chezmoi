@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- **OMP local broker-token wrapper**: zsh and PowerShell `omp` wrappers now prefer `~/.omp/auth-broker.token`, set `OMP_AUTH_BROKER_URL` to `http://raspi.***REMOVED***.ts.net:8765` when unset, and only fall back to `op run ~/.config/op/omp.env` when the local token is unavailable. This keeps `omp` working without a 1Password unlock/prompt loop.
+
 - **`mpmise -Extended` WinGet fallback**: when `mpm` hits its WinGet extended-search table parser crash (`ValueError: not enough values to unpack`), `mpmise` now warns and retries the same search without WinGet instead of failing the whole resolver.
 
 - **`dog` → `doggo` on macOS (arm64)**: `github:ogham/dog` ships no `arm64-apple-darwin` release asset (only `x86_64-apple-darwin`), so `mise install` failed with "No matching asset found for platform macos-arm64" on Apple Silicon. Replaced the darwin `package_mapping.rust_alternatives.darwin.mise` `github:ogham/dog` entry with the maintained `doggo` DNS client installed via `brew` (no arm64 GitHub asset, same as navi/dust/ouch). Windows and Linux keep `github:ogham/dog` (their `x86_64` assets resolve). The `rust-tools` inventory (zsh `80-rust-alternatives.zsh`, pwsh `99-functions-body.ps1`) now lists `doggo` alongside `dog`.

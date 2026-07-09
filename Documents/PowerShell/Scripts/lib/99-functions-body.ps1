@@ -714,29 +714,97 @@ if (Test-CommandExists 'op') {
             & $resolved.Source @args
         }
     }
+}
 
-    function omp {
-        $resolved = Get-Command omp -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-        if (-not $resolved) {
-            Write-Warning "omp: executable not found on PATH."
-            return
-        }
-
-        $envFile = Join-Path $HOME '.config\op\omp.env'
-        if (Test-Path $envFile) {
-            if ((Get-Command Invoke-OpEnsure -ErrorAction SilentlyContinue) -and (Invoke-OpEnsure -Quiet)) {
-                & op run --env-file=$envFile --no-masking -- $resolved.Source @args
-                return
-            }
-
-            Write-Error "omp: 1Password CLI is not authorized; refusing to run without OMP_AUTH_BROKER_TOKEN because auth-broker requests will fail with 401. Unlock/authorize 1Password, then run 'op-refresh'."
-            $global:LASTEXITCODE = 1
-            return
-        }
-
-        Write-Warning "Env file not found: $envFile - launching $($resolved.Source) without secret injection"
-        & $resolved.Source @args
+function omp {
+    $resolved = Get-Command omp -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $resolved) {
+        Write-Warning "omp: executable not found on PATH."
+        return
     }
+
+    if ($env:OP_WRAPPER_DISABLE) {
+        & $resolved.Source @args
+        return
+    }
+
+    $brokerUrl = if ($env:OMP_AUTH_BROKER_URL) {
+        $env:OMP_AUTH_BROKER_URL
+    } else {
+        'http://raspi.***REMOVED***.ts.net:8765'
+    }
+
+    $tokenFile = if ($env:OMP_AUTH_BROKER_TOKEN_FILE) {
+        $env:OMP_AUTH_BROKER_TOKEN_FILE
+    } else {
+        Join-Path $HOME '.omp\auth-broker.token'
+    }
+
+    if (Test-Path -LiteralPath $tokenFile -PathType Leaf) {
+        try {
+            $brokerToken = (Get-Content -Raw -LiteralPath $tokenFile -ErrorAction Stop).Trim()
+        } catch {
+            Write-Warning "omp: could not read token file at $tokenFile - falling back to 1Password"
+            $brokerToken = $null
+        }
+
+        if ($brokerToken) {
+            $oldBrokerUrl = $env:OMP_AUTH_BROKER_URL
+            $oldBrokerToken = $env:OMP_AUTH_BROKER_TOKEN
+            try {
+                $env:OMP_AUTH_BROKER_URL = $brokerUrl
+                $env:OMP_AUTH_BROKER_TOKEN = $brokerToken
+                & $resolved.Source @args
+                return
+            } finally {
+                if ($null -ne $oldBrokerUrl) {
+                    $env:OMP_AUTH_BROKER_URL = $oldBrokerUrl
+                } else {
+                    Remove-Item Env:\OMP_AUTH_BROKER_URL -ErrorAction SilentlyContinue
+                }
+                if ($null -ne $oldBrokerToken) {
+                    $env:OMP_AUTH_BROKER_TOKEN = $oldBrokerToken
+                } else {
+                    Remove-Item Env:\OMP_AUTH_BROKER_TOKEN -ErrorAction SilentlyContinue
+                }
+                Remove-Variable brokerToken -ErrorAction SilentlyContinue
+            }
+        } else {
+            Write-Warning "omp: token file is empty at $tokenFile - falling back to 1Password"
+        }
+    }
+
+    if ($env:OMP_AUTH_BROKER_TOKEN) {
+        $oldBrokerUrl = $env:OMP_AUTH_BROKER_URL
+        try {
+            $env:OMP_AUTH_BROKER_URL = $brokerUrl
+            & $resolved.Source @args
+            return
+        } finally {
+            if ($null -ne $oldBrokerUrl) {
+                $env:OMP_AUTH_BROKER_URL = $oldBrokerUrl
+            } else {
+                Remove-Item Env:\OMP_AUTH_BROKER_URL -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
+    $envFile = Join-Path $HOME '.config\op\omp.env'
+    if (Test-Path $envFile) {
+        if ((Get-Command op -CommandType Application -ErrorAction SilentlyContinue) -and
+            (Get-Command Invoke-OpEnsure -ErrorAction SilentlyContinue) -and
+            (Invoke-OpEnsure -Quiet)) {
+            & op run --env-file=$envFile --no-masking -- $resolved.Source @args
+            return
+        }
+
+        Write-Error "omp: no readable local broker token and 1Password CLI is not authorized; unlock/authorize 1Password, run 'op-refresh', or sync ~/.omp/auth-broker.token."
+        $global:LASTEXITCODE = 1
+        return
+    }
+
+    Write-Warning "Env file not found: $envFile - launching $($resolved.Source) without secret injection"
+    & $resolved.Source @args
 }
 
 <# 

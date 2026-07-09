@@ -263,7 +263,8 @@ if (( $+commands[op] )); then
     local tool=$1; shift
     local env_file="$HOME/.config/op/${tool}.env"
     local bin
-    bin=$(whence -p "$tool") || {
+    bin=$(whence -p "$tool" 2>/dev/null) || \
+      bin=$(mise which "$tool" 2>/dev/null) || {
       print -u2 "${tool}: command not found"
       return 127
     }
@@ -286,8 +287,49 @@ if (( $+commands[op] )); then
 
   opencode() { _op_run_wrapped opencode "$@"; }
   claude()   { _op_run_wrapped claude   "$@"; }
-  omp()      { _op_run_wrapped omp      "$@"; }
 fi
+
+omp() {
+  emulate -L zsh
+  local bin env_file token_file broker_url broker_token
+  bin=$(whence -p omp 2>/dev/null) || \
+    bin=$(mise which omp 2>/dev/null) || {
+    print -u2 "omp: command not found"
+    return 127
+  }
+
+  if [[ -n $OP_WRAPPER_DISABLE ]]; then
+    "$bin" "$@"
+    return
+  fi
+
+  broker_url="${OMP_AUTH_BROKER_URL:-http://raspi.***REMOVED***.ts.net:8765}"
+  token_file="${OMP_AUTH_BROKER_TOKEN_FILE:-$HOME/.omp/auth-broker.token}"
+  if [[ -r $token_file ]]; then
+    broker_token="$(<"$token_file")"
+    broker_token="${broker_token//$'\r'/}"
+    if [[ -n $broker_token ]]; then
+      OMP_AUTH_BROKER_URL="$broker_url" OMP_AUTH_BROKER_TOKEN="$broker_token" "$bin" "$@"
+      return
+    fi
+    print -u2 "omp: token file is empty at ${token_file} - falling back to 1Password"
+  fi
+
+  if [[ -n $OMP_AUTH_BROKER_TOKEN ]]; then
+    OMP_AUTH_BROKER_URL="$broker_url" OMP_AUTH_BROKER_TOKEN="$OMP_AUTH_BROKER_TOKEN" "$bin" "$@"
+    return
+  fi
+
+  env_file="$HOME/.config/op/omp.env"
+  if (( $+commands[op] )) && [[ -r $env_file ]]; then
+    op run --env-file="$env_file" --no-masking -- "$bin" "$@"
+    return
+  fi
+
+  [[ ! -r $env_file ]] && print -u2 "omp: env file not found at ${env_file} - running without secret injection"
+  (( ! $+commands[op] )) && print -u2 "omp: 1Password CLI not found and no local broker token - running without secret injection"
+  "$bin" "$@"
+}
 _omp_auth_host() {
   print -r -- "${OMP_AUTH_HOST:-raspi}"
 }
