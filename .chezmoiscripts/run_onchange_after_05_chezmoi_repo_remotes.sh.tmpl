@@ -68,7 +68,11 @@ fi
 echo "[chezmoi-repo-remotes] Configuring origin + github remotes in $REPO_DIR"
 
 # Canonical origin = GitLab (single URL, single pushurl by default).
-git remote set-url origin "$WANT_ORIGIN_URL"
+if git remote get-url origin >/dev/null 2>&1; then
+    git remote set-url origin "$WANT_ORIGIN_URL"
+else
+    git remote add origin "$WANT_ORIGIN_URL"
+fi
 git config --unset-all remote.origin.pushurl 2>/dev/null || true
 if [ -n "$WANT_ORIGIN_PUSHURL" ]; then
     git remote set-url --push origin "$WANT_ORIGIN_PUSHURL"

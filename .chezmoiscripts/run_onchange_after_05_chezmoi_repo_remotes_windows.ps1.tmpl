@@ -15,7 +15,7 @@
 # independent and individually retryable.
 #
 # Idempotent — exits silently when remotes already match. Strips any stale
-# `remote.origin.pushurl` left over from the old dual-pushurl layout.
+# `remote.origin.pushurl` / `remote.github.pushurl` left over from the old dual-pushurl layout.
 
 $ErrorActionPreference = 'Stop'
 
@@ -30,16 +30,23 @@ try {
     $haveOrigin     = (& git config --get remote.origin.url 2>$null)
     $haveOriginPush = (& git config --get-all remote.origin.pushurl 2>$null)
     $haveGithub     = (& git config --get remote.github.url 2>$null)
+    $haveGithubPush = (& git config --get-all remote.github.pushurl 2>$null)
 
     if ($haveOrigin -eq $WantOriginUrl -and `
         [string]::IsNullOrEmpty($haveOriginPush) -and `
-        $haveGithub -eq $WantGithubUrl) {
+        $haveGithub -eq $WantGithubUrl -and `
+        [string]::IsNullOrEmpty($haveGithubPush)) {
         exit 0
     }
 
     Write-Host "[chezmoi-repo-remotes] Configuring origin (GitLab) + github (GitHub) remotes in $RepoDir"
 
-    & git remote set-url origin $WantOriginUrl | Out-Null
+    $existingOrigin = & git remote get-url origin 2>$null
+    if (-not [string]::IsNullOrEmpty($existingOrigin)) {
+        & git remote set-url origin $WantOriginUrl | Out-Null
+    } else {
+        & git remote add origin $WantOriginUrl | Out-Null
+    }
     & git config --unset-all remote.origin.pushurl 2>$null
 
     $existingGithub = & git remote get-url github 2>$null
