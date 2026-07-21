@@ -67,6 +67,38 @@ assert_file_exists() {
     fi
 }
 
+assert_file_not_contains_literal() {
+    local file="$1"
+    local pattern="$2"
+
+    if [ ! -f "$file" ]; then
+        log_error "File not found: $file"
+        return 1
+    fi
+
+    if grep -Fq -- "$pattern" "$file"; then
+        log_error "File contains forbidden text: $file"
+        return 1
+    fi
+    return 0
+}
+
+assert_file_contains_literal() {
+    local file="$1"
+    local pattern="$2"
+
+    if [ ! -f "$file" ]; then
+        log_error "File not found: $file"
+        return 1
+    fi
+
+    if ! grep -Fq -- "$pattern" "$file"; then
+        log_error "File missing required text: $file"
+        return 1
+    fi
+    return 0
+}
+
 assert_directory_exists() {
     local dir="$1"
     if [ -d "$dir" ]; then
@@ -114,9 +146,15 @@ test_templates() {
     local source_dir=$(chezmoi source-path)
     
     test_case ".chezmoi.toml.tmpl syntax" "assert_template_valid $source_dir/.chezmoi.toml.tmpl"
-    test_case "common-header.tmpl syntax" "assert_template_valid $source_dir/.chezmoitemplates/common-header.tmpl"
-    test_case "platform-detect.tmpl syntax" "assert_template_valid $source_dir/.chezmoitemplates/platform-detect.tmpl"
-    test_case "package-manager.tmpl syntax" "assert_template_valid $source_dir/.chezmoitemplates/package-manager.tmpl"
+    test_case "common-header template syntax" "assert_template_valid $source_dir/.chezmoitemplates/common-header"
+    test_case "platform-detect template syntax" "assert_template_valid $source_dir/.chezmoitemplates/platform-detect"
+    test_case "mise-tool-entry template exists" "assert_file_exists $source_dir/.chezmoitemplates/mise-tool-entry"
+    test_case "Unix package installer fails on mise install errors" \
+        "assert_file_not_contains_literal $source_dir/.chezmoiscripts/run_onchange_install-packages-unix.sh.tmpl 'mise install --yes 2>&1 ||'"
+    test_case "Unix package installer does not hide mise missing checks" \
+        "assert_file_not_contains_literal $source_dir/.chezmoiscripts/run_onchange_install-packages-unix.sh.tmpl 'mise ls --missing || true' && assert_file_contains_literal $source_dir/.chezmoiscripts/run_onchange_install-packages-unix.sh.tmpl 'missing_mise_tools=\"\$(mise ls --missing)\"'"
+    test_case "Debian base bootstrap checks Python build headers" \
+        "assert_file_contains_literal $source_dir/.chezmoiscripts/run_onchange_before_install_base_packages_unix.sh.tmpl 'debian_python_build_packages=\"build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses-dev libgdbm-dev tk-dev\"'"
 }
 
 test_essential_tools() {
@@ -141,8 +179,8 @@ test_configurations() {
     echo "  Configuration Tests"
     echo "════════════════════════════════════════"
     
-    test_case "Git user.name configured" "[ -n \"\$(git config --global user.name)\" ]"
-    test_case "Git user.email configured" "[ -n \"\$(git config --global user.email)\" ]"
+    test_case "Git user.name configured" "[ -n \"\$(git config user.name)\" ]"
+    test_case "Git user.email configured" "[ -n \"\$(git config user.email)\" ]"
     
     # Check XDG directories
     test_case "XDG_CONFIG_HOME directory exists" "assert_directory_exists \${XDG_CONFIG_HOME:-\$HOME/.config}"
@@ -158,7 +196,7 @@ test_chezmoi_state() {
     test_case "chezmoi managed files exist" "[ \$(chezmoi managed | wc -l) -gt 0 ]"
     # `chezmoi diff` has no `--no-pager` flag; pager is already disabled in
     # .chezmoi.toml.tmpl ([diff] pager=""). Discard output via stdout redirect.
-    test_case "no chezmoi diff errors" "chezmoi diff >/dev/null 2>&1 || true"
+    test_case "no chezmoi diff errors" "chezmoi diff >/dev/null 2>&1"
     test_case "chezmoi data accessible" "chezmoi data >/dev/null"
 }
 
@@ -171,11 +209,11 @@ test_platform_specific() {
     case "$(uname -s)" in
         Linux*)
             test_case "zsh installed" "assert_command_exists zsh"
-            test_case ".zshrc exists" "assert_file_exists \$HOME/.zshrc"
+            test_case "XDG zshrc exists" "assert_file_exists \${XDG_CONFIG_HOME:-\$HOME/.config}/zsh/.zshrc"
             ;;
         Darwin*)
             test_case "zsh installed" "assert_command_exists zsh"
-            test_case ".zshrc exists" "assert_file_exists \$HOME/.zshrc"
+            test_case "XDG zshrc exists" "assert_file_exists \${XDG_CONFIG_HOME:-\$HOME/.config}/zsh/.zshrc"
             ;;
         *)
             log_warning "Platform-specific tests skipped"
@@ -195,7 +233,6 @@ test_mise_integration() {
     fi
     
     test_case "mise config exists" "assert_file_exists \$HOME/.config/mise/config.toml"
-    test_case "mise doctor runs" "mise doctor >/dev/null 2>&1 || true"
     test_case "mise list runs" "mise list >/dev/null"
 }
 
