@@ -3,6 +3,7 @@ providers:
   image: openai
   kimiApiFormat: openai
   autoThinkingModel: online
+  memoryModel: gemma-3-1b
 setupVersion: 1
 theme: 
   dark: spaceduck
@@ -29,6 +30,7 @@ mnemopi:
   scoping: per-project-tagged
   polyphonicRecall: true
   enhancedRecall: true
+  proactiveLinking: true
 vault: 
   enabled: true
 github: 
@@ -36,15 +38,16 @@ github:
 secrets: 
   enabled: true
 modelRoles: 
-  vision: openai-codex/gpt-5.5:xhigh
-  plan: openai-codex/gpt-5.5:high
-  slow: openai-codex/gpt-5.5:xhigh
-  default: openai-codex/gpt-5.5:high
-  designer: openai-codex/gpt-5.5:high
-  task: openai-codex/gpt-5.5
-  commit: openai-codex/gpt-5.5
-  smol: openai-codex/gpt-5.5
+  vision: anthropic/claude-opus-4-8:xhigh
+  plan: anthropic/claude-opus-4-8:high
+  slow: anthropic/claude-opus-4-8:xhigh
+  default: anthropic/claude-opus-4-8:high
+  designer: anthropic/claude-opus-4-8:high
+  task: anthropic/claude-opus-4-8
+  commit: anthropic/claude-opus-4-8
+  smol: anthropic/claude-opus-4-8
   advisor: anthropic/claude-opus-4-8:high
+  tiny: anthropic/claude-opus-4-8
 defaultThinkingLevel: auto
 autoResume: false
 steeringMode: one-at-a-time
@@ -73,7 +76,7 @@ todo:
 dev: 
   autoqa: 
     consent: granted
-hideThinkingBlock: false
+hideThinkingBlock: true
 disabledProviders: 
   []
 disabledExtensions: 
@@ -91,7 +94,6 @@ disabledExtensions:
   - skill:doctor
   - skill:reindex
 proseOnlyThinking: false
-serviceTier: openai-only
 personality: pragmatic
 autocompleteMaxVisible: 10
 features: 
@@ -107,3 +109,39 @@ inspect_image:
   enabled: true
 checkpoint: 
   enabled: true
+commands: 
+  enableOpencodeUser: false
+  enableOpencodeProject: false
+  enableClaudeProject: false
+  enableClaudeUser: false
+autolearn: 
+  enabled: true
+  autoContinue: true
+tier: 
+  openai: priority
+retry: 
+  fallbackChains: 
+    default: 
+      - openai-codex/gpt-5.6-sol
+    smol: 
+      - openai-codex/gpt-5.6-terra
+    slow: 
+      - openai-codex/gpt-5.6-sol
+    vision: 
+      - openai-codex/gpt-5.6-sol
+    plan: 
+      - openai-codex/gpt-5.6-sol
+    designer: 
+      - openai-codex/gpt-5.6-sol
+    commit: 
+      - openai-codex/gpt-5.6-terra
+    tiny: 
+      - openai-codex/gpt-5.6-terra
+    task: 
+      - openai-codex/gpt-5.6-terra
+    advisor: 
+      - openai-codex/gpt-5.6-sol
+cycleOrder: 
+  - default
+  - smol
+  - slow

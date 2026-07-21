@@ -9,6 +9,10 @@ BASH_ENV={{ $home }}/.config/omp/agent-bash-env
 
 # Qdrant MCP can cold-start FastEmbed; keep requests from timing out early.
 OMP_MCP_TIMEOUT_MS=120000
+
+# LM Studio runs on the Mac (***REMOVED***) over Tailscale, reached via MagicDNS.
+# omp's built-in lm-studio provider is keyless; it just needs the right base URL.
+LM_STUDIO_BASE_URL=http://***REMOVED***:1234/v1
 {{- else if $isZshHost -}}
 # OMP runtime environment for Randall's zsh workflow.
 # config.yml selects zsh as the shell; OMP_AGENT_SHELL makes ~/.zshenv source
