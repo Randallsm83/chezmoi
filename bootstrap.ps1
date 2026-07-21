@@ -822,6 +822,9 @@ function Set-EnvironmentVariables {
         'XDG_DATA_HOME' = "$env:USERPROFILE\.local\share"
         'XDG_STATE_HOME' = "$env:USERPROFILE\.local\state"
         'XDG_CACHE_HOME' = "$env:USERPROFILE\.cache"
+        # uv defaults to hardlinks on Windows, which fail when cache and virtualenvs
+        # are on different drives. Copy mode is slower but works everywhere.
+        'UV_LINK_MODE' = 'copy'
     }
     
     foreach ($var in $xdgVars.GetEnumerator()) {
