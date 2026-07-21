@@ -177,7 +177,31 @@ setup_github_token || true
 # template); `mise install` also picks up user pins in ~/.config/mise/config.toml.
 echo ""
 echo "Installing mise tools/runtimes from config..."
-mise install --yes 2>&1 || echo "Warning: Some mise tools failed to install"
+mise_install_failed=false
+if ! mise install --yes; then
+    mise_install_failed=true
+    echo "Warning: mise install exited non-zero; checking for missing tools..."
+fi
+if ! missing_mise_tools="$(mise ls --missing)"; then
+    echo "ERROR: failed to run 'mise ls --missing' after mise install."
+{{- if .is_remote }}
+    echo "Warning: remote host detected; continuing because missing mise tools cannot be checked automatically."
+{{- else }}
+    exit 1
+{{- end }}
+elif [ -n "$missing_mise_tools" ]; then
+    echo "ERROR: mise tools still missing after install:"
+    echo "Output from 'mise ls --missing':"
+    echo "$missing_mise_tools"
+{{- if .is_remote }}
+    echo "Warning: remote host detected; continuing despite missing mise tools."
+{{- else }}
+    exit 1
+{{- end }}
+elif [ "$mise_install_failed" = true ]; then
+    echo "Output from 'mise ls --missing':"
+    echo "  (no missing tools reported)"
+fi
 
 # Ensure shims are in PATH for subsequent operations
 export PATH="$HOME/.local/share/mise/shims:$PATH"

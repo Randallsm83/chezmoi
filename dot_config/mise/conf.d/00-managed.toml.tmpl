@@ -140,9 +140,13 @@ pipx = { uvx = true }
 {{- end }}
 
 # python
-# Force compile from source (precompiled mirror at mise-versions.jdx.dev
-# returned 500s for python-precompiled-aarch64-apple-darwin.gz)
+{{- if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") }}
+# Force compile from source on Apple Silicon only. The precompiled mirror at
+# mise-versions.jdx.dev returned 500s for python-precompiled-aarch64-apple-darwin.gz.
 python = { compile = true }
+{{- else }}
+python = {}
+{{- end }}
 
 # ruby
 ruby = {}

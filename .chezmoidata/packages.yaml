@@ -1136,6 +1136,7 @@ brew_bundle:
   taps_darwin:
     - { name: "buo/cask-upgrade" }
     - { name: "dreamhost/homebrew", url: "git@git.dreamhost.com:dreamhost/homebrew-repo.git" }
+  taps_linux: []
 
   # --------------------------------------------------------------------------
   # Always-installed formulae (no feature flag, all hosts)

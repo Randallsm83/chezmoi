@@ -174,12 +174,25 @@ if ! command_exists unzip; then
     needs_install=true
 fi
 
+if [ "$needs_install" = false ] && command_exists apt-get && command_exists dpkg-query; then
+    # Essential commands can exist while Python build headers are missing.
+    # Validate the Debian/Ubuntu packages needed for complete mise-built Python.
+    debian_python_build_packages="build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses-dev libgdbm-dev tk-dev"
+    for package in $debian_python_build_packages; do
+        if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q "install ok installed"; then
+            log_warning "$package not installed"
+            needs_install=true
+            break
+        fi
+    done
+fi
+
 if [ "$needs_install" = false ]; then
     log_success "Base packages already installed"
 else
 {{- if .is_remote }}
     log_info "Remote machine detected - skipping system package installation (requires sudo)"
-    log_info "Install missing packages manually if needed: git, curl, make, unzip"
+    log_info "Install missing packages manually if needed: git curl make unzip plus Debian/Ubuntu Python build deps: build-essential libssl-dev libreadline-dev zlib1g-dev libyaml-dev libffi-dev libbz2-dev liblzma-dev libsqlite3-dev libncurses-dev libgdbm-dev tk-dev"
 {{- else }}
 log_info "Installing base system packages..."
 
