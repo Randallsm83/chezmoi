@@ -101,7 +101,7 @@ Key rules of the road:
 - **Editors**: Neovim (LazyVim-based config)
 - **Terminals**: WezTerm, Windows Terminal (Windows), Warp
 - **Shell**: Zsh (Unix), PowerShell 7+ (Windows)
-- **Prompt**: Starship with custom onedark theme
+- **Prompt**: Starship styled through the unified theme data
 - **Version Control**: Git with 1Password SSH agent
 - **CLI Tools**: bat, eza, fzf, ripgrep, fd, delta, vivid, direnv, wget
 - **Languages**: Managed by mise (node, python, ruby, go, rust, lua, bun)
@@ -196,7 +196,7 @@ and chezmoi-managed symlinks/scripts.
 
 - **Active Theme**: Set via `theme.name` in `.chezmoidata/theme.yaml` (default: `spaceduck`). Override per machine in `chezmoi.local.toml` via `[data] theme = "..."`.
 - **Available Themes**: spaceduck, onedark, gruvbox-material, tokyonight, tokyonight-storm, dracula, kanagawa
-- **Apps Using Theme**: neovim, wezterm, starship, eza, vivid (LS_COLORS), bat, delta
+- **Apps Using Theme**: neovim, wezterm, starship, eza, vivid (LS_COLORS), bat, delta, opencode, Flow Launcher
 - **Fonts**: Hack Nerd Font (primary), FiraCode Nerd Font (fallback with ligatures)
 
 To change theme:
@@ -665,6 +665,6 @@ MIT License - Feel free to use and modify for your own dotfiles!
 
 **Made with ❤️ using [chezmoi](https://www.chezmoi.io/)**
 
-*Last updated*: 2026-06-12  
+*Last updated*: 2026-07-10
 *Managed files*: ~200 in `dot_config/`, ~370 managed total (varies per platform)  
 *Platforms*: Windows, Linux, WSL, macOS, Raspberry Pi

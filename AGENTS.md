@@ -90,13 +90,13 @@ The system is built around a small set of files that drive everything else:
 
 ### Feature flags
 Defined in `.chezmoidata/packages.yaml` under `package_features`. Two layers:
-- **Group flags** (convenience shortcuts): `essentials`, `shell_tools`, `languages`, `editors`, `terminals`, `rust_alternatives`, `ai_tools`, `gaming`, `docker`, `hardware_tools`, `windows_utilities`, `sysinternals`, `network_tools`, `dev_extras`, `nerd_fonts`.
+- **Group flags** (convenience shortcuts): `essentials`, `shell_tools`, `languages`, `editors`, `terminals`, `rust_alternatives`, `ai_tools`, `gaming`, `docker`, `hardware_tools`, `windows_utilities`, `sysinternals`, `network_tools`, `dev_extras`, `productivity`, `password_managers`, `browsers`, `media`, `vpn`, `nerd_fonts`.
 - **Individual flags**: `git`, `ssh`, `1password`, `mise`, `direnv`, `homebrew`, `wezterm`, `warp`, `windows_terminal`, `nvim`, `vim`, `vscode`, `zed`, `starship`, `zsh`, `powershell`, `fzf`, `atuin`, `wget`, `thefuck`, `fastfetch`, `topgrade`, `rust`, `golang`, `python`, `ruby`, `lua`, `node`, `perl`, `julia`, `php`, `sqlite3`, `arduino`, `vagrant`. Deprecated/off: `asdf`, `nvm`, `tinted_theming`.
 
 **`1password` access caveat**: the flag name starts with a digit, which is invalid Go-template identifier syntax. Always access it as `{{ index .package_features "1password" }}`, **never** `.package_features.1password`.
 
 ### Theme system
-A single `theme.name` in `.chezmoidata/theme.yaml` (overridable as `[data] theme = "..."` in `.chezmoi.toml.tmpl` / `.chezmoi.local.toml`) propagates to neovim, starship, wezterm, eza, vivid, bat, and delta via templates. Available themes: `spaceduck` (default), `onedark`, `gruvbox-material`, `tokyonight`, `tokyonight-storm`, `dracula`, `kanagawa`. Change theme → `chezmoi apply`.
+A single `theme.name` in `.chezmoidata/theme.yaml` (overridable as `[data] theme = "..."` in `.chezmoi.toml.tmpl` / `.chezmoi.local.toml`) propagates to neovim, starship, wezterm, eza, vivid, bat, delta, opencode, and Flow Launcher via templates and generator scripts. Available themes: `spaceduck` (default), `onedark`, `gruvbox-material`, `tokyonight`, `tokyonight-storm`, `dracula`, `kanagawa`. Change theme → `chezmoi apply`.
 
 ### Secrets
 1Password CLI (`op`) is the primary provider, but templates do **not** call `op` directly. Instead, all `op://` references are batched into a single `op inject` invocation in `.chezmoi.toml.tmpl` ($secretsTpl), exposed as the `.secrets.*` template namespace. This means **one biometric prompt per `chezmoi apply --init`** and **zero prompts per `chezmoi apply`**.
