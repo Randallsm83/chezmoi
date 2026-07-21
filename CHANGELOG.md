@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- **Standalone Qdrant MCP durability**: removed the stale qdrant server from the unmanaged PAM manifest, kept qdrant in the standalone `~/.mcp.json` flow, and rendered `HF_HUB_OFFLINE=0` plus a persistent FastEmbed cache path so `mcp-server-qdrant` does not fail after `%TEMP%` cleanup.
+
 - **OMP local broker-token wrapper**: zsh and PowerShell `omp` wrappers now prefer `~/.omp/auth-broker.token`, set `OMP_AUTH_BROKER_URL` to `http://raspi.***REMOVED***.ts.net:8765` when unset, and only fall back to `op run ~/.config/op/omp.env` when the local token is unavailable. This keeps `omp` working without a 1Password unlock/prompt loop.
 
 - **`mpmise -Extended` WinGet fallback**: when `mpm` hits its WinGet extended-search table parser crash (`ValueError: not enough values to unpack`), `mpmise` now warns and retries the same search without WinGet instead of failing the whole resolver.

@@ -19,7 +19,9 @@
         "QDRANT_URL": "http://raspi.***REMOVED***.ts.net:6333",
         "QDRANT_API_KEY": "${QDRANT_API_KEY}",
         "COLLECTION_NAME": "memories",
-        "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2"
+        "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2",
+        "HF_HUB_OFFLINE": "0",
+        "FASTEMBED_CACHE_PATH": "{{ joinPath .xdg_cache_home "fastembed" | replace "\\" "\\\\" }}"
       }
     }
   }
