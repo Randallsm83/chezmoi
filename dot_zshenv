@@ -4,6 +4,19 @@
 # so you cannot set paths reliably here.
 
 export ZDOTDIR="$HOME/.config/zsh"
+
+# Native Windows zsh (Git Bash/MSYS2/MinGW/Cygwin) inherits some environment
+# paths from Windows processes. Force zsh's XDG paths back to POSIX-style
+# paths so plugins and completion caches can resolve files correctly.
+case "${OSTYPE:-}" in
+  msys*|mingw*|cygwin*)
+    export SHELL="${SHELL:-/usr/bin/zsh}"
+    export XDG_CONFIG_HOME="$HOME/.config"
+    export XDG_DATA_HOME="$HOME/.local/share"
+    export XDG_CACHE_HOME="$HOME/.cache"
+    export XDG_STATE_HOME="$HOME/.local/state"
+    ;;
+esac
 [[ -d "$ZDOTDIR" ]] || mkdir -p "$ZDOTDIR" || {
   echo "Error: Failed to create dir: $ZDOTDIR" >&2
   return 1

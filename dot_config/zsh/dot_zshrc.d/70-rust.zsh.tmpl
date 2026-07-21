@@ -19,7 +19,7 @@ export PATH="$CARGO_HOME/bin:$PATH"
 export ENV_DIRS="$ENV_DIRS:$CARGO_HOME:$RUSTUP_HOME"
 
 # Generate rustup, cargo and rustc completions
-setopt no_monitor
+setopt no_monitor 2>/dev/null || true
 
 # Check and handle `rustup`
 if (( $+commands[rustup] )); then
@@ -58,7 +58,7 @@ EOF
   fi
 fi
 
-unsetopt no_monitor
+unsetopt no_monitor 2>/dev/null || true
 
 # -------------------------------------------------------------------------------------------------
 # -*- mode: zsh; sh-indentation: 2; indent-tabs-mode: nil; sh-basic-offset: 2; -*-

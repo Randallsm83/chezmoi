@@ -29,6 +29,21 @@ export MISE_IGNORED_CONFIG_PATHS="/mnt/c:/mnt/d"
 export MISE_CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
 export MISE_RUSTUP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/rustup"
 
+# Native Windows zsh cannot safely eval `mise activate zsh` because mise emits
+# Windows-style executable paths that zsh treats as shell syntax. Git Bash only
+# needs the installed tool bins on PATH; keep the real `mise` executable from
+# Scoop available and avoid installing broken hooks.
+case "${OSTYPE:-}" in
+  msys*|mingw*|cygwin*)
+    for _mise_bin in "$MISE_DATA_DIR"/installs/*/*/bin(N-/); do
+      path=("$_mise_bin" $path)
+    done
+    unset _mise_bin
+    export PATH
+    return 0
+    ;;
+esac
+
 # Activate whichever mise is first on PATH. dot_zshenv prepends ~/.local/bin
 # (used during bootstrap before Homebrew exists). Once `brew install mise`
 # runs, the install-packages script removes the standalone binary so this

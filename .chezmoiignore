@@ -184,14 +184,11 @@ docs/**
 {{- /* Platform-specific exclusions */ -}}
 
 {{- if eq .chezmoi.os "windows" }}
-# Exclude Unix-specific files on Windows
+# Exclude Unix-specific files on Windows, but keep zsh managed for Git Bash.
 
-# Unix shell configs
-.config/zsh/**
-.cache/zsh/**
+# Unix shell configs not used by Git Bash zsh
 .zshrc
 .zshrc.d/
-.zshenv
 .bashrc
 .bash_profile
 .profile

@@ -36,6 +36,13 @@ local WINDOW_OPACITY  = is_mac and 0.92 or 1.0
 -- ─────────────────────────────────────────────────────────────────────────────
 if is_windows then
   config.default_prog = { "pwsh.exe", "-NoLogo" }
+  local git_bash = wezterm.home_dir .. "\\scoop\\apps\\git\\current\\bin\\bash.exe"
+  config.launch_menu = {
+    {
+      label = "Git Bash",
+      args = { git_bash, "--login", "-i" },
+    },
+  }
   config.set_environment_variables = {
     -- Prepend ~/bin so user scripts win over system PATH
     PATH = wezterm.home_dir .. "\\bin;" .. os.getenv("PATH"),

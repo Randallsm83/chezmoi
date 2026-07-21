@@ -15,4 +15,4 @@ if [[ ! -f "$ZSH_CACHE_DIR/completions/_bun" ]]; then
   _comps[bun]=_bun
 fi
 
-SHELL=zsh bun completions >| "$ZSH_CACHE_DIR/completions/_bun" &|
+SHELL=zsh bun completions >| "$ZSH_CACHE_DIR/completions/_bun" 2>/dev/null &|

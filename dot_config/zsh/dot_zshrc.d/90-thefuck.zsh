@@ -7,11 +7,7 @@
 # Magnificent app that corrects previous console command.
 #
 
-if [[ -z $commands[thefuck] ]]; then
-    echo 'thefuck is not installed, you should "pip install thefuck" or "brew install thefuck" first.'
-    echo 'See https://github.com/nvbn/thefuck#installation'
-    return 1
-fi
+(( $+commands[thefuck] )) || return 1
 
 # Register alias
 [[ ! -a $ZSH_CACHE_DIR/thefuck ]] && thefuck --alias > $ZSH_CACHE_DIR/thefuck
