@@ -19,6 +19,12 @@
 .config/mise/conf.d/00-managed.toml
 {{- end }}
 
+{{- if ne .chezmoi.os "windows" }}
+# Git config is XDG-managed at ~/.config/git/config on Unix. Remove stale
+# ~/.gitconfig files that shadow or partially override the managed config.
+.gitconfig
+{{- end }}
+
 {{- if not .package_features.rust }}
 .config/zsh/.zshrc.d/70-rust.zsh
 .cache/zsh/completions/_rustc
