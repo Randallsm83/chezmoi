@@ -222,7 +222,7 @@ is_personal = true     # Personal machine
 is_work = false        # Work machine
 has_sudo = true        # Estimated sudo capability
 is_container = false   # Running in container
-hostname = "***REMOVED***"
+hostname = "<hostname>"
 
 # Smart feature defaults
 install_packages = true  # Auto-disabled on remote/container
