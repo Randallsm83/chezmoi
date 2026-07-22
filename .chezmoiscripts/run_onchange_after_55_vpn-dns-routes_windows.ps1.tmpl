@@ -1,11 +1,11 @@
 {{- if eq .chezmoi.os "windows" -}}
 #!/usr/bin/env pwsh
-# Install DNS routing NRPT rules. Renders from .chezmoidata.yaml ->
-# vpn_dns_routes. Reruns whenever the data hash changes.
+# Install DNS routing NRPT rules. Renders from .infra.vpn_pritunl_ns +
+# .infra.vpn_pritunl_domains (in .chezmoi.local.toml). Reruns on data hash change.
 # Hash: {{ printf "%s%s%s%s%s%s" (include ".chezmoidata/packages.yaml") (include ".chezmoidata/theme.yaml") (include ".chezmoidata/ssh.yaml") (include ".chezmoidata/dns.yaml") (include ".chezmoidata/fonts.yaml") (include ".chezmoidata/mcp.yaml") | sha256sum }}
 #
 # What this does:
-#   For each (profile, domain) pair in vpn_dns_routes, ensures a Name
+#   For each (profile, domain) pair in the Pritunl route data, ensures a Name
 #   Resolution Policy Table rule exists routing that explicit namespace
 #   (for example, '.internal.example') to the profile's VPN-internal resolver.
 #   Do not configure a localhost catch-all namespace here: if 127.0.0.1:53 is
@@ -53,7 +53,7 @@ if (-not (Test-IsAdmin)) {
     exit 0
 }
 
-Write-Host "[vpn-dns] reconciling NRPT rules from .chezmoidata.yaml" -ForegroundColor Cyan
+Write-Host "[vpn-dns] reconciling NRPT rules from .infra.vpn_pritunl_* (.chezmoi.local.toml)" -ForegroundColor Cyan
 
 # Index existing rules by namespace for fast lookup. NRPT keeps a list, not a
 # map, so two rules can target the same namespace; we treat any matching one
@@ -90,14 +90,14 @@ foreach ($r in $desired) {
 }
 
 # Optional: drop chezmoi-managed rules whose domains are no longer in the data
-# file. Without this, removing a domain from .chezmoidata.yaml leaves the
+# file. Without this, removing a domain from the Pritunl route data leaves the
 # rule live forever.
 $desiredNamespaces = $desired | ForEach-Object { $_.Domain } | Sort-Object -Unique
 $ourRules = Get-DnsClientNrptRule -ErrorAction SilentlyContinue | Where-Object { $_.Comment -eq $comment }
 foreach ($r in $ourRules) {
     foreach ($ns in $r.Namespace) {
         if ($desiredNamespaces -notcontains $ns) {
-            Write-Host ("  remove  {0,-25}  (no longer in vpn_dns_routes)" -f $ns) -ForegroundColor DarkYellow
+            Write-Host ("  remove  {0,-25}  (no longer in the Pritunl route data)" -f $ns) -ForegroundColor DarkYellow
             Remove-DnsClientNrptRule -Name $r.Name -Force
             break
         }

@@ -3,7 +3,7 @@
 How DNS resolution actually works on this stack, and where each piece lives in the chezmoi source tree. Last verified `2026-05-13`.
 ## Platform variants
 - **macOS** uses the resolver chain described below (Tailscale MagicDNS -> Pi-hole over the tailnet, with `/etc/resolver` split-DNS for work domains).
-- **Windows** uses a different first hop: a local `unbound` Windows service on `127.0.0.1:53` (managed by `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl`) that forwards via DoT to the raspi terminator on `:853`. Per-adapter DNS is set to `127.0.0.1`. A system-wide NRPT catch-all (`pihole` profile in `vpn_dns_routes`) pins every query to `127.0.0.1` regardless of which interface is up, so DNS doesn't leak to VPN-injected adapter DNS lists (Proton's `<proton-vpn-dns-ip>` is the motivating case). See the Windows section below.
+- **Windows** uses a different first hop: a local `unbound` Windows service on `127.0.0.1:53` (managed by `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl`) that forwards via DoT to the raspi terminator on `:853`. Physical adapters and the ProtonVPN tunnel adapter (Tailscale and Pritunl excepted) get their per-adapter DNS pinned to `127.0.0.1`, and a Scheduled Task re-pins ProtonVPN's tunnel adapter on every reconnect, so DNS doesn't leak to VPN-injected adapter DNS lists (Proton's `<proton-vpn-dns-ip>` is the motivating case). NRPT is used **only** for Pritunl VPN-internal split-DNS, not a localhost catch-all — a `.`→`127.0.0.1` catch-all was removed as unsafe (a stalled local resolver would break all name resolution). See the Windows section below.
 ## TL;DR
 
 ```text
@@ -57,12 +57,12 @@ Important properties:
 
 | Concern | File | Triggered by |
 | --- | --- | --- |
-| Encrypted DNS profile data | `.chezmoidata.yaml` → `encrypted_dns` block | data hash change |
+| Encrypted DNS profile data | `.chezmoidata/dns.yaml` → `encrypted_dns` block (resolver host + addresses come from `.infra.pi_fqdn` / `.infra.dns_pi_addrs`) | data hash change |
 | `.mobileconfig` source | `dot_config/dns/private_pihole-dot.mobileconfig.tmpl` | `chezmoi apply` |
 | Profile install/refresh | `.chezmoiscripts/run_onchange_after_56_encrypted-dns.sh.tmpl` | data hash change |
-| Browser DoH disable data | `.chezmoidata.yaml` → `browser_doh` block | data hash change |
+| Browser DoH disable data | `.chezmoidata/dns.yaml` → `browser_doh` block | data hash change |
 | Browser policies install | `.chezmoiscripts/run_onchange_after_57_browser-doh-policies.sh.tmpl` | data hash change |
-| VPN split-DNS data | `.chezmoidata.yaml` → `vpn_dns_routes` block | data hash change |
+| VPN split-DNS data | `.chezmoi.local.toml` `[data.infra]` → `vpn_pritunl_ns` + `vpn_pritunl_domains` (gitignored; formerly the `vpn_dns_routes` block in `.chezmoidata/dns.yaml`) | data hash change |
 | VPN split-DNS install | `.chezmoiscripts/run_onchange_after_55_vpn-dns-routes.sh.tmpl` | data hash change |
 | Pi-side DoT setup | `scripts/setup-pihole-dot.sh` | manual run on the Pi |
 
@@ -135,12 +135,12 @@ ssh raspi 'sudo unbound-control status'
   ```sh
   networksetup -setdnsservers "Wi-Fi" empty
   ```
-- **Adding a new VPN's split-DNS**: edit `vpn_dns_routes` in `.chezmoidata.yaml` and `chezmoi apply`. The `run_onchange_after_55` script reconciles `/etc/resolver/<domain>` files.
+- **Adding a new VPN's split-DNS**: set `vpn_pritunl_ns` / `vpn_pritunl_domains` under `[data.infra]` in `.chezmoi.local.toml` and `chezmoi apply`. The `run_onchange_after_55` script reconciles `/etc/resolver/<domain>` files.
 ## Windows variant
 The Windows hop chain is intentionally different because Windows lacks `/etc/resolver` and because VPN adapters there (Proton, Pritunl) attach their own DNS to their tunnel interfaces, which Windows happily uses over the loopback resolver. Layout:
 ```text
 Windows app
-  | (Windows DNS Client; NRPT catch-all forces 127.0.0.1)
+  | (per-adapter DNS pinned to 127.0.0.1; NRPT only for Pritunl split-DNS)
   v
 127.0.0.1:53  -- unbound service (no recursion, DoT forward-only)
   | DoT (TCP/853 + TLS)
@@ -160,14 +160,14 @@ Key pieces:
 | --- | --- | --- |
 | Local unbound install/refresh | `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl` | Installs scoop `unbound` as a Windows service; sets adapter DNS to `127.0.0.1` only after the listener responds. |
 | unbound config | `unbound/service.conf.tmpl` | Forwarder mode, no recursion, no validator, no public DoT fallback. |
-| NRPT catch-all (Proton override) | `.chezmoiscripts/run_onchange_after_55_vpn-dns-routes_windows.ps1.tmpl` + `vpn_dns_routes.pihole` in `.chezmoidata.yaml` | `Add-DnsClientNrptRule -Namespace "." -NameServers 127.0.0.1`. Needed because Proton's WireGuard tunnel attaches `<proton-vpn-dns-ip>` to the ProtonVPN adapter, and without NRPT Windows would prefer that over loopback whenever Proton is the default route. |
-| NRPT VPN-internal routes | same script, `vpn_dns_routes.pritunl` | Longest-suffix match wins, so `.dh-int.com` etc. go to `<vpn-dns-ip>` (Pritunl) while the rest hits the `.` catch-all. |
+| Per-adapter DNS pin (Proton override) | `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl` | Pins physical adapters and the ProtonVPN tunnel adapter to `127.0.0.1` once the local cache is verified responsive. Tailscale is excepted (so MagicDNS keeps working); so is Pritunl (its adapter DNS is empty — it uses NRPT split-DNS instead). Replaces the old `.`→`127.0.0.1` NRPT catch-all, removed as unsafe: if the local resolver stalls, a catch-all breaks *all* name resolution. Proton's WireGuard tunnel attaches `<proton-vpn-dns-ip>`; pinning its adapter to loopback stops that from winning the race. Live re-pinning on reconnect: see the auto-cleanup row below. |
+| NRPT VPN-internal routes | same script, `.infra.vpn_pritunl_ns` + `.infra.vpn_pritunl_domains` | One NRPT rule per internal work domain routes it to the Pritunl resolver (`<vpn-dns-ip>`); everything else follows the per-adapter DNS pin (loopback), since there is no `.` catch-all rule. |
 | Proton split-tunnel allow-list | Proton GUI -> Settings -> Split Tunneling -> Bypass VPN | Must include `100.64.0.0/10` and `fd7a:115c:a1e0::/48` so unbound's tailnet fallback (`<pi-tailnet-ip>@853`) is reachable when off-LAN. Without this Proton's kill switch drops all Tailscale traffic, including DNS. |
 | VPN tunnel adapter DNS auto-cleanup | `.chezmoiscripts/run_onchange_after_59_vpn-dns-watcher_windows.ps1.tmpl` + `dot_config/windows/scripts/clean-vpn-adapter-dns.ps1` | Registers a Scheduled Task triggered by System log event 7036 (Service Control Manager: `ProtonVPN WireGuard` -> `running`). Runs the cleanup script as SYSTEM, which strips everything except `127.0.0.1` from VPN tunnel adapter DNS. Without this, Proton's WireGuard tunnel re-injects `<proton-vpn-dns-ip>` on every reconnect (sleep/wake, server hop, kill-switch toggle) and DNS leaks until the next `chezmoi apply`. Logs to `%ProgramData%\chezmoi\clean-vpn-adapter-dns.log`. |
 Verification (Windows):
 ```pwsh
-# All queries should be forced to 127.0.0.1 by NRPT
-Get-DnsClientNrptRule | Where-Object Namespace -eq '.'
+# Every active adapter's IPv4 DNS should be pinned to 127.0.0.1 (there is no '.' NRPT catch-all)
+Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object InterfaceAlias, ServerAddresses
 # o-o.myaddr.l.google.com TXT should return dnscrypt-proxy's upstream
 # (Cloudflare, 172.x), NOT Proton's exit (159.26.x).
 (Resolve-DnsName -Name 'o-o.myaddr.l.google.com' -Type TXT -QuickTimeout).Strings

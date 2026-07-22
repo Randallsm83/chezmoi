@@ -1,7 +1,8 @@
 {{- if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # Install split-DNS resolver overrides for VPN-internal domains on
-# macOS / Linux. Renders from .chezmoidata.yaml -> vpn_dns_routes.
+# macOS / Linux. Renders from .infra.vpn_pritunl_ns + .infra.vpn_pritunl_domains
+# (defined in .chezmoi.local.toml).
 # Reruns whenever the data hash changes.
 # Hash: {{ printf "%s%s%s%s%s%s" (include ".chezmoidata/packages.yaml") (include ".chezmoidata/theme.yaml") (include ".chezmoidata/ssh.yaml") (include ".chezmoidata/dns.yaml") (include ".chezmoidata/fonts.yaml") (include ".chezmoidata/mcp.yaml") | sha256sum }}
 #
@@ -85,7 +86,7 @@ nameserver $ns
                 *) in_want=0 ;;
             esac
             if [ "$in_want" -eq 0 ] && sudo grep -q "^$TAG" "$f"; then
-                printf '  remove  %-25s  (no longer in vpn_dns_routes)\n' "$domain"
+                printf '  remove  %-25s  (no longer in the Pritunl route data)\n' "$domain"
                 sudo rm -f "$f"
             fi
         done
