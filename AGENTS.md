@@ -57,13 +57,13 @@ Tests cover `bootstrap.ps1` (Install-Chezmoi, Install-Scoop, Initialize-Chezmoi 
 ## Architecture (the big picture)
 The system is built around a small set of files that drive everything else:
 
-1. **`.chezmoi.toml.tmpl`** — Detects platform/machine at `chezmoi init` time and sets boolean flags (`.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`, `.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`, `.is_raspi`, `.remote_tier` ∈ {`minimal`, `medium`, `full`}) plus user identity.
+1. **`.chezmoi.toml.tmpl`** — Detects platform/machine at `chezmoi init` time and sets boolean flags (`.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`, `.is_remote`, `.is_personal`, `.is_work`, `.has_sudo`, `.is_raspi`, `.remote_tier` ∈ {`minimal`, `medium`, `full`}) plus user identity. Also emits the `[data.infra]` table (per-machine infrastructure identifiers — empty in public source; see *Infrastructure identifiers* below) and the batched `.secrets.*` bundle (see *Secrets* below).
 2. **`.chezmoidata/*.yaml`** — Single source of truth for static data, split into focused files that chezmoi merges into one namespace at template time. Editing any of these drives most repo-wide behavior changes:
    - `.chezmoidata/theme.yaml` — `theme.*` palettes, `theme_mappings.*` per-application theme identifiers.
    - `.chezmoidata/fonts.yaml` — `fonts.*` (primary, fallback, Nerd Font variants, Fira Code ligature settings).
    - `.chezmoidata/ssh.yaml` — `ssh.*` agent settings (1Password vaults, pipe/socket paths).
    - `.chezmoidata/packages.yaml` — `package_features.*` (feature flags), `package_mapping.*` (per-feature platform/manager packages, e.g. `package_mapping.<name>.darwin.cask`, `package_mapping.<name>.linux.<manager>`, `package_mapping.<name>.mise_remote` for no-sudo remote fallback), `brew_bundle.*`, `scoop_buckets`, `scoop_bucket_overrides`, `always_install.*`, `remote_packages.<tier>`, `claude_memory_projects`.
-   - `.chezmoidata/dns.yaml` — `vpn_dns_routes.*`, `encrypted_dns.*`, `browser_doh.*`, `caddy_ca.*`.
+   - `.chezmoidata/dns.yaml` — `encrypted_dns.*`, `browser_doh.*`, `caddy_ca.*`. (The VPN split-DNS routes and the DoT resolver's host/addresses were relocated to `.infra.*` — see *Infrastructure identifiers* below.)
    - `.chezmoidata/mcp.yaml` — `mcp.*` server definitions.
    The old monolithic `.chezmoidata.yaml` was split per wave-d-innovation; chezmoi treats every `*.yaml` in `.chezmoidata/` as if it were merged into the same top-level data namespace.
 3. **`.chezmoiignore`** — A *template* that uses the flags from steps 1–2 to exclude platform-irrelevant or feature-disabled files (e.g., Unix-only configs on Windows, `70-rust.zsh` when `package_features.rust = false`).
@@ -74,10 +74,10 @@ The system is built around a small set of files that drive everything else:
    - `run_onchange_before_install_base_packages_unix.sh.tmpl` — base packages
    - `run_onchange_install-packages-{unix,windows}.{sh,ps1}.tmpl` — packages from manifests
    - `run_onchange_generate_bat_themes*` / `run_after_rebuild_bat_cache*` — bat theme/cache rebuild
-   - `run_onchange_after_55_vpn-dns-routes.{sh,ps1}.tmpl` — split-DNS routes from `vpn_dns_routes` (macOS `/etc/resolver/`, Linux `resolvectl`, Windows NRPT)
+   - `run_onchange_after_55_vpn-dns-routes.{sh,ps1}.tmpl` — split-DNS routes from `.infra.vpn_pritunl_ns` + `.infra.vpn_pritunl_domains` (macOS `/etc/resolver/`, Linux `resolvectl`, Windows NRPT)
    - `run_onchange_after_70_vscode-extensions_{windows,unix}.{ps1,sh}.tmpl` — install missing VS Code extensions from `vscode/extensions.txt` (gated by `package_features.vscode` and presence of the `code` CLI; idempotent, additive only)
    - `run_after_sync_claude_memories.{sh,ps1}.tmpl` — sync Claude memories
-6. **`chezmoi.local.toml`** (gitignored, see `chezmoi.local.toml.example`) — per-machine variable overrides. Anything in this file wins over auto-detection.
+6. **`.chezmoi.local.toml`** (gitignored, see `chezmoi.local.toml.example`) — per-machine variable overrides, including the `[data.infra]` table. Anything in this file wins over auto-detection.
 
 ### Template variables you will encounter in `.tmpl` files
 - Platform: `.is_windows`, `.is_linux`, `.is_darwin`, `.is_wsl`, `.is_container`, `.is_raspi`
@@ -85,7 +85,7 @@ The system is built around a small set of files that drive everything else:
 - Feature flags: `.package_features.<name>` — see *Feature flags* below.
 - XDG: `.xdg_config_home`, `.xdg_data_home`, `.xdg_state_home`, `.xdg_cache_home`
 - User: `.name`, `.email`, `.github_username`
-- Data blocks: `.vpn_dns_routes`, `.remote_packages.<tier>`, `.package_mapping.<feature>`, `.claude_memory_projects`
+- Data blocks: `.remote_packages.<tier>`, `.package_mapping.<feature>`, `.claude_memory_projects`, `.infra.*` (see *Infrastructure identifiers* below)
 - Built-ins: `.chezmoi.os`, `.chezmoi.arch`, `.chezmoi.hostname`, `.chezmoi.username`, `.chezmoi.kernel.osrelease`
 
 ### Feature flags
@@ -104,6 +104,9 @@ A single `theme.name` in `.chezmoidata/theme.yaml` (overridable as `[data] theme
 To add a secret: append `key = "{{ op://Vault/Item/field }}"` to `$secretsTpl` in `.chezmoi.toml.tmpl`, then reference as `{{ .secrets.key }}` in any template. Run `chezmoi apply --init` to refresh after rotation. Set `CHEZMOI_SKIP_1P=1` to skip 1Password entirely (resolves to empty strings).
 
 The legacy `op-read-safe` partial in `.chezmoitemplates/` is retained for one-off cases but should not be used for new secrets — each invocation triggers its own biometric prompt. Age-encrypted `.age` files are the backup mechanism. Detailed patterns are in `SECRETS.md`.
+
+### Infrastructure identifiers
+Sensitive-but-not-secret identifiers — internal/tailnet hostnames, private IPs, remote login usernames — live in a dedicated `[data.infra]` table, **separate from `.secrets.*`**. The public source (`.chezmoi.toml.tmpl`) ships every `.infra.*` key with an empty-string default; real values live in gitignored `.chezmoi.local.toml` under `[data.infra]`, merged over the defaults via `mergeOverwrite`. They are kept out of the `op inject` bundle on purpose — that bundle is all-or-nothing, so one missing item would empty every `.secrets.*` value and break SSH. Template consumers MUST guard each use with `{{ with .infra.<key> }}…{{ end }}` so a missing value omits the block instead of rendering broken config; plain non-template `*.zsh`/`*.ps1` files cannot read `.infra` and fall back to existing env vars (`OMP_AUTH_HOST`, `OMP_AUTH_BROKER_URL`, …). Full key list and the 1Password regeneration steps are in `SECRETS.md`.
 
 ### OMP homelab auth
 The `omp` CLI authenticates against a homelab auth-broker (and an OpenAI-compatible auth-gateway) running in containers on the Pi (`raspi`). Configuration is split across three managed surfaces:

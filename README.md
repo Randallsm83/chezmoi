@@ -59,17 +59,17 @@ scripts that fire alongside them.
 ```mermaid
 flowchart LR
   LOCAL[".chezmoi.local.toml<br/>(per-machine overrides)"] -->|wins over auto-detection| TOML
-  TOML[".chezmoi.toml.tmpl<br/>machine detection + [data] + .secrets.*"] -->|.is_windows .is_linux .is_darwin<br/>.is_wsl .is_remote .is_raspi<br/>.remote_tier .secrets.*| TPL
+  TOML[".chezmoi.toml.tmpl<br/>machine detection + [data] + .secrets.* + .infra.*"] -->|.is_windows .is_linux .is_darwin<br/>.is_wsl .is_remote .is_raspi<br/>.remote_tier .secrets.* .infra.*| TPL
 
   subgraph DATA[".chezmoidata/ (merged into one namespace)"]
     DT["theme.yaml<br/>palette + theme_mappings"]
     DF["fonts.yaml"]
     DS["ssh.yaml"]
     DP["packages.yaml<br/>package_features, package_mapping,<br/>brew_bundle, scoop_*, always_install,<br/>remote_packages, claude_memory_projects"]
-    DD["dns.yaml<br/>vpn_dns_routes, encrypted_dns,<br/>browser_doh, caddy_ca"]
+    DD["dns.yaml<br/>encrypted_dns, browser_doh, caddy_ca"]
     DM["mcp.yaml"]
   end
-  DATA -->|.theme.* .fonts.* .ssh.*<br/>.package_features.* .package_mapping.*<br/>.vpn_dns_routes.* .caddy_ca.*| TPL
+  DATA -->|.theme.* .fonts.* .ssh.*<br/>.package_features.* .package_mapping.*<br/>.encrypted_dns.* .caddy_ca.*| TPL
 
   PARTIALS[".chezmoitemplates/<br/>platform-detect, 1password-agent.toml,<br/>op-read-safe, mise-tool-entry,<br/>ssh-pub-resolve, common-header, ps-logging"] -->|included via template directive| TPL
 
@@ -445,7 +445,7 @@ Rules of thumb:
 │   ├── packages.yaml                       # package_features, package_mapping,
 │   │                                       # brew_bundle, scoop_*, always_install,
 │   │                                       # remote_packages, claude_memory_projects
-│   ├── dns.yaml                            # vpn_dns_routes, encrypted_dns, browser_doh, caddy_ca
+│   ├── dns.yaml                            # encrypted_dns, browser_doh, caddy_ca
 │   └── mcp.yaml                            # mcp.* server definitions
 ├── .chezmoiignore                          # Platform + feature-flag gating (itself a template)
 ├── .chezmoiscripts/                        # Auto-run scripts (run_before_* / run_onchange_* / run_after_*)
