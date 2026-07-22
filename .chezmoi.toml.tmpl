@@ -198,7 +198,7 @@
     # via the security runbook. Templates MUST guard each use with
     # `with .infra.<key>` so an empty value omits the block instead of rendering
     # broken config. Resolved WITHOUT op inject, so it can never empty .secrets.
-{{- $infra := dict "dh_user" "" "ssh_host_yakko" "" "ssh_host_porky" "" "ssh_host_***REMOVED***" "" "ssh_user_***REMOVED***" "" "ssh_host_fp3" "" "ssh_user_fp3" "" "ssh_host_cass" "" "pi_fqdn" "" "pi_dog_ip" "" "omp_gateway_base_url" "" "omp_broker_url" "" "lm_studio_base_url" "" "vpn_pritunl_ns" "" "vpn_pritunl_domains" "" "dns_pi_addrs" "" -}}
+{{- $infra := dict "dh_user" "" "ssh_host_yakko" "" "ssh_host_porky" "" "ssh_host_dhshell" "" "ssh_user_dhshell" "" "ssh_host_fp3" "" "ssh_user_fp3" "" "ssh_host_cass" "" "pi_fqdn" "" "pi_dog_ip" "" "omp_gateway_base_url" "" "omp_broker_url" "" "lm_studio_base_url" "" "vpn_pritunl_ns" "" "vpn_pritunl_domains" "" "dns_pi_addrs" "" -}}
 {{- $infraLocalToml := joinPath .chezmoi.sourceDir ".chezmoi.local.toml" -}}
 {{- if stat $infraLocalToml -}}
 {{-   $liInfra := index (index (include $infraLocalToml | fromToml) "data" | default dict) "infra" | default dict -}}
@@ -234,7 +234,7 @@ ssh_pub_gitlab_com  = "{{ op://Personal/GitLab SSH Key/public key }}"
 ssh_pub_dh_git      = "{{ op://DH/jc6rk4l6qqwva26fzs2e4k27iu/public key }}"
 ssh_pub_dh_yakko    = "{{ op://DH/Yakko SSH Key/public key }}"
 ssh_pub_dh_porky    = "{{ op://DH/Porky SSH Key/public key }}"
-ssh_pub_***REMOVED*** = "{{ op://Personal/***REMOVED*** SSH Key/public key }}"
+ssh_pub_dhshell     = "{{ op://Personal/DreamHost Shell SSH Key/public key }}"
 ssh_pub_fp3         = "{{ op://Personal/fp3 SSH Key/public key }}"
 ssh_pub_raspi       = "{{ op://Homelab/qdreol3xtwen3z6lcdcjkbkvw4/public key }}"
 ssh_pub_openclaw    = "{{ op://Personal/Openclaw SSH Key/public key }}"

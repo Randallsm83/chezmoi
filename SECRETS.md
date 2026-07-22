@@ -122,7 +122,7 @@ Defined in `.chezmoi.toml.tmpl` $secretsTpl:
 - `ssh_pub_dh_git`
 - `ssh_pub_dh_yakko`
 - `ssh_pub_dh_porky`
-- `ssh_pub_***REMOVED***`
+- `ssh_pub_dhshell`
 - `ssh_pub_fp3`
 - `warp_api_key` — **still injected as a literal into the rendered PowerShell profile.** Candidate for migration to Pattern B if a Warp wrapper is added.
 - `anthropic_api_key` — **no longer referenced by any template.** Claude Code receives it at runtime via the `claude` op-run wrapper (Pattern B). The bundle entry can be removed once nothing else needs it.
@@ -156,7 +156,7 @@ live in a dedicated `[data.infra]` table:
 1Password stays the canonical store: regenerate the local block on any machine
 by materializing the values from your vault into `.chezmoi.local.toml`
 `[data.infra]`, then `chezmoi apply --init`. Keys: `dh_user`,
-`ssh_host_{yakko,porky,***REMOVED***,fp3,cass}`, `ssh_user_{***REMOVED***,fp3}`,
+`ssh_host_{yakko,porky,dhshell,fp3,cass}`, `ssh_user_{dhshell,fp3}`,
 `pi_fqdn`, `pi_dog_ip`, `omp_gateway_base_url`, `omp_broker_url`,
 `lm_studio_base_url`, `vpn_pritunl_ns`, `vpn_pritunl_domains`, `dns_pi_addrs`.
 

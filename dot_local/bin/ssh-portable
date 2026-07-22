@@ -20,11 +20,11 @@
 #   --no-sync  — skip auto-sync for this run (overrides SSH_PORTABLE_AUTO_SYNC=1)
 #
 # Example:
-#   ssh-portable ***REMOVED***
-#   ssh-portable ***REMOVED*** -- ls -la
-#   SSH_PORTABLE_SHELL=zsh ssh-portable ***REMOVED***
-#   SSH_PORTABLE_AUTO_SYNC=1 ssh-portable ***REMOVED***
-#   ssh-portable --sync ***REMOVED*** -- ls -la
+#   ssh-portable dhshell
+#   ssh-portable dhshell -- ls -la
+#   SSH_PORTABLE_SHELL=zsh ssh-portable dhshell
+#   SSH_PORTABLE_AUTO_SYNC=1 ssh-portable dhshell
+#   ssh-portable --sync dhshell -- ls -la
 
 set -euo pipefail
 
@@ -54,11 +54,11 @@ Environment Variables:
   SSH_PORTABLE_AUTO_SYNC    Set to 1 to auto-sync from GitHub before every connection
 
 Examples:
-  ssh-portable ***REMOVED***
-  ssh-portable --sync ***REMOVED***
-  ssh-portable ***REMOVED*** -- ls -la
-  SSH_PORTABLE_SHELL=zsh ssh-portable ***REMOVED***
-  SSH_PORTABLE_AUTO_SYNC=1 ssh-portable ***REMOVED***
+  ssh-portable dhshell
+  ssh-portable --sync dhshell
+  ssh-portable dhshell -- ls -la
+  SSH_PORTABLE_SHELL=zsh ssh-portable dhshell
+  SSH_PORTABLE_AUTO_SYNC=1 ssh-portable dhshell
 EOF
 }
 

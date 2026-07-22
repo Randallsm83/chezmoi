@@ -322,7 +322,7 @@ Library/**
     (list "dh_git"      "ssh_pub_dh_git"      "Dreamhost GIt SSH Key")
     (list "dh_yakko"    "ssh_pub_dh_yakko"    "Yakko SSH Key")
     (list "dh_porky"    "ssh_pub_dh_porky"    "Porky SSH Key")
-    (list "***REMOVED***" "ssh_pub_***REMOVED***" "***REMOVED*** SSH Key")
+    (list "dhshell"     "ssh_pub_dhshell"     "DreamHost Shell SSH Key")
     (list "fp3"         "ssh_pub_fp3"         "fp3 SSH Key")
     (list "raspi"       "ssh_pub_raspi"       "ranmil@raspi") -}}
 {{- range $p := $ssh_pubs -}}

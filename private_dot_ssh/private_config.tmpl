@@ -69,13 +69,13 @@ Host porky
 {{ end }}
 
 # VPS — git deploy access required.
-{{ with .infra.ssh_host_***REMOVED*** }}
-Host ***REMOVED***
+{{ with .infra.ssh_host_dhshell }}
+Host dhshell
   HostName {{ . }}
-  User {{ $.infra.ssh_user_***REMOVED*** }}
+  User {{ $.infra.ssh_user_dhshell }}
   ForwardAgent yes
   IdentitiesOnly yes
-  IdentityFile ~/.ssh/***REMOVED***.pub
+  IdentityFile ~/.ssh/dhshell.pub
 {{ end }}
 
 # WordPress server — git deploy access required.
