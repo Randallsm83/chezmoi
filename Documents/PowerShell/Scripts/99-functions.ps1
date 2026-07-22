@@ -114,7 +114,7 @@ function Get-OmpAuthHost {
 
 function Get-OmpGatewayPublicBaseUrl {
     if ($env:OMP_GATEWAY_PUBLIC_BASE_URL) { return $env:OMP_GATEWAY_PUBLIC_BASE_URL.TrimEnd('/') }
-    return 'https://raspi.***REMOVED***.ts.net/v1'
+    return "https://$(Get-OmpAuthHost)/v1"
 }
 
 function Get-OmpBrokerToken {
@@ -220,7 +220,7 @@ function omp-auth-tools {
     Write-Host ''
     Write-Host 'Overrides' -ForegroundColor Cyan
     Write-Host '  $env:OMP_AUTH_HOST = "raspi"'
-    Write-Host '  $env:OMP_GATEWAY_PUBLIC_BASE_URL = "https://raspi.***REMOVED***.ts.net/v1"'
+    Write-Host '  $env:OMP_GATEWAY_PUBLIC_BASE_URL = "https://raspi.<your-tailnet>.ts.net/v1"'
     Write-Host ''
 }
 # Aliases for the lazy functions are declared inside lib/99-functions-body.ps1

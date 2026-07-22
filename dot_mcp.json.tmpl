@@ -16,7 +16,7 @@
         "mcp-server-qdrant"
       ]{{ end }},
       "env": {
-        "QDRANT_URL": "http://raspi.***REMOVED***.ts.net:6333",
+        "QDRANT_URL": "{{ with .infra.pi_fqdn }}http://{{ . }}:6333{{ end }}",
         "QDRANT_API_KEY": "${QDRANT_API_KEY}",
         "COLLECTION_NAME": "memories",
         "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2",

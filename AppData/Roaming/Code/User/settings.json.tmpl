@@ -200,7 +200,9 @@
   "remote.autoForwardPorts": false,
   // "remote.SSH.showLoginTerminal": true,
   "remote.SSH.remotePlatform": {
-    "***REMOVED***": "linux",
+{{- with .infra.ssh_host_yakko }}
+    "{{ . }}": "linux",
+{{- end }}
     "yakko": "linux"
   },
   // ============================================================================

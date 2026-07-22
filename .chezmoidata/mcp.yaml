@@ -53,7 +53,7 @@ mcp:
       command: uvx
       args: ["--managed-python", "--python", "3.12", "mcp-server-qdrant"]
       env:
-        QDRANT_URL: "http://raspi.***REMOVED***.ts.net:6333"
+        QDRANT_URL: "${QDRANT_URL}"   # host from .infra.pi_fqdn via ~/.mcp.json (dot_mcp.json.tmpl); runtime env for other consumers
         QDRANT_API_KEY: "${QDRANT_API_KEY}"
         COLLECTION_NAME: "memories"
         EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2"

@@ -17,31 +17,7 @@
 # If the local stub resolver is stopped or stale, that policy breaks all
 # hostname resolution. Keep this block to explicit split-DNS namespaces only.
 
-vpn_dns_routes:
-
-  pritunl:
-    nameserver: "***REMOVED***"
-    # Internal-only namespaces. Public DreamHost domains (dreamhost.com,
-    # dreamhostps.com, dreamhost.io) are intentionally excluded so they
-    # remain reachable when the VPN is down — vpn.dreamhost.io in
-    # particular is the VPN login page itself.
-    #
-    # vk.dreamhost.io is a deeper, internal-only subtree (DH kubecluster /
-    # internal infra: *.kubecluster.vk.dreamhost.io, lde-service-master
-    # under prod-bm, etc.). NRPT picks the longest-matching suffix, so this
-    # entry coexists safely with the unrouted parent .dreamhost.io and does
-    # NOT shadow vpn.dreamhost.io (which is at the apex). The pihole
-    # catch-all (`.`) above is the shortest possible match, so any of these
-    # work-domain rules win over it for matching queries.
-    domains:
-      - git.dreamhost.com
-      - dreamhostnetworks.com
-      - dhcompute.net
-      - dh-int.com
-      - dhdap.com
-      - newdream.net
-      - dream.io
-      - vk.dreamhost.io
+# vpn_dns_routes relocated to gitignored .chezmoi.local.toml [data.infra] (vpn_pritunl_ns + vpn_pritunl_domains). See security runbook.
 
 # ============================================================================
 # Encrypted DNS (DoT) profile
@@ -67,10 +43,7 @@ vpn_dns_routes:
 encrypted_dns:
   enabled: true
   protocol: tls                            # "tls" (DoT) or "https" (DoH)
-  server_name: "raspi.***REMOVED***.ts.net"
-  server_addresses:
-    - "***REMOVED***"                       # raspi Ethernet LAN IPv4
-    - "***REMOVED***"                     # raspi tailnet IPv4
+  # server_name + server_addresses now come from .infra.pi_fqdn / .infra.dns_pi_addrs
   port: 853                                # used for the reachability probe
   identifier: "com.ranmil.dns.pihole-dot"
   display_name: "Pi-hole DoT"

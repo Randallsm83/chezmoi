@@ -135,6 +135,31 @@ The `.chezmoitemplates/op-read-safe` partial is retained for one-off cases
 but is **not the preferred pattern** — each invocation triggers its own
 biometric prompt. Prefer adding to `$secretsTpl` instead.
 
+### Infrastructure identifiers (`.infra.*` / `.chezmoi.local.toml`)
+
+Sensitive-but-not-secret infrastructure identifiers — internal/tailnet
+hostnames, private IPs, remote login usernames — are kept **out of the public
+repo** but are **not** routed through the batched `op inject` bundle above.
+Reason: that bundle is all-or-nothing (`op inject || strip-all`), so a single
+missing item would empty every `.secrets.*` value and break SSH. Instead they
+live in a dedicated `[data.infra]` table:
+
+- **Public source** (`.chezmoi.toml.tmpl`) ships every `.infra.*` key with an
+  empty-string default.
+- **Real values** live in gitignored `.chezmoi.local.toml` under `[data.infra]`,
+  merged over the defaults at init via `mergeOverwrite`.
+- **Consumers** (`.tmpl` files only) reference `{{ with .infra.<key> }}…{{ end }}`
+  so an empty value omits the block instead of rendering broken config.
+- **Plain files** (`*.zsh`, `*.ps1` that are not templates) cannot read `.infra`;
+  they fall back to existing env vars (`OMP_AUTH_HOST`, `OMP_AUTH_BROKER_URL`, …).
+
+1Password stays the canonical store: regenerate the local block on any machine
+by materializing the values from your vault into `.chezmoi.local.toml`
+`[data.infra]`, then `chezmoi apply --init`. Keys: `dh_user`,
+`ssh_host_{yakko,porky,***REMOVED***,fp3,cass}`, `ssh_user_{***REMOVED***,fp3}`,
+`pi_fqdn`, `pi_dog_ip`, `omp_gateway_base_url`, `omp_broker_url`,
+`lm_studio_base_url`, `vpn_pritunl_ns`, `vpn_pritunl_domains`, `dns_pi_addrs`.
+
 ---
 
 ## Architecture B: Runtime Injection via `op run`

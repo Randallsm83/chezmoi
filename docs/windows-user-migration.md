@@ -36,7 +36,7 @@ the folder name you want).
 
 ```powershell
 $pw = Read-Host -AsSecureString "Password for ranmil"
-New-LocalUser -Name ranmil -Password $pw -FullName "Randall Miller"
+New-LocalUser -Name ranmil -Password $pw -FullName "Your Name"
 Add-LocalGroupMember -Group Administrators -Member ranmil
 ```
 

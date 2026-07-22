@@ -15,20 +15,12 @@
 
 set -euo pipefail
 
-{{- if not (hasKey . "vpn_dns_routes") }}
-echo "[vpn-dns] no VPN DNS routes configured; nothing to do"
-exit 0
-{{- end }}
-
 # Desired routes from chezmoi data
 declare -a routes=(
-{{- with .vpn_dns_routes }}
-{{-   range $vpn, $cfg := . }}
-{{-     range $cfg.domains }}
-    "{{ . }}|{{ $cfg.nameserver }}|{{ $vpn }}"
-{{-     end }}
-{{-   end }}
-{{- end }}
+{{- $ns := .infra.vpn_pritunl_ns }}
+{{- with $ns }}{{ range ($.infra.vpn_pritunl_domains | splitList ",") }}
+    "{{ . }}|{{ $ns }}|pritunl"
+{{- end }}{{ end }}
 )
 
 if [ ${#routes[@]} -eq 0 ]; then

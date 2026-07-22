@@ -19,12 +19,12 @@ set -euo pipefail
 
 ENABLED="{{ $cfg.enabled }}"
 IDENTIFIER="{{ $cfg.identifier }}"
-SERVER_NAME="{{ $cfg.server_name }}"
+SERVER_NAME="{{ .infra.pi_fqdn }}"
 PORT="{{ $cfg.port }}"
 PROTOCOL="{{ $cfg.protocol }}"
 PROFILE_SRC="${HOME}/.config/dns/pihole-dot.mobileconfig"
 # Space-separated list of upstream addresses (rendered from chezmoi data).
-SERVER_ADDRS="{{ range $i, $a := $cfg.server_addresses }}{{ if $i }} {{ end }}{{ $a }}{{ end }}"
+SERVER_ADDRS="{{ range $i, $a := (.infra.dns_pi_addrs | splitList ",") }}{{ if $i }} {{ end }}{{ $a }}{{ end }}"
 
 log() { printf '[encrypted-dns] %s\n' "$*"; }
 warn() { printf '[encrypted-dns] WARN: %s\n' "$*" >&2; }

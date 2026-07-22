@@ -43,42 +43,50 @@ Host gl gitlab.com
 # DreamHost Git  (alias: dh-git)
 Host dh-git git.dreamhost.com
   HostName git.dreamhost.com
-  User rmiller
+{{ with .infra.dh_user }}  User {{ . }}{{ end }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/dh_git.pub
 
 # ── DreamHost Servers ─────────────────────────────────────────────────────────
 # ForwardAgent enabled on all — git deployments run from these servers.
 
+{{ with .infra.ssh_host_yakko }}
 Host yakko
-  HostName ***REMOVED***
-  User rmiller
+  HostName {{ . }}
+  User {{ $.infra.dh_user }}
   ForwardAgent yes
   IdentitiesOnly yes
   IdentityFile ~/.ssh/dh_yakko.pub
+{{ end }}
 
+{{ with .infra.ssh_host_porky }}
 Host porky
-  HostName ***REMOVED***
-  User rmiller
+  HostName {{ . }}
+  User {{ $.infra.dh_user }}
   ForwardAgent yes
   IdentitiesOnly yes
   IdentityFile ~/.ssh/dh_porky.pub
+{{ end }}
 
-# VPS running ***REMOVED*** app — git deploy access required.
+# VPS — git deploy access required.
+{{ with .infra.ssh_host_***REMOVED*** }}
 Host ***REMOVED***
-  HostName ***REMOVED***
-  User ***REMOVED***
+  HostName {{ . }}
+  User {{ $.infra.ssh_user_***REMOVED*** }}
   ForwardAgent yes
   IdentitiesOnly yes
   IdentityFile ~/.ssh/***REMOVED***.pub
+{{ end }}
 
-# DreamPress WordPress server — git deploy access required.
+# WordPress server — git deploy access required.
+{{ with .infra.ssh_host_fp3 }}
 Host fp3
-  HostName ***REMOVED***
-  User ***REMOVED***
+  HostName {{ . }}
+  User {{ $.infra.ssh_user_fp3 }}
   ForwardAgent yes
   IdentitiesOnly yes
   IdentityFile ~/.ssh/fp3.pub
+{{ end }}
 
 # ── Home Lab ──────────────────────────────────────────────────────────────────
 
@@ -91,13 +99,15 @@ Host raspi
   IdentityFile ~/.ssh/raspi.pub
 
 # OpenClaw container host — DreamHost VM (resolved via Tailscale MagicDNS).
-# MagicDNS name is `cass`; `openclaw` kept as an alias for muscle memory.
+# MagicDNS name kept in .infra; `openclaw` alias for muscle memory.
 # Login user is `debian` (Debian cloud image). Key: Openclaw SSH Key in 1P.
+{{ with .infra.ssh_host_cass }}
 Host cass openclaw
-  HostName cass
+  HostName {{ . }}
   User debian
   IdentitiesOnly yes
   IdentityFile ~/.ssh/openclaw.pub
+{{ end }}
 
 # ── Global Defaults ───────────────────────────────────────────────────────────
 # IMPORTANT: Host * must be last so per-host overrides take effect first.

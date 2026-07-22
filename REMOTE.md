@@ -290,7 +290,7 @@ Git config automatically adjusts for remote:
 # Minimal git config on remote (no credential helper)
 [user]
     name = Randall
-    email = randallsm83@gmail.com
+    email = you@example.com
 
 [core]
     editor = nvim

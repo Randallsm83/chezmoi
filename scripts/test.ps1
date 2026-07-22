@@ -312,7 +312,7 @@ function Test-DnsSafety {
         $usesTlsForwarding = $text -match '(?m)^\s*forward-tls-upstream:\s*yes\s*$'
         $disablesForwardFallback = $text -match '(?m)^\s*forward-first:\s*no\s*$'
         $hasTlsCertBundle = $text -match '(?m)^\s*tls-cert-bundle:\s*".*cacert\.pem"\s*$'
-        $hasRaspiForwarders = ($text -match 'forward-addr:\s*\{\{ \$addr \}\}@\{\{ \$\.encrypted_dns\.port \}\}#\{\{ \$\.encrypted_dns\.server_name \}\}')
+        $hasRaspiForwarders = ($text -match 'forward-addr:\s*\{\{ \$addr \}\}@\{\{ \$\.encrypted_dns\.port \}\}#\{\{ \$\.infra\.pi_fqdn \}\}')
         $hasNoPublicFallback = $text -notmatch '(cloudflare-dns\.com|dns\.quad9\.net|google|8\.8\.8\.8|1\.1\.1\.1|forward-first:\s*yes)'
 
         $listensOnLocalhost -and

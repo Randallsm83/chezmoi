@@ -198,8 +198,8 @@
   "AnimationSpeed": "Medium",
   "CustomAnimationLength": 360,
   "PluginSettings": {
-    "PythonExecutablePath": "C:\\Users\\randa\\.local\\share\\mise\\shims\\pythonw.exe",
-    "NodeExecutablePath": "C:\\Users\\randa\\.local\\share\\mise\\shims\\node.exe",
+    "PythonExecutablePath": "{{ joinPath .xdg_data_home "mise" "shims" "pythonw.exe" | replace "\\" "\\\\" }}",
+    "NodeExecutablePath": "{{ joinPath .xdg_data_home "mise" "shims" "node.exe" | replace "\\" "\\\\" }}",
     "Plugins": {
       "0ECADE17459B49F587BF81DC3A125110": {
         "ID": "0ECADE17459B49F587BF81DC3A125110",

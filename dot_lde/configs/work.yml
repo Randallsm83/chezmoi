@@ -65,8 +65,8 @@ projects:
   # #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   # #  - DISABLE_CSRF: 'false'
   # #  - LOCIZE_DEV_MODE: 'true'
-  # #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  # #  - LOCIZE_API_KEY: '***REMOVED***'
+  # #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  # #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_PANEL_NAVIGATION: 'true' -- makes ndn use dev js generated from here
   # panel-navigation:
@@ -83,8 +83,8 @@ projects:
   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
   #
   #  - LOCIZE_DEV_MODE: 'true'
-  #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #  - LOCIZE_API_KEY: '***REMOVED***'
+  #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #  - LOCIZE_API_KEY: '<your-locize-api-key>'
   #
   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #  - DISABLE_CSRF: 'false'
@@ -104,8 +104,8 @@ projects:
   #   #  - API3_PUBLIC_PATH: '${API3_PATH:-/api3}'
   #   #
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
   #   #
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
@@ -125,8 +125,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_DREAMASSISTANT: 'true' -- variable in `ndn` makes it use dev js generated from here
   # dreamassistant:
@@ -139,8 +139,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_UNIVERSAL_CHECKOUT: 'true' -- variable in `ndn` makes it use dev js generated from here
   # universal-checkout:
@@ -156,8 +156,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_GSUITE: 'true' -- variable in `ndn` makes it use dev js generated from here
   # gsuite:
@@ -173,8 +173,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_USERS: 'true' -- variable in `ndn` makes it use dev js generated from here
   # users:
@@ -187,8 +187,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_WORDPRESS: 'true' -- variable in `ndn` makes it use dev js generated from here
   # wordpress:
@@ -201,8 +201,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_DREAMSHIELD: 'true' -- variable in `ndn` makes it use dev js generated from here
   # dreamshield:
@@ -218,8 +218,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_MAIL: 'true' -- variable in `ndn` makes it use dev js generated from here
   # mail:
@@ -235,8 +235,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_PRO_SERVICES: 'true' -- variable in `ndn` makes it use dev js generated from here
   # pro-services:
@@ -249,8 +249,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_ONBOARDING: 'true' -- variable in `ndn` makes it use dev js generated from here
   # onboarding:
@@ -266,8 +266,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # TODO: variable is not implemented on ndn level
   # # NDN_DEV_MIGRATION  -- variable in `ndn` makes it use dev js generated from here
@@ -281,8 +281,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # - NDN_DEV_SITEPANEL: 'true' -- variable in `ndn` makes it use dev js generated from here
   # sitepanel:
@@ -298,8 +298,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   # # NDN_DEV_PANEL_SEO: 'true' -- variable in `ndn` makes it use dev js generated from here
   # panel-seo-dashboard:
@@ -312,8 +312,8 @@ projects:
   #   #  - IGNORE_QUERY_CONFIG_PARAMS: '${IGNORE_QUERY_CONFIG_PARAMS:-false}'
   #   #  - DISABLE_CSRF: 'false'
   #   #  - LOCIZE_DEV_MODE: 'true'
-  #   #  - LOCIZE_PROJECT_ID: '***REMOVED***'
-  #   #  - LOCIZE_API_KEY: '***REMOVED***'
+  #   #  - LOCIZE_PROJECT_ID: '<your-locize-project-id>'
+  #   #  - LOCIZE_API_KEY: '<your-locize-api-key>'
 
   ### Uebernet
 
@@ -361,11 +361,11 @@ projects:
   #   #  - API3_PUBLIC_PATH: '${API_PATH:-/api3}'
   #   #  - API2_PUBLIC_PATH: '${NDN_PATH:-/ndn}/api2_sitepanel/rpc'
   #   #  - BUILD_BUNDLE_REPORT: '${BUILD_BUNDLE_REPORT:-true}'
-  #   #  - FIREBASE_API_KEY: '${FIREBASE_API_KEY:-***REMOVED***}'
+  #   #  - FIREBASE_API_KEY: '${FIREBASE_API_KEY:-<your-firebase-api-key>}'
   #   #  - ANALYTICS_ENABLED: '${ANALYTICS_ENABLED}:-true'
-  #   #  - FIREBASE_AUTH_DOMAIN: '${FIREBASE_AUTH_DOMAIN:-***REMOVED***.firebaseapp.com}'
-  #   #  - FIREBASE_PROJECT_ID: '${FIREBASE_PROJECT_ID:-***REMOVED***}'
-  #   #  - FIREBASE_STORAGE_BUCKET: '${FIREBASE_STORAGE_BUCKET:-***REMOVED***.appspot.com}'
+  #   #  - FIREBASE_AUTH_DOMAIN: '${FIREBASE_AUTH_DOMAIN:-<your-firebase-project>.firebaseapp.com}'
+  #   #  - FIREBASE_PROJECT_ID: '${FIREBASE_PROJECT_ID:-<your-firebase-project>}'
+  #   #  - FIREBASE_STORAGE_BUCKET: '${FIREBASE_STORAGE_BUCKET:-<your-firebase-project>.appspot.com}'
   #   #  - FIREBASE_MESSAGING_SENDER_ID: '${FIREBASE_MESSAGING_SENDER_ID:-157153869609}'
   #   #  - FIREBASE_APP_ID: '${FIREBASE_APP_ID:-1:157153869609:web:f75bc1c22a65a380ca4138}'
 
@@ -375,7 +375,7 @@ projects:
   #   repo: git@git.dreamhost.com:dreamhost/lde-nginx-proxy.git
   #   path: 'lde-nginx-proxy'
   #   env_vars:
-  #   - PROXY_URL: 'https://***REMOVED***'
+  #   - PROXY_URL: 'https://<internal-proxy-host>'
 
   # Enable this one if you want to use PRODUCTION database for API3. CAREFUL!
   # After enabling this, disable the other api3 services below.
@@ -384,7 +384,7 @@ projects:
   #   repo: git@git.dreamhost.com:dreamhost/lde-nginx-proxy.git
   #   path: 'lde-nginx-proxy'
   #   env_vars:
-  #   - PROXY_URL: 'https://***REMOVED***'
+  #   - PROXY_URL: 'https://<internal-proxy-host>'
 
   # API3 services
   api3:

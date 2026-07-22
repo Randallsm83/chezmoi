@@ -3,7 +3,7 @@
 How DNS resolution actually works on this stack, and where each piece lives in the chezmoi source tree. Last verified `2026-05-13`.
 ## Platform variants
 - **macOS** uses the resolver chain described below (Tailscale MagicDNS -> Pi-hole over the tailnet, with `/etc/resolver` split-DNS for work domains).
-- **Windows** uses a different first hop: a local `unbound` Windows service on `127.0.0.1:53` (managed by `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl`) that forwards via DoT to the raspi terminator on `:853`. Per-adapter DNS is set to `127.0.0.1`. A system-wide NRPT catch-all (`pihole` profile in `vpn_dns_routes`) pins every query to `127.0.0.1` regardless of which interface is up, so DNS doesn't leak to VPN-injected adapter DNS lists (Proton's `10.2.0.1` is the motivating case). See the Windows section below.
+- **Windows** uses a different first hop: a local `unbound` Windows service on `127.0.0.1:53` (managed by `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl`) that forwards via DoT to the raspi terminator on `:853`. Per-adapter DNS is set to `127.0.0.1`. A system-wide NRPT catch-all (`pihole` profile in `vpn_dns_routes`) pins every query to `127.0.0.1` regardless of which interface is up, so DNS doesn't leak to VPN-injected adapter DNS lists (Proton's `<proton-vpn-dns-ip>` is the motivating case). See the Windows section below.
 ## TL;DR
 
 ```text
@@ -11,7 +11,7 @@ Mac apps ──► macOS mDNSResponder ──► tailnet (100.x.x.x) over WireGu
                                           │
                           ┌───────────────┴───────────────┐
                           ▼                               ▼
-              100.100.100.100 (Tailscale          ***REMOVED*** (Pi-hole on Pi,
+              <tailscale-magicdns-ip> (Tailscale          <pi-tailnet-ip> (Pi-hole on Pi,
               MagicDNS proxy)                      direct tailnet route)
                           │                               │
                           └────► forwards to ─────────────┘
@@ -39,15 +39,15 @@ Important properties:
 
 `scutil --dns` reports several supplemental + scoped resolvers. The relevant ones, in priority order:
 
-1. **Tailscale MagicDNS** (`utun9`) — `100.100.100.100` / `fd7a:115c:a1e0::53`. Tailscale injects this at the per-interface level via NetworkExtension, which **outranks** system-scope profile DNS in macOS. This is why the encrypted DNS profile we install is not resolver #1 (see below).
-2. **Direct tailnet route to Pi-hole** — `***REMOVED***`. macOS may parallel-query this and MagicDNS for the same name; both responses are equivalent because MagicDNS forwards there anyway.
-3. **Split-DNS for work domains** — `/etc/resolver/<domain>` files routing `dh-int.com`, `dreamhost.*`, etc. to `***REMOVED***` (Pritunl-internal DNS). Only used when those domains are queried; only resolves when Pritunl is up.
-4. **Encrypted DNS profile (DoT, fallback)** — `raspi.***REMOVED***.ts.net` over TLS to `***REMOVED***:853`. Installed but generally not the active resolver because Tailscale outranks it. Becomes primary when Tailscale is down or `accept-dns` is off.
-5. **LAN fallback** — `192.168.0.1` (router). Last-resort. Plaintext UDP/53. Not used in current observed behavior.
+1. **Tailscale MagicDNS** (`utun9`) — `<tailscale-magicdns-ip>` / `fd7a:115c:a1e0::53`. Tailscale injects this at the per-interface level via NetworkExtension, which **outranks** system-scope profile DNS in macOS. This is why the encrypted DNS profile we install is not resolver #1 (see below).
+2. **Direct tailnet route to Pi-hole** — `<pi-tailnet-ip>`. macOS may parallel-query this and MagicDNS for the same name; both responses are equivalent because MagicDNS forwards there anyway.
+3. **Split-DNS for work domains** — `/etc/resolver/<domain>` files routing `dh-int.com`, `dreamhost.*`, etc. to `<vpn-dns-ip>` (Pritunl-internal DNS). Only used when those domains are queried; only resolves when Pritunl is up.
+4. **Encrypted DNS profile (DoT, fallback)** — `raspi.<your-tailnet>.ts.net` over TLS to `<pi-tailnet-ip>:853`. Installed but generally not the active resolver because Tailscale outranks it. Becomes primary when Tailscale is down or `accept-dns` is off.
+5. **LAN fallback** — `<router-ip>` (router). Last-resort. Plaintext UDP/53. Not used in current observed behavior.
 
 ## Components and where they live
 
-### Pi side (raspi.***REMOVED***.ts.net)
+### Pi side (raspi.<your-tailnet>.ts.net)
 
 - **Pi-hole** (dnsmasq) on `:53/udp,tcp`, listening on LAN + tailscale interfaces. Filters and logs.
 - **unbound** as a DoT terminator on `:853/tcp`. TLS cert from `tailscale cert`. Forwards plain DNS to `127.0.0.1:53` (Pi-hole). `module-config: "iterator"` (no validator — Pi-hole's upstream handles DNSSEC).
@@ -84,7 +84,7 @@ Tailscale runs as a NetworkExtension so its DNS is at level 1. Our DoT profile i
 
 This is **not a problem** for the security goal (encrypted LAN-leg DNS) because:
 
-- The Tailscale resolver IPs (`100.100.100.100`, `***REMOVED***`) are inside the WireGuard tunnel — packets to them are already encrypted.
+- The Tailscale resolver IPs (`<tailscale-magicdns-ip>`, `<pi-tailnet-ip>`) are inside the WireGuard tunnel — packets to them are already encrypted.
 - The DoT profile remains a valid fallback when Tailscale is off (or you're on a machine with `accept-dns=false`).
 
 If you ever want DoT to be primary:
@@ -105,7 +105,7 @@ scutil --dns
 sudo profiles list -type configuration | grep pihole-dot
 
 # End-to-end DoT query against the Pi
-kdig @raspi.***REMOVED***.ts.net +tls +short example.com
+kdig @raspi.<your-tailnet>.ts.net +tls +short example.com
 
 # Reflective probe — what the world sees as your resolver's egress IP
 dig +short TXT o-o.myaddr.l.google.com @ns1.google.com
@@ -131,7 +131,7 @@ ssh raspi 'sudo unbound-control status'
   echo '0 3 * * 1 root bash /usr/local/sbin/setup-pihole-dot.sh' | sudo tee /etc/cron.d/pihole-dot-renew
   ```
 - **Approving the DoT profile after install**: macOS no longer auto-installs unsigned profiles. The `run_onchange_after_56_encrypted-dns.sh` script `open`s the `.mobileconfig` so System Settings prompts for approval. You only need to do this once per fresh machine; subsequent `chezmoi apply` runs no-op when the profile is already installed.
-- **Pi outage behavior**: if the Pi is unreachable (Tailscale down, raspi off), DNS resolution will lag and then fall back to whatever's last in the resolver chain (currently `192.168.0.1` if it's still configured on the Wi-Fi service). To make Pi outages fail loudly instead of degrading silently, drop the LAN fallback nameservers from the active network service:
+- **Pi outage behavior**: if the Pi is unreachable (Tailscale down, raspi off), DNS resolution will lag and then fall back to whatever's last in the resolver chain (currently `<router-ip>` if it's still configured on the Wi-Fi service). To make Pi outages fail loudly instead of degrading silently, drop the LAN fallback nameservers from the active network service:
   ```sh
   networksetup -setdnsservers "Wi-Fi" empty
   ```
@@ -145,8 +145,8 @@ Windows app
 127.0.0.1:53  -- unbound service (no recursion, DoT forward-only)
   | DoT (TCP/853 + TLS)
   v
-  forward-addr: ***REMOVED***@853#raspi.***REMOVED***.ts.net   (LAN, preferred)
-  forward-addr: ***REMOVED***@853#raspi.***REMOVED***.ts.net (tailnet fallback)
+  forward-addr: <pi-lan-ip>@853#raspi.<your-tailnet>.ts.net   (LAN, preferred)
+  forward-addr: <pi-tailnet-ip>@853#raspi.<your-tailnet>.ts.net (tailnet fallback)
   | TLS, validated against scoop cacert bundle
   v
 raspi:853  -- unbound DoT terminator (iterator only, no validator)
@@ -160,10 +160,10 @@ Key pieces:
 | --- | --- | --- |
 | Local unbound install/refresh | `.chezmoiscripts/run_onchange_after_56_unbound_windows.ps1.tmpl` | Installs scoop `unbound` as a Windows service; sets adapter DNS to `127.0.0.1` only after the listener responds. |
 | unbound config | `unbound/service.conf.tmpl` | Forwarder mode, no recursion, no validator, no public DoT fallback. |
-| NRPT catch-all (Proton override) | `.chezmoiscripts/run_onchange_after_55_vpn-dns-routes_windows.ps1.tmpl` + `vpn_dns_routes.pihole` in `.chezmoidata.yaml` | `Add-DnsClientNrptRule -Namespace "." -NameServers 127.0.0.1`. Needed because Proton's WireGuard tunnel attaches `10.2.0.1` to the ProtonVPN adapter, and without NRPT Windows would prefer that over loopback whenever Proton is the default route. |
-| NRPT VPN-internal routes | same script, `vpn_dns_routes.pritunl` | Longest-suffix match wins, so `.dh-int.com` etc. go to `***REMOVED***` (Pritunl) while the rest hits the `.` catch-all. |
-| Proton split-tunnel allow-list | Proton GUI -> Settings -> Split Tunneling -> Bypass VPN | Must include `100.64.0.0/10` and `fd7a:115c:a1e0::/48` so unbound's tailnet fallback (`***REMOVED***@853`) is reachable when off-LAN. Without this Proton's kill switch drops all Tailscale traffic, including DNS. |
-| VPN tunnel adapter DNS auto-cleanup | `.chezmoiscripts/run_onchange_after_59_vpn-dns-watcher_windows.ps1.tmpl` + `dot_config/windows/scripts/clean-vpn-adapter-dns.ps1` | Registers a Scheduled Task triggered by System log event 7036 (Service Control Manager: `ProtonVPN WireGuard` -> `running`). Runs the cleanup script as SYSTEM, which strips everything except `127.0.0.1` from VPN tunnel adapter DNS. Without this, Proton's WireGuard tunnel re-injects `10.2.0.1` on every reconnect (sleep/wake, server hop, kill-switch toggle) and DNS leaks until the next `chezmoi apply`. Logs to `%ProgramData%\chezmoi\clean-vpn-adapter-dns.log`. |
+| NRPT catch-all (Proton override) | `.chezmoiscripts/run_onchange_after_55_vpn-dns-routes_windows.ps1.tmpl` + `vpn_dns_routes.pihole` in `.chezmoidata.yaml` | `Add-DnsClientNrptRule -Namespace "." -NameServers 127.0.0.1`. Needed because Proton's WireGuard tunnel attaches `<proton-vpn-dns-ip>` to the ProtonVPN adapter, and without NRPT Windows would prefer that over loopback whenever Proton is the default route. |
+| NRPT VPN-internal routes | same script, `vpn_dns_routes.pritunl` | Longest-suffix match wins, so `.dh-int.com` etc. go to `<vpn-dns-ip>` (Pritunl) while the rest hits the `.` catch-all. |
+| Proton split-tunnel allow-list | Proton GUI -> Settings -> Split Tunneling -> Bypass VPN | Must include `100.64.0.0/10` and `fd7a:115c:a1e0::/48` so unbound's tailnet fallback (`<pi-tailnet-ip>@853`) is reachable when off-LAN. Without this Proton's kill switch drops all Tailscale traffic, including DNS. |
+| VPN tunnel adapter DNS auto-cleanup | `.chezmoiscripts/run_onchange_after_59_vpn-dns-watcher_windows.ps1.tmpl` + `dot_config/windows/scripts/clean-vpn-adapter-dns.ps1` | Registers a Scheduled Task triggered by System log event 7036 (Service Control Manager: `ProtonVPN WireGuard` -> `running`). Runs the cleanup script as SYSTEM, which strips everything except `127.0.0.1` from VPN tunnel adapter DNS. Without this, Proton's WireGuard tunnel re-injects `<proton-vpn-dns-ip>` on every reconnect (sleep/wake, server hop, kill-switch toggle) and DNS leaks until the next `chezmoi apply`. Logs to `%ProgramData%\chezmoi\clean-vpn-adapter-dns.log`. |
 Verification (Windows):
 ```pwsh
 # All queries should be forced to 127.0.0.1 by NRPT

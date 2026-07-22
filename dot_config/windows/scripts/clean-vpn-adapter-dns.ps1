@@ -43,7 +43,7 @@ param(
     #     change), not `Pritunl`.
     #   - Its adapter DNS list is empty when connected -- Pritunl does not
     #     inject a DNS server onto its tunnel adapter the way Proton does.
-    #   - Pritunl installs its own NRPT rule (`.dreamhost.com` -> ***REMOVED***,
+    #   - Pritunl installs its own NRPT rule (`.dreamhost.com` -> <vpn-dns-ip>,
     #     comment 'DH VPN') for split-DNS, which is the right mechanism
     #     and doesn't conflict with our catch-all to 127.0.0.1.
     # So there's nothing to clean on Pritunl reconnect.

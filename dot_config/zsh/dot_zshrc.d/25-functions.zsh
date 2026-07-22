@@ -303,7 +303,7 @@ omp() {
     return
   fi
 
-  broker_url="${OMP_AUTH_BROKER_URL:-http://raspi.***REMOVED***.ts.net:8765}"
+  broker_url="${OMP_AUTH_BROKER_URL:-}"
   token_file="${OMP_AUTH_BROKER_TOKEN_FILE:-$HOME/.omp/auth-broker.token}"
   if [[ -r $token_file ]]; then
     broker_token="$(<"$token_file")"
@@ -335,7 +335,7 @@ _omp_auth_host() {
 }
 
 _omp_gateway_public_base_url() {
-  print -r -- "${OMP_GATEWAY_PUBLIC_BASE_URL:-https://raspi.***REMOVED***.ts.net/v1}"
+  print -r -- "${OMP_GATEWAY_PUBLIC_BASE_URL:-https://${OMP_AUTH_HOST:-raspi}/v1}"
 }
 _omp_broker_token() {
   ssh "$(_omp_auth_host)" docker exec auth-broker cat /root/.omp/auth-broker.token
@@ -426,7 +426,7 @@ omp-auth-tools() {
   print ""
   print "${cyan}Overrides${reset}"
   print "  export OMP_AUTH_HOST=raspi"
-  print "  export OMP_GATEWAY_PUBLIC_BASE_URL=https://raspi.***REMOVED***.ts.net/v1"
+  print "  export OMP_GATEWAY_PUBLIC_BASE_URL=https://raspi.<your-tailnet>.ts.net/v1"
   print ""
 }
 

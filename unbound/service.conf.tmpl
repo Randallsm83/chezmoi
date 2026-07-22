@@ -81,6 +81,6 @@ forward-zone:
 
     # raspi DoT terminators from .chezmoidata/dns.yaml encrypted_dns.
     # The "#authname" suffix supplies SNI and certificate validation hostname.
-{{- range $addr := .encrypted_dns.server_addresses }}
-    forward-addr: {{ $addr }}@{{ $.encrypted_dns.port }}#{{ $.encrypted_dns.server_name }}
+{{- range $addr := (.infra.dns_pi_addrs | splitList ",") }}
+    forward-addr: {{ $addr }}@{{ $.encrypted_dns.port }}#{{ $.infra.pi_fqdn }}
 {{- end }}

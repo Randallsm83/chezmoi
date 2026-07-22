@@ -191,6 +191,24 @@
     setup_1password = {{ and (not $is_remote) (not $is_raspi) }}  # Skip on remote/Pi by default
     remote_minimal = {{ $remote_minimal }}  # Compat alias: true iff remote_tier == "minimal"
 
+    # ---- Infrastructure identifiers (per-machine; EMPTY in public source) ----
+    # Sensitive hostnames / IPs / remote usernames are NOT committed. The public
+    # source ships empty defaults; real values live in gitignored
+    # .chezmoi.local.toml under [data.infra] and are regenerated from 1Password
+    # via the security runbook. Templates MUST guard each use with
+    # `with .infra.<key>` so an empty value omits the block instead of rendering
+    # broken config. Resolved WITHOUT op inject, so it can never empty .secrets.
+{{- $infra := dict "dh_user" "" "ssh_host_yakko" "" "ssh_host_porky" "" "ssh_host_***REMOVED***" "" "ssh_user_***REMOVED***" "" "ssh_host_fp3" "" "ssh_user_fp3" "" "ssh_host_cass" "" "pi_fqdn" "" "pi_dog_ip" "" "omp_gateway_base_url" "" "omp_broker_url" "" "lm_studio_base_url" "" "vpn_pritunl_ns" "" "vpn_pritunl_domains" "" "dns_pi_addrs" "" -}}
+{{- $infraLocalToml := joinPath .chezmoi.sourceDir ".chezmoi.local.toml" -}}
+{{- if stat $infraLocalToml -}}
+{{-   $liInfra := index (index (include $infraLocalToml | fromToml) "data" | default dict) "infra" | default dict -}}
+{{-   $infra = mergeOverwrite $infra $liInfra -}}
+{{- end }}
+[data.infra]
+{{- range $k, $v := $infra }}
+    {{ $k }} = {{ $v | quote }}
+{{- end }}
+
 
 # ============================================================================
 # 1Password Secrets - Single Batched Resolution

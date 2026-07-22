@@ -447,7 +447,8 @@ if (Test-CommandExists 'dog.exe') {
         if ($args.Count -eq 0 -or $hasNameserver) {
             & dog.exe @args
         } else {
-            & dog.exe @args '@***REMOVED***'
+            $piDns = $env:OMP_INFRA_PI_DOG_IP
+            if ($piDns) { & dog.exe @args "@$piDns" } else { & dog.exe @args }
         }
     }
 }
@@ -731,7 +732,7 @@ function omp {
     $brokerUrl = if ($env:OMP_AUTH_BROKER_URL) {
         $env:OMP_AUTH_BROKER_URL
     } else {
-        'http://raspi.***REMOVED***.ts.net:8765'
+        ''
     }
 
     $tokenFile = if ($env:OMP_AUTH_BROKER_TOKEN_FILE) {
@@ -822,7 +823,7 @@ function Get-OmpAuthHost {
 #>
 function Get-OmpGatewayPublicBaseUrl {
     if ($env:OMP_GATEWAY_PUBLIC_BASE_URL) { return $env:OMP_GATEWAY_PUBLIC_BASE_URL.TrimEnd('/') }
-    return 'https://raspi.***REMOVED***.ts.net/v1'
+    return "https://$(Get-OmpAuthHost)/v1"
 }
 <# 
 .SYNOPSIS
@@ -963,7 +964,7 @@ function omp-auth-tools {
     Write-Host ''
     Write-Host 'Overrides' -ForegroundColor Cyan
     Write-Host '  $env:OMP_AUTH_HOST = "raspi"'
-    Write-Host '  $env:OMP_GATEWAY_PUBLIC_BASE_URL = "https://raspi.***REMOVED***.ts.net/v1"'
+    Write-Host '  $env:OMP_GATEWAY_PUBLIC_BASE_URL = "https://raspi.<your-tailnet>.ts.net/v1"'
     Write-Host ''
 }
 # ================================================================================================

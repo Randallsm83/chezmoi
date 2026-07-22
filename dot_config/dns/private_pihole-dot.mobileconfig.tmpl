@@ -18,7 +18,7 @@
     <key>PayloadDisplayName</key>
     <string>{{ $cfg.display_name }}</string>
     <key>PayloadDescription</key>
-    <string>Pins the system resolver at {{ $cfg.server_name }} over {{ upper $cfg.protocol }}. Managed by chezmoi.</string>
+    <string>Pins the system resolver at {{ .infra.pi_fqdn }} over {{ upper $cfg.protocol }}. Managed by chezmoi.</string>
     <key>PayloadIdentifier</key>
     <string>{{ $cfg.identifier }}</string>
     <key>PayloadOrganization</key>
@@ -51,10 +51,10 @@
                 <key>DNSProtocol</key>
                 <string>{{ if eq $cfg.protocol "tls" }}TLS{{ else if eq $cfg.protocol "https" }}HTTPS{{ else }}{{ upper $cfg.protocol }}{{ end }}</string>
                 <key>ServerName</key>
-                <string>{{ $cfg.server_name }}</string>
+                <string>{{ .infra.pi_fqdn }}</string>
                 <key>ServerAddresses</key>
                 <array>
-                    {{- range $cfg.server_addresses }}
+                    {{- range (.infra.dns_pi_addrs | splitList ",") }}
                     <string>{{ . }}</string>
                     {{- end }}
                 </array>

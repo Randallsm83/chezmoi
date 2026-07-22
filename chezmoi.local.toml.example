@@ -132,7 +132,7 @@
 #     has_sudo = true
 #     
 #     email = "randall@company.com"
-#     name = "Randall Smith"
+#     name = "Your Name"
 #     
 #     [data.package_features]
 #         rust = false        # Company restricts Rust

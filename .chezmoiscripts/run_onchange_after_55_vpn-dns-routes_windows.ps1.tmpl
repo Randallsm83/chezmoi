@@ -7,7 +7,7 @@
 # What this does:
 #   For each (profile, domain) pair in vpn_dns_routes, ensures a Name
 #   Resolution Policy Table rule exists routing that explicit namespace
-#   (for example, '.dh-int.com') to the profile's VPN-internal resolver.
+#   (for example, '.internal.example') to the profile's VPN-internal resolver.
 #   Do not configure a localhost catch-all namespace here: if 127.0.0.1:53 is
 #   not responsive, Windows loses all hostname resolution.
 #
@@ -18,20 +18,12 @@
 #   policy layer that runs before per-interface DNS, so it cannot be
 #   silently overridden by adapter configuration.
 
-{{- if not (hasKey . "vpn_dns_routes") }}
-Write-Host "No VPN DNS routes configured (vpn_dns_routes block in .chezmoidata.yaml is missing)."
-exit 0
-{{- end }}
-
 # Build the desired rule set from chezmoi data.
 $desired = @(
-{{- with .vpn_dns_routes }}
-{{-   range $vpn, $cfg := . }}
-{{-     range $cfg.domains }}
-    @{ Domain = '.{{ . }}'; NameServer = '{{ $cfg.nameserver }}'; Vpn = '{{ $vpn }}' },
-{{-     end }}
-{{-   end }}
-{{- end }}
+{{- $ns := .infra.vpn_pritunl_ns }}
+{{- with $ns }}{{ range ($.infra.vpn_pritunl_domains | splitList ",") }}
+    @{ Domain = '.{{ . }}'; NameServer = '{{ $ns }}'; Vpn = 'pritunl' },
+{{- end }}{{ end }}
     $null
 ) | Where-Object { $_ }
 

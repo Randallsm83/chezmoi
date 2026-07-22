@@ -6,7 +6,7 @@
 #
 # Stands up unbound on :853 doing DoT, forwarding plain DNS to Pi-hole on
 # the Pi's primary LAN address. Pi-hole/FTL may bind only to the LAN address
-# (for example ***REMOVED***:53), not loopback; forwarding to 127.0.0.1 caused
+# (for example <pi-lan-ip>:53), not loopback; forwarding to 127.0.0.1 caused
 # DoT queries to SERVFAIL while direct Pi-hole LAN queries worked.
 #
 # Layout after this script runs:
@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-HOSTNAME_FQDN="${HOSTNAME_FQDN:-raspi.***REMOVED***.ts.net}"
+HOSTNAME_FQDN="${HOSTNAME_FQDN:-$(hostname -f 2>/dev/null || hostname)}"
 UPSTREAM_HOST="${UPSTREAM_HOST:-$(hostname -I | awk '{print $1}')}"
 UPSTREAM_PORT="${UPSTREAM_PORT:-53}"   # Pi-hole's listening port (dnsmasq/FTL)
 DOT_PORT="${DOT_PORT:-853}"

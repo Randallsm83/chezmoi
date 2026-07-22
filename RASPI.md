@@ -104,7 +104,7 @@ mise prune
 Pi profile sets `setup_1password = false`. If a stale `.chezmoi.local.toml` overrides this, edit it and remove the override, then `chezmoi init` to regenerate.
 
 ## Encrypted DNS (DoT terminator)
-The macOS profile rendered from `encrypted_dns` in `.chezmoidata.yaml` pins the Mac at `raspi.***REMOVED***.ts.net:853` over DoT. The Pi has to terminate that TLS connection and forward to Pi-hole. Stand it up with the helper script in `scripts/`:
+The macOS profile rendered from `encrypted_dns` in `.chezmoidata.yaml` pins the Mac at `raspi.<your-tailnet>.ts.net:853` over DoT. The Pi has to terminate that TLS connection and forward to Pi-hole. Stand it up with the helper script in `scripts/`:
 ```sh
 # From a workstation that has the dotfiles repo:
 scp ~/projects/personal/dotfiles/scripts/setup-pihole-dot.sh raspi:/tmp/
@@ -118,6 +118,6 @@ echo '0 3 * * 1 root bash /usr/local/sbin/setup-pihole-dot.sh' | sudo tee /etc/c
 Until the Pi side is up, `chezmoi apply` on the Mac will print a warning and skip the profile install (the script TCP-probes `:853` first). No partial state.
 Verify from the Mac:
 ```sh
-nc -z -w 3 raspi.***REMOVED***.ts.net 853 && echo reachable
-kdig -d @raspi.***REMOVED***.ts.net +tls-ca +short example.com
+nc -z -w 3 raspi.<your-tailnet>.ts.net 853 && echo reachable
+kdig -d @raspi.<your-tailnet>.ts.net +tls-ca +short example.com
 ```
