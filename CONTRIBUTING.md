@@ -57,6 +57,14 @@ chezmoi execute-template < .chezmoitemplates/your-template.tmpl
 
 ---
 
+### Secret Scanning Hook
+
+`chezmoi apply` enables a `gitleaks` pre-commit hook (`core.hooksPath = .githooks`) that blocks commits containing secrets. It activates only where `gitleaks` is installed (bundled with the `git` package feature — scoop/mise/brew); install it manually with `scoop install gitleaks`, `brew install gitleaks`, or `mise use -g gitleaks`.
+
+- The hook is **fail-closed**: if `gitleaks` is present but the scan cannot run, the commit is refused.
+- Route real values through 1Password (`op://…`) or a `<placeholder>` (see [SECRETS.md](./SECRETS.md)).
+- Override a verified false positive with `git commit --no-verify`.
+
 ## Making Changes
 
 ### Branch Naming

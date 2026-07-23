@@ -1,0 +1,52 @@
+title = "chezmoi dotfiles — secret-scan config"
+
+# Start from gitleaks' built-in ruleset (covers Firebase AIza…, AWS, GitHub PAT,
+# Slack, private keys, generic high-entropy, etc.), then add repo-specific rules
+# for the exact credential shapes that leaked here.
+[extend]
+useDefault = true
+
+# --- Repo-specific rules -----------------------------------------------------
+
+# Locize API key / project ID: bare UUIDs assigned to a LOCIZE_* variable.
+# (A bare UUID alone is too generic for the default entropy rule, so we key on
+# the variable name — this is exactly the shape that leaked in work.yml.)
+[[rules]]
+id = "locize-credential"
+description = "Locize API key or project ID (UUID assigned to a LOCIZE_* var)"
+regex = '''(?i)locize[_-]?(?:api[_-]?key|project[_-]?id)['"]?\s*[:=]\s*['"]?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'''
+keywords = ["locize"]
+
+# Any credential-shaped variable assigned a literal value. Repo convention is
+# that secrets MUST be op:// references or <placeholders>; a literal here is a
+# leak. Catches the OMP broker token and anything of that class. RE2 has no
+# lookahead, so op://, {{…}}, <…>, ${…}, ***REMOVED*** are exempted in the
+# allowlist below rather than in this pattern.
+[[rules]]
+id = "credential-var-literal"
+description = "Credential-like variable assigned a literal value (should be op:// or placeholder)"
+regex = '''(?i)\b[a-z0-9_]*(?:token|secret[_-]?access[_-]?key|secret[_-]?key|access[_-]?key|private[_-]?key|encryption[_-]?key|signing[_-]?key|api[_-]?key|secret|password|passwd|credential)\b['"]?\s*[:=]\s*['"]?[A-Za-z0-9_./+=-]{12,}'''
+keywords = ["token", "secret", "key", "password", "passwd", "credential"]
+
+# --- Global allowlist --------------------------------------------------------
+# Exempts this repo's sanctioned non-secret patterns so they never trip a rule.
+# regexTarget = "line" so the whole line is checked (an op:// value or
+# placeholder anywhere on the line clears it).
+[[allowlists]]
+description = "sanctioned secret-injection references and placeholders"
+regexTarget = "line"
+regexes = [
+  '''op://[^\s"'}]+''',              # 1Password references
+  '''\{\{[^}]*\}\}''',               # chezmoi/Go template expressions
+  '''<[A-Za-z0-9 ._-]+>''',          # <your-…> style placeholders
+  '''\$\{[A-Za-z0-9_]+''',           # ${SHELL_VAR} interpolation
+  '''\*\*\*REMOVED\*\*\*''',         # filter-repo scrub markers
+]
+
+[[allowlists]]
+description = "value is code, not a literal secret (variable reference or cmdlet result)"
+regexTarget = "match"
+regexes = [
+  '''[:=]\s*["']?\$''',                       # $var / "$var" / ${var} reference or $(…) subst
+  '''[:=]\s*[A-Z][a-z]+-[A-Z][A-Za-z]+\b''',  # PowerShell Verb-Noun cmdlet result (Get-OmpBrokerToken)
+]

@@ -367,6 +367,18 @@ bash .chezmoiscripts/run_onchange_before_01_validate-secrets.sh.tmpl
 
 ---
 
+## Secret Scanning (defense in depth)
+
+Three layers stop a credential from ever reaching the public mirrors:
+
+1. **Local pre-commit hook** — `.githooks/pre-commit` runs `gitleaks` against staged changes and blocks the commit on a finding. It is enabled automatically by `chezmoi apply` (`.chezmoiscripts/run_onchange_after_76_install-git-hooks*` sets `core.hooksPath = .githooks` on the source repo). Rules live in `.gitleaks.toml`: the built-in gitleaks ruleset plus repo-specific rules for the Locize UUID and any credential-shaped variable assigned a literal, with an allowlist for sanctioned `op://` references, `{{ ... }}` template expressions, and `<placeholders>`.
+   - **Fail-closed**: if `gitleaks` is missing the commit is refused, not silently skipped — but the hook only activates on hosts where `gitleaks` is installed (scoop/mise/brew via the `git` package feature), so scanner-less machines are never locked out.
+   - **Bypass a verified false positive**: `git commit --no-verify`.
+2. **GitHub** — native secret scanning + push protection are enabled on the repo; a gitleaks GitHub Action (`.github/workflows/secret-scan.yml`) is the CI backstop.
+3. **GitLab** — Secret Detection CI (`.gitlab-ci.yml`) is the equivalent backstop on the mirror.
+
+Install `gitleaks` manually if needed: `scoop install gitleaks` (Windows) · `brew install gitleaks` (macOS) · `mise use -g gitleaks` (Linux).
+
 ## Per-Machine Configuration
 
 Use `.chezmoi.local.toml` for machine-specific overrides. The chezmoi

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Secret-scan pre-commit hook for the chezmoi dotfiles repo.
+# Enabled via `core.hooksPath = .githooks` (set by chezmoi apply; see
+# .chezmoiscripts/run_onchange_after_75_install-git-hooks*). Blocks commits
+# whose staged changes contain secrets, per .gitleaks.toml.
+#
+# FAIL-CLOSED: if gitleaks cannot be located the commit is refused (not skipped),
+# so a minimal PATH from a git GUI or odd shell can never silently disable
+# scanning. Bypass a verified false positive with `git commit --no-verify`.
+set -euo pipefail
+
+# git GUIs / hooks frequently run with a minimal PATH that omits scoop/brew/mise
+# bin dirs, so prepend the common install locations before resolving gitleaks.
+for d in \
+  "$HOME/scoop/shims" \
+  "$HOME/.local/bin" \
+  "$HOME/.local/share/mise/shims" \
+  /opt/homebrew/bin \
+  /usr/local/bin \
+  /usr/bin
+do
+  [ -d "$d" ] && case ":$PATH:" in *":$d:"*) ;; *) PATH="$d:$PATH" ;; esac
+done
+# Windows profile (scoop) when $HOME differs from the Windows user directory.
+if [ -n "${USERPROFILE:-}" ]; then
+  win="${USERPROFILE//\\//}"
+  [ -d "$win/scoop/shims" ] && case ":$PATH:" in *":$win/scoop/shims:"*) ;; *) PATH="$win/scoop/shims:$PATH" ;; esac
+fi
+export PATH
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  printf '\033[31m[gitleaks] not found — commit refused (fail-closed secret scan).\033[0m\n' >&2
+  printf 'Install it so staged changes are scanned: scoop install gitleaks | brew install gitleaks\n' >&2
+  printf 'Bypass only if you accept the risk: git commit --no-verify\n' >&2
+  exit 1
+fi
+
+repo_root=$(git rev-parse --show-toplevel)
+if gitleaks git --staged --redact --no-banner -c "$repo_root/.gitleaks.toml"; then
+  exit 0
+fi
+
+printf '\033[31m[gitleaks] Secret(s) detected in staged changes — commit blocked.\033[0m\n' >&2
+printf 'Route the value through 1Password (op://…) or a <placeholder>. See SECRETS.md.\n' >&2
+printf 'Override only if this is a verified false positive: git commit --no-verify\n' >&2
+exit 1

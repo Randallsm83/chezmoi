@@ -1,0 +1,26 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+# Point core.hooksPath at the tracked .githooks/ in the chezmoi source repo so
+# the secret-scan pre-commit hook runs when authoring dotfiles commits.
+#
+# The hook is FAIL-CLOSED, so activation is gated on gitleaks actually being
+# present: on a host without the scanner the hook is NOT enabled — commits are
+# never locked out. A previously-set hooksPath is unset if gitleaks regresses.
+# Idempotent; reruns when the hook or its config changes.
+# Hash: {{ printf "%s%s" (include ".githooks/pre-commit") (include ".gitleaks.toml") | sha256sum }}
+$ErrorActionPreference = 'Stop'
+$src = "{{ .chezmoi.sourceDir }}"
+git -C $src rev-parse --git-dir *> $null
+if ($LASTEXITCODE -ne 0) { return }
+
+$env:PATH = "$env:USERPROFILE\scoop\shims;$env:PATH"
+if (Get-Command gitleaks -ErrorAction SilentlyContinue) {
+  git -C $src config core.hooksPath .githooks
+  Write-Host "[git-hooks] secret-scan pre-commit enabled (core.hooksPath -> .githooks)"
+} else {
+  if ((git -C $src config --get core.hooksPath 2>$null) -eq ".githooks") {
+    git -C $src config --unset core.hooksPath
+  }
+  Write-Host "[git-hooks] gitleaks not installed — secret-scan hook not enabled on this host"
+}
+{{- end }}

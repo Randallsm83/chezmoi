@@ -1,0 +1,13 @@
+# Server-side secret scanning backstop for the GitLab mirror, mirroring the
+# GitHub Action and the local gitleaks pre-commit hook. GitLab's built-in
+# Secret Detection analyzer runs on shared runners; findings appear in the
+# pipeline's Security tab. Requires CI/CD + shared runners enabled on the
+# project (free tier includes limited minutes).
+include:
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+stages:
+  - test
+
+secret_detection:
+  stage: test
