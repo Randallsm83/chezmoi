@@ -9,6 +9,10 @@
 # Idempotent; reruns when the hook or its config changes.
 # Hash: {{ printf "%s%s" (include ".githooks/pre-commit") (include ".gitleaks.toml") | sha256sum }}
 $ErrorActionPreference = 'Stop'
+# We intentionally inspect $LASTEXITCODE on git calls that are allowed to fail
+# (non-git source dir; core.hooksPath already unset). Keep those from throwing
+# under PowerShell 7.4+ where native non-zero exits honor ErrorActionPreference.
+$PSNativeCommandUseErrorActionPreference = $false
 $src = "{{ .chezmoi.sourceDir }}"
 git -C $src rev-parse --git-dir *> $null
 if ($LASTEXITCODE -ne 0) { return }
